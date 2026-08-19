@@ -1,0 +1,376 @@
+/* app/globals.css */
+
+@import "tailwindcss";
+@import 'material-symbols';
+
+@custom-variant dark (&:where(.dark, .dark *));
+/* ============================================================
+   متغیرهای CSS پایه
+   ============================================================ */
+:root {
+  --primary: #8b0000;
+  --primary-container: #8b0000;
+  --primary-fixed: #ffdad4;
+  --primary-fixed-dim: #ffb4a8;
+  --on-primary: #ffffff;
+  --on-primary-container: #ff907f;
+  --secondary: #904d00;
+  --secondary-container: #fd8b00;
+  --on-secondary: #ffffff;
+  --on-secondary-container: #603100;
+  --surface: #f9f9fc;
+  --surface-bright: #f9f9fc;
+  --surface-dim: #dadadc;
+  --surface-container: #eeeef0;
+  --surface-container-low: #f3f3f6;
+  --surface-container-lowest: #ffffff;
+  --surface-container-high: #e8e8ea;
+  --surface-container-highest: #e2e2e5;
+  --outline: #8e706b;
+  --outline-variant: #e3beb8;
+  --background: #f9f9fc;
+  --on-background: #1a1c1e;
+  --on-surface: #1a1c1e;
+  --on-surface-variant: #5a403c;
+  --error: #ba1a1a;
+  --error-container: #ffdad6;
+  --on-error: #ffffff;
+  --on-error-container: #93000a;
+  --tertiary: #003420;
+  --tertiary-container: #004d31;
+  --on-tertiary: #ffffff;
+  --on-tertiary-container: #58c390;
+  --radius: 0.5rem;
+  --cell-size: 2rem;
+  --font-family: "number-font", "text-font", Vazirmatn, sans-serif;
+
+  /* ShadCN HSL متغیرها */
+  --background-hsl: 0 0% 100%;
+  --foreground: 222.2 84% 4.9%;
+  --card: 0 0% 100%;
+  --card-foreground: 222.2 84% 4.9%;
+  --popover: 0 0% 100%;
+  --popover-foreground: 222.2 84% 4.9%;
+  --primary-foreground: 210 40% 98%;
+  --secondary-hsl: 210 40% 96%;
+  --secondary-foreground: 222.2 84% 4.9%;
+  --muted: 210 40% 96%;
+  --muted-foreground: 215.4 16.3% 46.9%;
+  --accent: 210 40% 96%;
+  --accent-foreground: 222.2 84% 4.9%;
+  --destructive: 0 84.2% 60.2%;
+  --destructive-foreground: 210 40% 98%;
+  --border: 214.3 31.8% 91.4%;
+  --input: 214.3 31.8% 91.4%;
+  --ring: 221.2 83.2% 53.3%;
+  --sidebar-background: 0 0% 98%;
+  --sidebar-foreground: 240 5.3% 26.1%;
+  --sidebar-primary: 240 5.9% 10%;
+  --sidebar-primary-foreground: 0 0% 98%;
+  --sidebar-accent: 240 4.8% 95.9%;
+  --sidebar-accent-foreground: 240 5.9% 10%;
+  --sidebar-border: 220 13% 91%;
+  --sidebar-ring: 217.2 91.2% 59.8%;
+  --chart-1: 12 76% 61%;
+  --chart-2: 173 58% 39%;
+  --chart-3: 197 37% 24%;
+  --chart-4: 43 74% 66%;
+  --chart-5: 27 87% 67%;
+  --error-foreground: 210 40% 98%;
+}
+
+.dark {
+  --background-hsl: 222.2 84% 4.9%;
+  --foreground: 210 40% 98%;
+  --card: 222.2 84% 4.9%;
+  --card-foreground: 210 40% 98%;
+  --popover: 222.2 84% 4.9%;
+  --popover-foreground: 210 40% 98%;
+  --primary-foreground: 222.2 84% 4.9%;
+  --secondary-hsl: 217.2 32.6% 17.5%;
+  --secondary-foreground: 210 40% 98%;
+  --muted: 217.2 32.6% 17.5%;
+  --muted-foreground: 215 20.2% 65.1%;
+  --accent: 217.2 32.6% 17.5%;
+  --accent-foreground: 210 40% 98%;
+  --destructive: 0 62.8% 30.6%;
+  --destructive-foreground: 210 40% 98%;
+  --border: 217.2 32.6% 17.5%;
+  --input: 217.2 32.6% 17.5%;
+  --ring: 224.3 76.3% 94.1%;
+}
+
+/* ============================================================
+   Tailwind v4 Theme
+   ============================================================ */
+@theme {
+  --color-background: var(--background);
+  --color-foreground: hsl(var(--foreground));
+  --color-card: hsl(var(--card));
+  --color-card-foreground: hsl(var(--card-foreground));
+  --color-popover: hsl(var(--popover));
+  --color-popover-foreground: hsl(var(--popover-foreground));
+  --color-primary: var(--primary);
+  --color-primary-container: var(--primary-container);
+  --color-on-primary: var(--on-primary);
+  --color-on-primary-container: var(--on-primary-container);
+  --color-secondary: var(--secondary);
+  --color-secondary-container: var(--secondary-container);
+  --color-on-secondary: var(--on-secondary);
+  --color-on-secondary-container: var(--on-secondary-container);
+  --color-surface: var(--surface);
+  --color-surface-container: var(--surface-container);
+  --color-surface-container-low: var(--surface-container-low);
+  --color-surface-container-lowest: var(--surface-container-lowest);
+  --color-surface-container-high: var(--surface-container-high);
+  --color-surface-container-highest: var(--surface-container-highest);
+  --color-outline: var(--outline);
+  --color-outline-variant: var(--outline-variant);
+  --color-on-background: var(--on-background);
+  --color-on-surface: var(--on-surface);
+  --color-on-surface-variant: var(--on-surface-variant);
+  --color-error: var(--error);
+  --color-error-container: var(--error-container);
+  --color-on-error: var(--on-error);
+  --color-on-error-container: var(--on-error-container);
+  --color-tertiary: var(--tertiary);
+  --color-tertiary-container: var(--tertiary-container);
+  --color-on-tertiary: var(--on-tertiary);
+  --color-on-tertiary-container: var(--on-tertiary-container);
+  --color-muted: hsl(var(--muted));
+  --color-muted-foreground: hsl(var(--muted-foreground));
+  --color-accent: hsl(var(--accent));
+  --color-accent-foreground: hsl(var(--accent-foreground));
+  --color-destructive: hsl(var(--destructive));
+  --color-destructive-foreground: hsl(var(--destructive-foreground));
+  --color-border: hsl(var(--border));
+  --color-input: hsl(var(--input));
+  --color-ring: hsl(var(--ring));
+  --color-sidebar: hsl(var(--sidebar-background));
+  --color-sidebar-foreground: hsl(var(--sidebar-foreground));
+  --color-sidebar-primary: hsl(var(--sidebar-primary));
+  --color-sidebar-primary-foreground: hsl(var(--sidebar-primary-foreground));
+  --color-sidebar-accent: hsl(var(--sidebar-accent));
+  --color-sidebar-accent-foreground: hsl(var(--sidebar-accent-foreground));
+  --color-sidebar-border: hsl(var(--sidebar-border));
+  --color-sidebar-ring: hsl(var(--sidebar-ring));
+
+  --font-sans: var(--font-family, "number-font", "text-font", Vazirmatn, sans-serif);
+  --font-mono: JetBrains Mono, monospace;
+
+  --radius-lg: var(--radius);
+  --radius-md: calc(var(--radius) - 2px);
+  --radius-sm: calc(var(--radius) - 4px);
+
+  --animate-accordion-down: accordion-down 0.2s ease-out;
+  --animate-accordion-up: accordion-up 0.2s ease-out;
+}
+
+/* ============================================================
+   Keyframes
+   ============================================================ */
+@keyframes accordion-down {
+  from { height: 0; }
+  to { height: var(--radix-accordion-content-height); }
+}
+
+@keyframes accordion-up {
+  from { height: var(--radix-accordion-content-height); }
+  to { height: 0; }
+}
+
+@keyframes slideIn {
+  from { opacity: 0; transform: translateY(-10px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+@keyframes slideDown {
+  from { opacity: 0; transform: translateY(-20px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+@keyframes fadeIn {
+  from { opacity: 0; transform: translateY(10px) scale(0.95); }
+  to { opacity: 1; transform: translateY(0) scale(1); }
+}
+
+/* ============================================================
+   Base
+   ============================================================ */
+@layer base {
+  * {
+    @apply border-border;
+  }
+  body {
+    @apply bg-background text-foreground;
+  }
+}
+
+/* ============================================================
+   فونت‌ها
+   ============================================================ */
+@font-face {
+  font-family: "text-font";
+  src: url("../styles/fonts/IRANSansWeb.woff") format("woff");
+  font-weight: normal;
+  font-style: normal;
+  font-display: swap;
+}
+
+@font-face {
+  font-family: "number-font";
+  src: url("../styles/fonts/IRANSansWeb(FaNum).woff") format("woff");
+  font-weight: normal;
+  font-style: normal;
+  font-display: swap;
+}
+
+body {
+  font-family: "number-font", "text-font", Vazirmatn, sans-serif !important;
+  background-color: var(--background, #f9f9fc) !important;
+  color: var(--on-background, #1a1c1e) !important;
+}
+
+html, body {
+  overflow-x: hidden;
+  max-width: 100vw;
+}
+
+input[type="text"],
+input[type="number"],
+input[type="tel"],
+input[type="email"],
+input[type="password"],
+input[type="search"],
+textarea,
+select {
+  font-family: "number-font", "text-font", sans-serif !important;
+}
+
+/* ============================================================
+   کلاس‌های کمکی
+   ============================================================ */
+input:focus,
+textarea:focus,
+select:focus {
+  outline: none !important;
+  box-shadow: none !important;
+}
+
+.industrial-stroke {
+  border: 1px solid var(--outline);
+}
+
+.inset-input {
+  background-color: var(--surface-container-lowest);
+}
+
+.rounded-none {
+  border-radius: 0 !important;
+}
+
+/* ============================================================
+   Swiper Pagination
+   ============================================================ */
+.swiper-pagination-bullet {
+  width: 16px !important;
+  height: 16px !important;
+  font-size: 12px !important;
+  line-height: 16px !important;
+  text-align: center;
+  color: #fff !important;
+  background: #cecece !important;
+  opacity: 1 !important;
+}
+
+.swiper-pagination-bullet-active {
+  background: green !important;
+  transform: scale(1.1);
+}
+
+/* ============================================================
+   RTL
+   ============================================================ */
+[dir="rtl"] .rt-switch {
+  direction: ltr;
+}
+
+[dir="rtl"] .rt-switch [data-state="checked"] {
+  background-color: hsl(var(--primary-foreground));
+}
+
+[dir="rtl"] .rt-switch [data-state="unchecked"] {
+  background-color: hsl(var(--input));
+}
+
+/* ============================================================
+   انیمیشن‌ها
+   ============================================================ */
+.task-enter {
+  animation: slideIn 0.3s ease-out;
+}
+
+.animate-slide-down {
+  animation: slideDown 0.3s ease-out;
+}
+
+.animate-in {
+  animation: fadeIn 0.2s ease-out forwards;
+}
+
+/* ============================================================
+   اسکرولبار
+   ============================================================ */
+.custom-scrollbar::-webkit-scrollbar { width: 6px; }
+.custom-scrollbar::-webkit-scrollbar-track { @apply bg-muted; }
+.custom-scrollbar::-webkit-scrollbar-thumb { @apply bg-muted-foreground/30 rounded-full; }
+.custom-scrollbar::-webkit-scrollbar-thumb:hover { @apply bg-muted-foreground/50; }
+
+.no-scrollbar::-webkit-scrollbar { display: none; }
+.no-scrollbar {
+  -ms-overflow-style: none;
+  scrollbar-width: none;
+}
+
+.scrollbar-hide {
+  -ms-overflow-style: none !important;
+  scrollbar-width: none !important;
+}
+.scrollbar-hide::-webkit-scrollbar {
+  display: none !important;
+}
+
+.thin-scrollbar::-webkit-scrollbar {
+  width: 6px;
+  height: 6px;
+}
+.thin-scrollbar::-webkit-scrollbar-track {
+  background: transparent;
+}
+.thin-scrollbar::-webkit-scrollbar-thumb {
+  background-color: rgba(0, 0, 0, 0.2);
+  border-radius: 3px;
+}
+
+/* ============================================================
+   عمومی
+   ============================================================ */
+.page-container {
+  max-width: 900px;
+  margin: 0 auto;
+  width: 100%;
+}
+
+[dir="rtl"] {
+  text-align: right;
+}
+
+/* ============================================================
+   Material Symbols
+   ============================================================ */
+.material-symbols-outlined {
+  font-variation-settings: 'FILL' 0, 'wght' 400, 'GRAD' 0, 'opsz' 24;
+  display: inline-block;
+  vertical-align: middle;
+  line-height: 1;
+}
