@@ -49,7 +49,6 @@ export default function MobileHeader({ showLocation = false, showBack = false, f
     const [menuOpen, setMenuOpen] = useState(false);
     const { data: arms, isLoading: armsLoading, refetch: refetchArms } = useArms();
 
-
     const menuRef = useRef<HTMLDivElement>(null);
     const buttonRef = useRef<HTMLButtonElement>(null);
 
@@ -76,7 +75,6 @@ export default function MobileHeader({ showLocation = false, showBack = false, f
         checkOwner();
     }, [user, currentSlug]);
 
-    // بستن منو با کلیک بیرون
     useEffect(() => {
         if (!menuOpen) return;
         const handleClickOutside = (e: MouseEvent) => {
@@ -116,17 +114,30 @@ export default function MobileHeader({ showLocation = false, showBack = false, f
         router.push('/');
     };
 
-
-
     const armName = currentArm?.name || 'Daymat';
     const armSlogan = currentArm?.slogan || 'قیمت امروز فروشندگان عمده مصالح';
     const API_BASE = process.env.NEXT_PUBLIC_API_BASE_URL?.replace(/\/$/, '') || 'http://localhost:3011';
-    const logoFileId = (currentArm as any)?.config?.general?.logoFileId || currentArm?.logoUrl;
-    const logoUrl = (currentArm as any)?.config?.general?.logoUrl || currentArm?.logoUrl;
-    const logoSrc = logoFileId ? `${API_BASE}/file/${logoFileId}` : logoUrl || '/images/logo.png';
+
+    // ═══════════════ تغییر این بخش ═══════════════
+    const arvanLogoUrl = (currentArm as any)?.config?.general?.logoUrl;
+    const arvanLogoPath = (currentArm as any)?.config?.general?.logoFile?.path;
+    const arvanThumbnailPath = (currentArm as any)?.config?.general?.logoFile?.thumbnailPath;
+    const legacyLogoUrl = currentArm?.logoUrl;
+
+    // اولویت: آروان کامل > آروان path > آروان thumbnail > localhost/file > لوگوی پیش‌فرض
+    const logoSrc =
+        arvanLogoUrl?.startsWith('http') ? arvanLogoUrl :
+            arvanLogoPath?.startsWith('http') ? arvanLogoPath :
+                arvanThumbnailPath?.startsWith('http') ? arvanThumbnailPath :
+                    legacyLogoUrl?.startsWith('http') ? legacyLogoUrl :
+                        legacyLogoUrl ? `${API_BASE}/file/${legacyLogoUrl}` :
+                            '/images/logo.png';
+    // ═══════════════ پایان تغییر ═══════════════
+
     const showJoin = isHomePage && (!isAuthenticated || !isMember) && !armsLoading;
     const showTestBadge = currentArm?.config?.general?.showTestBadge ?? true;
-    const testBadgeText = currentArm?.config?.general?.testBadgeText
+    const testBadgeText = currentArm?.config?.general?.testBadgeText;
+
     return (
         <header className={`lg:hidden z-40 bg-white dark:bg-gray-900 border-b border-outline-variant/20 dark:border-gray-800 ${fixed ? 'sticky top-0' : ''}`}>
             <div className="flex items-center justify-between px-4 h-16">
@@ -137,27 +148,26 @@ export default function MobileHeader({ showLocation = false, showBack = false, f
                         </button>
                     )}
                     <div className="w-16 h-16 cursor-pointer relative rounded-lg overflow-hidden flex-shrink-0" onClick={() => router.push('/')}>
-                        <Image src={logoSrc} alt="Logo" fill className="object-contain" unoptimized={logoSrc.startsWith('http')}  />
+                        <Image
+                            src={logoSrc}
+                            alt="Logo"
+                            fill
+                            className="object-contain"
+                            unoptimized={logoSrc.startsWith('http')}
+                        />
                     </div>
                     <div className="flex flex-col text-right min-w-0">
                         <div className="flex items-center gap-1.5">
                             <button onClick={() => router.push('/')} className="pb-2 font-bold text-gray-900 dark:text-gray-100 text-[13px] leading-tight truncate">
                                 {armName}
                             </button>
-
-                        {/*    {showJoin && (
-                                <button onClick={handleJoinClick} className="bg-red-600 hover:bg-red-700 dark:bg-red-700 dark:hover:bg-red-800 text-white px-2 py-0.5 rounded text-[9px] font-bold disabled:opacity-50 transition-colors">
-                                    {isJoining ? '...' : 'عضویت'}
-                                </button>
-                            )}*/}
                         </div>
-                        <span className=" text-gray-400 dark:text-gray-500 text-[10px] leading-tight truncate">
+                        <span className="text-gray-400 dark:text-gray-500 text-[10px] leading-tight truncate">
                             {armSlogan}
                         </span>
                     </div>
                 </div>
 
-                {/* دکمه منو همبرگری */}
                 <div className="flex items-center gap-1">
                     <button
                         ref={buttonRef}
@@ -168,7 +178,6 @@ export default function MobileHeader({ showLocation = false, showBack = false, f
                     </button>
                 </div>
 
-                {/* پنل منوی کشویی */}
                 {menuOpen && (
                     <div
                         ref={menuRef}
@@ -194,14 +203,11 @@ export default function MobileHeader({ showLocation = false, showBack = false, f
                                 </>
                             )}
 
-
-
                             {isArmOwner && (
                                 <button onClick={() => { setMenuOpen(false); router.push('/arm-admin'); }} className="w-full flex items-center gap-2 px-4 py-3 text-sm text-emerald-600 hover:bg-emerald-50 dark:hover:bg-emerald-900/20 text-right">
                                     <Store className="w-4 h-4" /> پنل مالک بازار
                                 </button>
                             )}
-                            {/* حالت تاریک */}
                             <ThemeToggle />
                             {user?.role === 'system_admin' && (
                                 <button onClick={() => { setMenuOpen(false); router.push('/admin'); }} className="w-full flex items-center gap-2 px-4 py-3 text-sm text-primary hover:bg-primary/10 text-right">

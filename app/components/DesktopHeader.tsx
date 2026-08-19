@@ -10,9 +10,8 @@ import { useArms } from '@/lib/api/apiHooks';
 import { toast } from 'sonner';
 import { apiService } from '@/lib/api/apiService';
 import Image from 'next/image';
-import { getApiUrl } from '@/lib/api/apiRequest';
 import { performLogout } from '@/lib/store/slices/authSlice';
-import {ThemeToggle} from "@/app/components/ThemeToggle";
+import { ThemeToggle } from "@/app/components/ThemeToggle";
 
 interface DesktopHeaderProps {
     showLocation?: boolean;
@@ -32,7 +31,6 @@ export default function DesktopHeader({ showLocation = false, showBack = true, f
     const [isArmOwner, setIsArmOwner] = useState(false);
     const [menuOpen, setMenuOpen] = useState(false);
     const { data: arms, isLoading: armsLoading, refetch: refetchArms } = useArms();
-
 
     const menuRef = useRef<HTMLDivElement>(null);
     const buttonRef = useRef<HTMLButtonElement>(null);
@@ -103,19 +101,22 @@ export default function DesktopHeader({ showLocation = false, showBack = true, f
         router.push('/');
     };
 
-
-
     const armName = currentArm?.name || 'Daymat';
     const armSlogan = currentArm?.slogan || 'قیمت امروز فروشندگان عمده مصالح';
     const API_BASE = process.env.NEXT_PUBLIC_API_BASE_URL?.replace(/\/$/, '') || 'http://localhost:3011';
     const logoFileId = (currentArm as any)?.config?.general?.logoFileId || currentArm?.logoUrl;
-    const logoUrl = (currentArm as any)?.config?.general?.logoUrl || currentArm?.logoUrl;
-    const logoSrc = logoFileId ? `${API_BASE}/file/${logoFileId}` : logoUrl || '/images/logo.png';
+    const logoFile = (currentArm as any)?.config?.general?.logoFile;
+    const logoSrc = logoFile?.path || (currentArm as any)?.config?.general?.logoUrl || '/images/logo.png';
+
     const fullName = user?.fullName || 'کاربر';
-    const avatarSrc = user?.avatarFile?.id ? getApiUrl(`/file/${user.avatarFile.id}/thumbnail`) : null;
+
+    // ✅ تغییر اینجا: استفاده مستقیم از thumbnailPath آروان
+    const avatarSrc = user?.avatarFile?.thumbnailPath || user?.avatarFile?.path || null;
+
     const showJoin = isHomePage && (!isAuthenticated || !isMember) && !armsLoading;
     const showTestBadge = currentArm?.config?.general?.showTestBadge ?? true;
     const testBadgeText = currentArm?.config?.general?.testBadgeText;
+
     return (
         <header className={`hidden lg:block bg-white dark:bg-gray-900 border-b border-outline-variant/20 ${fixed ? 'sticky top-0 left-0 right-0 z-50 w-full' : ''}`}>
             <div className="flex items-center justify-between px-6 lg:px-8 h-[80px]">
@@ -131,16 +132,10 @@ export default function DesktopHeader({ showLocation = false, showBack = true, f
                             </button>
 
                             {(showTestBadge && testBadgeText) && (
-                                <span className="inline-flex  items-center text-[10px] font-medium text-primary bg-primary/10 border border-primary/20 rounded-full px-1.5 py-0.5 whitespace-nowrap">
+                                <span className="inline-flex items-center text-[10px] font-medium text-primary bg-primary/10 border border-primary/20 rounded-full px-1.5 py-0.5 whitespace-nowrap">
                                     {testBadgeText}
                                 </span>
                             )}
-
-                            {/*  {showJoin && (
-                                <button onClick={handleJoinClick} className="bg-red-600 hover:bg-red-700 text-white px-3 py-1 rounded-lg text-[11px] font-medium transition-colors shadow-sm disabled:opacity-50">
-                                    {isJoining ? 'در حال عضویت...' : 'عضویت رایگان'}
-                                </button>
-                            )}*/}
                         </div>
                         <span className="text-gray-400 dark:text-gray-500 text-[11px] pt-2">{armSlogan}</span>
                     </div>
@@ -214,10 +209,6 @@ export default function DesktopHeader({ showLocation = false, showBack = true, f
 
                                     {/* حالت تاریک */}
                                     <ThemeToggle />
-
-
-
-
 
                                     {/* جداکننده قبل از لینک‌های عمومی */}
                                     <div className="border-t border-gray-100 dark:border-gray-700 my-1"></div>

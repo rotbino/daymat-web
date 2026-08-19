@@ -15,9 +15,10 @@ interface ProfileHeaderProps {
 
 export default function ProfileHeader({ user, business, isArmOwner, isSystemAdmin, onEditClick }: ProfileHeaderProps) {
     const router = useRouter();
-    const avatarUrl = user?.avatarFile?.id
-        ? getApiUrl(`/file/${user.avatarFile.id}/thumbnail`)
-        : null;
+
+    // ✅ استفاده مستقیم از thumbnailPath آروان
+    const avatarUrl = user?.avatarFile?.thumbnailPath || user?.avatarFile?.path || null;
+
     const hasBusiness = !!business;
 
     return (
@@ -39,11 +40,11 @@ export default function ProfileHeader({ user, business, isArmOwner, isSystemAdmi
                     {user?.fullName && user.fullName !== '' && user.fullName !== 'کاربر مهمان' ? user.fullName : 'بی‌نام'}
                 </h1>
                 {user.bio && (
-                    <span className="inline-flex items-center gap-1  px-3 py-1 bg-primary/10 dark:bg-primary/20 text-primary dark:text-primary-400 text-xs rounded-full font-medium">
-                    <Store className="w-3 h-3" />  {user.bio || ''}  </span>
+                    <span className="inline-flex items-center gap-1 px-3 py-1 bg-primary/10 dark:bg-primary/20 text-primary dark:text-primary-400 text-xs rounded-full font-medium">
+                        <Store className="w-3 h-3" /> {user.bio}
+                    </span>
                 )}
                 <p className="text-sm text-on-surface-variant dark:text-gray-400 mt-1">{user?.phone || ''}</p>
-
 
                 {(isSystemAdmin || isArmOwner) && (
                     <div className="w-full mt-4 pt-4 border-t border-outline-variant/30 dark:border-gray-700 flex flex-row gap-2 flex-wrap justify-center">
