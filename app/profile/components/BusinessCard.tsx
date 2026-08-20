@@ -5,7 +5,7 @@ import { useRouter } from 'next/navigation';
 import { Edit, BadgeCheck, Clock, XCircle, Shield, MapPin, Phone, Building2, Tag } from 'lucide-react';
 import { getApiUrl } from '@/lib/api/apiRequest';
 import { cn } from '@/lib/utils';
-
+import Image from 'next/image';
 interface BusinessCardProps {
     business: any;
     completionPercentage: number;
@@ -64,7 +64,7 @@ export default function BusinessCard({
                                          onVerificationClick,
                                      }: BusinessCardProps) {
     const router = useRouter();
-    const logoUrl = business?.logoUrl ? getApiUrl(`/file/${business.logoUrl}`) : null;
+    const logoUrl = business?.logoUrl || null;
 
     const tierColor =
         currentTier === 'gold' ? 'text-yellow-500 dark:text-yellow-400' :
@@ -84,14 +84,19 @@ export default function BusinessCard({
             {/* بخش بالایی: لوگو + دکمه ویرایش (چپ) | نام + تیک + موقعیت (راست) */}
             <div className="flex items-start gap-3">
                 {/* ستون چپ: لوگو */}
-                <div className="flex flex-col items-center gap-1 flex-shrink-0">
-                    <div className="w-16 h-16 rounded-xl bg-surface-container-high dark:bg-gray-800 border border-outline dark:border-gray-700 flex items-center justify-center overflow-hidden">
-                        {logoUrl ? (
-                            <img src={logoUrl} alt={business.name} className="w-full h-full object-cover" />
-                        ) : (
-                            <Building2 className="w-8 h-8 text-primary" />
-                        )}
-                    </div>
+                <div className="w-16 h-16 rounded-xl bg-surface-container-high dark:bg-gray-800 border border-outline dark:border-gray-700 flex items-center justify-center overflow-hidden relative">
+                    {logoUrl ? (
+                        <Image
+                            src={logoUrl}
+                            alt={business.name || 'لوگوی کسب‌وکار'}
+                            width={64}
+                            height={64}
+                            className="w-full h-full object-cover"
+                            unoptimized={logoUrl.startsWith('https://daymatfilles.s3')}
+                        />
+                    ) : (
+                        <Building2 className="w-8 h-8 text-primary" />
+                    )}
                 </div>
 
                 {/* ستون راست: نام، نوع، موقعیت */}

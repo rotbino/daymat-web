@@ -87,6 +87,7 @@ export default function EditBusinessPage() {
                 industryId: business.industryId || '',
             });
             setCurrentLogoFileId(business.logoUrl || '');
+
             setSelectedActivities(business.activities || []);
         }
     }, [business]);
@@ -392,9 +393,14 @@ export default function EditBusinessPage() {
                         <div className="relative mx-auto sm:mx-0">
                             <FileUploader
                                 value={currentLogoFileId}
+                                previewUrl={business?.logoFile?.path || null} // ✅ اضافه کردن این خط
                                 onFileSelect={(file) => { if (file) handleLogoUpload(file); }}
                                 onRemove={() => { setCurrentLogoFileId(''); setFormData(prev => ({ ...prev, logoUrl: '' })); }}
-                                rounded={true} width={120} height={120} disabled={isSaving}
+                                rounded={true}
+                                width={120}
+                                height={120}
+                                disabled={isSaving}
+                                showDeleteBtn={true}
                             />
                             {isUploading && (
                                 <div className="absolute -bottom-6 left-0 right-0 text-center">

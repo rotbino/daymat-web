@@ -72,10 +72,10 @@ export function AdListItem({
     const overrideUnitTitle = selection?.overrideUnitTitle;
     const unit = overrideUnitTitle || ad.unit?.title || ad.unit?.shortCode || 'تن';
 
-    const adImage = ad.files?.find((f: any) => f.fieldKey?.startsWith('ad-image'));
-    const imageUrl = adImage
-        ? `${process.env.NEXT_PUBLIC_API_BASE_URL}/file/${adImage.id}/thumbnail`
-        : '/images/no_product_image.jpg';
+    // ✅ تغییر اصلی: استفاده از thumbnailPath یا path از فایل
+    const firstFile = ad.files?.[0];
+    const imageUrl = firstFile?.thumbnailPath || firstFile?.path || '/images/no_product_image.jpg';
+
     const category = ad.category?.title;
     const productType = ad.productType || ad.title;
     const remaining = timeLeft(ad.expiresAt);
@@ -108,12 +108,9 @@ export function AdListItem({
                         className="rounded-[4px] cursor-pointer hover:bg-gray-100 dark:hover:bg-gray-700 px-3 py-1.5"
                     >
                         <div dir={"rtl"} className={"flex flex-1 "}>
-
                             <Copy className="w-3.5 h-3.5 mx-2" />
                             <span>کپی</span>
-
                         </div>
-
                     </DropdownMenuItem>
 
                     <DropdownMenuItem
@@ -135,7 +132,6 @@ export function AdListItem({
                                 <EyeOff className="w-3.5 h-3.5 mx-2" />
                                 <span>آرشیو</span>
                             </div>
-
                         </DropdownMenuItem>
                     )}
                 </DropdownMenuContent>
@@ -150,7 +146,14 @@ export function AdListItem({
                 <Link href={`/ad/${ad.id}`}>
                     <div className="flex items-start gap-3 cursor-pointer">
                         <div className="relative w-14 h-14 rounded-md overflow-hidden bg-surface-container-high dark:bg-gray-800 flex-shrink-0">
-                            <Image src={imageUrl} alt={productType} fill className="object-contain p-1" sizes="56px" unoptimized />
+                            <Image
+                                src={imageUrl}
+                                alt={productType}
+                                fill
+                                className="object-contain p-1"
+                                sizes="56px"
+                                unoptimized={imageUrl.startsWith('https://daymatfilles.s3')}
+                            />
                             <div className="absolute inset-0 bg-blue-500/20 flex items-center justify-center">
                                 <span className="text-[8px] font-bold text-blue-700 bg-blue-100/80 px-1.5 py-0.5 rounded">در انتظار تایید</span>
                             </div>
@@ -186,7 +189,14 @@ export function AdListItem({
                 <Link href={`/ad/${ad.id}`}>
                     <div className="flex items-start gap-3 cursor-pointer">
                         <div className="relative w-14 h-14 rounded-md overflow-hidden bg-surface-container-high dark:bg-gray-800 flex-shrink-0">
-                            <Image src={imageUrl} alt={productType} fill className="object-contain p-1" sizes="56px" unoptimized />
+                            <Image
+                                src={imageUrl}
+                                alt={productType}
+                                fill
+                                className="object-contain p-1"
+                                sizes="56px"
+                                unoptimized={imageUrl.startsWith('https://daymatfilles.s3')}
+                            />
                             <div className="absolute inset-0 bg-red-500/20 flex items-center justify-center">
                                 <span className="text-[8px] font-bold text-red-700 bg-red-100/80 px-1.5 py-0.5 rounded">در انتظار اصلاح</span>
                             </div>
@@ -246,7 +256,14 @@ export function AdListItem({
             <Link href={`/ad/${ad.id}`}>
                 <div className="flex items-start gap-3 cursor-pointer">
                     <div className="relative w-14 h-14 rounded-md overflow-hidden bg-surface-container-high dark:bg-gray-800 flex-shrink-0">
-                        <Image src={imageUrl} alt={productType} fill className="object-contain p-1" sizes="56px" unoptimized />
+                        <Image
+                            src={imageUrl}
+                            alt={productType}
+                            fill
+                            className="object-contain p-1"
+                            sizes="56px"
+                            unoptimized={imageUrl.startsWith('https://daymatfilles.s3')}
+                        />
                     </div>
                     <div className="flex-1 min-w-0">
                         <div className="flex items-center gap-2 flex-wrap">

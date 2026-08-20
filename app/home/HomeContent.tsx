@@ -260,7 +260,8 @@ export default function HomeContent() {
                             <p className="text-sm text-on-surface-variant dark:text-gray-400">در حال بارگذاری قیمت‌ها...</p>
                         </div>
                     ) : hasAds ? (
-                        <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 2xl:grid-cols-6 gap-3 md:gap-4">
+                        // ✅ حد وسط — فقط 2xl:grid-cols-6 حذف شده
+                        <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-3 md:gap-4">
                             {vitrineData.ads.map((ad: any) => (
                                 <AdCard key={ad.id} ad={ad} onContact={handleContactClick} onDetail={setSelectedAd} />
                             ))}

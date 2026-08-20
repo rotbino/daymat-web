@@ -1,8 +1,9 @@
 // app/profile/components/AdsList.tsx
 'use client';
 
-import React, {useState, useMemo} from 'react';
+import React, { useState, useMemo } from 'react';
 import { useRouter } from 'next/navigation';
+import Image from 'next/image'; // ✅ اضافه کردن
 import { useSelector } from 'react-redux';
 import { RootState } from '@/lib/store/store';
 import {
@@ -161,7 +162,7 @@ export default function AdsList({
     const handleDeactivate = () => {
         if (!deactivateConfirm.ad) return;
         onToggleActive?.(deactivateConfirm.ad);
-        refreshAds();                 // ← این خط رفرش را انجام می‌دهد
+        refreshAds();
         setDeactivateConfirm({ ad: null, open: false });
     };
 
