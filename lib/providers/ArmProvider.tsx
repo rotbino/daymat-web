@@ -7,7 +7,7 @@ import { useDispatch, useSelector } from 'react-redux';
 import { useQueryClient } from '@tanstack/react-query';
 import { RootState } from '@/lib/store/store';
 import { setArm, setArmLoading, setArmError } from '@/lib/store/slices/armSlice';
-import { useArm } from '@/lib/api/apiHooks';
+import { useArm, useArms } from '@/lib/api/apiHooks';
 import { toast } from 'sonner';
 import { apiService } from '@/lib/api/apiService';
 
@@ -48,7 +48,9 @@ export function ArmProvider({ children }: ArmProviderProps) {
     const [isInitialized, setIsInitialized] = useState(false);
     const [autoJoinAttempted, setAutoJoinAttempted] = useState(false);
 
-    const { data: armData, isLoading: armLoading } = useArm(currentSlug || '');
+    // ✅ استفاده از هوک‌ها
+    const { data: armData, isLoading: armLoading, refetch: refetchArm } = useArm(currentSlug || '');
+    const { data: userArms, refetch: refetchArms } = useArms();
 
     // ⭐ ست کردن بازو توی Redux
     useEffect(() => {
@@ -58,7 +60,7 @@ export function ArmProvider({ children }: ArmProviderProps) {
         }
     }, [armData, currentSlug, dispatch]);
 
-    // ✅ فقط invalidate کش‌ها هنگام تغییر بازو (بدون refetch یا clear)
+    // ✅ فقط invalidate کش‌ها هنگام تغییر بازو
     useEffect(() => {
         if (!currentSlug) return;
 
@@ -81,15 +83,19 @@ export function ArmProvider({ children }: ArmProviderProps) {
 
         const checkAndJoin = async () => {
             try {
-                const userArms = await apiService.arm.getUserArms();
-                const hasAnyMembership = userArms.some((a: any) => a.slug === currentSlug);
+                let hasAnyMembership = false;
+                if (userArms) {
+                    hasAnyMembership = userArms.some((a: any) => a.slug === currentSlug);
+                }
+
                 if (hasAnyMembership) return;
 
                 await apiService.arm.join(currentSlug!);
                 toast.success('به‌طور خودکار عضو بازار شدید');
 
-                const updatedArm = await apiService.arm.fetchArmData(currentSlug!);
-                dispatch(setArm({ arm: updatedArm, slug: currentSlug! }));
+                await refetchArms();
+                await refetchArm();
+
             } catch (error: any) {
                 if (error?.data?.errorCode === 'ALREADY_MEMBER') {
                     // هیچی
@@ -102,7 +108,7 @@ export function ArmProvider({ children }: ArmProviderProps) {
         };
 
         checkAndJoin();
-    }, [armData, isAuthenticated, currentSlug, autoJoinAttempted, dispatch]);
+    }, [armData, isAuthenticated, currentSlug, autoJoinAttempted, userArms, refetchArms, refetchArm]);
 
     // ⭐ ریست autoJoinAttempted وقتی مسیر عوض میشه
     useEffect(() => {
@@ -178,6 +184,37 @@ export function ArmProvider({ children }: ArmProviderProps) {
 
         initArm();
     }, [pathname, currentSlug, currentArm, router, dispatch]);
+
+    // ✅ 🚀 Prefetch ویترین به محض mount شدن (ساده‌ترین و سریع‌ترین راه)
+    useEffect(() => {
+        if (typeof window === 'undefined') return;
+
+        // slug رو از هر جایی که هست پیدا کن
+        let slug = currentSlug;
+        if (!slug) {
+            slug = localStorage.getItem('lastArmSlug') || undefined;
+        }
+        if (!slug) {
+            const firstSegment = pathname?.split('/').filter(Boolean)[0];
+            if (firstSegment && !PUBLIC_PATHS.some(p => firstSegment === p || firstSegment?.startsWith(p))) {
+                slug = firstSegment;
+            }
+        }
+        if (!slug) return;
+
+        // ویترین را با پارامترهای پیش‌فرض Prefetch کن
+        const defaultParams = { page: 1, limit: 20, bumpFilter: 'all' };
+        const queryKey = ['vitrine', slug, JSON.stringify(defaultParams)];
+
+        if (!queryClient.getQueryData(queryKey)) {
+            console.log('🚀 Prefetching vitrine from ArmProvider:', slug);
+            queryClient.prefetchQuery({
+                queryKey,
+                queryFn: () => apiService.ad.getVitrine(slug, defaultParams),
+                staleTime: 1000 * 30,
+            });
+        }
+    }, [currentSlug, pathname, queryClient]);
 
     if (!isInitialized || armLoading) {
         return (

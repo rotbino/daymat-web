@@ -76,9 +76,9 @@ export default function AdCard({ ad, onContact, onDetail }: AdCardProps) {
     const tierActive = tier && tier !== 'none';
     const tierInfo   = tierActive ? TIER[tier] : null;
 
-    /* ── تصویر ── */
-    const file     = ad.files?.find((f: any) => f.fieldKey?.startsWith('ad-image'));
-    const imgUrl   = file?.path || '/images/no_product_image.jpg';
+
+    const file = ad.files?.[0]; // فقط اولین فایل را بگیر
+    const imgUrl = file?.path || file?.thumbnailPath || '/images/no_product_image.jpg';
     const thumbUrl = file?.thumbnailPath || imgUrl;
     const isExternal = imgUrl.startsWith('https://');
 
@@ -284,10 +284,7 @@ export default function AdCard({ ad, onContact, onDetail }: AdCardProps) {
                         {relTime === 'امروز' ? '📌 امروز' : '🔄 دیروز'}
                     </div>
                 )}
-                <div className="absolute bottom-2 left-2 bg-black/50 backdrop-blur-sm text-white px-2 py-0.5 rounded-full flex items-center gap-1 z-10">
-                    <MapPin className="w-3 h-3" />
-                    <span className="text-[10px]">{ad.city || 'نامشخص'}</span>
-                </div>
+
                 <div className="absolute bottom-2 right-2 z-10">
                     <PaymentTags />
                 </div>

@@ -16,7 +16,7 @@ import { cn } from '@/lib/utils';
 interface DashboardStats {
     totalMembers: number;
     activeMembers: number;
-    pendingMembers: number;   // ✅ اضافه شود
+    pendingMembers: number;
     totalAds: number;
     activeAds: number;
     pendingAds: number;
@@ -40,7 +40,7 @@ export default function ArmAdminDashboard() {
                 setStats({
                     totalMembers: armStats.totalMembers || 0,
                     activeMembers: armStats.activeMembers || 0,
-                    pendingMembers: armStats.pendingMembers || 0,   // ✅
+                    pendingMembers: armStats.pendingMembers || 0,
                     totalAds: armStats.totalAds || 0,
                     activeAds: armStats.activeAds || 0,
                     pendingAds: armStats.pendingAds || 0,
@@ -52,7 +52,7 @@ export default function ArmAdminDashboard() {
                 setStats({
                     totalMembers: 0,
                     activeMembers: 0,
-                    pendingMembers:0,
+                    pendingMembers: 0,
                     totalAds: 0,
                     activeAds: 0,
                     pendingAds: 0,
@@ -66,13 +66,62 @@ export default function ArmAdminDashboard() {
         fetchStats();
     }, [currentSlug]);
 
+    // ⭐ کارت‌های آماری با لینک
     const statCards = [
-        { title: 'کل اعضا', value: stats?.totalMembers || 0, icon: Users, color: 'text-blue-600 dark:text-blue-400', bg: 'bg-blue-50 dark:bg-blue-900/30' },
-        { title: 'اعضای فعال', value: stats?.activeMembers || 0, icon: Users, color: 'text-emerald-600 dark:text-emerald-400', bg: 'bg-emerald-50 dark:bg-emerald-900/30' },
-        { title: 'کل آگهی‌ها', value: stats?.totalAds || 0, icon: Package, color: 'text-orange-600 dark:text-orange-400', bg: 'bg-orange-50 dark:bg-orange-900/30' },
-        { title: 'آگهی‌های فعال', value: stats?.activeAds || 0, icon: Package, color: 'text-green-600 dark:text-green-400', bg: 'bg-green-50 dark:bg-green-900/30' },
-        { title: 'فیش‌های در انتظار', value: stats?.pendingPayments || 0, icon: CreditCard, color: 'text-amber-600 dark:text-amber-400', bg: 'bg-amber-50 dark:bg-amber-900/30' },
-        { title: 'اعتبارات فروخته شده', value: stats?.totalCredits || 0, icon: Wallet, color: 'text-purple-600 dark:text-purple-400', bg: 'bg-purple-50 dark:bg-purple-900/30' },
+        {
+            title: 'کل اعضا',
+            value: stats?.totalMembers || 0,
+            icon: Users,
+            color: 'text-blue-600 dark:text-blue-400',
+            bg: 'bg-blue-50 dark:bg-blue-900/30',
+            href: '/arm-admin/members',
+            hoverColor: 'hover:border-blue-300 dark:hover:border-blue-700'
+        },
+        {
+            title: 'اعضای فعال',
+            value: stats?.activeMembers || 0,
+            icon: Users,
+            color: 'text-emerald-600 dark:text-emerald-400',
+            bg: 'bg-emerald-50 dark:bg-emerald-900/30',
+            href: '/arm-admin/members?status=active',
+            hoverColor: 'hover:border-emerald-300 dark:hover:border-emerald-700'
+        },
+        {
+            title: 'کل آگهی‌ها',
+            value: stats?.totalAds || 0,
+            icon: Package,
+            color: 'text-orange-600 dark:text-orange-400',
+            bg: 'bg-orange-50 dark:bg-orange-900/30',
+            href: '/arm-admin/ads',
+            hoverColor: 'hover:border-orange-300 dark:hover:border-orange-700'
+        },
+        {
+            title: 'آگهی‌های فعال',
+            value: stats?.activeAds || 0,
+            icon: Package,
+            color: 'text-green-600 dark:text-green-400',
+            bg: 'bg-green-50 dark:bg-green-900/30',
+            href: '/arm-admin/ads?status=active',
+            hoverColor: 'hover:border-green-300 dark:hover:border-green-700'
+        },
+        {
+            title: 'فیش‌های در انتظار',
+            value: stats?.pendingPayments || 0,
+            icon: CreditCard,
+            color: 'text-amber-600 dark:text-amber-400',
+            bg: 'bg-amber-50 dark:bg-amber-900/30',
+            href: '/arm-admin/financial/verify',
+            hoverColor: 'hover:border-amber-300 dark:hover:border-amber-700'
+        },
+        {
+            title: 'اعتبارات فروخته شده',
+            value: stats?.totalCredits || 0,
+            icon: Wallet,
+            color: 'text-purple-600 dark:text-purple-400',
+            bg: 'bg-purple-50 dark:bg-purple-900/30',
+            href: '/arm-admin/financial',
+            hoverColor: 'hover:border-purple-300 dark:hover:border-purple-700'
+        },
     ];
 
     if (loading) {
@@ -107,7 +156,8 @@ export default function ArmAdminDashboard() {
                     <ArrowLeft className="w-4 h-4 text-purple-500 group-hover:translate-x-1 transition-transform" />
                 </Link>
             )}
-            {/* باکس هشدار فیش‌های در انتظار (فقط اگر تعداد > 0) */}
+
+            {/* ✅ باکس هشدار فیش‌های در انتظار (فقط اگر تعداد > 0) */}
             {stats && stats.pendingPayments > 0 && (
                 <Link
                     href="/arm-admin/financial/verify"
@@ -153,19 +203,36 @@ export default function ArmAdminDashboard() {
                 </Link>
             )}
 
-            {/* کارت‌های آماری */}
+            {/* ⭐ کارت‌های آماری (قابل کلیک) */}
             <div className="grid grid-cols-2 lg:grid-cols-3 gap-3">
                 {statCards.map((card, index) => {
                     const Icon = card.icon;
+                    // اگر مقدار صفر است، لینک غیرفعال می‌شود (اما همچنان قابل کلیک است)
+                    const isZero = card.value === 0;
+
                     return (
-                        <div
+                        <Link
                             key={index}
-                            className="bg-white dark:bg-gray-900 rounded-xl border border-outline-variant/20 dark:border-gray-800 p-4 shadow-sm hover:shadow-md transition-shadow"
+                            href={card.href}
+                            className={cn(
+                                'bg-white dark:bg-gray-900 rounded-xl border border-outline-variant/20 dark:border-gray-800 p-4 shadow-sm transition-all group',
+                                !isZero && card.hoverColor,
+                                isZero ? 'cursor-default opacity-80' : 'hover:shadow-md hover:border-primary/30 dark:hover:border-primary/40'
+                            )}
+                            onClick={(e) => {
+                                if (isZero) {
+                                    e.preventDefault();
+                                    toast.info('هیچ داده‌ای برای نمایش وجود ندارد');
+                                }
+                            }}
                         >
                             <div className="flex items-center justify-between mb-2">
                                 <div className={cn("p-2 rounded-lg", card.bg)}>
                                     <Icon className={cn("w-4 h-4", card.color)} />
                                 </div>
+                                {!isZero && (
+                                    <ArrowLeft className="w-3.5 h-3.5 text-on-surface-variant/30 group-hover:text-primary transition-colors" />
+                                )}
                             </div>
                             <p className="text-2xl font-bold text-on-surface dark:text-gray-100">
                                 {card.value.toLocaleString('fa-IR')}
@@ -173,42 +240,35 @@ export default function ArmAdminDashboard() {
                             <p className="text-[11px] text-on-surface-variant dark:text-gray-400 mt-1">
                                 {card.title}
                             </p>
-                        </div>
+                        </Link>
                     );
                 })}
             </div>
 
-            {/* لینک‌های سریع */}
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
-                <Link
-                    href="/arm-admin/financial"
-                    className="bg-white dark:bg-gray-900 rounded-xl border border-outline-variant/20 dark:border-gray-800 p-4 hover:border-primary/30 dark:hover:border-primary/40 transition-all group"
-                >
-                    <div className="flex items-center justify-between">
-                        <div>
-                            <h3 className="font-semibold text-sm text-on-surface dark:text-gray-100">مدیریت فیش‌ها</h3>
-                            <p className="text-xs text-on-surface-variant dark:text-gray-400 mt-1">
-                                {stats?.pendingPayments || 0} فیش در انتظار بررسی
-                            </p>
+            {/* ⭐ لینک مدیریت فیش‌ها (فقط اگر فیش تایید نشده وجود داشته باشد) */}
+            {stats && stats.pendingPayments > 0 && (
+                <div className="grid grid-cols-1 gap-3">
+                    <Link
+                        href="/arm-admin/financial/verify"
+                        className="bg-white dark:bg-gray-900 rounded-xl border border-outline-variant/20 dark:border-gray-800 p-4 hover:border-amber-300 dark:hover:border-amber-700 transition-all group shadow-sm hover:shadow-md"
+                    >
+                        <div className="flex items-center justify-between">
+                            <div className="flex items-center gap-3">
+                                <div className="p-2 rounded-lg bg-amber-50 dark:bg-amber-900/30">
+                                    <CreditCard className="w-4 h-4 text-amber-600 dark:text-amber-400" />
+                                </div>
+                                <div>
+                                    <h3 className="font-semibold text-sm text-on-surface dark:text-gray-100">مدیریت فیش‌ها</h3>
+                                    <p className="text-xs text-on-surface-variant dark:text-gray-400 mt-1">
+                                        {stats.pendingPayments} فیش در انتظار بررسی
+                                    </p>
+                                </div>
+                            </div>
+                            <ArrowLeft className="w-4 h-4 text-on-surface-variant/30 group-hover:text-primary transition-colors" />
                         </div>
-                        <ArrowLeft className="w-4 h-4 text-on-surface-variant/30 group-hover:text-primary transition-colors" />
-                    </div>
-                </Link>
-                <Link
-                    href="/arm-admin/members"
-                    className="bg-white dark:bg-gray-900 rounded-xl border border-outline-variant/20 dark:border-gray-800 p-4 hover:border-primary/30 dark:hover:border-primary/40 transition-all group"
-                >
-                    <div className="flex items-center justify-between">
-                        <div>
-                            <h3 className="font-semibold text-sm text-on-surface dark:text-gray-100">مدیریت اعضا</h3>
-                            <p className="text-xs text-on-surface-variant dark:text-gray-400 mt-1">
-                                {stats?.totalMembers || 0} عضو در بازار
-                            </p>
-                        </div>
-                        <ArrowLeft className="w-4 h-4 text-on-surface-variant/30 group-hover:text-primary transition-colors" />
-                    </div>
-                </Link>
-            </div>
+                    </Link>
+                </div>
+            )}
         </div>
     );
 }

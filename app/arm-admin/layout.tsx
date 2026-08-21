@@ -5,6 +5,7 @@ import React, { useEffect, useState } from 'react';
 import { useRouter, usePathname } from 'next/navigation';
 import { useSelector } from 'react-redux';
 import { RootState } from '@/lib/store/store';
+import { useArms } from '@/lib/api/apiHooks';
 import Link from 'next/link';
 import {
     LayoutDashboard,
@@ -13,8 +14,6 @@ import {
     Settings,
     ChevronRight,
     ChevronLeft,
-    Menu,
-    X,
     Home,
     LogOut,
     Store,
@@ -28,10 +27,11 @@ import { useQuery } from '@tanstack/react-query';
 
 const menuItems = [
     { href: '/arm-admin', label: 'داشبورد', icon: LayoutDashboard, exact: true },
-    { href: '/arm-admin/ads', label: 'مدیریت آگهی‌ها', icon: Package },
-    { href: '/arm-admin/members', label: 'مدیریت اعضا', icon: Users },
-    { href: '/arm-admin/settings', label: 'تنظیمات بازار', icon: Settings },
+    { href: '/arm-admin/ads', label: 'آگهی‌ها', icon: Package },
+    { href: '/arm-admin/members', label: 'اعضا', icon: Users },
+    { href: '/arm-admin/settings', label: 'تنظیمات', icon: Settings },
     { href: '/arm-admin/financial', label: 'مالی', icon: CreditCard },
+    { href: '/', label: 'سایت', icon: Home },
 ];
 
 export default function ArmAdminLayout({ children }: { children: React.ReactNode }) {
@@ -41,9 +41,10 @@ export default function ArmAdminLayout({ children }: { children: React.ReactNode
     const { currentSlug, currentArm } = useSelector((state: RootState) => state.arm);
 
     const [isCollapsed, setIsCollapsed] = useState(false);
-    const [mobileOpen, setMobileOpen] = useState(false);
     const [isAuthorized, setIsAuthorized] = useState<boolean | null>(null);
     const [loading, setLoading] = useState(true);
+
+    const { data: userArms } = useArms();
 
     const { data: stats } = useQuery({
         queryKey: ['arm-stats', currentSlug],
@@ -64,6 +65,24 @@ export default function ArmAdminLayout({ children }: { children: React.ReactNode
                 setLoading(false);
                 return;
             }
+
+            if (userArms) {
+                const isAdmin = userArms.some(
+                    (a: any) => a.slug === currentSlug && a.role === 'arm_owner'
+                );
+
+                if (!isAdmin) {
+                    toast.error('شما دسترسی به پنل مدیریت این بازار را ندارید');
+                    router.push(`/${currentSlug}`);
+                    setIsAuthorized(false);
+                    setLoading(false);
+                    return;
+                }
+                setIsAuthorized(true);
+                setLoading(false);
+                return;
+            }
+
             try {
                 const arms = await apiService.arm.getUserArms();
                 const isAdmin = arms.some((a: any) => a.slug === currentSlug && a.role === 'arm_owner');
@@ -80,15 +99,19 @@ export default function ArmAdminLayout({ children }: { children: React.ReactNode
             }
         };
         checkAuthorization();
-    }, [isAuthenticated, user, currentSlug, router]);
+    }, [isAuthenticated, user, currentSlug, router, userArms]);
 
-    useEffect(() => {
-        setMobileOpen(false);
-    }, [pathname]);
 
+// ✅ اصلاح تابع تشخیص active
     const isActive = (href: string, exact?: boolean) => {
-        if (exact) return pathname === href;
-        return pathname?.startsWith(href);
+        // حذف اسلش انتهایی برای مقایسه دقیق
+        const cleanPathname = pathname.endsWith('/') ? pathname.slice(0, -1) : pathname;
+        const cleanHref = href.endsWith('/') ? href.slice(0, -1) : href;
+
+        if (exact) {
+            return cleanPathname === cleanHref;
+        }
+        return cleanPathname?.startsWith(cleanHref);
     };
 
     if (loading || isAuthorized === null) {
@@ -143,58 +166,63 @@ export default function ArmAdminLayout({ children }: { children: React.ReactNode
                 </button>
             </div>
 
+            {/* ⭐ منوی سایدبار با رنگ فونت به جای پس‌زمینه */}
             <nav className="flex-1 overflow-y-auto px-3 py-5 space-y-1">
-                {menuItems.map((item) => {
+                {menuItems.map((item, index) => {
                     const active = isActive(item.href, item.exact);
                     const Icon = item.icon;
 
                     let badgeCount = 0;
                     if (item.href === '/arm-admin/ads') badgeCount = stats?.pendingAds || 0;
                     if (item.href === '/arm-admin/financial') badgeCount = stats?.pendingPayments || 0;
-                    // ✅ جدید: تعداد اعضای در انتظار تأیید
                     if (item.href === '/arm-admin/members') badgeCount = stats?.pendingMembers || 0;
 
                     return (
-                        <Link
-                            key={item.href}
-                            href={item.href}
-                            onClick={onNavigate}
-                            className={cn(
-                                'flex items-center gap-3 px-3 py-2.5 rounded-xl transition-all duration-200 group relative',
-                                active
-                                    ? 'bg-primary text-white shadow-md font-medium'
-                                    : 'text-on-surface-variant dark:text-gray-400 hover:bg-surface-container-high dark:hover:bg-gray-800 hover:text-on-surface dark:hover:text-gray-200',
-                                isCollapsed && 'justify-center px-2'
-                            )}
-                            title={isCollapsed ? item.label : undefined}
-                        >
-                            <Icon
+                        <React.Fragment key={item.href}>
+                            <Link
+                                href={item.href}
+                                onClick={onNavigate}
                                 className={cn(
-                                    'w-4 h-4 flex-shrink-0',
+                                    'flex items-center gap-3 px-3 py-2.5 rounded-xl transition-all duration-200 group relative',
                                     active
-                                        ? 'text-white'
-                                        : 'text-on-surface-variant/40 dark:text-gray-500 group-hover:text-on-surface-variant dark:group-hover:text-gray-400'
+                                        ? 'text-primary font-bold' // ✅ فقط فونت رنگی، بدون پس‌زمینه
+                                        : 'text-on-surface-variant dark:text-gray-400 hover:text-on-surface dark:hover:text-gray-200 hover:bg-surface-container-high dark:hover:bg-gray-800',
+                                    isCollapsed && 'justify-center px-2'
                                 )}
-                            />
-                            {!isCollapsed && (
-                                <>
-                                    <span className="text-[13px] leading-none">{item.label}</span>
-                                    {active && (
-                                        <span className="mr-auto w-1.5 h-1.5 rounded-full bg-white" />
-                                    )}
-                                </>
-                            )}
-                            {badgeCount > 0 && (
-                                <span
+                                title={isCollapsed ? item.label : undefined}
+                            >
+                                <Icon
                                     className={cn(
-                                        'inline-flex items-center justify-center min-w-[20px] h-5 px-1.5 rounded-full text-[10px] font-bold text-white bg-red-500',
-                                        isCollapsed ? 'absolute -top-1 -right-1' : 'mr-auto'
+                                        'w-4 h-4 flex-shrink-0',
+                                        active
+                                            ? 'text-primary'
+                                            : 'text-on-surface-variant/40 dark:text-gray-500 group-hover:text-on-surface-variant dark:group-hover:text-gray-400'
                                     )}
-                                >
-                                    {badgeCount > 99 ? '99+' : badgeCount}
-                                </span>
+                                />
+                                {!isCollapsed && (
+                                    <>
+                                        <span className="text-[13px] leading-none">{item.label}</span>
+                                        {active && (
+                                            <span className="mr-auto w-1.5 h-1.5 rounded-full bg-primary" />
+                                        )}
+                                    </>
+                                )}
+                                {badgeCount > 0 && (
+                                    <span
+                                        className={cn(
+                                            'inline-flex items-center justify-center min-w-[20px] h-5 px-1.5 rounded-full text-[10px] font-bold text-white bg-red-500',
+                                            isCollapsed ? 'absolute -top-1 -right-1' : 'mr-auto'
+                                        )}
+                                    >
+                                        {badgeCount > 99 ? '99+' : badgeCount}
+                                    </span>
+                                )}
+                            </Link>
+                            {/* خط عمودی بین آیتم‌ها */}
+                            {!isCollapsed && index < menuItems.length - 1 && (
+                                <div className="mx-3 h-px bg-outline-variant/20 dark:bg-gray-800" />
                             )}
-                        </Link>
+                        </React.Fragment>
                     );
                 })}
             </nav>
@@ -260,52 +288,56 @@ export default function ArmAdminLayout({ children }: { children: React.ReactNode
                     <ThemeToggle />
                 </header>
 
-                {/* هدر موبایل */}
-                <div className="lg:hidden sticky top-0 z-30 bg-white dark:bg-gray-900 border-b border-outline-variant/20 dark:border-gray-800 px-4 h-14 flex items-center justify-between flex-shrink-0">
-                    <div className="flex items-center gap-3">
-                        <div className="w-8 h-8 rounded-lg bg-primary flex items-center justify-center">
-                            <Store className="w-4 h-4 text-white" />
+                {/* هدر موبایل: منوی افقی */}
+                <div className="lg:hidden sticky top-0 z-30 flex-shrink-0">
+                    <div className="bg-white dark:bg-gray-900 border-b border-outline-variant/20 dark:border-gray-800 shadow-sm">
+                        <div className="flex items-center gap-1 px-3 py-2 overflow-x-auto scrollbar-hide">
+                            {menuItems.map((item) => {
+                                const active = isActive(item.href, item.exact);
+                                const Icon = item.icon;
+
+                                let badgeCount = 0;
+                                if (item.href === '/arm-admin/ads') badgeCount = stats?.pendingAds || 0;
+                                if (item.href === '/arm-admin/financial') badgeCount = stats?.pendingPayments || 0;
+                                if (item.href === '/arm-admin/members') badgeCount = stats?.pendingMembers || 0;
+
+                                return (
+                                    <Link
+                                        key={item.href}
+                                        href={item.href}
+                                        className={cn(
+                                            'flex flex-col flex-1 items-center gap-1.5 px-2 py-2 rounded-lg text-xs font-medium whitespace-nowrap transition-all flex-shrink-0',
+                                            active
+                                                ? 'text-primary font-bold' // ✅ فقط فونت رنگی
+                                                : 'text-on-surface-variant dark:text-gray-400 hover:text-on-surface dark:hover:text-gray-300'
+                                        )}
+                                    >
+
+
+                                        <Icon className="w-3.5 h-3.5" />
+                                        <span className={"text-[8px]"}>
+                                            {item.label}
+                                        </span>
+                                        {badgeCount > 0 && (
+                                            <span className="inline-flex items-center justify-center min-w-[18px] h-[18px] px-1 rounded-full text-[9px] font-bold text-white bg-red-500">
+                                                {badgeCount > 99 ? '99+' : badgeCount}
+                                            </span>
+                                        )}
+                                    </Link>
+                                );
+                            })}
+                           {/* <div className="flex-shrink-0 pr-2">
+                                <ThemeToggle />
+                            </div>*/}
                         </div>
-                        <span className="font-bold text-sm text-on-surface dark:text-gray-100">{armName}</span>
-                    </div>
-                    <div className="flex items-center gap-2">
-                        <ThemeToggle />
-                        <button
-                            onClick={() => setMobileOpen(true)}
-                            className="p-2 hover:bg-surface-container-high dark:hover:bg-gray-800 rounded-xl"
-                        >
-                            <Menu className="w-5 h-5 text-on-surface-variant dark:text-gray-400" />
-                        </button>
                     </div>
                 </div>
 
-                {/* محتوای اصلی (اسکرول‌پذیر) */}
+                {/* محتوای اصلی */}
                 <main className="flex-1 overflow-y-auto overflow-x-hidden">
                     <div className="p-4 lg:p-6">{children}</div>
                 </main>
             </div>
-
-            {/* Drawer موبایل */}
-            {mobileOpen && (
-                <>
-                    <div
-                        className="lg:hidden fixed inset-0 bg-black/50 dark:bg-black/70 backdrop-blur-sm z-40"
-                        onClick={() => setMobileOpen(false)}
-                    />
-                    <div className="lg:hidden fixed top-0 right-0 h-full w-72 bg-white dark:bg-gray-900 z-50 shadow-2xl animate-slide-in-right">
-                        <div className="flex items-center justify-between h-14 px-4 border-b border-outline-variant/20 dark:border-gray-800">
-                            <span className="font-bold text-sm text-on-surface dark:text-gray-100">پنل مدیریت</span>
-                            <button
-                                onClick={() => setMobileOpen(false)}
-                                className="p-2 hover:bg-surface-container-high dark:hover:bg-gray-800 rounded-xl"
-                            >
-                                <X className="w-5 h-5 text-on-surface-variant dark:text-gray-400" />
-                            </button>
-                        </div>
-                        <SidebarContent onNavigate={() => setMobileOpen(false)} />
-                    </div>
-                </>
-            )}
         </div>
     );
 }

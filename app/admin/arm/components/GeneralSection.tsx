@@ -11,6 +11,7 @@ import { setArm } from '@/lib/store/slices/armSlice';
 import { toast } from 'sonner';
 import {Loader2, Upload, Check, Palette, Info, Lock, Phone, Mail, Clock, User} from 'lucide-react';
 import { cn } from '@/lib/utils';
+import {apiService} from "@/lib/api/apiService";
 
 // ============================================================
 // 📋 Props
@@ -89,12 +90,13 @@ export function GeneralSection({
     const logoFileId = watch('config.general.logoFileId');
     const currentPrimary = watch('colorPrimary') || '#e65100';
 
-    // خواندن مقادیر فعلی پشتیبانی (برای نمایش در صورت عدم وجود)
-    const supportPhone = watch('config.support.phone') || '';
-    const supportMobile = watch('config.support.mobile') || '';
-    const supportEmail = watch('config.support.email') || '';
-    const supportWorkingHours = watch('config.support.workingHours') || '';
-    const supportDescription = watch('config.support.description') || '';
+    const logoFile = watch('config.general.logoFile');
+    const logoUrl = watch('config.general.logoUrl');
+    const previewUrl = logoFile?.path || logoUrl || null;
+
+// app/admin/arm/components/GeneralSection.tsx
+
+    // app/admin/arm/components/GeneralSection.tsx
 
     const handleLogoUpload = async (file: File) => {
         if (!armId) { toast.error('ابتدا بازار را ذخیره کنید'); return; }
@@ -102,9 +104,62 @@ export function GeneralSection({
         setIsUploadingLogo(true);
         try {
             const result = await uploadMutation.mutateAsync({ file, model: 'Arm', modelId: armId, fieldKey: 'logo' });
+
+            // ✅ ۱. ذخیره در React Hook Form
             setValue('config.general.logoFileId', result.id, { shouldDirty: true });
-            setValue('config.general.logoUrl', '', { shouldDirty: true });
-            toast.success('لوگو با موفقیت آپلود شد');
+            setValue('config.general.logoUrl', result.path, { shouldDirty: true });
+            setValue('config.general.logoFile', {
+                id: result.id,
+                path: result.path,
+                thumbnailPath: result.thumbnailPath,
+                fieldKey: 'logo',
+            }, { shouldDirty: true });
+
+            // ✅ ۲. بلافاصله به بک‌اند ذخیره کن (تا با رفرش از بین نره)
+            if (armId) {
+                const currentConfig = watch('config');
+                await apiService.admin.arms.update(armId, {
+                    config: {
+                        ...currentConfig,
+                        general: {
+                            ...currentConfig?.general,
+                            logoFileId: result.id,
+                            logoUrl: result.path,
+                            logoFile: {
+                                id: result.id,
+                                path: result.path,
+                                thumbnailPath: result.thumbnailPath,
+                                fieldKey: 'logo',
+                            },
+                        },
+                    },
+                });
+                toast.success('لوگو ذخیره شد');
+            }
+
+            // ✅ ۳. Redux رو به‌روز کن
+            if (currentArm && currentSlug) {
+                const updatedArm = {
+                    ...currentArm,
+                    config: {
+                        ...currentArm.config,
+                        general: {
+                            ...currentArm.config?.general,
+                            logoFileId: result.id,
+                            logoUrl: result.path,
+                            logoFile: {
+                                id: result.id,
+                                path: result.path,
+                                thumbnailPath: result.thumbnailPath,
+                                fieldKey: 'logo',
+                            },
+                        },
+                    },
+                };
+                dispatch(setArm({ arm: updatedArm, slug: currentSlug }));
+            }
+
+            toast.success('لوگو با موفقیت آپلود و ذخیره شد');
         } catch (error: any) {
             toast.error(error?.message || 'خطا در آپلود لوگو');
         } finally {
@@ -115,6 +170,25 @@ export function GeneralSection({
     const handleLogoRemove = () => {
         setValue('config.general.logoFileId', undefined, { shouldDirty: true });
         setValue('config.general.logoUrl', '', { shouldDirty: true });
+        setValue('config.general.logoFile', undefined, { shouldDirty: true });
+
+        // ✅ Redux رو هم به‌روز کن
+        if (currentArm && currentSlug) {
+            const updatedArm = {
+                ...currentArm,
+                config: {
+                    ...currentArm.config,
+                    general: {
+                        ...currentArm.config?.general,
+                        logoFileId: undefined,
+                        logoUrl: '',
+                        logoFile: undefined,
+                    },
+                },
+            };
+            dispatch(setArm({ arm: updatedArm, slug: currentSlug }));
+        }
+
         toast.success('لوگو حذف شد');
     };
 
@@ -270,8 +344,10 @@ export function GeneralSection({
                     <p className="text-[11px] text-on-surface-variant/60 dark:text-gray-500 mb-4">سایز پیشنهادی 200 * 200 پیکسل با پس‌زمینه شفاف</p>
 
                     <div className="flex items-start gap-4">
+
                         <FileUploader
                             value={logoFileId}
+                            previewUrl={previewUrl}  // ✅ این خط را اضافه کن
                             onFileSelect={canUploadLogo ? handleLogoUpload : undefined}
                             onRemove={canUploadLogo ? handleLogoRemove : undefined}
                             rounded={false}
@@ -279,6 +355,7 @@ export function GeneralSection({
                             height={120}
                             disabled={isUploadingLogo || !canUploadLogo}
                         />
+
                         <div className="flex-1 space-y-2">
                             {isUploadingLogo && (
                                 <div className="flex items-center gap-2 text-sm text-primary">

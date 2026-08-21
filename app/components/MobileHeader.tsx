@@ -1,33 +1,28 @@
 // app/components/MobileHeader.tsx
 'use client';
 
-import React, { useEffect, useState, useRef } from 'react';
+import React, {useEffect, useState, useRef, useMemo} from 'react';
 import { useRouter, usePathname, useParams } from 'next/navigation';
 import { useSelector, useDispatch } from 'react-redux';
 import {
     ArrowRight,
-    Headphones,
-    Menu,
-    X,
     User,
-    Sun,
-    Moon,
     LogOut,
     Store,
     ShieldCheck,
     Info,
     FileText,
-    ChevronLeft
+    ChevronDown,
+    Lightbulb,
+    X,
 } from 'lucide-react';
 import { RootState } from '@/lib/store/store';
 import { useArms } from '@/lib/api/apiHooks';
 import { toast } from 'sonner';
 import { apiService } from '@/lib/api/apiService';
 import Image from 'next/image';
-import { LocationFilter } from '@/app/components/LocationFilter';
-import { useFilters } from '@/lib/hooks/useFilters';
 import { performLogout } from '@/lib/store/slices/authSlice';
-import {ThemeToggle} from "@/app/components/ThemeToggle";
+import { ThemeToggle } from '@/app/components/ThemeToggle';
 
 interface MobileHeaderProps {
     showLocation?: boolean;
@@ -35,25 +30,44 @@ interface MobileHeaderProps {
     showBack?: boolean;
 }
 
-export default function MobileHeader({ showLocation = false, showBack = false, fixed = true }: MobileHeaderProps) {
+export default function MobileHeader({
+                                         showLocation = false,
+                                         showBack = false,
+                                         fixed = true,
+                                     }: MobileHeaderProps) {
     const router = useRouter();
     const pathname = usePathname();
     const params = useParams();
     const dispatch = useDispatch();
-    const { isAuthenticated, user } = useSelector((state: RootState) => state.auth);
-    const { currentArm, currentSlug } = useSelector((state: RootState) => state.arm);
-    const { location } = useFilters();
+
+    const { isAuthenticated, user } = useSelector(
+        (state: RootState) => state.auth
+    );
+
+    const { currentArm, currentSlug } = useSelector(
+        (state: RootState) => state.arm
+    );
+
     const [isMember, setIsMember] = useState(false);
     const [isJoining, setIsJoining] = useState(false);
-    const [isArmOwner, setIsArmOwner] = useState(false);
     const [menuOpen, setMenuOpen] = useState(false);
-    const { data: arms, isLoading: armsLoading, refetch: refetchArms } = useArms();
+    const [armSwitcherOpen, setArmSwitcherOpen] = useState(false);
 
     const menuRef = useRef<HTMLDivElement>(null);
     const buttonRef = useRef<HTMLButtonElement>(null);
+    const switcherRef = useRef<HTMLDivElement>(null);
+    const switcherButtonRef = useRef<HTMLButtonElement>(null);
 
     const isHomePage = pathname === `/${params.slug}` || pathname === '/';
-
+    const { data: arms, isLoading: armsLoading, refetch: refetchArms } = useArms();
+    // ✅ بررسی مالک بودن کاربر در بازوی فعلی با استفاده از arms
+    const isArmOwner = useMemo(() => {
+        if (!user || !currentSlug || !arms) return false;
+        return arms.some((a: any) => a.role === 'arm_owner' && a.slug === currentSlug);
+    }, [arms, currentSlug, user]);
+    // ------------------------------------------------------------
+    // بررسی عضویت کاربر در بازوی فعلی
+    // ------------------------------------------------------------
     useEffect(() => {
         if (!isAuthenticated || !currentSlug || !arms) {
             setIsMember(false);
@@ -63,35 +77,65 @@ export default function MobileHeader({ showLocation = false, showBack = false, f
         setIsMember(member);
     }, [isAuthenticated, currentSlug, arms]);
 
-    useEffect(() => {
-        const checkOwner = async () => {
-            if (!user || !currentSlug) return;
-            try {
-                const userArms = await apiService.arm.getUserArms();
-                const owner = userArms.some((a: any) => a.role === 'arm_owner' && a.slug === currentSlug);
-                setIsArmOwner(owner);
-            } catch (e) { setIsArmOwner(false); }
-        };
-        checkOwner();
-    }, [user, currentSlug]);
+    // ------------------------------------------------------------
+    // بررسی مالک بودن کاربر در بازوی فعلی
+    // ------------------------------------------------------------
 
+    // ------------------------------------------------------------
+    // بستن منو با کلیک بیرون
+    // ------------------------------------------------------------
     useEffect(() => {
         if (!menuOpen) return;
+
         const handleClickOutside = (e: MouseEvent) => {
             if (
-                menuRef.current && !menuRef.current.contains(e.target as Node) &&
-                buttonRef.current && !buttonRef.current.contains(e.target as Node)
+                menuRef.current &&
+                !menuRef.current.contains(e.target as Node) &&
+                buttonRef.current &&
+                !buttonRef.current.contains(e.target as Node)
             ) {
                 setMenuOpen(false);
             }
         };
+
         document.addEventListener('mousedown', handleClickOutside);
-        return () => document.removeEventListener('mousedown', handleClickOutside);
+        return () =>
+            document.removeEventListener('mousedown', handleClickOutside);
     }, [menuOpen]);
 
+    // ------------------------------------------------------------
+    // بستن منوی سوئیچر بازو با کلیک بیرون
+    // ------------------------------------------------------------
+    useEffect(() => {
+        if (!armSwitcherOpen) return;
+
+        const handleClickOutside = (e: MouseEvent) => {
+            if (
+                switcherRef.current &&
+                !switcherRef.current.contains(e.target as Node) &&
+                switcherButtonRef.current &&
+                !switcherButtonRef.current.contains(e.target as Node)
+            ) {
+                setArmSwitcherOpen(false);
+            }
+        };
+
+        document.addEventListener('mousedown', handleClickOutside);
+        return () =>
+            document.removeEventListener('mousedown', handleClickOutside);
+    }, [armSwitcherOpen]);
+
+    // ------------------------------------------------------------
+    // عضویت در بازو
+    // ------------------------------------------------------------
     const handleJoinClick = async () => {
-        if (!isAuthenticated) { router.push(`/login?redirect=/`); return; }
+        if (!isAuthenticated) {
+            router.push(`/login?redirect=/`);
+            return;
+        }
+
         setIsJoining(true);
+
         try {
             await apiService.arm.join(currentSlug || 'barton');
             toast.success('با موفقیت در بازار عضو شدید');
@@ -108,59 +152,225 @@ export default function MobileHeader({ showLocation = false, showBack = false, f
         }
     };
 
+    // ------------------------------------------------------------
+    // خروج
+    // ------------------------------------------------------------
     const handleLogout = () => {
         setMenuOpen(false);
         dispatch(performLogout());
         router.push('/');
     };
 
+    // ------------------------------------------------------------
+    // تغییر بازار
+    // ------------------------------------------------------------
+    const switchArm = (slug: string) => {
+        setArmSwitcherOpen(false);
+        router.push(`/${slug}`);
+    };
+
+    // ------------------------------------------------------------
+    // اطلاعات بازوی فعلی
+    // ------------------------------------------------------------
     const armName = currentArm?.name || 'Daymat';
     const armSlogan = currentArm?.slogan || 'قیمت امروز فروشندگان عمده مصالح';
-    const API_BASE = process.env.NEXT_PUBLIC_API_BASE_URL?.replace(/\/$/, '') || 'http://localhost:3011';
+    const armPrimaryColor = currentArm?.colorPrimary || '#a11f2c';
 
-    // ═══════════════ تغییر این بخش ═══════════════
-    const arvanLogoUrl = (currentArm as any)?.config?.general?.logoUrl;
-    const arvanLogoPath = (currentArm as any)?.config?.general?.logoFile?.path;
-    const arvanThumbnailPath = (currentArm as any)?.config?.general?.logoFile?.thumbnailPath;
-    const legacyLogoUrl = currentArm?.logoUrl;
-
-    // اولویت: آروان کامل > آروان path > آروان thumbnail > localhost/file > لوگوی پیش‌فرض
+    const logoFile = (currentArm as any)?.config?.general?.logoFile;
     const logoSrc =
-        arvanLogoUrl?.startsWith('http') ? arvanLogoUrl :
-            arvanLogoPath?.startsWith('http') ? arvanLogoPath :
-                arvanThumbnailPath?.startsWith('http') ? arvanThumbnailPath :
-                    legacyLogoUrl?.startsWith('http') ? legacyLogoUrl :
-                        legacyLogoUrl ? `${API_BASE}/file/${legacyLogoUrl}` :
-                            '/images/logo.png';
-    // ═══════════════ پایان تغییر ═══════════════
+        logoFile?.path ||
+        (currentArm as any)?.config?.general?.logoUrl ||
+        '/images/logo.png';
 
-    const showJoin = isHomePage && (!isAuthenticated || !isMember) && !armsLoading;
-    const showTestBadge = currentArm?.config?.general?.showTestBadge ?? true;
+    // ------------------------------------------------------------
+    // اطلاعات کاربر
+    // ------------------------------------------------------------
+    const fullName = user?.fullName || 'کاربر';
+    const avatarSrc =
+        user?.avatarFile?.thumbnailPath ||
+        user?.avatarFile?.path ||
+        null;
+
+    const showJoin =
+        isHomePage && (!isAuthenticated || !isMember) && !armsLoading;
+
+    const showTestBadge =
+        currentArm?.config?.general?.showTestBadge ?? true;
+
     const testBadgeText = currentArm?.config?.general?.testBadgeText;
 
+    const userArmsList = arms || [];
+
+    // ============================================================
+    // RENDER
+    // ============================================================
+
     return (
-        <header className={`lg:hidden z-40 bg-white dark:bg-gray-900 border-b border-outline-variant/20 dark:border-gray-800 ${fixed ? 'sticky top-0' : ''}`}>
+        <header
+            className={`
+                lg:hidden
+                bg-white
+                dark:bg-gray-900
+                border-b
+                border-outline-variant/20
+                dark:border-gray-800
+                ${fixed ? 'sticky top-0' : ''}
+                z-40
+            `}
+        >
             <div className="flex items-center justify-between px-4 h-16">
-                <div className="flex items-center gap-1 flex-1 min-w-0">
+                {/* ==================================================
+                    سمت چپ: لوگو + نام بازو
+                ================================================== */}
+                <div className="flex items-center gap-2 flex-1 min-w-0">
                     {showBack && (
-                        <button onClick={() => router.back()} className="p-1.5 -ml-1">
+                        <button
+                            onClick={() => router.back()}
+                            className="p-1.5 -ml-1"
+                        >
                             <ArrowRight className="w-5 h-5 text-gray-500 dark:text-gray-400" />
                         </button>
                     )}
-                    <div className="w-16 h-16 cursor-pointer relative rounded-lg overflow-hidden flex-shrink-0" onClick={() => router.push('/')}>
+
+                    {/* لوگوی بازو */}
+                    <div
+                        className="
+                            cursor-pointer
+                            rounded-lg
+                            overflow-hidden
+                            flex-shrink-0
+                            bg-gray-50 dark:bg-gray-800
+                        "
+                        style={{ height: '36px', width: 'auto', minWidth: '28px', maxWidth: '80px' }}
+                        onClick={() => router.push('/')}
+                    >
                         <Image
                             src={logoSrc}
                             alt="Logo"
-                            fill
+                            width={80}
+                            height={36}
                             className="object-contain"
                             unoptimized={logoSrc.startsWith('http')}
+                            style={{ height: '36px', width: 'auto' }}
                         />
                     </div>
+
+                    {/* نام و شعار بازو */}
                     <div className="flex flex-col text-right min-w-0">
                         <div className="flex items-center gap-1.5">
-                            <button onClick={() => router.push('/')} className="pb-2 font-bold text-gray-900 dark:text-gray-100 text-[13px] leading-tight truncate">
+                            <button
+                                onClick={() => router.push('/')}
+                                className="font-bold text-gray-900 dark:text-gray-100 text-[14px] leading-tight truncate"
+                                style={{ color: armPrimaryColor }}
+                            >
                                 {armName}
                             </button>
+                            {showTestBadge && testBadgeText && (
+                                <span className="inline-flex items-center text-[8px] font-medium text-primary bg-primary/10 border border-primary/20 rounded-full px-1.5 py-0.5 whitespace-nowrap">
+                                    {testBadgeText}
+                                </span>
+                            )}
+                            {/* سوئیچر بازار (اگر بیش از یک بازار عضو باشه) */}
+                            {isAuthenticated && userArmsList.length > 1 && (
+                                <div className="relative">
+                                    <button
+                                        ref={switcherButtonRef}
+                                        onClick={() =>
+                                            setArmSwitcherOpen(!armSwitcherOpen)
+                                        }
+                                        className="
+                                            flex
+                                            items-center
+                                            gap-0.5
+                                            text-gray-400
+                                            hover:text-gray-600
+                                            dark:hover:text-gray-300
+                                            transition-colors
+                                            p-0.5
+                                            rounded
+                                            hover:bg-gray-100
+                                            dark:hover:bg-gray-800
+                                        "
+                                    >
+                                        <ChevronDown className="w-3.5 h-3.5" />
+                                    </button>
+
+                                    {armSwitcherOpen && (
+                                        <div
+                                            ref={switcherRef}
+                                            className="
+                                                absolute
+                                                right-0
+                                                top-full
+                                                mt-2
+                                                w-48
+                                                bg-white
+                                                dark:bg-gray-800
+                                                border
+                                                border-gray-200
+                                                dark:border-gray-700
+                                                rounded-xl
+                                                shadow-xl
+                                                py-1.5
+                                                z-[100]
+                                            "
+                                        >
+                                            <div className="px-3 py-1.5 border-b border-gray-100 dark:border-gray-700">
+                                                <span className="text-[10px] text-gray-500 dark:text-gray-400">
+                                                    بازارهای من
+                                                </span>
+                                            </div>
+                                            {userArmsList.map((arm: any) => (
+                                                <button
+                                                    key={arm.slug}
+                                                    onClick={() =>
+                                                        switchArm(arm.slug)
+                                                    }
+                                                    className={`
+                                                        w-full
+                                                        flex
+                                                        items-center
+                                                        gap-3
+                                                        px-3
+                                                        py-2
+                                                        text-sm
+                                                        text-right
+                                                        hover:bg-gray-100
+                                                        dark:hover:bg-gray-700
+                                                        transition-colors
+                                                        ${arm.slug === currentSlug
+                                                        ? 'bg-primary/5 dark:bg-primary/10 text-primary'
+                                                        : 'text-gray-700 dark:text-gray-200'
+                                                    }
+                                                    `}
+                                                >
+                                                    <div className="w-6 h-6 relative rounded overflow-hidden flex-shrink-0">
+                                                        <Image
+                                                            src={
+                                                                arm?.logoUrl||'/images/logo.png'
+                                                            }
+                                                            alt={arm.name}
+                                                            fill
+                                                            className="object-contain"
+                                                            unoptimized
+                                                            sizes="24px"
+                                                        />
+                                                    </div>
+                                                    <span className="truncate flex-1">
+                                                        {arm.name}
+                                                    </span>
+                                                    {arm.slug ===
+                                                        currentSlug && (
+                                                            <span className="text-[10px] text-primary">
+                                                            ✓
+                                                        </span>
+                                                        )}
+                                                </button>
+                                            ))}
+                                        </div>
+                                    )}
+                                </div>
+                            )}
                         </div>
                         <span className="text-gray-400 dark:text-gray-500 text-[10px] leading-tight truncate">
                             {armSlogan}
@@ -168,79 +378,347 @@ export default function MobileHeader({ showLocation = false, showBack = false, f
                     </div>
                 </div>
 
-                <div className="flex items-center gap-1">
-                    <button
-                        ref={buttonRef}
-                        onClick={() => setMenuOpen(!menuOpen)}
-                        className="p-2 text-gray-500 hover:text-gray-900 dark:hover:text-gray-200 hover:bg-gray-100 dark:hover:bg-gray-800 rounded-lg transition-colors"
-                    >
-                        <Menu className="w-5 h-5" />
-                    </button>
-                </div>
-
-                {menuOpen && (
-                    <div
-                        ref={menuRef}
-                        className="fixed top-0 right-0 h-full w-72 bg-white dark:bg-gray-900 border-l border-gray-200 dark:border-gray-700 shadow-2xl z-[100] overflow-y-auto"
-                    >
-                        <div className="flex items-center justify-between p-4 border-b border-gray-100 dark:border-gray-700">
-                            <h3 className="font-bold text-sm text-on-surface dark:text-gray-100">منو</h3>
-                            <button onClick={() => setMenuOpen(false)} className="p-1 hover:bg-gray-100 dark:hover:bg-gray-800 rounded-md">
-                                <X className="w-5 h-5" />
-                            </button>
-                        </div>
-
-                        <div className="py-2">
-                            {isAuthenticated && (
-                                <>
-                                    <div className="px-4 py-3 border-b border-gray-100 dark:border-gray-700">
-                                        <p className="text-sm font-semibold text-gray-900 dark:text-gray-100">{user?.fullName || 'کاربر'}</p>
-                                        <p className="text-[10px] text-gray-500 dark:text-gray-400">{user?.phone}</p>
+                {/* ==================================================
+                    سمت راست: پروفایل (بدون دکمه +)
+                ================================================== */}
+                <div className="flex items-center gap-2">
+                    {/* ==================================================
+                        پروفایل / منوی کاربری
+                    ================================================== */}
+                    {isAuthenticated ? (
+                        <div className="relative">
+                            {/* دکمه پروفایل */}
+                            <button
+                                ref={buttonRef}
+                                onClick={() => setMenuOpen(!menuOpen)}
+                                className="
+                                    flex
+                                    items-center
+                                    gap-1
+                                    text-xs
+                                    text-gray-500
+                                    hover:text-gray-900
+                                    px-1.5
+                                    py-1
+                                    rounded-lg
+                                    hover:bg-gray-100
+                                    dark:hover:bg-gray-800
+                                    transition-colors
+                                "
+                            >
+                                {avatarSrc ? (
+                                    <div className="w-8 h-8 rounded-full overflow-hidden border border-gray-200 dark:border-gray-700 flex-shrink-0">
+                                        <Image
+                                            src={avatarSrc}
+                                            alt={fullName}
+                                            width={32}
+                                            height={32}
+                                            className="w-full h-full object-cover"
+                                            unoptimized={avatarSrc.startsWith(
+                                                'http'
+                                            )}
+                                        />
                                     </div>
-                                    <button onClick={() => { setMenuOpen(false); router.push('/profile'); }} className="w-full flex items-center gap-2 px-4 py-3 text-sm text-gray-700 dark:text-gray-200 hover:bg-gray-100 dark:hover:bg-gray-800 text-right">
-                                        <User className="w-4 h-4" /> پنل کاربری
-                                    </button>
-                                </>
-                            )}
-
-                            {isArmOwner && (
-                                <button onClick={() => { setMenuOpen(false); router.push('/arm-admin'); }} className="w-full flex items-center gap-2 px-4 py-3 text-sm text-emerald-600 hover:bg-emerald-50 dark:hover:bg-emerald-900/20 text-right">
-                                    <Store className="w-4 h-4" /> پنل مالک بازار
-                                </button>
-                            )}
-                            <ThemeToggle />
-                            {user?.role === 'system_admin' && (
-                                <button onClick={() => { setMenuOpen(false); router.push('/admin'); }} className="w-full flex items-center gap-2 px-4 py-3 text-sm text-primary hover:bg-primary/10 text-right">
-                                    <ShieldCheck className="w-4 h-4" /> پنل ادمین
-                                </button>
-                            )}
-
-                            <div className="border-t border-gray-100 dark:border-gray-700 my-2"></div>
-
-                            <button onClick={() => { setMenuOpen(false); router.push('/docs/about'); }} className="w-full flex items-center gap-2 px-4 py-3 text-sm text-gray-700 dark:text-gray-200 hover:bg-gray-100 dark:hover:bg-gray-800 text-right">
-                                <Info className="w-4 h-4" /> درباره {armName}
-                            </button>
-                            <button onClick={() => { setMenuOpen(false); router.push('/docs/terms'); }} className="w-full flex items-center gap-2 px-4 py-3 text-sm text-gray-700 dark:text-gray-200 hover:bg-gray-100 dark:hover:bg-gray-800 text-right">
-                                <FileText className="w-4 h-4" /> قوانین
+                                ) : (
+                                    <div className="w-8 h-8 rounded-full overflow-hidden border border-gray-200 dark:border-gray-700 flex-shrink-0 bg-gray-100 dark:bg-gray-800 flex items-center justify-center">
+                                        <User className="w-4 h-4 text-gray-400" />
+                                    </div>
+                                )}
+                                <ChevronDown className="w-3.5 h-3.5" />
                             </button>
 
-                            {isAuthenticated && (
-                                <>
-                                    <div className="border-t border-gray-100 dark:border-gray-700 my-2"></div>
-                                    <button onClick={handleLogout} className="w-full flex items-center gap-2 px-4 py-3 text-sm text-red-600 hover:bg-red-50 dark:hover:bg-red-900/20 text-right">
-                                        <LogOut className="w-4 h-4" /> خروج
-                                    </button>
-                                </>
-                            )}
+                            {/* ==================================================
+                                منوی کاربر
+                            ================================================== */}
+                            {menuOpen && (
+                                <div
+                                    ref={menuRef}
+                                    className="
+                                        absolute
+                                        left-0
+                                        top-full
+                                        mt-2
+                                        w-64
+                                        bg-white
+                                        dark:bg-gray-900
+                                        border
+                                        border-gray-200
+                                        dark:border-gray-700
+                                        rounded-xl
+                                        shadow-xl
+                                        py-1.5
+                                        z-[100]
+                                    "
+                                >
+                                    {/* سربرگ کاربر + دکمه بستن */}
+                                    <div className="px-4 py-3 border-b border-gray-100 dark:border-gray-700 flex items-center justify-between">
+                                        <div className="flex-1 min-w-0">
+                                            <p className="text-sm font-semibold text-gray-900 dark:text-gray-100 truncate">
+                                                {fullName}
+                                            </p>
+                                            <p className="text-[10px] text-gray-500 dark:text-gray-400">
+                                                {user?.phone}
+                                            </p>
+                                        </div>
 
-                            {!isAuthenticated && (
-                                <button onClick={() => { setMenuOpen(false); router.push('/login'); }} className="w-full flex items-center gap-2 px-4 py-3 text-sm text-primary font-medium">
-                                    ورود / ثبت‌نام
-                                </button>
+                                        {/* دکمه بستن منو */}
+                                        <button
+                                            onClick={() => setMenuOpen(false)}
+                                            className="
+                                                p-1.5
+                                                rounded-lg
+                                                hover:bg-gray-100
+                                                dark:hover:bg-gray-700
+                                                transition-colors
+                                                flex-shrink-0
+                                                mr-1
+                                            "
+                                            aria-label="بستن منو"
+                                        >
+                                            <X className="w-4 h-4 text-gray-500 dark:text-gray-400" />
+                                        </button>
+                                    </div>
+
+                                    {/* پروفایل من */}
+                                    <button
+                                        onClick={() => {
+                                            setMenuOpen(false);
+                                            router.push('/profile');
+                                        }}
+                                        className="
+                                            w-full
+                                            flex
+                                            items-center
+                                            gap-2
+                                            px-4
+                                            py-2.5
+                                            text-sm
+                                            text-gray-700
+                                            dark:text-gray-200
+                                            hover:bg-gray-100
+                                            dark:hover:bg-gray-800
+                                            transition-colors
+                                            text-right
+                                        "
+                                    >
+                                        <User className="w-4 h-4 text-gray-500 dark:text-gray-400" />
+                                        پروفایل من
+                                    </button>
+
+                                    {/* مدیریت بازار */}
+                                    {isArmOwner && (
+                                        <button
+                                            onClick={() => {
+                                                setMenuOpen(false);
+                                                router.push('/arm-admin');
+                                            }}
+                                            className="
+                                                w-full
+                                                flex
+                                                items-center
+                                                gap-2
+                                                px-4
+                                                py-2.5
+                                                text-sm
+                                                text-emerald-600
+                                                dark:text-emerald-400
+                                                hover:bg-emerald-50
+                                                dark:hover:bg-emerald-900/20
+                                                transition-colors
+                                                text-right
+                                            "
+                                        >
+                                            <Store className="w-4 h-4" />
+                                            پنل مالک بازار
+                                        </button>
+                                    )}
+
+                                    {/* پنل ادمین */}
+                                    {user?.role === 'system_admin' && (
+                                        <button
+                                            onClick={() => {
+                                                setMenuOpen(false);
+                                                router.push('/admin');
+                                            }}
+                                            className="
+                                                w-full
+                                                flex
+                                                items-center
+                                                gap-2
+                                                px-4
+                                                py-2.5
+                                                text-sm
+                                                text-primary
+                                                hover:bg-primary/10
+                                                dark:hover:bg-primary/20
+                                                transition-colors
+                                                text-right
+                                            "
+                                        >
+                                            <ShieldCheck className="w-4 h-4" />
+                                            پنل ادمین
+                                        </button>
+                                    )}
+
+                                    {/* حالت تاریک */}
+                                    <ThemeToggle />
+
+                                    {/* جداکننده */}
+                                    <div className="border-t border-gray-100 dark:border-gray-700 my-1" />
+
+                                    {/* درباره ما */}
+                                    <button
+                                        onClick={() => {
+                                            setMenuOpen(false);
+                                            router.push('/docs/about');
+                                        }}
+                                        className="
+                                            w-full
+                                            flex
+                                            items-center
+                                            gap-2
+                                            px-4
+                                            py-2.5
+                                            text-sm
+                                            text-gray-700
+                                            dark:text-gray-200
+                                            hover:bg-gray-100
+                                            dark:hover:bg-gray-800
+                                            transition-colors
+                                            text-right
+                                        "
+                                    >
+                                        <Info className="w-4 h-4 text-gray-500 dark:text-gray-400" />
+                                        درباره {armName}
+                                    </button>
+
+                                    {/* قوانین */}
+                                    <button
+                                        onClick={() => {
+                                            setMenuOpen(false);
+                                            router.push('/docs/terms');
+                                        }}
+                                        className="
+                                            w-full
+                                            flex
+                                            items-center
+                                            gap-2
+                                            px-4
+                                            py-2.5
+                                            text-sm
+                                            text-gray-700
+                                            dark:text-gray-200
+                                            hover:bg-gray-100
+                                            dark:hover:bg-gray-800
+                                            transition-colors
+                                            text-right
+                                        "
+                                    >
+                                        <FileText className="w-4 h-4 text-gray-500 dark:text-gray-400" />
+                                        قوانین
+                                    </button>
+
+                                    {/* پیشنهادات و انتقادات */}
+                                    <button
+                                        onClick={() => {
+                                            setMenuOpen(false);
+                                            router.push('/feedback');
+                                        }}
+                                        className="
+                                            w-full
+                                            flex
+                                            items-center
+                                            gap-2
+                                            px-4
+                                            py-2.5
+                                            text-sm
+                                            text-gray-700
+                                            dark:text-gray-200
+                                            hover:bg-gray-100
+                                            dark:hover:bg-gray-800
+                                            transition-colors
+                                            text-right
+                                        "
+                                    >
+                                        <Lightbulb className="w-4 h-4 text-yellow-500 dark:text-yellow-400" />
+                                        پیشنهادات و انتقادات
+                                    </button>
+
+                                    {/* جداکننده */}
+                                    <div className="border-t border-gray-100 dark:border-gray-700 my-1" />
+
+                                    {/* قدرت گرفته از دی مت */}
+                                    <div
+                                        className="
+                                            px-4
+                                            py-3
+                                            border-t
+                                            border-gray-100
+                                            dark:border-gray-700
+                                            mt-1
+                                        "
+                                    >
+                                        <div className="flex items-center justify-center gap-2">
+                                            <div className="w-40 h-15 relative">
+                                                <Image
+                                                    src="/images/logo2.png"
+                                                    alt="دیمت"
+                                                    width={40}
+                                                    height={10}
+                                                    className="w-full h-full object-contain"
+                                                />
+                                            </div>
+
+                                        </div>
+                                    </div>
+
+                                    {/* جداکننده */}
+                                    <div className="border-t border-gray-100 dark:border-gray-700 my-1" />
+
+                                    {/* خروج */}
+                                    {/*<button
+                                        onClick={handleLogout}
+                                        className="
+                                            w-full
+                                            flex
+                                            items-center
+                                            gap-2
+                                            px-4
+                                            py-2.5
+                                            text-sm
+                                            text-red-600
+                                            hover:bg-red-50
+                                            dark:hover:bg-red-900/20
+                                            transition-colors
+                                            text-right
+                                        "
+                                    >
+                                        <LogOut className="w-4 h-4" />
+                                        خروج
+                                    </button>*/}
+                                </div>
                             )}
                         </div>
-                    </div>
-                )}
+                    ) : (
+                        <button
+                            onClick={() => router.push('/login')}
+                            className="
+                                text-xs
+                                text-gray-500
+                                hover:text-gray-900
+                                dark:hover:text-gray-300
+                                px-2
+                                py-1.5
+                                rounded-lg
+                                hover:bg-gray-100
+                                dark:hover:bg-gray-800
+                                transition-colors
+                            "
+                        >
+                            ورود
+                        </button>
+                    )}
+                </div>
             </div>
         </header>
     );

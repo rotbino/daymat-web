@@ -1,11 +1,11 @@
 // app/profile/components/ManagedArmsList.tsx
 'use client';
 
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useMemo } from 'react';
 import { useRouter } from 'next/navigation';
 import { useSelector } from 'react-redux';
 import { RootState } from '@/lib/store/store';
-import { apiService } from '@/lib/api/apiService';
+import { useArms } from '@/lib/api/apiHooks'; // ✅ اضافه کردن هوک
 import { toast } from 'sonner';
 import Link from 'next/link';
 import {
@@ -50,56 +50,20 @@ interface ManagedArmsListProps {
 export function ManagedArmsList({ onRefresh }: ManagedArmsListProps) {
     const router = useRouter();
     const { isAuthenticated, user } = useSelector((state: RootState) => state.auth);
-    const [managedArms, setManagedArms] = useState<ManagedArm[]>([]);
-    const [loading, setLoading] = useState(true);
-    const [error, setError] = useState<string | null>(null);
 
-    // ============================================================
-    // ✅ واکشی بازارهایی که کاربر مدیر آنهاست
-    // ============================================================
-    useEffect(() => {
-        const fetchManagedArms = async () => {
-            // اگر لاگین نیست، کاری نکن
-            if (!isAuthenticated || !user) {
-                setManagedArms([]);
-                setLoading(false);
-                return;
-            }
+    // ✅ استفاده از هوک useArms به جای درخواست مستقیم
+    const { data: arms, isLoading, refetch } = useArms();
 
-            setLoading(true);
-            setError(null);
-
-            try {
-                // دریافت همه بازارهای کاربر
-                const arms = await apiService.arm.getUserArms();
-
-                // فیلتر کردن بازارهایی که نقش admin دارند
-                const adminArms = arms.filter(
-                    (arm: any) => arm.role === 'system_admin'
-                ) as ManagedArm[];
-
-                setManagedArms(adminArms);
-            } catch (error: any) {
-                console.error('Error fetching managed arms:', error);
-                // اگر خطای احراز هویت بود، خاموش باش
-                if (error?.response?.status === 401 || error?.data?.errorCode === 'UNAUTHORIZED') {
-                    setManagedArms([]);
-                } else {
-                    setError('خطا در دریافت لیست بازارهای مدیریتی');
-                    toast.error('خطا در دریافت لیست بازارها');
-                }
-            } finally {
-                setLoading(false);
-            }
-        };
-
-        fetchManagedArms();
-    }, [isAuthenticated, user]);
+    // ✅ فیلتر کردن بازارهایی که نقش system_admin دارند (با useMemo)
+    const managedArms = useMemo(() => {
+        if (!arms || !Array.isArray(arms)) return [];
+        return arms.filter((arm: any) => arm.role === 'system_admin') as ManagedArm[];
+    }, [arms]);
 
     // ============================================================
     // ✅ اگر در حال بارگذاری است
     // ============================================================
-    if (loading) {
+    if (isLoading) {
         return (
             <div className="bg-white dark:bg-gray-900 rounded-2xl border border-outline-variant/50 dark:border-gray-700 p-6 shadow-sm">
                 <div className="flex items-center justify-between mb-4">
@@ -116,9 +80,9 @@ export function ManagedArmsList({ onRefresh }: ManagedArmsListProps) {
     }
 
     // ============================================================
-    // ✅ اگر خطا داشت یا مدیر هیچ بازاری نیست
+    // ✅ اگر کاربر لاگین نیست یا مدیر هیچ بازاری نیست
     // ============================================================
-    if (error || managedArms.length === 0) {
+    if (!isAuthenticated || !user || managedArms.length === 0) {
         return null; // اصلاً چیزی نمایش نده
     }
 
@@ -214,7 +178,7 @@ export function ManagedArmsList({ onRefresh }: ManagedArmsListProps) {
                                     </Link>
 
                                     <Link
-                                        href={`/arm-admin`}  // ✅ بدون slug
+                                        href={`/arm-admin`}
                                         className="flex items-center gap-1 px-3 py-1.5 text-xs bg-primary text-on-primary rounded-lg hover:bg-primary/90 transition-colors shadow-sm"
                                     >
                                         <Settings className="w-3.5 h-3.5" />
@@ -223,7 +187,7 @@ export function ManagedArmsList({ onRefresh }: ManagedArmsListProps) {
                                 </div>
                             </div>
 
-                            {/* نوار پیشرفت یا آمار سریع (اختیاری) */}
+                            {/* نوار پیشرفت یا آمار سریع */}
                             <div className="mt-3 pt-3 border-t border-outline-variant/30 dark:border-gray-700">
                                 <div className="flex items-center gap-4 text-[10px] text-on-surface-variant dark:text-gray-400">
                                     <div className="flex items-center gap-1">

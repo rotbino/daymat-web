@@ -107,14 +107,14 @@ export default function ProfilePage() {
     const { currentArm, currentSlug } = useSelector((state: RootState) => state.arm);
     const { data: activeBusiness, isLoading: activeLoading, refetch } = useActiveBusiness();
     const { data: creditBalance, refetch: refetchBalance } = useCreditBalance();
-    const { data: userArms, isLoading: armsLoading, refetch: refetchArms } = useArms();
+
 
     const [isEditModalOpen, setIsEditModalOpen] = useState(false);
     const [isPasswordModalOpen, setIsPasswordModalOpen] = useState(false);
     const [isVerificationModalOpen, setIsVerificationModalOpen] = useState(false);
     const [selectedAd, setSelectedAd] = useState<any>(null);
     const [isRefreshModalOpen, setIsRefreshModalOpen] = useState(false);
-    const [isArmOwner, setIsArmOwner] = useState(false);
+
     const [selectedBusinessId, setSelectedBusinessId] = useState<string | null>(null);
     const [reapplying, setReapplying] = useState(false);
     const { data: businessesList } = useBusinesses();
@@ -124,13 +124,17 @@ export default function ProfilePage() {
     const hasBusiness = !!activeBusiness;
     const isSystemAdmin = user?.role === 'system_admin';
 
-    useEffect(() => {
-        if (activeBusiness && !selectedBusinessId) {
-            setSelectedBusinessId(activeBusiness.id);
-        }
-    }, [activeBusiness, selectedBusinessId]);
 
-    // ⭐ عضویت در بازوی فعلی
+    const { data: userArms, isLoading: armsLoading, refetch: refetchArms } = useArms();
+
+    const isArmOwner = useMemo(() => {
+        if (!user || !currentSlug || !userArms) return false;
+        return userArms.some(
+            (a: any) => a.slug === currentSlug && a.role === 'arm_owner'
+        );
+    }, [userArms, currentSlug, user]);
+
+
     const currentMembership = useMemo(() => {
         if (!userArms || !currentSlug) return null;
         return userArms.find((a: any) => a.slug === currentSlug) || null;
@@ -141,7 +145,11 @@ export default function ProfilePage() {
     const isRejected = currentMembership?.status === 'rejected';
     const rejectionReason = currentMembership?.rejectionReason;
 
-
+    useEffect(() => {
+        if (activeBusiness && !selectedBusinessId) {
+            setSelectedBusinessId(activeBusiness.id);
+        }
+    }, [activeBusiness, selectedBusinessId]);
 
     const completionPercentage = useMemo(() => {
         const b = selectedBusiness;
@@ -175,6 +183,7 @@ export default function ProfilePage() {
     const bumpCost = armConfig?.economy?.bumpCost || 10;
     const maxActiveAds = armConfig?.modules?.priceTable?.maxActiveAdsPerUser || 5;
 
+
     const handleReapply = async () => {
         if (!currentSlug || !selectedBusinessId) return;
         setReapplying(true);
@@ -192,21 +201,7 @@ export default function ProfilePage() {
         }
     };
 
-    useEffect(() => {
-        const checkArmOwner = async () => {
-            if (!user || !currentSlug) return;
-            try {
-                const arms = await apiService.arm.getUserArms();
-                const isOwner = arms.some(
-                    (a: any) => a.slug === currentSlug && a.role === 'arm_owner'
-                );
-                setIsArmOwner(isOwner);
-            } catch (error) {
-                console.error(error);
-            }
-        };
-        checkArmOwner();
-    }, [user, currentSlug]);  // ✅ حالا با تغییر بازو یا کاربر دوباره اجرا می‌شود
+
 
     const handleProfileUpdate = async (data: any) => {
         try {
@@ -330,8 +325,8 @@ export default function ProfilePage() {
                                     <div className="flex items-center gap-4">
                                         <div className="w-12 h-12 rounded-full bg-primary/20 dark:bg-primary/30 flex items-center justify-center"><Factory className="w-6 h-6 text-primary" /></div>
                                         <div>
-                                            <h3 className="text-base font-semibold text-on-surface dark:text-gray-100">شروع فعالیت صنعتی</h3>
-                                            <p className="text-sm text-on-surface-variant dark:text-gray-400">کسب و کار خود را در یک دقیقه ثبت کنید.</p>
+                                            <h3 className="text-base font-semibold text-on-surface dark:text-gray-100">شروع فعالیت تجاری</h3>
+                                            <p className="text-sm text-on-surface-variant dark:text-gray-400">کسب و کار خود را در یک دقیقه ثبت کنید و قیمتهای خود را روی تابلو قرار دهید.</p>
                                         </div>
                                     </div>
                                     <button onClick={() => router.push('/business/register')} className="px-6 py-2.5 bg-primary text-on-primary rounded-xl text-sm font-medium">ثبت کسب‌وکار</button>
@@ -402,7 +397,7 @@ export default function ProfilePage() {
                             <div className="flex flex-col sm:flex-row items-center justify-between gap-4">
                                 <div className="flex items-center gap-4">
                                     <Factory className="w-6 h-6 text-primary" />
-                                    <div><h3 className="text-base font-semibold text-on-surface dark:text-gray-100">شروع فعالیت صنعتی</h3><p className="text-sm text-on-surface-variant dark:text-gray-400">کسب و کار خود را ثبت کنید.</p></div>
+                                    <div><h3 className="text-base font-semibold text-on-surface dark:text-gray-100">شروع فعالیت تجاری</h3><p className="text-sm text-on-surface-variant dark:text-gray-400">در یک دقیقه کسب و کار خود را ثبت کنید و قیمتهای خود را روی تابلو قرار دهید.</p></div>
                                 </div>
                                 <button onClick={() => router.push('/business/register')} className="px-6 py-2.5 bg-primary text-on-primary rounded-xl text-sm">ثبت کسب‌وکار</button>
                             </div>

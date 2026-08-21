@@ -2,7 +2,7 @@
 'use client';
 import React, { useState, useCallback, useEffect, useRef, cloneElement, ReactElement } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
-import { ChevronLeft, ArrowRight, X, Check, Sparkles } from 'lucide-react';
+import { ChevronLeft, ArrowRight, X, Check } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { NumberInput } from "@/components/common";
 import { LocationFilter } from '@/app/components/LocationFilter';
@@ -30,12 +30,21 @@ interface Props {
     resultCount?: number;
 }
 
-// --- Compact Floating Label (Adapted for Filter Bar) ---
+// ─── فلت‌سازی درخت ───
+// اگر والد فقط یک فرزند داشته باشد، آن را حذف می‌کنیم
+function flattenSingleChildTree(tree: CategoryNode[]): CategoryNode[] {
+    if (tree.length === 1 && tree[0].children && tree[0].children.length > 0) {
+        return flattenSingleChildTree(tree[0].children);
+    }
+    return tree;
+}
+
+// ─── Compact Floating Label ───
 interface FloatingWrapperProps {
     label: string;
     id: string;
     children: ReactElement;
-    minWidth?: number
+    minWidth?: number;
 }
 
 const CompactFloatingLabel: React.FC<FloatingWrapperProps> = ({ label, id, children, minWidth = 70 }) => {
@@ -75,7 +84,7 @@ const CompactFloatingLabel: React.FC<FloatingWrapperProps> = ({ label, id, child
     );
 };
 
-// --- Main Component ---
+// ─── Main Component ───
 export default function FilterBar({
                                       categoryTree,
                                       selectedCategoryId,
@@ -94,25 +103,38 @@ export default function FilterBar({
     const router = useRouter();
     const searchParams = useSearchParams();
 
-    // States
+    // ✅ درخت فلت‌شده
+    const flatTree = flattenSingleChildTree(categoryTree);
+
     const [path, setPath] = useState<CategoryNode[]>([]);
     const [moqInput, setMoqInput] = useState<number | undefined>(undefined);
     const [stockInput, setStockInput] = useState<number | undefined>(undefined);
-
-    // Progressive Disclosure States
     const [showMoq, setShowMoq] = useState(false);
     const [showStock, setShowStock] = useState(false);
-
-    // Dropdown States
     const [openMoq, setOpenMoq] = useState(false);
     const [openStock, setOpenStock] = useState(false);
 
-    // Refs
     const moqRef = useRef<HTMLDivElement>(null);
     const stockRef = useRef<HTMLDivElement>(null);
 
-    // Effects
-    useEffect(() => { setPath([]); }, [categoryTree]);
+    // ✅ فقط اگر مسیر دیگر معتبر نیست، خالی کن
+    useEffect(() => {
+        if (path.length === 0) return;
+
+        const isValidPath = (): boolean => {
+            let current = flatTree;
+            for (const p of path) {
+                const found = current.find(n => n.id === p.id);
+                if (!found) return false;
+                current = found.children || [];
+            }
+            return true;
+        };
+
+        if (!isValidPath()) {
+            setPath([]);
+        }
+    }, [flatTree]);
 
     useEffect(() => {
         const handleClickOutside = (event: MouseEvent) => {
@@ -123,7 +145,6 @@ export default function FilterBar({
         return () => document.removeEventListener("mousedown", handleClickOutside);
     }, []);
 
-    // Debounces
     useEffect(() => {
         if (!showMoq || moqInput === undefined) return;
         const timer = setTimeout(() => onMinQuantityChange?.(moqInput || 0), 300);
@@ -136,11 +157,12 @@ export default function FilterBar({
         return () => clearTimeout(timer);
     }, [stockInput, showStock, onMinAvailableChange]);
 
-    const currentLevel = path.length === 0 ? categoryTree : (path[path.length - 1].children || []);
+    const currentLevel = path.length === 0 ? flatTree : (path[path.length - 1].children || []);
 
     const updateUrl = useCallback((id: string | null) => {
         const params = new URLSearchParams(searchParams.toString());
-        if (id) params.set('category', id); else params.delete('category');
+        if (id) params.set('category', id);
+        else params.delete('category');
         router.replace(`?${params.toString()}`, { scroll: false });
     }, [router, searchParams]);
 
@@ -155,13 +177,20 @@ export default function FilterBar({
             if (prev.length === 0) return prev;
             const newPath = prev.slice(0, -1);
             const parentNode = newPath.length > 0 ? newPath[newPath.length - 1] : null;
-            if (parentNode) { onSelect(parentNode.id); updateUrl(parentNode.id); }
-            else { onSelect(''); updateUrl(null); }
+            if (parentNode) {
+                onSelect(parentNode.id);
+                updateUrl(parentNode.id);
+            } else {
+                onSelect('');
+                updateUrl(null);
+            }
             onResetFilters?.();
             return newPath;
         });
-        setShowMoq(false); setShowStock(false);
-        setMoqInput(undefined); setStockInput(undefined);
+        setShowMoq(false);
+        setShowStock(false);
+        setMoqInput(undefined);
+        setStockInput(undefined);
     }, [onSelect, updateUrl, onResetFilters]);
 
     const handleBreadcrumbClick = useCallback((index: number) => {
@@ -175,15 +204,17 @@ export default function FilterBar({
     }, [onSelect, updateUrl]);
 
     const selectAll = useCallback(() => {
-        onSelect(''); updateUrl(null); setPath([]);
-        setShowMoq(false); setShowStock(false);
-        setMoqInput(undefined); setStockInput(undefined);
+        onSelect('');
+        updateUrl(null);
+        setPath([]);
+        setShowMoq(false);
+        setShowStock(false);
+        setMoqInput(undefined);
+        setStockInput(undefined);
         onResetFilters?.();
     }, [onSelect, updateUrl, onResetFilters]);
 
-
-    // Custom Checkbox Component
-    const FilterCheckbox = ({ label, checked, onChange }: { label: string, checked: boolean, onChange: () => void }) => (
+    const FilterCheckbox = ({ label, checked, onChange }: { label: string; checked: boolean; onChange: () => void }) => (
         <label className="flex items-center gap-1.5 pl-4 cursor-pointer group select-none whitespace-nowrap">
             <div className="relative">
                 <input type="checkbox" checked={checked} onChange={onChange} className="sr-only peer" />
@@ -197,21 +228,26 @@ export default function FilterBar({
 
     return (
         <div className="w-full bg-white/80 dark:bg-gray-900/80 backdrop-blur-xl border-b border-outline-variant/10">
-
             {/* Breadcrumb */}
             {path.length > 0 && (
                 <div className="flex items-center px-3 pt-1.5 pb-0.5 border-b border-outline-variant/5">
                     <div className="flex items-center gap-1 text-[10px] md:text-[12px] overflow-x-auto scrollbar-hide py-0.5">
-                        <button onClick={selectAll} className="hover:text-primary transition-colors text-on-surface-variant/70 whitespace-nowrap">همه دسته‌ها</button>
+                        <button onClick={selectAll} className="hover:text-primary transition-colors text-on-surface-variant/70 whitespace-nowrap">
+                            همه دسته‌ها
+                        </button>
                         {path.map((node, idx) => {
                             const isLast = idx === path.length - 1;
                             return (
                                 <React.Fragment key={node.id}>
                                     <ChevronLeft className="w-3 h-3 flex-shrink-0 text-on-surface-variant/30" />
                                     {isLast ? (
-                                        <span className="text-on-surface font-semibold whitespace-nowrap px-1 py-0.5 rounded bg-primary/5 text-primary">{node.title}</span>
+                                        <span className="text-on-surface font-semibold whitespace-nowrap px-1 py-0.5 rounded bg-primary/5 text-primary">
+                                            {node.title}
+                                        </span>
                                     ) : (
-                                        <button onClick={() => handleBreadcrumbClick(idx)} className="hover:text-primary transition-colors whitespace-nowrap text-on-surface-variant/70">{node.title}</button>
+                                        <button onClick={() => handleBreadcrumbClick(idx)} className="hover:text-primary transition-colors whitespace-nowrap text-on-surface-variant/70">
+                                            {node.title}
+                                        </button>
                                     )}
                                 </React.Fragment>
                             );
@@ -223,10 +259,7 @@ export default function FilterBar({
             {/* Main Bar */}
             <div className="px-3 py-1.5">
                 <div className="flex items-center gap-2">
-
-                    {/* Categories & Location Scroll Area */}
                     <div className="flex items-center gap-1.5 overflow-x-auto scrollbar-hide flex-1 min-w-0">
-
                         {path.length > 0 && (
                             <button onClick={goBack} className="flex-shrink-0 p-1 rounded-lg hover:bg-surface-container-high text-on-surface-variant hover:text-on-surface transition-all active:scale-95" title="بازگشت">
                                 <ArrowRight className="w-4 h-4" />
@@ -236,46 +269,54 @@ export default function FilterBar({
                         {path.length === 0 && (
                             <button onClick={selectAll} className={cn(
                                 "whitespace-nowrap px-3 py-1 text-xs font-semibold rounded-full border transition-all flex-shrink-0 active:scale-95",
-                                !selectedCategoryId ? "bg-primary text-on-primary border-primary shadow-md shadow-primary/20" : "bg-surface-container-low text-on-surface-variant border-outline-variant hover:border-primary hover:text-primary"
-                            )}>همه</button>
+                                !selectedCategoryId
+                                    ? "bg-primary text-on-primary border-primary shadow-md shadow-primary/20"
+                                    : "bg-surface-container-low text-on-surface-variant border-outline-variant hover:border-primary hover:text-primary"
+                            )}>
+                                همه
+                            </button>
                         )}
 
                         {isLeaf && path.length > 0 && (
                             <div className="flex items-center gap-1 whitespace-nowrap px-2.5 py-1 rounded-full text-xs font-semibold bg-primary/10 text-primary border border-primary/20 flex-shrink-0">
                                 {path[path.length - 1].title}
-                                <button onClick={goBack} className="hover:bg-primary/20 p-0.5 rounded-full transition-colors"><X className="w-3 h-3" /></button>
+                                <button onClick={goBack} className="hover:bg-primary/20 p-0.5 rounded-full transition-colors">
+                                    <X className="w-3 h-3" />
+                                </button>
                             </div>
                         )}
 
                         {currentLevel.map((node) => (
-                            <button key={node.id} onClick={() => drillDown(node)} className={cn(
-                                "whitespace-nowrap px-3 py-1 rounded-full text-xs font-medium border transition-all flex-shrink-0 active:scale-95",
-                                node.id === selectedCategoryId ? "bg-primary text-on-primary border-primary shadow-md shadow-primary/20" : "bg-surface-container-low/50 text-on-surface-variant border-outline-variant/50 hover:border-primary/40 hover:bg-surface-container-high hover:shadow-sm"
-                            )}>{node.title}</button>
+                            <button
+                                key={node.id}
+                                onClick={() => drillDown(node)}
+                                className={cn(
+                                    "whitespace-nowrap px-3 py-1 rounded-full text-xs font-medium border transition-all flex-shrink-0 active:scale-95",
+                                    node.id === selectedCategoryId
+                                        ? "bg-primary text-on-primary border-primary shadow-md shadow-primary/20"
+                                        : "bg-surface-container-low/50 text-on-surface-variant border-outline-variant/50 hover:border-primary/40 hover:bg-surface-container-high hover:shadow-sm"
+                                )}
+                            >
+                                {node.title}
+                            </button>
                         ))}
 
-                        {/* ✅ قرارگیری لوکیشن در انتهای نوار دسته بندی */}
-                        <div className={"flex flex-1"}>
-                            <div className={"flex flex-1"} />
+                        <div className="flex flex-1">
+                            <div className="flex flex-1" />
                             <LocationFilter />
                         </div>
-
                     </div>
 
-                    {/* Divider (Desktop) */}
                     {isLeaf && <div className="w-px h-7 bg-outline-variant/20 mx-1 hidden md:block" />}
 
-                    {/* Right Toolbar (Progressive Disclosure) - Desktop */}
                     {isLeaf && (
                         <div className="hidden md:flex items-center gap-2 flex-shrink-0">
-
-                            {/* MOQ Logic */}
                             {!showMoq ? (
                                 <FilterCheckbox label="امکان خرید در حجم" checked={false} onChange={() => setShowMoq(true)} />
                             ) : (
                                 <div className="flex items-center gap-1 animate-in fade-in slide-in-from-right-2 duration-300">
                                     <CompactFloatingLabel label={`حجم خرید (${selectedUnit})`} id="moq-input">
-                                        <NumberInput className={"max-h-8 text-center"} value={moqInput} onChange={(val) => setMoqInput(val)} />
+                                        <NumberInput className="max-h-8 text-center" value={moqInput} onChange={(val) => setMoqInput(val)} />
                                     </CompactFloatingLabel>
                                     <button onClick={() => { setShowMoq(false); setMoqInput(undefined); onMinQuantityChange?.(0); }} className="p-0.5 rounded-md hover:bg-error/10 text-on-surface-variant hover:text-error transition-colors">
                                         <X className="w-3.5 h-3.5" />
@@ -285,15 +326,14 @@ export default function FilterBar({
 
                             <div className="w-px h-5 bg-outline-variant/20" />
 
-                            {/* Stock Logic */}
                             {!showStock ? (
                                 <FilterCheckbox label="تضمین موجودی" checked={false} onChange={() => setShowStock(true)} />
                             ) : (
                                 <div className="flex items-center gap-1 animate-in fade-in slide-in-from-right-2 duration-300">
                                     <CompactFloatingLabel minWidth={130} label={`حداقل موجودی (${selectedUnit})`} id="stock-input">
-                                        <NumberInput className={"max-h-8 text-center"} value={stockInput} onChange={(val) => setStockInput(val)} />
+                                        <NumberInput className="max-h-8 text-center" value={stockInput} onChange={(val) => setStockInput(val)} />
                                     </CompactFloatingLabel>
-                                    <button onClick={() => { setShowStock(false); setStockInput(undefined); onMinAvailableChange?.(0); }} className="p-0.5 rounded-md hover:bg-error/10 text-on-surface-variant hover:text-error  transition-colors">
+                                    <button onClick={() => { setShowStock(false); setStockInput(undefined); onMinAvailableChange?.(0); }} className="p-0.5 rounded-md hover:bg-error/10 text-on-surface-variant hover:text-error transition-colors">
                                         <X className="w-3.5 h-3.5" />
                                     </button>
                                 </div>
@@ -305,28 +345,29 @@ export default function FilterBar({
                 {/* Mobile Toolbar */}
                 {isLeaf && (
                     <div className="flex md:hidden items-center gap-x-0.5 gap-y-2 mt-2 pt-4 pb-1 border-t border-outline-variant/10">
-
-                        {/* MOQ Logic Mobile */}
                         {!showMoq ? (
                             <FilterCheckbox label="امکان خرید در حجم" checked={false} onChange={() => setShowMoq(true)} />
                         ) : (
                             <div className="flex items-center gap-0 animate-in fade-in duration-200">
                                 <CompactFloatingLabel minWidth={120} label={`حجم خرید (${selectedUnit})`} id="moq-input-m">
-                                    <NumberInput className={"max-h-8 text-center"}  value={moqInput} onChange={(val) => setMoqInput(val)} />
+                                    <NumberInput className="max-h-8 text-center" value={moqInput} onChange={(val) => setMoqInput(val)} />
                                 </CompactFloatingLabel>
-                                <button className="p-0.5 text-error relative left-6" onClick={() => { setShowMoq(false); setMoqInput(undefined); onMinQuantityChange?.(0); }}><X className="w-3.5 h-3.5" /></button>
+                                <button className="p-0.5 text-error relative left-6" onClick={() => { setShowMoq(false); setMoqInput(undefined); onMinQuantityChange?.(0); }}>
+                                    <X className="w-3.5 h-3.5" />
+                                </button>
                             </div>
                         )}
 
-                        {/* Stock Logic Mobile */}
                         {!showStock ? (
                             <FilterCheckbox label="تضمین موجودی" checked={false} onChange={() => setShowStock(true)} />
                         ) : (
                             <div className="flex items-center gap-0 animate-in fade-in duration-200">
                                 <CompactFloatingLabel minWidth={130} label={`حداقل موجودی (${selectedUnit})`} id="stock-input-m">
-                                    <NumberInput className={"max-h-8 text-center"} value={stockInput} onChange={(val) => setStockInput(val)} />
+                                    <NumberInput className="max-h-8 text-center" value={stockInput} onChange={(val) => setStockInput(val)} />
                                 </CompactFloatingLabel>
-                                <button className="p-0.5 text-error relative left-6" onClick={() => { setShowStock(false); setStockInput(undefined); onMinAvailableChange?.(0); }}><X className="w-3.5 h-3.5" /></button>
+                                <button className="p-0.5 text-error relative left-6" onClick={() => { setShowStock(false); setStockInput(undefined); onMinAvailableChange?.(0); }}>
+                                    <X className="w-3.5 h-3.5" />
+                                </button>
                             </div>
                         )}
 

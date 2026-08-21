@@ -1,6 +1,7 @@
+// app/components/DesktopHeader.tsx
 'use client';
 
-import React, { useEffect, useState, useRef } from 'react';
+import React, {useEffect, useState, useRef, useMemo} from 'react';
 import { useRouter, usePathname, useParams } from 'next/navigation';
 import { useSelector, useDispatch } from 'react-redux';
 import {
@@ -8,11 +9,11 @@ import {
     User,
     ChevronDown,
     LogOut,
-    Settings,
     ShieldCheck,
     Store,
     Info,
     FileText,
+    Lightbulb, X,
 } from 'lucide-react';
 
 import { RootState } from '@/lib/store/store';
@@ -49,39 +50,32 @@ export default function DesktopHeader({
 
     const [isMember, setIsMember] = useState(false);
     const [isJoining, setIsJoining] = useState(false);
-    const [isArmOwner, setIsArmOwner] = useState(false);
     const [menuOpen, setMenuOpen] = useState(false);
-
-    const {
-        data: arms,
-        isLoading: armsLoading,
-        refetch: refetchArms,
-    } = useArms();
+    const [armSwitcherOpen, setArmSwitcherOpen] = useState(false);
 
     const menuRef = useRef<HTMLDivElement>(null);
     const buttonRef = useRef<HTMLButtonElement>(null);
+    const switcherRef = useRef<HTMLDivElement>(null);
+    const switcherButtonRef = useRef<HTMLButtonElement>(null);
 
-    // ------------------------------------------------------------
-    // تشخیص صفحه اصلی بازو
-    // ------------------------------------------------------------
+    const isHomePage = pathname === `/${params.slug}` || pathname === '/';
 
-    const isHomePage =
-        pathname === `/${params.slug}` || pathname === '/';
-
+    const { data: arms, isLoading: armsLoading, refetch: refetchArms } = useArms();
+    // ✅ بررسی مالک بودن کاربر در بازوی فعلی با استفاده از arms
+    const isArmOwner = useMemo(() => {
+        if (!user || !currentSlug || !arms) return false;
+        return arms.some((a: any) => a.role === 'arm_owner' && a.slug === currentSlug);
+    }, [arms, currentSlug, user]);
     // ------------------------------------------------------------
     // بررسی عضویت کاربر در بازوی فعلی
     // ------------------------------------------------------------
-
     useEffect(() => {
         if (!isAuthenticated || !currentSlug || !arms) {
             setIsMember(false);
             return;
         }
 
-        const member = arms.some(
-            (a: any) => a.slug === currentSlug
-        );
-
+        const member = arms.some((a: any) => a.slug === currentSlug);
         setIsMember(member);
     }, [isAuthenticated, currentSlug, arms]);
 
@@ -89,35 +83,10 @@ export default function DesktopHeader({
     // بررسی مالک بودن کاربر در بازوی فعلی
     // ------------------------------------------------------------
 
-    useEffect(() => {
-        const checkOwner = async () => {
-            if (!user || !currentSlug) {
-                setIsArmOwner(false);
-                return;
-            }
-
-            try {
-                const userArms = await apiService.arm.getUserArms();
-
-                const owner = userArms.some(
-                    (a: any) =>
-                        a.role === 'arm_owner' &&
-                        a.slug === currentSlug
-                );
-
-                setIsArmOwner(owner);
-            } catch (e) {
-                setIsArmOwner(false);
-            }
-        };
-
-        checkOwner();
-    }, [user, currentSlug]);
 
     // ------------------------------------------------------------
     // بستن منوی کاربر با کلیک بیرون
     // ------------------------------------------------------------
-
     useEffect(() => {
         if (!menuOpen) return;
 
@@ -132,23 +101,34 @@ export default function DesktopHeader({
             }
         };
 
-        document.addEventListener(
-            'mousedown',
-            handleClickOutside
-        );
-
-        return () => {
-            document.removeEventListener(
-                'mousedown',
-                handleClickOutside
-            );
-        };
+        document.addEventListener('mousedown', handleClickOutside);
+        return () => document.removeEventListener('mousedown', handleClickOutside);
     }, [menuOpen]);
+
+    // ------------------------------------------------------------
+    // بستن منوی سوئیچر بازو با کلیک بیرون
+    // ------------------------------------------------------------
+    useEffect(() => {
+        if (!armSwitcherOpen) return;
+
+        const handleClickOutside = (e: MouseEvent) => {
+            if (
+                switcherRef.current &&
+                !switcherRef.current.contains(e.target as Node) &&
+                switcherButtonRef.current &&
+                !switcherButtonRef.current.contains(e.target as Node)
+            ) {
+                setArmSwitcherOpen(false);
+            }
+        };
+
+        document.addEventListener('mousedown', handleClickOutside);
+        return () => document.removeEventListener('mousedown', handleClickOutside);
+    }, [armSwitcherOpen]);
 
     // ------------------------------------------------------------
     // عضویت در بازو
     // ------------------------------------------------------------
-
     const handleJoinClick = async () => {
         if (!isAuthenticated) {
             router.push(`/login?redirect=/`);
@@ -158,28 +138,18 @@ export default function DesktopHeader({
         setIsJoining(true);
 
         try {
-            await apiService.arm.join(
-                currentSlug || 'barton'
-            );
+            await apiService.arm.join(currentSlug || 'barton');
 
-            toast.success(
-                'با موفقیت در بازار عضو شدید'
-            );
+            toast.success('با موفقیت در بازار عضو شدید');
 
             await refetchArms();
 
             setIsMember(true);
         } catch (error: any) {
-            if (
-                error?.data?.errorCode ===
-                'ALREADY_MEMBER'
-            ) {
+            if (error?.data?.errorCode === 'ALREADY_MEMBER') {
                 setIsMember(true);
             } else {
-                toast.error(
-                    error?.message ||
-                    'خطا در عضویت'
-                );
+                toast.error(error?.message || 'خطا در عضویت');
             }
         } finally {
             setIsJoining(false);
@@ -189,80 +159,45 @@ export default function DesktopHeader({
     // ------------------------------------------------------------
     // خروج
     // ------------------------------------------------------------
-
     const handleLogout = () => {
         setMenuOpen(false);
-
         dispatch(performLogout());
-
         router.push('/');
+    };
+
+    // ------------------------------------------------------------
+    // تغییر بازار
+    // ------------------------------------------------------------
+    const switchArm = (slug: string) => {
+        setArmSwitcherOpen(false);
+        router.push(`/${slug}`);
     };
 
     // ------------------------------------------------------------
     // اطلاعات بازوی فعلی
     // ------------------------------------------------------------
+    const armName = currentArm?.name || 'Daymat';
+    const armSlogan = currentArm?.slogan || 'قیمت امروز فروشندگان عمده مصالح';
+    const armPrimaryColor = currentArm?.colorPrimary || '#a11f2c';
 
-    const armName =
-        currentArm?.name || 'Daymat';
-
-    const armSlogan =
-        currentArm?.slogan ||
-        'قیمت امروز فروشندگان عمده مصالح';
-
-    const API_BASE =
-        process.env.NEXT_PUBLIC_API_BASE_URL?.replace(
-            /\/$/,
-            ''
-        ) || 'http://localhost:3011';
-
-    const logoFileId =
-        (currentArm as any)?.config?.general
-            ?.logoFileId ||
-        currentArm?.logoUrl;
-
-    const logoFile =
-        (currentArm as any)?.config?.general
-            ?.logoFile;
-
+    const logoFile = (currentArm as any)?.config?.general?.logoFile;
     const logoSrc =
         logoFile?.path ||
-        (currentArm as any)?.config?.general
-            ?.logoUrl ||
+        (currentArm as any)?.config?.general?.logoUrl ||
         '/images/logo.png';
 
     // ------------------------------------------------------------
     // اطلاعات کاربر
     // ------------------------------------------------------------
+    const fullName = user?.fullName || 'کاربر';
+    const avatarSrc = user?.avatarFile?.thumbnailPath || user?.avatarFile?.path || null;
 
-    const fullName =
-        user?.fullName || 'کاربر';
+    const showJoin = isHomePage && (!isAuthenticated || !isMember) && !armsLoading;
 
-    // استفاده مستقیم از thumbnailPath آروان
-    const avatarSrc =
-        user?.avatarFile?.thumbnailPath ||
-        user?.avatarFile?.path ||
-        null;
+    const showTestBadge = currentArm?.config?.general?.showTestBadge ?? true;
+    const testBadgeText = currentArm?.config?.general?.testBadgeText;
 
-    // ------------------------------------------------------------
-    // وضعیت نمایش دکمه‌ها
-    // ------------------------------------------------------------
-
-    const showJoin =
-        isHomePage &&
-        (!isAuthenticated || !isMember) &&
-        !armsLoading;
-
-    // ------------------------------------------------------------
-    // Badge آزمایشی
-    // ------------------------------------------------------------
-
-    const showTestBadge =
-        currentArm?.config?.general
-            ?.showTestBadge ?? true;
-
-    const testBadgeText =
-        currentArm?.config?.general
-            ?.testBadgeText;
+    const userArmsList = arms || [];
 
     // ============================================================
     // RENDER
@@ -276,10 +211,7 @@ export default function DesktopHeader({
                 dark:bg-gray-900
                 border-b
                 border-outline-variant/20
-                ${fixed
-                ? 'sticky top-0 left-0 right-0 z-50 w-full'
-                : ''
-            }
+                ${fixed ? 'sticky top-0 left-0 right-0 z-50 w-full' : ''}
             `}
         >
             <div
@@ -289,195 +221,207 @@ export default function DesktopHeader({
                     justify-between
                     px-6
                     lg:px-8
-                    h-[80px]
+                    h-[72px]
                 "
             >
+                <div className="flex items-center gap-3">
 
-                {/* ==================================================
-                    سمت چپ:
-                    Daymat + بازوی فعال
-                ================================================== */}
-
-                <div className="flex items-center gap-4">
-
-                    {/* ------------------------------------------------
-                        Daymat - برند مادر
-                    ------------------------------------------------ */}
-
-                    <button
-                        onClick={() => router.push('/')}
-                        aria-label="Daymat"
-                        className="
-                            flex
-                            items-center
-                            gap-2
-                            group
-                            flex-shrink-0
-                            cursor-pointer
-                        "
-                    >
-                        {/* آیکون دیمت Daymat */}
-
-                        <div className="w-25 h-7  rounded">
-                            <Image src="/images/logo2.png" alt="دی مت" width={32} height={32} className="w-full h-full object-cover" />
-                        </div>
-
-
-                    </button>
-
-                    {/* ------------------------------------------------
-                        جداکننده Daymat و بازو
-                    ------------------------------------------------ */}
-
-                    <div
-                        className="
-                            h-8
-                            w-px
-                            bg-gray-200
-                            dark:bg-gray-700
-                        "
-                    />
-
-                    {/* ------------------------------------------------
-                        بازوی فعال
-                    ------------------------------------------------ */}
-
-                    <div
-                        className="
-                            flex
-                            items-center
-                            gap-3
-                        "
-                    >
-
+                    <div className="flex items-center gap-3">
                         {/* لوگوی بازو */}
-
                         <div
                             className="
-                                w-12
-                                h-12
-                                cursor-pointer
-                                relative
-                                rounded-lg
-                                overflow-hidden
-                                flex-shrink-0
-                                hover:opacity-80
-                                transition-opacity
-                            "
-                            onClick={() =>
-                                router.push('/')
-                            }
+        cursor-pointer
+        relative
+        rounded-lg
+        overflow-hidden
+        hover:opacity-80
+        transition-opacity
+        p-0.5
+        flex-shrink-0
+    "
+                            style={{ width: 'auto', height: '60px' }} // ارتفاع ثابت، عرض خودکار
+                            onClick={() => router.push('/')}
                         >
                             <Image
                                 src={logoSrc}
                                 alt={armName}
-                                fill
-                                className="object-contain"
-                                unoptimized={logoSrc.startsWith(
-                                    'http'
-                                )}
-                                sizes="48px"
+                                width={0} // عرض توسط height کنترل می‌شود
+                                height={60} // ارتفاع ثابت
+                                className="w-auto h-full object-contain"
+                                unoptimized={logoSrc.startsWith('http')}
+                                sizes="auto"
                             />
                         </div>
 
                         {/* نام و شعار بازو */}
-
-                        <div
-                            className="
-                                flex
-                                flex-col
-                                text-right
-                            "
-                        >
-
-                            {/* نام بازو + Badge */}
-
-                            <div
-                                className="
-                                    flex
-                                    items-center
-                                    gap-1.5
-                                "
-                            >
+                        <div className="flex flex-col text-right">
+                            <div className="flex items-center gap-1.5">
                                 <button
-                                    onClick={() =>
-                                        router.push('/')
-                                    }
+                                    onClick={() => router.push('/')}
                                     className="
-                                        font-extrabold
+                                        font-bold
                                         text-gray-900
                                         dark:text-gray-100
-                                        text-[15px]
+                                        text-[16px]
                                         leading-tight
                                         hover:opacity-80
                                         transition-opacity
                                     "
+                                    style={{ color: armPrimaryColor }}
                                 >
                                     {armName}
                                 </button>
 
-                                {showTestBadge &&
-                                    testBadgeText && (
-                                        <span
+                                {showTestBadge && testBadgeText && (
+                                    <span
+                                        className="
+                                            inline-flex
+                                            items-center
+                                            text-[9px]
+                                            font-medium
+                                            text-primary
+                                            bg-primary/10
+                                            border
+                                            border-primary/20
+                                            rounded-full
+                                            px-1.5
+                                            py-0.5
+                                            whitespace-nowrap
+                                        "
+                                    >
+                                        {testBadgeText}
+                                    </span>
+                                )}
+
+                                {/* سوئیچر بازار (اگر بیش از یک بازار عضو باشه) */}
+                                {isAuthenticated && userArmsList.length > 1 && (
+                                    <div className="relative">
+                                        <button
+                                            ref={switcherButtonRef}
+                                            onClick={() =>
+                                                setArmSwitcherOpen(!armSwitcherOpen)
+                                            }
                                             className="
-                                                inline-flex
+                                                flex
                                                 items-center
-                                                text-[10px]
-                                                font-medium
-                                                text-primary
-                                                bg-primary/10
-                                                border
-                                                border-primary/20
-                                                rounded-full
-                                                px-1.5
-                                                py-0.5
-                                                whitespace-nowrap
+                                                gap-0.5
+                                                text-gray-400
+                                                hover:text-gray-600
+                                                dark:hover:text-gray-300
+                                                transition-colors
+                                                p-0.5
+                                                rounded
+                                                hover:bg-gray-100
+                                                dark:hover:bg-gray-800
                                             "
                                         >
-                                            {testBadgeText}
-                                        </span>
-                                    )}
+                                            <ChevronDown className="w-4 h-4" />
+                                        </button>
+
+                                        {armSwitcherOpen && (
+                                            <div
+                                                ref={switcherRef}
+                                                className="
+                                                    absolute
+                                                    right-0
+                                                    top-full
+                                                    mt-2
+                                                    w-56
+                                                    bg-white
+                                                    dark:bg-gray-800
+                                                    border
+                                                    border-gray-200
+                                                    dark:border-gray-700
+                                                    rounded-xl
+                                                    shadow-xl
+                                                    py-1.5
+                                                    z-[100]
+                                                "
+                                            >
+                                                <div className="px-3 py-1.5 border-b border-gray-100 dark:border-gray-700">
+                                                    <span className="text-[10px] text-gray-500 dark:text-gray-400">
+                                                        بازارهای من
+                                                    </span>
+                                                </div>
+                                                {userArmsList.map((arm: any) => (
+                                                    <button
+                                                        key={arm.slug}
+                                                        onClick={() =>
+                                                            switchArm(arm.slug)
+                                                        }
+                                                        className={`
+                                                            w-full
+                                                            flex
+                                                            items-center
+                                                            gap-3
+                                                            px-3
+                                                            py-2
+                                                            text-sm
+                                                            text-right
+                                                            hover:bg-gray-100
+                                                            dark:hover:bg-gray-700
+                                                            transition-colors
+                                                            ${arm.slug === currentSlug
+                                                            ? 'bg-primary/5 dark:bg-primary/10 text-primary'
+                                                            : 'text-gray-700 dark:text-gray-200'
+                                                        }
+                                                        `}
+                                                    >
+                                                        <div className="w-6 h-6 relative rounded overflow-hidden flex-shrink-0">
+                                                            <Image
+                                                                src={
+                                                                    arm?.logoUrl||'/images/logo.png'
+                                                                }
+                                                                alt={arm.name}
+                                                                fill
+                                                                className="object-contain"
+                                                                unoptimized
+                                                                sizes="24px"
+                                                            />
+                                                        </div>
+                                                        <span className="truncate flex-1">
+                                                            {arm.name}
+                                                        </span>
+                                                        {arm.slug ===
+                                                            currentSlug && (
+                                                                <span className="text-[10px] text-primary">
+                                                                ✓
+                                                            </span>
+                                                            )}
+                                                    </button>
+                                                ))}
+                                            </div>
+                                        )}
+                                    </div>
+                                )}
                             </div>
 
                             {/* شعار بازو */}
-
-                            <span
-                                className="
+                            {armSlogan &&(
+                                <span
+                                    className="
                                     text-gray-400
                                     dark:text-gray-500
                                     text-[11px]
-                                    mt-1
+                                    mt-2
                                 "
-                            >
+                                >
                                 {armSlogan}
                             </span>
+                            )}
 
                         </div>
                     </div>
                 </div>
 
                 {/* ==================================================
-                    سمت راست:
-                    ثبت قیمت + پروفایل
+                    سمت راست: ثبت قیمت + پروفایل
                 ================================================== */}
-
-                <div
-                    className="
-                        flex
-                        items-center
-                        gap-3
-                    "
-                >
-
-                    {/* ------------------------------------------------
-                        ثبت قیمت
-                    ------------------------------------------------ */}
-
+                <div className="flex items-center gap-3">
+                    {/* ثبت قیمت */}
                     <button
                         onClick={() =>
-                            router.push(
-                                `/ad/create?arm=${currentSlug}`
-                            )
+                            router.push(`/ad/create?arm=${currentSlug}`)
                         }
                         className="
                             flex
@@ -496,24 +440,18 @@ export default function DesktopHeader({
                         "
                     >
                         <Plus className="w-4 h-4" />
-
                         ثبت قیمت
                     </button>
 
                     {/* ==================================================
                         پروفایل / منوی کاربری
                     ================================================== */}
-
                     {isAuthenticated ? (
                         <div className="relative">
-
                             {/* دکمه پروفایل */}
-
                             <button
                                 ref={buttonRef}
-                                onClick={() =>
-                                    setMenuOpen(!menuOpen)
-                                }
+                                onClick={() => setMenuOpen(!menuOpen)}
                                 className="
                                     flex
                                     items-center
@@ -529,22 +467,8 @@ export default function DesktopHeader({
                                     transition-colors
                                 "
                             >
-
-                                {/* Avatar */}
-
                                 {avatarSrc ? (
-                                    <div
-                                        className="
-                                            w-9
-                                            h-9
-                                            rounded-full
-                                            overflow-hidden
-                                            border
-                                            border-gray-200
-                                            dark:border-gray-700
-                                            flex-shrink-0
-                                        "
-                                    >
+                                    <div className="w-9 h-9 rounded-full overflow-hidden border border-gray-200 dark:border-gray-700 flex-shrink-0">
                                         <Image
                                             src={avatarSrc}
                                             alt={fullName}
@@ -561,20 +485,7 @@ export default function DesktopHeader({
                                         />
                                     </div>
                                 ) : (
-                                    <div
-                                        className="
-                                            w-9
-                                            h-9
-                                            rounded-full
-                                            overflow-hidden
-                                            border
-                                            border-gray-200
-                                            dark:border-gray-700
-                                            flex-shrink-0
-                                            bg-gray-100
-                                            dark:bg-gray-800
-                                        "
-                                    >
+                                    <div className="w-9 h-9 rounded-full overflow-hidden border border-gray-200 dark:border-gray-700 flex-shrink-0 bg-gray-100 dark:bg-gray-800">
                                         <Image
                                             src="/images/no_profile_image.jpg"
                                             alt="بدون تصویر"
@@ -588,16 +499,12 @@ export default function DesktopHeader({
                                         />
                                     </div>
                                 )}
-
-                                <ChevronDown
-                                    className="w-4 h-4"
-                                />
+                                <ChevronDown className="w-4 h-4" />
                             </button>
 
                             {/* ==================================================
                                 منوی کاربر
                             ================================================== */}
-
                             {menuOpen && (
                                 <div
                                     ref={menuRef}
@@ -618,53 +525,70 @@ export default function DesktopHeader({
                                         z-[100]
                                     "
                                 >
-
                                     {/* ------------------------------------------------
-                                        سربرگ کاربر
-                                    ------------------------------------------------ */}
-
+    سربرگ کاربر + دکمه بستن
+----------------------------------------------- */}
                                     <div
                                         className="
-                                            px-4
-                                            py-2
-                                            border-b
-                                            border-gray-100
-                                            dark:border-gray-700
-                                        "
+        px-4
+        py-2
+        border-b
+        border-gray-100
+        dark:border-gray-700
+        flex
+        items-center
+        justify-between
+    "
                                     >
-                                        <p
-                                            className="
-                                                text-sm
-                                                font-semibold
-                                                text-gray-900
-                                                dark:text-gray-100
-                                                truncate
-                                            "
-                                        >
-                                            {fullName}
-                                        </p>
+                                        <div className="flex-1 min-w-0">
+                                            <p
+                                                className="
+                text-sm
+                font-semibold
+                text-gray-900
+                dark:text-gray-100
+                truncate
+            "
+                                            >
+                                                {fullName}
+                                            </p>
 
-                                        <p
+                                            <p
+                                                className="
+                                                        text-[10px]
+                                                        text-gray-500
+                                                        dark:text-gray-400
+                                                    "
+                                            >
+                                                {user?.phone}
+                                            </p>
+                                        </div>
+
+                                        {/* دکمه بستن منو */}
+                                        <button
+                                            onClick={() => setMenuOpen(false)}
                                             className="
-                                                text-[10px]
-                                                text-gray-500
-                                                dark:text-gray-400
+                                                p-1
+                                                rounded-lg
+                                                hover:bg-gray-100
+                                                dark:hover:bg-gray-700
+                                                transition-colors
+                                                flex-shrink-0
+                                                ml-2
                                             "
+                                            aria-label="بستن منو"
                                         >
-                                            {user?.phone}
-                                        </p>
+                                            <X className="w-4 h-4 text-gray-500 dark:text-gray-400" />
+                                        </button>
                                     </div>
 
                                     {/* ------------------------------------------------
-                                        پنل کاربری
+                                        پروفایل من
                                     ------------------------------------------------ */}
-
                                     <button
                                         onClick={() => {
                                             setMenuOpen(false);
-                                            router.push(
-                                                '/profile'
-                                            );
+                                            router.push('/profile');
                                         }}
                                         className="
                                             w-full
@@ -691,20 +615,17 @@ export default function DesktopHeader({
                                             "
                                         />
 
-                                        پنل کاربری
+                                        پروفایل من
                                     </button>
 
                                     {/* ------------------------------------------------
                                         مدیریت بازار
                                     ------------------------------------------------ */}
-
                                     {isArmOwner && (
                                         <button
                                             onClick={() => {
                                                 setMenuOpen(false);
-                                                router.push(
-                                                    '/arm-admin'
-                                                );
+                                                router.push('/arm-admin');
                                             }}
                                             className="
                                                 w-full
@@ -736,17 +657,13 @@ export default function DesktopHeader({
                                     {/* ------------------------------------------------
                                         پنل ادمین
                                     ------------------------------------------------ */}
-
-                                    {user?.role ===
-                                        'system_admin' && (
-                                            <button
-                                                onClick={() => {
-                                                    setMenuOpen(false);
-                                                    router.push(
-                                                        '/admin'
-                                                    );
-                                                }}
-                                                className="
+                                    {user?.role === 'system_admin' && (
+                                        <button
+                                            onClick={() => {
+                                                setMenuOpen(false);
+                                                router.push('/admin');
+                                            }}
+                                            className="
                                                 w-full
                                                 flex
                                                 items-center
@@ -760,26 +677,24 @@ export default function DesktopHeader({
                                                 transition-colors
                                                 text-right
                                             "
-                                            >
-                                                <ShieldCheck
-                                                    className="
+                                        >
+                                            <ShieldCheck
+                                                className="
                                                     w-4
                                                     h-4
                                                 "
-                                                />
+                                            />
 
-                                                پنل ادمین
-                                            </button>
-                                        )}
+                                            پنل ادمین
+                                        </button>
+                                    )}
 
                                     {/* ------------------------------------------------
                                         حالت تاریک
                                     ------------------------------------------------ */}
-
                                     <ThemeToggle />
 
                                     {/* جداکننده */}
-
                                     <div
                                         className="
                                             border-t
@@ -792,13 +707,10 @@ export default function DesktopHeader({
                                     {/* ------------------------------------------------
                                         درباره ما
                                     ------------------------------------------------ */}
-
                                     <button
                                         onClick={() => {
                                             setMenuOpen(false);
-                                            router.push(
-                                                '/docs/about'
-                                            );
+                                            router.push('/docs/about');
                                         }}
                                         className="
                                             w-full
@@ -831,13 +743,10 @@ export default function DesktopHeader({
                                     {/* ------------------------------------------------
                                         قوانین
                                     ------------------------------------------------ */}
-
                                     <button
                                         onClick={() => {
                                             setMenuOpen(false);
-                                            router.push(
-                                                '/docs/terms'
-                                            );
+                                            router.push('/docs/terms');
                                         }}
                                         className="
                                             w-full
@@ -867,8 +776,43 @@ export default function DesktopHeader({
                                         قوانین
                                     </button>
 
-                                    {/* جداکننده */}
+                                    {/* ------------------------------------------------
+                                        پیشنهادات و انتقادات
+                                    ------------------------------------------------ */}
+                                    <button
+                                        onClick={() => {
+                                            setMenuOpen(false);
+                                            router.push('/feedback');
+                                        }}
+                                        className="
+                                            w-full
+                                            flex
+                                            items-center
+                                            gap-2
+                                            px-4
+                                            py-2.5
+                                            text-sm
+                                            text-gray-700
+                                            dark:text-gray-200
+                                            hover:bg-gray-100
+                                            dark:hover:bg-gray-700
+                                            transition-colors
+                                            text-right
+                                        "
+                                    >
+                                        <Lightbulb
+                                            className="
+                                                w-4
+                                                h-4
+                                                text-yellow-500
+                                                dark:text-yellow-400
+                                            "
+                                        />
 
+                                        پیشنهادات و انتقادات
+                                    </button>
+
+                                    {/* جداکننده */}
                                     <div
                                         className="
                                             border-t
@@ -879,10 +823,36 @@ export default function DesktopHeader({
                                     />
 
                                     {/* ------------------------------------------------
+                                        قدرت گرفته از دی مت
+                                    ------------------------------------------------ */}
+                                    <div
+                                        className="
+                                            px-4
+                                            py-3
+                                            border-t
+                                            border-gray-100
+                                            dark:border-gray-700
+                                            mt-1
+                                        "
+                                    >
+                                        <div className="flex items-center justify-center gap-2">
+                                            <div className="w-40 h-10 relative">
+                                                <Image
+                                                    src="/images/logo2.png"
+                                                    alt="دیمت"
+                                                    width={20}
+                                                    height={20}
+                                                    className="w-full h-full object-contain"
+                                                />
+                                            </div>
+
+                                        </div>
+                                    </div>
+
+                                    {/* ------------------------------------------------
                                         خروج
                                     ------------------------------------------------ */}
-
-                                    <button
+                                    {/*<button
                                         onClick={handleLogout}
                                         className="
                                             w-full
@@ -907,22 +877,13 @@ export default function DesktopHeader({
                                         />
 
                                         خروج
-                                    </button>
-
+                                    </button>*/}
                                 </div>
                             )}
-
                         </div>
                     ) : (
-
-                        /* ------------------------------------------------
-                           کاربر وارد نشده
-                        ------------------------------------------------ */
-
                         <button
-                            onClick={() =>
-                                router.push('/login')
-                            }
+                            onClick={() => router.push('/login')}
                             className="
                                 text-xs
                                 text-gray-500
@@ -934,9 +895,7 @@ export default function DesktopHeader({
                         >
                             ورود
                         </button>
-
                     )}
-
                 </div>
             </div>
         </header>

@@ -8,7 +8,7 @@ import { RootState } from '@/lib/store/store';
 import { FormHeader } from '@/app/components';
 import { useCreditBalance, usePurchaseCredit } from '@/lib/api/apiHooks';
 import { toast } from 'sonner';
-import { CreditCard, Banknote, Loader2, Shield, Check, Info, Phone } from 'lucide-react';
+import { CreditCard, Banknote, Loader2, Shield, Check, Info, Phone, Sparkles, Users, Rocket } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { NumberInput } from "@/components/common";
 import { FileUploader } from '@/components/common/FileUploader';
@@ -32,7 +32,7 @@ export default function PurchaseCreditPage() {
     const [isSubmitting, setIsSubmitting] = useState(false);
     const [uploadError, setUploadError] = useState<string | null>(null);
     const [showSuccess, setShowSuccess] = useState(false);
-
+    const [isExpanded, setIsExpanded] = useState(false);
     // ============================================================
     // ✅ خواندن تنظیمات از config بازو
     // ============================================================
@@ -82,7 +82,6 @@ export default function PurchaseCreditPage() {
             setPaymentMethod('online');
         }
 
-        // ✅ اگر فقط یک درگاه فعال هست، همان انتخاب شود
         if (enabledGateways.length === 1) {
             setSelectedGateway(enabledGateways[0].name);
         }
@@ -159,11 +158,9 @@ export default function PurchaseCreditPage() {
                 creditCount,
             });
 
-            // ✅ اگر پرداخت آنلاین و آدرس پرداخت وجود داشت، هدایت کن
             if (paymentMethod === 'online' && result.payment_url) {
                 window.location.href = result.payment_url;
             } else {
-                // ✅ نمایش پیام موفقیت و هدایت به صفحه تراکنش‌ها
                 setShowSuccess(true);
                 toast.success('فیش شما ارسال شد. پس از تایید مدیر، اعتبار شما افزایش می‌یابد.');
                 await refetchBalance();
@@ -179,7 +176,6 @@ export default function PurchaseCreditPage() {
         }
     };
 
-    // اگر پیام موفقیت نشان داده شود
     if (showSuccess) {
         return (
             <div className="min-h-screen flex flex-col bg-surface">
@@ -211,9 +207,42 @@ export default function PurchaseCreditPage() {
 
             <main className="flex-1 w-full max-w-lg mx-auto px-4 pt-20">
                 <form onSubmit={handleSubmit} className="space-y-6">
+                    {/* ⭐ کارت توضیحی اعتبار - جدید */}
+
+                        {/* ⭐ کارت توضیحی اعتبار - جمع‌شونده */}
+                        <div className="bg-white dark:bg-gray-900 rounded-2xl border border-outline-variant/50 dark:border-gray-800 shadow-sm overflow-hidden">
+                            <button
+                                type="button"
+                                onClick={() => setIsExpanded(!isExpanded)}
+                                className="w-full flex items-center justify-between p-4 hover:bg-surface-container-low dark:hover:bg-gray-800 transition-colors text-right"
+                            >
+                                <div className="flex items-center gap-3">
+                                    <div className="w-8 h-8 rounded-full bg-primary/10 dark:bg-primary/20 flex items-center justify-center flex-shrink-0">
+                                        <Sparkles className="w-4 h-4 text-primary" />
+                                    </div>
+                                    <h3 className="text-sm font-semibold text-on-surface dark:text-gray-100">
+                                        اعتبار چیست؟
+                                    </h3>
+                                </div>
+                                <span className="text-on-surface-variant dark:text-gray-400">
+            {isExpanded ? '▴' : '▾'}
+        </span>
+                            </button>
+
+                            {isExpanded && (
+                                <div className="p-4 pb-4 space-y-3">
+                                    <p className="text-xs text-on-surface-variant dark:text-gray-400 leading-relaxed">
+                                     با خرید اعتبار می توانید آگهی های خود را نردبان کنید و یا آگهی بیش از سهمیه رایگان ثبت کنید و در کل برای استفاده از امکانات غیر رایگان اعتبار نیاز دارید. همیچنین به زودی بستری فراهم می شود تا با فعالیتهایی مانند دعوت از دوستان اعتبار دریافت کنید.
+                                    </p>
+
+                                </div>
+                            )}
+                        </div>
+
+
                     {/* موجودی فعلی */}
                     <div className="bg-white p-5 rounded-2xl border border-outline-variant/50 shadow-sm text-center">
-                        <p className="text-sm text-on-surface-variant">موجودی اعتبار شما</p>
+                        <p className="text-sm text-on-surface-variant">موجودی اعتبار من</p>
                         <p className="text-3xl font-bold text-primary mt-1">
                             {balance?.balance?.toLocaleString() || 0} <span className="text-base font-normal text-on-surface-variant">اعتبار</span>
                         </p>
@@ -271,7 +300,6 @@ export default function PurchaseCreditPage() {
                         </label>
 
                         <div className="space-y-3">
-                            {/* پرداخت آنلاین */}
                             {onlineAvailable && (
                                 <div className="space-y-2">
                                     <button
@@ -298,7 +326,6 @@ export default function PurchaseCreditPage() {
                                         )}
                                     </button>
 
-                                    {/* ✅ انتخاب درگاه (اگر بیش از یک درگاه فعال باشد) */}
                                     {paymentMethod === 'online' && enabledGateways.length > 0 && (
                                         <div className="space-y-3">
                                             <label className="text-sm font-semibold text-on-surface block">
@@ -368,7 +395,6 @@ export default function PurchaseCreditPage() {
                                 </div>
                             )}
 
-                            {/* پرداخت کارت به کارت */}
                             {manualAvailable && (
                                 <button
                                     type="button"
@@ -404,7 +430,7 @@ export default function PurchaseCreditPage() {
                         )}
                     </div>
 
-                    {/* اطلاعات کارت به کارت (جمع‌وجور شده) */}
+                    {/* اطلاعات کارت به کارت */}
                     {paymentMethod === 'manual' && manualAvailable && (
                         <div id="manual-payment-section" className="bg-amber-50/80 border border-amber-200/60 rounded-xl p-4 space-y-3">
                             <div className="flex items-center gap-2 text-amber-700">
@@ -412,7 +438,6 @@ export default function PurchaseCreditPage() {
                                 <span className="text-sm font-medium">اطلاعات واریز</span>
                             </div>
 
-                            {/* اطلاعات بانکی با grid دو ستونه */}
                             <div className="grid grid-cols-2 gap-x-3 gap-y-1.5 text-sm">
                                 {paymentConfig.manual?.cardNumber && (
                                     <>
@@ -435,7 +460,7 @@ export default function PurchaseCreditPage() {
                                 {paymentConfig.manual?.shebaNumber && (
                                     <>
                                         <span className="text-on-surface-variant text-xs">شماره شبا</span>
-                                        <span className="font-mono font-bold text-left" dir="ltr">{paymentConfig.manual.shebaNumber}</span>
+                                        <span className="font-monom font-bold text-left" dir="ltr">{paymentConfig.manual.shebaNumber}</span>
                                     </>
                                 )}
                             </div>
@@ -487,7 +512,7 @@ export default function PurchaseCreditPage() {
                         </div>
                     )}
 
-                    {/* دکمه پرداخت با عنوان پویا */}
+                    {/* دکمه پرداخت */}
                     <button
                         type="submit"
                         disabled={isSubmitting || isUploading || (!onlineAvailable && !manualAvailable) || (paymentMethod === 'manual' && !receiptFileId)}
@@ -516,7 +541,7 @@ export default function PurchaseCreditPage() {
                         )}
                     </button>
 
-                    {/* راهنمای تکمیلی برای روش کارت به کارت */}
+                    {/* راهنمای تکمیلی */}
                     {paymentMethod === 'manual' && (
                         <div className="text-center text-xs text-amber-700/70 bg-amber-50/50 border border-amber-200/30 rounded-xl p-3">
                             <p> اگر در زمینه پرداخت سوال دارید با پشتیبان تماس بگیرید.</p>
@@ -542,12 +567,10 @@ export default function PurchaseCreditPage() {
 
                     <div className="text-center text-xs text-on-surface-variant/60 space-y-1">
                         <p>پس از تایید فیش، اعتبار به کیف پول شما اضافه می‌شود</p>
-
                     </div>
                 </form>
             </main>
 
-            {/* انیمیشن پیشرفت مخفی برای صفحه موفقیت */}
             <style jsx>{`
                 @keyframes progress {
                     0% { width: 0%; }

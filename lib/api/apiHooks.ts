@@ -132,23 +132,22 @@ export const useDeleteBusiness = () => {
 };
 
 // ============================================================
-// ARM HOOKS
+// ARM HOOKS بازارهای که کاربر در آنها عضو است
 // ============================================================
-// lib/api/apiHooks.ts
-// lib/api/apiHooks.ts
+
 export const useArms = () => {
     const user = useSelector((state: RootState) => state.auth.user);
     const isAuthenticated = useSelector((state: RootState) => state.auth.isAuthenticated);
     const userId = user?.id;
 
     return useQuery({
-        queryKey: ['arms', userId],   // کلید یکتا برای هر کاربر
+        queryKey: ['arms', userId],
         queryFn: () => apiService.arm.getUserArms(),
-        staleTime: 0,                 // ✅ همیشه تازه
-        gcTime: 0,                    // ✅ کش ذخیره نشود
+        staleTime: 5 * 60 * 1000, // ✅ ۵ دقیقه کش
+        gcTime: 10 * 60 * 1000,
         retry: 1,
-        refetchOnWindowFocus: true,   // ✅ رفرش هنگام فوکوس صفحه
-        refetchOnMount: true,
+        refetchOnWindowFocus: false,
+        refetchOnMount: false,      // ✅ با mount رفرش نشود
         enabled: isAuthenticated && !!userId,
     });
 };
@@ -664,6 +663,33 @@ export const useLocationTree = () => {
         queryFn: () => apiService.location.getFullTree(),
         staleTime: Infinity,
         gcTime: Infinity,
+    });
+};
+
+
+
+// lib/api/apiHooks.ts
+
+export const useAdDetail = (id: string, initialData?: any) => {
+    return useQuery({
+        queryKey: ['ad', id, 'detail'],
+        queryFn: () => apiService.ad.getDetail(id),
+        enabled: !!id,
+        initialData, // ✅ استفاده از initialData
+        staleTime: 5 * 60 * 1000,
+        gcTime: 10 * 60 * 1000,
+        retry: 1,
+        refetchOnMount: false,
+        refetchOnWindowFocus: false,
+    });
+};
+
+export const useAdSaved = (id: string) => {
+    return useQuery({
+        queryKey: ['ad', id, 'saved'],
+        queryFn: () => apiService.ad.getSavedAds().then(s => s.some((a: any) => a.id === id)),
+        enabled: false, // ✅ فقط دستی fetch شود
+        staleTime: 60 * 1000,
     });
 };
 

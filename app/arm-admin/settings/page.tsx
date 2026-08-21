@@ -347,7 +347,7 @@ export default function ArmAdminSettings() {
             </div>
 
             {/* دکمه ذخیره */}
-            {showSaveButton && (
+           {/* {showSaveButton && (
                 <button
                     onClick={handleSave}
                     disabled={!hasChanges || saving}
@@ -361,15 +361,15 @@ export default function ArmAdminSettings() {
                     {saving ? <Loader2 className="w-4 h-4 animate-spin" /> : <Save className="w-4 h-4" />}
                     {saving ? 'در حال ذخیره...' : 'ذخیره تغییرات'}
                 </button>
-            )}
+            )}*/}
 
             {/* دکمه ذخیره موبایل */}
             {showSaveButton && (
-                <div className="fixed bottom-0 left-0 right-0 bg-white dark:bg-gray-900 border-t border-outline-variant/20 dark:border-gray-800 p-4 z-40 lg:hidden">
+                <div className="fixed bottom-0  left-5 w-[200px] bg-white dark:bg-gray-900 border-t border-outline-variant/20 dark:border-gray-800 p-4 z-40 ">
                     <button
                         onClick={handleSave}
                         disabled={!hasChanges || saving}
-                        className="w-full bg-primary text-on-primary py-3 rounded-xl font-medium flex items-center justify-center gap-2 disabled:opacity-50"
+                        className="w-full bg-primary text-on-primary py-3 rounded font-medium flex items-center justify-center gap-2 disabled:opacity-50"
                     >
                         {saving ? <Loader2 className="w-5 h-5 animate-spin" /> : <Save className="w-5 h-5" />}
                         ذخیره تغییرات

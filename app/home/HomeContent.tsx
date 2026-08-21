@@ -5,7 +5,7 @@ import { useRouter, useSearchParams } from 'next/navigation';
 import { useSelector } from 'react-redux';
 import { RootState } from '@/lib/store/store';
 import { AppHeader, AppFooter } from '@/app/components';
-import { useVitrine } from '@/lib/api/apiHooks';
+import {useArms, useVitrine} from '@/lib/api/apiHooks';
 import { apiService } from '@/lib/api/apiService';
 import { toast } from 'sonner';
 import {Package, RefreshCw, Headphones, CheckCircle2, Archive, Clock, Wrench} from 'lucide-react';
@@ -39,7 +39,7 @@ export default function HomeContent() {
 
     const selectedCategory = otherFilters.find(f => f.type === 'category');
     const selectedCategoryId = selectedCategory?.value || null;
-
+    const { data: arms, refetch: refetchArms } = useArms();
     const findNodeById = useCallback((nodes: any[], id: string): any => {
         for (const node of nodes) {
             if (node.id === id) return node;
@@ -99,27 +99,56 @@ export default function HomeContent() {
         setMinAvailableQuantity(0);
     }, [clearFilters]);
 
+
+
     const handleContactClick = useCallback(async (adId: string) => {
-        if (!isAuthenticated) { router.push(`/login?arm=${currentSlug}&redirect=/${currentSlug}`); return; }
+        if (!isAuthenticated) {
+            router.push(`/login?arm=${currentSlug}&redirect=/${currentSlug}`);
+            return;
+        }
         if (isCalling) return;
         setIsCalling(true);
+
         try {
+            // ✅ استفاده از arms از کش به جای درخواست مستقیم
             let isMemberOfArm = false;
-            try { const arms = await apiService.arm.getUserArms(); isMemberOfArm = arms.some((a: any) => a.slug === currentSlug); } catch (e) {}
+            if (arms) {
+                isMemberOfArm = arms.some((a: any) => a.slug === currentSlug);
+            }
+
             if (!isMemberOfArm) {
-                try { await apiService.arm.join(currentSlug || 'barton'); } catch (joinError: any) {
-                    if (joinError?.data?.errorCode !== 'ALREADY_MEMBER') { toast.error('برای مشاهده شماره تماس، ابتدا عضو بازار شوید'); setIsCalling(false); return; }
+                try {
+                    await apiService.arm.join(currentSlug || 'barton');
+                    // ✅ بعد از عضویت، کش رو رفرش کن
+                    await refetchArms();
+                } catch (joinError: any) {
+                    if (joinError?.data?.errorCode !== 'ALREADY_MEMBER') {
+                        toast.error('برای مشاهده شماره تماس، ابتدا عضو بازار شوید');
+                        setIsCalling(false);
+                        return;
+                    }
                 }
             }
+
             const contactInfo = await apiService.ad.getContact(adId);
-            if (window.innerWidth < 768) { window.location.href = `tel:${contactInfo.phone}`; }
-            else { toast.info(`${contactInfo.businessName}\nشماره: ${contactInfo.phone}`, { duration: 8000 }); navigator.clipboard.writeText(contactInfo.phone).catch(()=>{}); }
+            if (window.innerWidth < 768) {
+                window.location.href = `tel:${contactInfo.phone}`;
+            } else {
+                toast.info(`${contactInfo.businessName}\nشماره: ${contactInfo.phone}`, { duration: 8000 });
+                navigator.clipboard.writeText(contactInfo.phone).catch(()=>{});
+            }
         } catch (error: any) {
-            if (error?.data?.errorCode === 'DAILY_CALL_LIMIT_EXCEEDED') toast.error(error?.data?.message || 'محدودیت تماس روزانه');
-            else if (error?.data?.errorCode === 'NOT_MEMBER') toast.error('برای مشاهده شماره تماس، ابتدا عضو بازار شوید');
-            else toast.error(error?.message || 'خطا');
-        } finally { setIsCalling(false); }
-    }, [isAuthenticated, isCalling, currentSlug, router]);
+            if (error?.data?.errorCode === 'DAILY_CALL_LIMIT_EXCEEDED') {
+                toast.error(error?.data?.message || 'محدودیت تماس روزانه');
+            } else if (error?.data?.errorCode === 'NOT_MEMBER') {
+                toast.error('برای مشاهده شماره تماس، ابتدا عضو بازار شوید');
+            } else {
+                toast.error(error?.message || 'خطا');
+            }
+        } finally {
+            setIsCalling(false);
+        }
+    }, [isAuthenticated, isCalling, currentSlug, router, arms, refetchArms]);
 
     const { data: vitrineData, isLoading: vitrineLoading } = useVitrine(vitrineSlug, filterParams);
 
