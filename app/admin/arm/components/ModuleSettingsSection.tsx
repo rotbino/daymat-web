@@ -44,7 +44,7 @@ const moduleConfigs: Record<string, { title: string; icon: any; rules: RuleNode[
         icon: TrendingUp,
         rules: [
             { key: 'requireLoginToViewPrices', label: 'مشاهده قیمت فقط برای اعضای سایت', hint: 'کاربر مهمان قیمت‌ها را نمی‌بیند', icon: 'Eye' },
-            { key: 'requireMembershipToViewPrices', label: 'عضویت در بازار برای مشاهده قیمت', hint: 'تا عضو بازار نشده قیمت مخفی است', icon: 'Shield' },
+            { key: 'requireMembershipToViewPrices', label: 'پیوستن به بازار برای مشاهده قیمت', hint: 'تا عضو بازار نشده قیمت مخفی است', icon: 'Shield' },
             { key: 'requireMembershipToCall', label: 'تماس فقط برای اعضای بازار', hint: 'دکمه تماس فقط برای اعضا فعال است', icon: 'Phone' },
             { key: 'allowAnonymousPublishing', label: 'انتشار ناشناس آگهی', hint: 'فروشنده بدون نمایش نام کسب‌وکار آگهی دهد', icon: 'Shield' },
             {
@@ -83,8 +83,8 @@ const moduleConfigs: Record<string, { title: string; icon: any; rules: RuleNode[
         title: 'تابلوی درخواست خرید',
         icon: ShoppingCart,
         rules: [
-            { key: 'requireMembershipToView', label: 'عضویت برای مشاهده درخواست‌ها', hint: 'فقط اعضای بازار ببینند', icon: 'Shield' },
-            { key: 'requireMembershipToSubmit', label: 'عضویت برای ثبت درخواست', hint: 'فقط اعضای بازار ثبت کنند', icon: 'Shield' },
+            { key: 'requireMembershipToView', label: 'پیوستن به بازار برای مشاهده درخواست‌ها', hint: 'فقط اعضای بازار ببینند', icon: 'Shield' },
+            { key: 'requireMembershipToSubmit', label: 'پیوستن به بازار برای ثبت درخواست', hint: 'فقط اعضای بازار ثبت کنند', icon: 'Shield' },
             { key: 'maxActiveRequestsPerUser', label: 'حداکثر درخواست فعال', icon: 'Package', isNumber: true, min: 1, max: 50, suffix: 'عدد' },
         ],
     },

@@ -198,9 +198,9 @@ export const useJoinArm = () => {
         onSuccess: (_, slug) => {
             queryClient.invalidateQueries({ queryKey: ['arm', slug] });
             queryClient.invalidateQueries({ queryKey: ['arms'] });
-            toast.success('عضویت با موفقیت انجام شد');
+            toast.success('پیوستن با موفقیت انجام شد');
         },
-        onError: (error: ApiError) => toast.error(error.message || 'خطا در عضویت'),
+        onError: (error: ApiError) => toast.error(error.message || 'خطا در پیوستن به بازار'),
     });
 };
 
@@ -630,25 +630,39 @@ export const useIndustriesLeaves = () => {
     });
 };
 
+
 // ──────────────────────────────────────────────
 // 🔹 هوک‌های مربوط به دسته‌بندی کالا (Categories)
 // ──────────────────────────────────────────────
-export const useCategoriesFlat = (slug?: string) => {
+
+/**
+ * ✅ دریافت لیست مسطح تمام دسته‌بندی‌ها
+ * برای استفاده در مودال انتخاب دسته‌بندی مرجع
+ * داده‌ها کش می‌شوند چون تغییرات کم دارند
+ */
+export const useCategoriesFlat = () => {
     return useQuery({
-        queryKey: ['categories', 'flat', slug ?? 'global'],
-        queryFn: () => apiService.arm.getAllCategoryFlat(slug),   // ← تغییر این خط
-        staleTime: Infinity,
-        gcTime: Infinity,
-        retry: 1,
+        queryKey: ['admin', 'categories', 'flat'],
+        queryFn: () => apiService.admin.categories.getAllFlat(),  // ✅ اصلاح شد
+        staleTime: 1000 * 60 * 30,  // 30 دقیقه کش
+        gcTime: 1000 * 60 * 60,   // 1 ساعت در حافظه
+        retry: 2,
+        refetchOnWindowFocus: false,
     });
 };
 
+/**
+ * ✅ دریافت درخت کامل دسته‌بندی‌ها
+ * برای صفحه مدیریت دسته‌بندی‌ها
+ */
 export const useCategoriesTree = () => {
     return useQuery({
-        queryKey: ['categories', 'tree'],
+        queryKey: ['admin', 'categories', 'tree'],
         queryFn: () => apiService.admin.categories.getTree(),
-        staleTime: Infinity,
-        gcTime: Infinity,
+        staleTime: 1000 * 60 * 30,  // 30 دقیقه کش
+        gcTime: 1000 * 60 * 60,   // 1 ساعت در حافظه
+        retry: 2,
+        refetchOnWindowFocus: false,
     });
 };
 

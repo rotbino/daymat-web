@@ -140,7 +140,7 @@ export function ArmCreateWizard() {
         formState: { errors },
     } = useForm({ defaultValues, mode: 'onTouched' });
 
-    // ─── لود بازو (در صورت وجود slug) ───
+    // ─── لود بازار (در صورت وجود slug) ───
     useEffect(() => {
         if (!slug || armLoaded) return;
         (async () => {
@@ -162,7 +162,7 @@ export function ArmCreateWizard() {
                 setArmId(arm.id);
                 setArmLoaded(true);
             } catch (error: any) {
-                toast.error(error?.message || 'خطا در دریافت اطلاعات بازو');
+                toast.error(error?.message || 'خطا در دریافت اطلاعات بازار');
                 router.replace('/admin/arm/create');
             }
         })();
@@ -229,7 +229,7 @@ export function ArmCreateWizard() {
         }
     };
 
-    // ─── ایجاد اولیه بازو (فقط مرحله basics) ───
+    // ─── ایجاد اولیه بازار (فقط مرحله basics) ───
     const handleCreateArm = async () => {
         const data = watch();
         try {
@@ -285,7 +285,7 @@ export function ArmCreateWizard() {
 
         try {
             await apiService.arm.update(armId, { config: updatedConfig });
-            // اگر بازو فعال است، Redux را هم به‌روز کن تا صفحه ثبت‌نام فوراً ببیند
+            // اگر بازار فعال است، Redux را هم به‌روز کن تا صفحه ثبت‌نام فوراً ببیند
             if (watch('status') === 'active' && slug) {
                 const freshArm = await apiService.arm.fetchArmData(slug);
                 dispatch(setArm({ arm: freshArm, slug }));
@@ -310,7 +310,7 @@ export function ArmCreateWizard() {
             return;
         }
 
-        // اگر در مرحله basics هستیم و هنوز armId نداریم، بازو را بساز
+        // اگر در مرحله basics هستیم و هنوز armId نداریم، بازار را بساز
         if (currentStep.id === 'basics' && !armId) {
             const newArmId = await handleCreateArm();
             if (!newArmId) return;
@@ -343,7 +343,7 @@ export function ArmCreateWizard() {
         if (!armId) return;
         try {
             await apiService.arm.update(armId, { status: 'active' });
-            // حالا بازو فعال شده، ریداکس را به‌روز کن
+            // حالا بازار فعال شده، ریداکس را به‌روز کن
             if (slug) {
                 const freshArm = await apiService.arm.fetchArmData(slug);
                 dispatch(setArm({ arm: freshArm, slug }));

@@ -36,11 +36,11 @@ const TABS: { id: SettingsTab; label: string; icon: string }[] = [
     { id: 'economy', label: 'اقتصاد', icon: '💰' },
     { id: 'modules', label: 'ماژول‌ها', icon: '🧩' },
     { id: 'access', label: 'دسترسی', icon: '🔐' },
-    { id: 'categories', label: 'دسته‌بندی‌ها', icon: '📂' },
+    { id: 'categories', label: 'گروهها', icon: '📂' },
    /* { id: 'industries', label: 'صنوف', icon: '🏭' },*/
     { id: 'locations', label: 'موقعیت‌ها', icon: '📍' },
     { id: 'labels', label: 'برچسب‌ها', icon: '🏷️' },
-    { id: 'permissions', label: 'دسترسی های من', icon: '🛡️' },
+   /* { id: 'permissions', label: 'دسترسی های من', icon: '🛡️' },*/
 ];
 
 export default function ArmAdminSettings() {
@@ -200,14 +200,14 @@ export default function ArmAdminSettings() {
                                         key={tab.id}
                                         onClick={() => handleTabChange(tab.id)}
                                         className={cn(
-                                            "flex items-center justify-center gap-2 px-4 py-2.5 text-sm font-medium rounded-lg transition-all whitespace-nowrap flex-shrink-0",
+                                            "flex flex-col items-center justify-center gap-2 px-4 py-2.5 text-sm font-medium rounded-lg transition-all whitespace-nowrap flex-shrink-0",
                                             isActive
                                                 ? 'bg-white dark:bg-gray-700 text-primary dark:text-primary-400 shadow-sm'
                                                 : 'text-on-surface-variant dark:text-gray-400 hover:text-on-surface dark:hover:text-gray-200',
                                         )}
                                     >
                                         <span>{tab.icon}</span>
-                                        <span className="hidden sm:inline">{tab.label}</span>
+                                        <span className="text-[10px]">{tab.label}</span>
                                     </button>
                                 );
                             })}

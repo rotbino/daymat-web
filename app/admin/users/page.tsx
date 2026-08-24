@@ -212,7 +212,7 @@ export default function AdminUsersPage() {
                                 { key: 'phone', label: 'موبایل' },
                                 { key: 'role', label: 'نقش' },
                                 { key: 'status', label: 'وضعیت' },
-                                { key: 'createdAt', label: 'عضویت' },
+                                { key: 'createdAt', label: 'تاریخ ثبت نام' },
                                 { key: null, label: 'بازارها' },
                                 { key: null, label: 'عملیات' },
                             ].map(col => (

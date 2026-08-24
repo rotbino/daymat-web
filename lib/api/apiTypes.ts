@@ -3,7 +3,7 @@
 // نقش‌های سیستمی (سطح کاربر) - ساده شده
 export type SystemRole = 'system_admin' | 'system_user';
 
-// نقش‌های سطح بازو (Arm) - ساده شده
+// نقش‌های سطح بازار (Arm) - ساده شده
 export type ArmRole = 'arm_owner' | 'arm_seller' | 'arm_buyer' | 'arm_member';
 
 // نقش‌های سطح کسب‌وکار (Business) - ساده شده
@@ -295,6 +295,8 @@ export interface CreateAdDto {
     isAnonymous?: boolean;
     isBumped?: boolean;
     customFields?: AdCustomFields;
+    unitQty?: number;
+    unitIsVariableQty?: boolean;
 }
 
 

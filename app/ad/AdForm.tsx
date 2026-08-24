@@ -14,7 +14,7 @@ import { toast } from 'sonner';
 import {
     Package, Send, Edit2, MapPin, Clock,
     ArrowDown, ArrowLeft, ArrowRight, TrendingUp, Plus, Check,
-    Settings, Layers, ClipboardCheck, CreditCard, AlertTriangle, FileText,
+    Settings, Layers, ClipboardCheck, CreditCard, AlertTriangle, FileText, Pencil,
 } from 'lucide-react';
 import Image from 'next/image';
 import { ArmLocationSelector } from '@/app/components/ArmLocationSelector';
@@ -28,7 +28,6 @@ import { SpecsSection } from './components/SpecsSection';
 import { PaymentMethodsSection } from './components/PaymentMethodsSection';
 import { useDeleteFile } from '@/lib/api/apiHooks';
 
-// ─── استپ‌های ویزارد ───
 const BASE_STEPS = [
     { title: 'گروه', icon: Layers },
     { title: 'قیمت', icon: Package },
@@ -47,12 +46,20 @@ interface QuantityConstraints {
     max: number | null;
 }
 
+interface UnitOption {
+    unitId: string;
+    unitTitle: string;
+    unitShortCode: string;
+    isVariableQty: boolean;
+    qty: number | null;
+    isDefault: boolean;
+}
+
 function getCategoryConstraintsFromTree(
     categoryId: string,
     armConfig: any,
     categoryTree: any[]
 ): QuantityConstraints {
-    // ۱. ابتدا در config بازو جستجو کن (محدودیت‌های سفارشی)
     const selection = armConfig?.categorySelections?.find(
         (s: any) => s.categoryId === categoryId
     );
@@ -64,7 +71,6 @@ function getCategoryConstraintsFromTree(
         }
     }
 
-    // ۲. اگر پیدا نشد، به والدین در درخت نگاه کن
     const findNodeInTree = (nodes: any[], id: string): any => {
         for (const node of nodes) {
             if (node.id === id) return node;
@@ -84,6 +90,50 @@ function getCategoryConstraintsFromTree(
     return { min: null, max: null };
 }
 
+// ✅ دریافت واحدهای قابل انتخاب برای کتگوری
+function getAvailableUnits(
+    categoryId: string,
+    armConfig: any,
+    categoryTree: any[]
+): UnitOption[] {
+    const selection = armConfig?.categorySelections?.find(
+        (s: any) => s.categoryId === categoryId
+    );
+
+    if (!selection) return [];
+
+    const units: UnitOption[] = [];
+
+    // ✅ واحد پیش‌فرض
+    if (selection.overrideUnitId) {
+        units.push({
+            unitId: selection.overrideUnitId,
+            unitTitle: selection.overrideUnitTitle || '',
+            unitShortCode: selection.overrideUnitShortCode || '',
+            isVariableQty: selection.overrideUnitIsVariableQty !== false,
+            qty: selection.overrideUnitQty ?? null,
+            isDefault: true,
+        });
+    }
+
+    // ✅ واحدهای فرعی
+    const altUnits = selection.alternativeUnits || [];
+    altUnits.forEach((au: any) => {
+        if (au.unitId && au.isActive !== false) {
+            units.push({
+                unitId: au.unitId,
+                unitTitle: au.unitTitle || '',
+                unitShortCode: au.unitShortCode || '',
+                isVariableQty: au.isVariableQty !== false,
+                qty: au.qty ?? null,
+                isDefault: false,
+            });
+        }
+    });
+
+    return units;
+}
+
 export function AdForm({ adId, onSuccess }: AdFormProps) {
     const router = useRouter();
     const { user, isAuthenticated } = useSelector((state: RootState) => state.auth);
@@ -100,7 +150,6 @@ export function AdForm({ adId, onSuccess }: AdFormProps) {
     const [redirecting, setRedirecting] = useState(false);
     const [activeAdsCount, setActiveAdsCount] = useState(0);
     const [loadingActiveAds, setLoadingActiveAds] = useState(true);
-    const [isLocationModalOpen, setIsLocationModalOpen] = useState(false);
     const [isSubmitting, setIsSubmitting] = useState(false);
     const [currentStep, setCurrentStep] = useState(1);
 
@@ -139,6 +188,11 @@ export function AdForm({ adId, onSuccess }: AdFormProps) {
         isAnonymous: false,
         isBumped: false,
         description: '',
+        // ✅ جدید
+        unitId: '',
+        unitTitle: '',
+        unitQty: null as number | null,
+        unitIsVariableQty: false,
     });
 
     const [bumpDurationHours, setBumpDurationHours] = useState<number>(24);
@@ -153,6 +207,9 @@ export function AdForm({ adId, onSuccess }: AdFormProps) {
     });
 
     const [adImageFiles, setAdImageFiles] = useState<{ id?: string; file?: File; previewUrl?: string }[]>([]);
+
+    // ✅ واحدهای قابل انتخاب
+    const [availableUnits, setAvailableUnits] = useState<UnitOption[]>([]);
 
     const findNodeById = (nodes: any[], id: string): any => {
         for (const node of nodes) {
@@ -172,7 +229,7 @@ export function AdForm({ adId, onSuccess }: AdFormProps) {
         return null;
     }, [formData.categoryId, categoryTree]);
 
-    const unitName = selectedCategoryData?.unitTitle || 'تن';
+    const unitName = formData.unitTitle || selectedCategoryData?.unitTitle || 'تن';
     const categoryExample = selectedCategoryData?.example || '';
 
     const locationTree = currentArm?.locationTree || [];
@@ -241,22 +298,49 @@ export function AdForm({ adId, onSuccess }: AdFormProps) {
 
     const TOTAL_STEPS = stepMeta.length;
 
-    const [allCategories, setAllCategories] = useState<any[]>([]);
     const [categoryConstraints, setCategoryConstraints] = useState<QuantityConstraints>({ min: null, max: null });
 
-
+    // ✅ وقتی کتگوری تغییر میکنه، واحدها رو آپدیت کن
     useEffect(() => {
-        if (formData.categoryId && categoryTree) {
+        if (formData.categoryId && armConfig && categoryTree) {
             const constraints = getCategoryConstraintsFromTree(
                 formData.categoryId,
-                currentArm?.config as any,
+                armConfig,
                 categoryTree
             );
             setCategoryConstraints(constraints);
+
+            const units = getAvailableUnits(formData.categoryId, armConfig, categoryTree);
+            setAvailableUnits(units);
+
+            // ✅ اگه واحد فعلی در لیست نیست، اولین واحد رو انتخاب کن
+            if (units.length > 0) {
+                const currentUnitExists = units.some(u => u.unitId === formData.unitId);
+                if (!currentUnitExists) {
+                    const defaultUnit = units.find(u => u.isDefault) || units[0];
+                    setFormData(prev => ({
+                        ...prev,
+                        unitId: defaultUnit.unitId,
+                        unitTitle: defaultUnit.unitTitle,
+                        unitQty: defaultUnit.qty,
+                        unitIsVariableQty: defaultUnit.isVariableQty,
+                    }));
+                }
+            } else {
+                // ✅ هیچ واحد خاصی تعریف نشده - رفتار مثل قبل
+                setFormData(prev => ({
+                    ...prev,
+                    unitId: selectedCategoryData?.defaultUnitId || '',
+                    unitTitle: selectedCategoryData?.unitTitle || 'تن',
+                    unitQty: null,
+                    unitIsVariableQty: false,
+                }));
+            }
         } else {
             setCategoryConstraints({ min: null, max: null });
+            setAvailableUnits([]);
         }
-    }, [formData.categoryId, currentArm?.config, categoryTree]);
+    }, [formData.categoryId, armConfig, categoryTree]);
 
     useEffect(() => {
         if (isEditMode && existingAd) {
@@ -274,6 +358,10 @@ export function AdForm({ adId, onSuccess }: AdFormProps) {
                 isAnonymous: existingAd.isAnonymous || false,
                 isBumped: existingAd.isBumped || false,
                 description: existingAd.description || '',
+                unitId: existingAd.unitId || '',
+                unitTitle: existingAd.unit?.title || '',
+                unitQty: existingAd.unitQty ?? null,
+                unitIsVariableQty: existingAd.unitIsVariableQty ?? false,
             });
 
             if (existingAd.isBumped) {
@@ -464,7 +552,7 @@ export function AdForm({ adId, onSuccess }: AdFormProps) {
 
         if (formData.isBumped && creditBalance && creditBalance.balance < totalBumpCost) {
             toast.error(`اعتبار کافی نیست. برای نردبان به ${totalBumpCost} اعتبار نیاز دارید.`);
-            setCurrentStep(isEditMode ? 4 : 4);
+            setCurrentStep(4);
             return;
         }
 
@@ -512,14 +600,14 @@ export function AdForm({ adId, onSuccess }: AdFormProps) {
             }
 
             const title = formData.productType
-                ? `${selectedCategoryData?.name || ''} ${formData.productType}`
-                : selectedCategoryData?.name || '';
+                ? `${selectedCategoryData?.title || ''} ${formData.productType}`
+                : selectedCategoryData?.title || '';
 
             let ad;
             if (isEditMode) {
                 const updateData: any = {
                     categoryId: formData.categoryId,
-                    unitId: selectedCategoryData?.defaultUnitId || '',
+                    unitId: formData.unitId || selectedCategoryData?.defaultUnitId || '',
                     title,
                     productType: formData.productType,
                     unitPrice: formData.unitPrice,
@@ -531,6 +619,9 @@ export function AdForm({ adId, onSuccess }: AdFormProps) {
                     validityHours: parseInt(formData.validityHours),
                     isAnonymous: formData.isAnonymous,
                     description: formData.description,
+                    // ✅ جدید
+                    unitQty: formData.unitQty,
+                    unitIsVariableQty: formData.unitIsVariableQty,
                 };
                 if (!isBumpActive) {
                     updateData.isBumped = formData.isBumped;
@@ -558,7 +649,7 @@ export function AdForm({ adId, onSuccess }: AdFormProps) {
                 ad = await createAdMutation.mutateAsync({
                     armSlug: currentSlug || 'barton',
                     categoryId: formData.categoryId,
-                    unitId: selectedCategoryData?.defaultUnitId || '',
+                    unitId: formData.unitId || selectedCategoryData?.defaultUnitId || '',
                     title,
                     productType: formData.productType,
                     unitPrice: formData.unitPrice,
@@ -573,6 +664,8 @@ export function AdForm({ adId, onSuccess }: AdFormProps) {
                     isBumped: formData.isBumped,
                     bumpDurationHours: formData.isBumped ? bumpDurationHours : undefined,
                     description: formData.description,
+                    unitQty: formData.unitQty,
+                    unitIsVariableQty: formData.unitIsVariableQty,
                 });
                 toast.success('آگهی با موفقیت ثبت شد');
             }
@@ -739,6 +832,9 @@ export function AdForm({ adId, onSuccess }: AdFormProps) {
                                         categoryId,
                                         minQuantity: 0,
                                         unitPrice: 0,
+                                        unitId: '',
+                                        unitTitle: '',
+                                        unitQty: null,
                                     }));
                                 }}
                             />
@@ -748,7 +844,7 @@ export function AdForm({ adId, onSuccess }: AdFormProps) {
                     <span className="w-7 h-7 rounded-lg bg-primary/10 flex items-center justify-center">
                       <Package className="w-3.5 h-3.5 text-primary" />
                     </span>
-                                        عنوان کالا {/*{selectedCategoryData.name || selectedCategoryData.title}*/}
+                                        عنوان کالا
                                         <span className="text-error text-xs">*</span>
                                     </label>
                                     <input
@@ -756,10 +852,131 @@ export function AdForm({ adId, onSuccess }: AdFormProps) {
                                         maxLength={30}
                                         value={formData.productType}
                                         onChange={(e) => setFormData(prev => ({ ...prev, productType: e.target.value }))}
-                                        //placeholder={categoryExample ? `مثال: ${categoryExample}` : `مثال: ${selectedCategoryData.name || selectedCategoryData.title} درجه یک`}
                                         placeholder={"عنوان کوتاه کالا را وارد کنید."}
                                         className="w-full h-12 bg-surface-container-lowest border border-outline/60 px-4 text-sm text-right placeholder:text-on-surface-variant/40 focus:ring-2 focus:ring-primary/20 focus:border-primary outline-none rounded-xl transition-all"
                                     />
+                                </div>
+                            )}
+
+
+                            {/* ✅ انتخاب واحد - فقط اگر واحدهای خاص تعریف شده باشه */}
+                            {/* ✅ انتخاب واحد */}
+                            {availableUnits.length > 0 && (
+                                <div className="bg-white p-4 rounded-2xl border border-outline-variant/40 shadow-sm space-y-3">
+                                    <label className="text-sm font-bold text-on-surface flex items-center gap-2">
+            <span className="w-7 h-7 rounded-lg bg-amber-100 flex items-center justify-center">
+                <Package className="w-3.5 h-3.5 text-amber-600" />
+            </span>
+                                        واحد فروش
+                                    </label>
+
+                                    <div className="space-y-2">
+                                        {availableUnits.map((unit, idx) => {
+                                            const isSelected = formData.unitId === unit.unitId;
+                                            const baseUnitTitle = selectedCategoryData?.baseUnitTitle || 'واحد';
+                                            const isEditingQty = isSelected && unit.isVariableQty && formData.isEditingQty;
+
+                                            return (
+                                                <div
+                                                    key={idx}
+                                                    className={cn(
+                                                        "rounded-xl border transition-all overflow-hidden",
+                                                        isSelected
+                                                            ? "border-primary bg-primary/5 shadow-sm shadow-primary/5"
+                                                            : "border-outline-variant/20 hover:border-primary/30"
+                                                    )}
+                                                >
+                                                    {/* سربرگ واحد - همیشه نمایش */}
+                                                    <button
+                                                        type="button"
+                                                        onClick={() => {
+                                                            setFormData(prev => ({
+                                                                ...prev,
+                                                                unitId: unit.unitId,
+                                                                unitTitle: unit.unitTitle,
+                                                                unitQty: unit.qty,
+                                                                unitIsVariableQty: unit.isVariableQty,
+                                                                isEditingQty: false, // ✅ بستن حالت ویرایش
+                                                            }));
+                                                        }}
+                                                        className="w-full text-right px-4 py-3 flex items-center justify-between gap-2"
+                                                    >
+                                                        <div className="flex items-center gap-2 flex-1 min-w-0">
+                                                            <div className={cn(
+                                                                "w-5 h-5 rounded-full border-2 flex items-center justify-center flex-shrink-0 transition-all",
+                                                                isSelected ? "border-primary bg-primary" : "border-outline-variant/40"
+                                                            )}>
+                                                                {isSelected && <Check className="w-3 h-3 text-white" />}
+                                                            </div>
+
+                                                            <span className="font-medium text-sm truncate">
+                                    {unit.unitTitle}
+                                </span>
+
+                                                            {unit.isDefault && (
+                                                                <span className="text-[9px] bg-primary/10 text-primary px-1.5 py-0.5 rounded-full font-medium flex-shrink-0">
+                                        پیش‌فرض
+                                    </span>
+                                                            )}
+                                                        </div>
+
+                                                        {/* تعداد + آیکون ویرایش */}
+                                                        <div className="flex items-center gap-1.5 flex-shrink-0">
+                                                            {formData.unitQty != null && isSelected && (
+                                                                <span className="text-[11px] text-on-surface-variant bg-surface-container-high/80 px-2 py-1 rounded-lg">
+                                        {formData.unitQty.toLocaleString()} {baseUnitTitle}
+                                    </span>
+                                                            )}
+
+                                                            {/* ✅ آیکون ویرایش - فقط برای واحد انتخاب‌شده و متغیر */}
+                                                            {isSelected && unit.isVariableQty && (
+                                                                <button
+                                                                    type="button"
+                                                                    onClick={(e) => {
+                                                                        e.stopPropagation();
+                                                                        setFormData(prev => ({
+                                                                            ...prev,
+                                                                            isEditingQty: !prev.isEditingQty, // ✅ toggle حالت ویرایش
+                                                                        }));
+                                                                    }}
+                                                                    className={cn(
+                                                                        "p-1.5 rounded-lg transition-colors",
+                                                                        isEditingQty
+                                                                            ? "bg-primary/10 text-primary"
+                                                                            : "hover:bg-primary/10 hover:text-primary"
+                                                                    )}
+                                                                    title={`ویرایش تعداد ${baseUnitTitle} در هر ${unit.unitTitle}`}
+                                                                >
+                                                                    <Pencil className="w-3.5 h-3.5" />
+                                                                </button>
+                                                            )}
+                                                        </div>
+                                                    </button>
+
+                                                    {/* ✅ ویرایش تعداد - فقط وقتی مداد زده شده */}
+                                                    {isEditingQty && (
+                                                        <div className="px-4 pb-3 pt-1 border-t border-primary/10 bg-primary/5">
+                                                            <div className="flex items-center gap-2">
+                                                                <label className="text-[11px] font-medium text-on-surface-variant whitespace-nowrap">
+                                                                    تعداد {baseUnitTitle} در هر {unit.unitTitle}:
+                                                                </label>
+                                                                <NumberInput
+                                                                    value={formData.unitQty || undefined}
+                                                                    onChange={(val) => setFormData(prev => ({ ...prev, unitQty: val || null }))}
+                                                                    placeholder={`مثلاً ${unit.qty || 24}`}
+                                                                    className="flex-1 h-10 bg-white border border-outline/60 px-3 text-sm font-medium text-right rounded-lg"
+                                                                    autoFocus
+                                                                />
+                                                            </div>
+                                                            <p className="text-[10px] text-on-surface-variant/50 mt-1.5">
+                                                                💡 می‌توانید تعداد {baseUnitTitle} در هر {unit.unitTitle} را تغییر دهید
+                                                            </p>
+                                                        </div>
+                                                    )}
+                                                </div>
+                                            );
+                                        })}
+                                    </div>
                                 </div>
                             )}
 
@@ -837,8 +1054,7 @@ export function AdForm({ adId, onSuccess }: AdFormProps) {
                                     value={formData.minQuantity || undefined}
                                     onChange={(val) => setFormData(prev => ({ ...prev, minQuantity: val || 0 }))}
                                     unit={unitName}
-                                    placeholder={``}
-                                    className="w-full h-14 bg-surface-container-lowest border border-outline/60 px-4  font-extrabold text-right  focus:ring-2 focus:ring-primary/20 focus:border-primary outline-none rounded-xl transition-all"
+                                    className="w-full h-14 bg-surface-container-lowest border border-outline/60 px-4 font-extrabold text-right focus:ring-2 focus:ring-primary/20 focus:border-primary outline-none rounded-xl transition-all"
                                 />
                                 {(categoryConstraints.min || categoryConstraints.max) && (
                                     <p className="text-[10px] text-primary/70 mt-1">

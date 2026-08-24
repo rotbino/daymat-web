@@ -121,7 +121,7 @@ export default function AdminActivitiesPage() {
             <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-6">
                 <div>
                     <h1 className="text-2xl font-bold text-on-surface">مدیریت فعالیت‌ها</h1>
-                    <p className="text-sm text-on-surface-variant mt-1">درخت فعالیت‌های قابل انتخاب برای بازوها</p>
+                    <p className="text-sm text-on-surface-variant mt-1">درخت فعالیت‌های قابل انتخاب برای بازارها</p>
                 </div>
                 <button onClick={handleAddRoot} className="flex items-center gap-2 px-4 py-2.5 bg-primary text-on-primary rounded-xl hover:bg-primary/90 transition-all text-sm font-medium">
                     <Plus className="w-4 h-4" />افزودن فعالیت اصلی

@@ -98,7 +98,7 @@ export function ChangePasswordModal({ isOpen, onClose, onSuccess }: ChangePasswo
                                     setNewPassword(e.target.value);
                                     if (errors.newPassword) setErrors({ ...errors, newPassword: undefined });
                                 }}
-                                placeholder="••••••"
+                                placeholder="رمز جدید را وارد کنید"
                                 className={`w-full bg-surface-container-lowest border h-12 px-4 font-mono-data text-right focus:ring-1 focus:ring-primary focus:border-primary outline-none transition-all ${
                                     errors.newPassword ? 'border-error' : 'border-outline'
                                 }`}
@@ -128,7 +128,7 @@ export function ChangePasswordModal({ isOpen, onClose, onSuccess }: ChangePasswo
                                     setConfirmPassword(e.target.value);
                                     if (errors.confirmPassword) setErrors({ ...errors, confirmPassword: undefined });
                                 }}
-                                placeholder="••••••"
+                                placeholder="همان رمز بالا را دوباره وارد کنید"
                                 className={`w-full bg-surface-container-lowest border h-12 px-4 font-mono-data text-right focus:ring-1 focus:ring-primary focus:border-primary outline-none transition-all ${
                                     errors.confirmPassword ? 'border-error' : 'border-outline'
                                 }`}

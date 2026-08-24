@@ -6,6 +6,7 @@ import { Edit, BadgeCheck, Clock, XCircle, Shield, MapPin, Phone, Building2, Tag
 import { getApiUrl } from '@/lib/api/apiRequest';
 import { cn } from '@/lib/utils';
 import Image from 'next/image';
+import {BUSINESS_TYPE_LABELS} from "@/lib/api/data-types";
 interface BusinessCardProps {
     business: any;
     completionPercentage: number;
@@ -24,17 +25,7 @@ interface BusinessCardProps {
 }
 
 // مپ کردن نوع کسب و کار به برچسب فارسی
-const BUSINESS_TYPE_LABELS: Record<string, string> = {
-    producer: 'تولیدی',
-    wholesaler: 'عمده‌فروش',
-    importer: 'واردکننده',
-    exporter: 'صادرکننده',
-    distributor: 'توزیع‌کننده',
-    retailer: 'خرده‌فروش',
-    contractor: 'پیمانکار',
-    service_provider: 'خدمات',
-    other: 'سایر',
-};
+
 
 const BUSINESS_TYPE_COLORS: Record<string, string> = {
     producer: 'bg-blue-100 text-blue-700 dark:bg-blue-900/30 dark:text-blue-400',

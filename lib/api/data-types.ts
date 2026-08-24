@@ -23,7 +23,17 @@ export const BUSINESS_ROLES = [
     { label: 'فروشنده عمده', value: 'seller' },
     { label: 'خریدار عمده', value: 'buyer' },
 ];
-
+export const BUSINESS_TYPE_LABELS: Record<string, string> = {
+    producer: 'تولیدی',
+    wholesaler: 'عمده‌فروش',
+    importer: 'واردکننده',
+    exporter: 'صادرکننده',
+    distributor: 'توزیع‌کننده',
+    retailer: 'خرده‌فروش',
+    contractor: 'پیمانکار',
+    service_provider: 'خدمات',
+    other: 'سایر',
+};
 // ============================================================
 // نوع کسب‌وکار
 // ============================================================

@@ -15,6 +15,8 @@ import {
     ChevronDown,
     Lightbulb,
     X,
+    UserPlus,
+    Loader2,
 } from 'lucide-react';
 import { RootState } from '@/lib/store/store';
 import { useArms } from '@/lib/api/apiHooks';
@@ -23,6 +25,7 @@ import { apiService } from '@/lib/api/apiService';
 import Image from 'next/image';
 import { performLogout } from '@/lib/store/slices/authSlice';
 import { ThemeToggle } from '@/app/components/ThemeToggle';
+import JoinArmModal from '@/app/components/JoinArmModal';
 
 interface MobileHeaderProps {
     showLocation?: boolean;
@@ -52,6 +55,7 @@ export default function MobileHeader({
     const [isJoining, setIsJoining] = useState(false);
     const [menuOpen, setMenuOpen] = useState(false);
     const [armSwitcherOpen, setArmSwitcherOpen] = useState(false);
+    const [isJoinModalOpen, setIsJoinModalOpen] = useState(false);
 
     const menuRef = useRef<HTMLDivElement>(null);
     const buttonRef = useRef<HTMLButtonElement>(null);
@@ -60,30 +64,23 @@ export default function MobileHeader({
 
     const isHomePage = pathname === `/${params.slug}` || pathname === '/';
     const { data: arms, isLoading: armsLoading, refetch: refetchArms } = useArms();
-    // ✅ بررسی مالک بودن کاربر در بازوی فعلی با استفاده از arms
+
     const isArmOwner = useMemo(() => {
         if (!user || !currentSlug || !arms) return false;
         return arms.some((a: any) => a.role === 'arm_owner' && a.slug === currentSlug);
     }, [arms, currentSlug, user]);
-    // ------------------------------------------------------------
-    // بررسی عضویت کاربر در بازوی فعلی
-    // ------------------------------------------------------------
+
     useEffect(() => {
         if (!isAuthenticated || !currentSlug || !arms) {
             setIsMember(false);
             return;
         }
-        const member = arms.some((a: any) => a.slug === currentSlug);
+        const member = arms.some(
+            (a: any) => a.slug === currentSlug && a.status === 'active'
+        );
         setIsMember(member);
     }, [isAuthenticated, currentSlug, arms]);
 
-    // ------------------------------------------------------------
-    // بررسی مالک بودن کاربر در بازوی فعلی
-    // ------------------------------------------------------------
-
-    // ------------------------------------------------------------
-    // بستن منو با کلیک بیرون
-    // ------------------------------------------------------------
     useEffect(() => {
         if (!menuOpen) return;
 
@@ -103,9 +100,6 @@ export default function MobileHeader({
             document.removeEventListener('mousedown', handleClickOutside);
     }, [menuOpen]);
 
-    // ------------------------------------------------------------
-    // بستن منوی سوئیچر بازو با کلیک بیرون
-    // ------------------------------------------------------------
     useEffect(() => {
         if (!armSwitcherOpen) return;
 
@@ -126,52 +120,56 @@ export default function MobileHeader({
     }, [armSwitcherOpen]);
 
     // ------------------------------------------------------------
-    // عضویت در بازو
+    // پیوستن به بازار - مثل DesktopHeader
     // ------------------------------------------------------------
     const handleJoinClick = async () => {
         if (!isAuthenticated) {
-            router.push(`/login?redirect=/`);
+            router.push(`/login?redirect=/${currentSlug}`);
             return;
         }
 
-        setIsJoining(true);
+        const armConfig = currentArm?.config as any || {};
+        const requireBusiness = armConfig.accessRules?.requireBusinessForMembership ?? false;
 
-        try {
-            await apiService.arm.join(currentSlug || 'barton');
-            toast.success('با موفقیت در بازار عضو شدید');
-            await refetchArms();
-            setIsMember(true);
-        } catch (error: any) {
-            if (error?.data?.errorCode === 'ALREADY_MEMBER') {
+        if (requireBusiness) {
+            setIsJoinModalOpen(true);
+        } else {
+            setIsJoining(true);
+            try {
+                const result = await apiService.arm.join(currentSlug || 'barton');
+
+                if (result?.status === 'pending') {
+                    toast.success('درخواست پیوستن ثبت شد. در انتظار تأیید مدیر بازار...');
+                } else {
+                    toast.success('با موفقیت به بازار پیوستید');
+                }
+
+                await refetchArms();
                 setIsMember(true);
-            } else {
-                toast.error(error?.message || 'خطا در عضویت');
+            } catch (error: any) {
+                if (error?.data?.errorCode === 'ALREADY_MEMBER') {
+                    setIsMember(true);
+                    toast.info('شما قبلاً به این بازار پیوستهاید');
+                } else {
+                    toast.error(error?.message || 'خطا در پیوستن به بازار');
+                }
+            } finally {
+                setIsJoining(false);
             }
-        } finally {
-            setIsJoining(false);
         }
     };
 
-    // ------------------------------------------------------------
-    // خروج
-    // ------------------------------------------------------------
     const handleLogout = () => {
         setMenuOpen(false);
         dispatch(performLogout());
         router.push('/');
     };
 
-    // ------------------------------------------------------------
-    // تغییر بازار
-    // ------------------------------------------------------------
     const switchArm = (slug: string) => {
         setArmSwitcherOpen(false);
         router.push(`/${slug}`);
     };
 
-    // ------------------------------------------------------------
-    // اطلاعات بازوی فعلی
-    // ------------------------------------------------------------
     const armName = currentArm?.name || 'Daymat';
     const armSlogan = currentArm?.slogan || 'قیمت امروز فروشندگان عمده مصالح';
     const armPrimaryColor = currentArm?.colorPrimary || '#a11f2c';
@@ -182,17 +180,13 @@ export default function MobileHeader({
         (currentArm as any)?.config?.general?.logoUrl ||
         '/images/logo.png';
 
-    // ------------------------------------------------------------
-    // اطلاعات کاربر
-    // ------------------------------------------------------------
     const fullName = user?.fullName || 'کاربر';
     const avatarSrc =
         user?.avatarFile?.thumbnailPath ||
         user?.avatarFile?.path ||
         null;
 
-    const showJoin =
-        isHomePage && (!isAuthenticated || !isMember) && !armsLoading;
+    const showJoin = isAuthenticated && !isMember && !armsLoading;
 
     const showTestBadge =
         currentArm?.config?.general?.showTestBadge ?? true;
@@ -200,10 +194,6 @@ export default function MobileHeader({
     const testBadgeText = currentArm?.config?.general?.testBadgeText;
 
     const userArmsList = arms || [];
-
-    // ============================================================
-    // RENDER
-    // ============================================================
 
     return (
         <header
@@ -219,20 +209,17 @@ export default function MobileHeader({
             `}
         >
             <div className="flex items-center justify-between px-4 h-16">
-                {/* ==================================================
-                    سمت چپ: لوگو + نام بازو
-                ================================================== */}
+                {/* سمت راست: لوگو + نام بازار */}
                 <div className="flex items-center gap-2 flex-1 min-w-0">
                     {showBack && (
                         <button
                             onClick={() => router.back()}
-                            className="p-1.5 -ml-1"
+                            className="p-1.5 -ml-1 flex-shrink-0"
                         >
                             <ArrowRight className="w-5 h-5 text-gray-500 dark:text-gray-400" />
                         </button>
                     )}
 
-                    {/* لوگوی بازو */}
                     <div
                         className="
                             cursor-pointer
@@ -241,36 +228,67 @@ export default function MobileHeader({
                             flex-shrink-0
                             bg-gray-50 dark:bg-gray-800
                         "
-                        style={{ height: '36px', width: 'auto', minWidth: '28px', maxWidth: '80px' }}
+
                         onClick={() => router.push('/')}
                     >
                         <Image
                             src={logoSrc}
                             alt="Logo"
                             width={80}
-                            height={36}
-                            className="object-contain"
+                            height={40}
+                            className="object-contain w-full h-full"
                             unoptimized={logoSrc.startsWith('http')}
-                            style={{ height: '36px', width: 'auto' }}
+                            style={{ height: '40px', width: 'auto', maxWidth: '80px' }}
                         />
                     </div>
 
-                    {/* نام و شعار بازو */}
                     <div className="flex flex-col text-right min-w-0">
-                        <div className="flex items-center gap-1.5">
+                        <div className="flex items-center gap-1.5 flex-wrap">
                             <button
                                 onClick={() => router.push('/')}
-                                className="font-bold text-gray-900 dark:text-gray-100 text-[14px] leading-tight truncate"
+                                className="font-bold pb-1.5 text-gray-900 dark:text-gray-100 text-[14px] leading-tight truncate"
                                 style={{ color: armPrimaryColor }}
                             >
                                 {armName}
                             </button>
+
+                            {/* ✅ دکمه پیوستن */}
+                            {showJoin && (
+                                <button
+                                    onClick={handleJoinClick}
+                                    disabled={isJoining}
+                                    className="
+                                        inline-flex
+                                        items-center
+                                        gap-0.5
+                                        text-[9px]
+                                        px-2
+                                        py-1
+                                        rounded-full
+                                        bg-primary
+                                        text-white
+                                        hover:bg-primary/90
+                                        transition-colors
+                                        disabled:opacity-50
+                                        whitespace-nowrap
+                                    "
+                                >
+                                    {isJoining ? (
+                                        <Loader2 className="w-2.5 h-2.5 animate-spin" />
+                                    ) : (
+                                        <>
+                                            پیوستن به بازار
+                                        </>
+                                    )}
+                                </button>
+                            )}
+
                             {showTestBadge && testBadgeText && (
                                 <span className="inline-flex items-center text-[8px] font-medium text-primary bg-primary/10 border border-primary/20 rounded-full px-1.5 py-0.5 whitespace-nowrap">
                                     {testBadgeText}
                                 </span>
                             )}
-                            {/* سوئیچر بازار (اگر بیش از یک بازار عضو باشه) */}
+
                             {isAuthenticated && userArmsList.length > 1 && (
                                 <div className="relative">
                                     <button
@@ -347,7 +365,7 @@ export default function MobileHeader({
                                                     <div className="w-6 h-6 relative rounded overflow-hidden flex-shrink-0">
                                                         <Image
                                                             src={
-                                                                arm?.logoUrl||'/images/logo.png'
+                                                                arm?.logoUrl || '/images/logo.png'
                                                             }
                                                             alt={arm.name}
                                                             fill
@@ -372,22 +390,16 @@ export default function MobileHeader({
                                 </div>
                             )}
                         </div>
-                        <span className="text-gray-400 dark:text-gray-500 text-[10px] leading-tight truncate">
+                        <span className="dark:text-gray-500 pt-1 text-[10px] leading-tight truncate">
                             {armSlogan}
                         </span>
                     </div>
                 </div>
 
-                {/* ==================================================
-                    سمت راست: پروفایل (بدون دکمه +)
-                ================================================== */}
-                <div className="flex items-center gap-2">
-                    {/* ==================================================
-                        پروفایل / منوی کاربری
-                    ================================================== */}
+                {/* سمت چپ: پروفایل */}
+                <div className="flex items-center gap-2 flex-shrink-0">
                     {isAuthenticated ? (
                         <div className="relative">
-                            {/* دکمه پروفایل */}
                             <button
                                 ref={buttonRef}
                                 onClick={() => setMenuOpen(!menuOpen)}
@@ -427,9 +439,6 @@ export default function MobileHeader({
                                 <ChevronDown className="w-3.5 h-3.5" />
                             </button>
 
-                            {/* ==================================================
-                                منوی کاربر
-                            ================================================== */}
                             {menuOpen && (
                                 <div
                                     ref={menuRef}
@@ -450,7 +459,6 @@ export default function MobileHeader({
                                         z-[100]
                                     "
                                 >
-                                    {/* سربرگ کاربر + دکمه بستن */}
                                     <div className="px-4 py-3 border-b border-gray-100 dark:border-gray-700 flex items-center justify-between">
                                         <div className="flex-1 min-w-0">
                                             <p className="text-sm font-semibold text-gray-900 dark:text-gray-100 truncate">
@@ -461,7 +469,6 @@ export default function MobileHeader({
                                             </p>
                                         </div>
 
-                                        {/* دکمه بستن منو */}
                                         <button
                                             onClick={() => setMenuOpen(false)}
                                             className="
@@ -479,7 +486,6 @@ export default function MobileHeader({
                                         </button>
                                     </div>
 
-                                    {/* پروفایل من */}
                                     <button
                                         onClick={() => {
                                             setMenuOpen(false);
@@ -505,7 +511,6 @@ export default function MobileHeader({
                                         پروفایل من
                                     </button>
 
-                                    {/* مدیریت بازار */}
                                     {isArmOwner && (
                                         <button
                                             onClick={() => {
@@ -533,7 +538,6 @@ export default function MobileHeader({
                                         </button>
                                     )}
 
-                                    {/* پنل ادمین */}
                                     {user?.role === 'system_admin' && (
                                         <button
                                             onClick={() => {
@@ -560,13 +564,10 @@ export default function MobileHeader({
                                         </button>
                                     )}
 
-                                    {/* حالت تاریک */}
                                     <ThemeToggle />
 
-                                    {/* جداکننده */}
                                     <div className="border-t border-gray-100 dark:border-gray-700 my-1" />
 
-                                    {/* درباره ما */}
                                     <button
                                         onClick={() => {
                                             setMenuOpen(false);
@@ -592,7 +593,6 @@ export default function MobileHeader({
                                         درباره {armName}
                                     </button>
 
-                                    {/* قوانین */}
                                     <button
                                         onClick={() => {
                                             setMenuOpen(false);
@@ -618,7 +618,6 @@ export default function MobileHeader({
                                         قوانین
                                     </button>
 
-                                    {/* پیشنهادات و انتقادات */}
                                     <button
                                         onClick={() => {
                                             setMenuOpen(false);
@@ -644,10 +643,8 @@ export default function MobileHeader({
                                         پیشنهادات و انتقادات
                                     </button>
 
-                                    {/* جداکننده */}
                                     <div className="border-t border-gray-100 dark:border-gray-700 my-1" />
 
-                                    {/* قدرت گرفته از دی مت */}
                                     <div
                                         className="
                                             px-4
@@ -668,40 +665,14 @@ export default function MobileHeader({
                                                     className="w-full h-full object-contain"
                                                 />
                                             </div>
-
                                         </div>
                                     </div>
-
-                                    {/* جداکننده */}
-                                    <div className="border-t border-gray-100 dark:border-gray-700 my-1" />
-
-                                    {/* خروج */}
-                                    {/*<button
-                                        onClick={handleLogout}
-                                        className="
-                                            w-full
-                                            flex
-                                            items-center
-                                            gap-2
-                                            px-4
-                                            py-2.5
-                                            text-sm
-                                            text-red-600
-                                            hover:bg-red-50
-                                            dark:hover:bg-red-900/20
-                                            transition-colors
-                                            text-right
-                                        "
-                                    >
-                                        <LogOut className="w-4 h-4" />
-                                        خروج
-                                    </button>*/}
                                 </div>
                             )}
                         </div>
                     ) : (
                         <button
-                            onClick={() => router.push('/login')}
+                            onClick={() => router.push(`/login?redirect=/${currentSlug}`)}
                             className="
                                 text-xs
                                 text-gray-500
@@ -720,6 +691,12 @@ export default function MobileHeader({
                     )}
                 </div>
             </div>
+
+            {/* ✅ مدال پیوستن */}
+            <JoinArmModal
+                isOpen={isJoinModalOpen}
+                onClose={() => setIsJoinModalOpen(false)}
+            />
         </header>
     );
 }

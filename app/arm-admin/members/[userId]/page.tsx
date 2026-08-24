@@ -106,10 +106,10 @@ export default function MemberDetailPage() {
         setApproving(true);
         try {
             await apiService.armAdmin.members.approveMember(currentSlug as string, userId);
-            toast.success('عضویت با موفقیت تأیید شد');
+            toast.success('تایید پیوند با موفقیت انجام شد');
             fetchMember(false);
         } catch (error: any) {
-            toast.error(error?.message || 'خطا در تأیید عضویت');
+            toast.error(error?.message || 'خطا در تأیید پیوند');
         } finally {
             setApproving(false);
         }
@@ -133,17 +133,17 @@ export default function MemberDetailPage() {
             setRejecting(false);
         }
     };
-    //حذف عضویت در بازو
+    //حذف پیوستن به بازار
     const handleRemoveMember = async () => {
         if (!currentSlug || !userId) return;
         if (!confirm('آیا از حذف این عضو اطمینان دارید؟')) return;
         setRemoving(true);
         try {
             await apiService.armAdmin.members.removeMember(currentSlug, userId);
-            toast.success('عضویت کاربر از بازار حذف شد');
+            toast.success('پیوند کاربر با بازار قطع شد');
             fetchMember(false);
         } catch (error: any) {
-            toast.error(error?.message || 'خطا در حذف عضویت');
+            toast.error(error?.message || 'خطا در قطع پیوند');
         } finally {
             setRemoving(false);
         }
@@ -412,7 +412,7 @@ export default function MemberDetailPage() {
                                     className="flex flex-1   min-w-[110px] items-center justify-center gap-1.5 px-3 sm:px-4 py-2 bg-green-600 text-white rounded-lg text-sm font-medium hover:bg-green-700 disabled:opacity-50 transition-colors"
                                 >
                                     {approving ? <Loader2 className="w-4 h-4 animate-spin" /> : <CheckCircle className="w-4 h-4" />}
-                                    <span className="text-[9px]">تایید عضویت</span>
+                                    <span className="text-[9px]">تایید پیوند</span>
                                 </button>
 
                                 {/* نیاز به اصلاح */}
@@ -425,26 +425,26 @@ export default function MemberDetailPage() {
                                     <span className="text-[9px]">نیاز به اصلاح</span>
                                 </button>
 
-                                {/* رد عضویت */}
+                                {/* رد پیوند */}
                                 <button
                                     onClick={() => setConfirmAction('remove')}
                                     disabled={removing}
                                     className="flex flex-1  min-w-[90px] items-center justify-center gap-1.5 px-3 sm:px-4 py-2 bg-red-600 text-white rounded-lg text-sm font-medium hover:bg-red-700 disabled:opacity-50 transition-colors"
                                 >
                                     {removing ? <Loader2 className="w-4 h-4 animate-spin" /> : <XCircle className="w-4 h-4" />}
-                                    <span className="text-[9px]">رد عضویت</span>
+                                    <span className="text-[9px]">رد پیوند</span>
                                 </button>
                             </>
                         ) : (
                             <>
-                                {/* حذف عضویت برای سایر وضعیت‌ها */}
+                                {/* حذف پیوند برای سایر وضعیت‌ها */}
                                 <button
                                     onClick={() => setConfirmAction('remove')}
                                     disabled={removing}
                                     className="flex flex-1  min-w-[90px] items-center justify-center gap-1.5 px-4 py-2 bg-red-600 text-white rounded-lg text-sm font-medium hover:bg-red-700 disabled:opacity-50 transition-colors"
                                 >
                                     {removing ? <Loader2 className="w-4 h-4 animate-spin" /> : <XCircle className="w-4 h-4" />}
-                                    <span className="text-[9px]">حذف عضویت</span>
+                                    <span className="text-[9px]">حذف پیوند</span>
                                 </button>
                             </>
                         )}
@@ -541,7 +541,7 @@ export default function MemberDetailPage() {
                             </p>
                         </div>
                         <div className="bg-surface p-4 rounded-xl border border-outline-variant/20">
-                            <p className="text-xs text-on-surface-variant mb-1.5">تاریخ عضویت</p>
+                            <p className="text-xs text-on-surface-variant mb-1.5">تاریخ پیوستن</p>
                             <p className="text-sm font-semibold text-on-surface">
                                 {new Date(member.joinedAt).toLocaleDateString('fa-IR')}
                             </p>
@@ -776,12 +776,12 @@ export default function MemberDetailPage() {
                         </div>
 
                         <h3 className="text-lg font-bold text-on-surface dark:text-gray-100">
-                            {confirmAction === 'remove' ? 'حذف عضویت کاربر' : 'رد عضویت کاربر'}
+                            {confirmAction === 'remove' ? 'حذف پیوند کاربر' : 'رد پیوند کاربر'}
                         </h3>
                         <p className="text-sm text-on-surface-variant dark:text-gray-400 leading-relaxed">
                             {confirmAction === 'remove'
-                                ? 'با این عمل، کاربر از عضویت این بازار خارج خواهد شد. آیا مطمئن هستید؟'
-                                : 'درخواست عضویت این کاربر رد خواهد شد. این عمل قابل بازگشت نیست. ادامه می‌دهید؟'}
+                                ? 'با این عمل، پیوند کاربر با بازار قطع خواهد شد. آیا مطمئن هستید؟'
+                                : 'درخواست پیوست این کاربر رد خواهد شد. این عمل قابل بازگشت نیست. ادامه می‌دهید؟'}
                         </p>
 
                         <div className="flex gap-3 pt-2">

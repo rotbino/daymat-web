@@ -52,7 +52,7 @@ export function ArmProvider({ children }: ArmProviderProps) {
     const { data: armData, isLoading: armLoading, refetch: refetchArm } = useArm(currentSlug || '');
     const { data: userArms, refetch: refetchArms } = useArms();
 
-    // ⭐ ست کردن بازو توی Redux
+    // ⭐ ست کردن بازار توی Redux
     useEffect(() => {
         if (armData && currentSlug) {
             dispatch(setArm({ arm: armData, slug: currentSlug }));
@@ -60,7 +60,7 @@ export function ArmProvider({ children }: ArmProviderProps) {
         }
     }, [armData, currentSlug, dispatch]);
 
-    // ✅ فقط invalidate کش‌ها هنگام تغییر بازو
+    // ✅ فقط invalidate کش‌ها هنگام تغییر بازار
     useEffect(() => {
         if (!currentSlug) return;
 
@@ -70,7 +70,7 @@ export function ArmProvider({ children }: ArmProviderProps) {
         setAutoJoinAttempted(false);
     }, [currentSlug, queryClient]);
 
-    // ⭐ عضویت خودکار با رعایت تنظیمات
+    // ⭐ پیوستن خودکار با رعایت تنظیمات
     useEffect(() => {
         if (!armData || !isAuthenticated || autoJoinAttempted) return;
 
@@ -91,7 +91,7 @@ export function ArmProvider({ children }: ArmProviderProps) {
                 if (hasAnyMembership) return;
 
                 await apiService.arm.join(currentSlug!);
-                toast.success('به‌طور خودکار عضو بازار شدید');
+                //toast.success('به‌طور خودکار به بازار پیوستید');
 
                 await refetchArms();
                 await refetchArm();
@@ -115,7 +115,7 @@ export function ArmProvider({ children }: ArmProviderProps) {
         setAutoJoinAttempted(false);
     }, [currentSlug]);
 
-    // ⭐ لود اولیه بازو (بدون تغییر)
+    // ⭐ لود اولیه بازار (بدون تغییر)
     useEffect(() => {
         const initArm = async () => {
             if (PUBLIC_PATHS.some(path => pathname === path || pathname?.startsWith(`${path}/`))) {

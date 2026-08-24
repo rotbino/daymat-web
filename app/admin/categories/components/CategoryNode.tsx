@@ -2,7 +2,7 @@
 'use client';
 
 import React from 'react';
-import { ChevronLeft, Plus, Pencil, Trash2 } from 'lucide-react';
+import { ChevronRight, Plus, Pencil, Trash2 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { CategoryNode as CategoryNodeType } from '../page';
 
@@ -33,7 +33,7 @@ export function CategoryNodeComponent({ node, expandedIds, onToggle, onEdit, onD
                     hasChildren ? "text-on-surface-variant/60" : "text-transparent",
                     isExpanded && hasChildren && "-rotate-90"
                 )}>
-                    <ChevronLeft className="w-3.5 h-3.5" />
+                    <ChevronRight className="w-3.5 h-3.5" />
                 </span>
 
                 {/* آیکون و نام */}

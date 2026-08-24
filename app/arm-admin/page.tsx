@@ -134,7 +134,7 @@ export default function ArmAdminDashboard() {
 
     return (
         <div className="space-y-6">
-            {/* ✅ باکس هشدار عضویت‌های در انتظار تأیید */}
+            {/* ✅ باکس هشدار پیوستن های در انتظار تأیید */}
             {stats && stats.pendingMembers > 0 && (
                 <Link
                     href="/arm-admin/members?status=pending"
@@ -146,7 +146,7 @@ export default function ArmAdminDashboard() {
                         </div>
                         <div>
                             <p className="text-sm font-semibold text-purple-800 dark:text-purple-200">
-                                {stats.pendingMembers.toLocaleString('fa-IR')} درخواست عضویت در انتظار تأیید
+                                {stats.pendingMembers.toLocaleString('fa-IR')} درخواست پیوستن در انتظار تأیید
                             </p>
                             <p className="text-xs text-purple-600/80 dark:text-purple-400/80 mt-0.5">
                                 برای بررسی و تأیید یا رد کلیک کنید

@@ -29,8 +29,8 @@ const menuItems = [
     { href: '/arm-admin', label: 'داشبورد', icon: LayoutDashboard, exact: true },
     { href: '/arm-admin/ads', label: 'آگهی‌ها', icon: Package },
     { href: '/arm-admin/members', label: 'اعضا', icon: Users },
-    { href: '/arm-admin/settings', label: 'تنظیمات', icon: Settings },
     { href: '/arm-admin/financial', label: 'مالی', icon: CreditCard },
+    { href: '/arm-admin/settings', label: 'تنظیمات', icon: Settings },
     { href: '/', label: 'سایت', icon: Home },
 ];
 
@@ -167,7 +167,7 @@ export default function ArmAdminLayout({ children }: { children: React.ReactNode
             </div>
 
             {/* ⭐ منوی سایدبار با رنگ فونت به جای پس‌زمینه */}
-            <nav className="flex-1 overflow-y-auto px-3 py-5 space-y-1">
+            <nav className="flex-1  overflow-y-auto px-3 py-5 space-y-1">
                 {menuItems.map((item, index) => {
                     const active = isActive(item.href, item.exact);
                     const Icon = item.icon;

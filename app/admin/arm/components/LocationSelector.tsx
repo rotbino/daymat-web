@@ -49,7 +49,7 @@ export function LocationSelector({
     const canRemove = isAdmin || locationsAccess.canRemove === true;
     const isOwnerWithNoAccess = !isAdmin && !canAdd && !canRemove;
 
-    // ⭐ فیلد محدودیت عضویت بر اساس موقعیت
+    // ⭐ فیلد محدودیت پیوستن به بازار بر اساس موقعیت
     const restrictMembershipByLocation = watch('config.accessRules.restrictMembershipByLocation') ?? false;
 
     const handleToggleRestrictMembership = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -167,12 +167,12 @@ export function LocationSelector({
                 </div>
             )}
 
-            {/* ═══════════════ محدودیت عضویت بر اساس موقعیت ═══════════════ */}
+            {/* ═══════════════ محدودیت پیوستن به بازار بر اساس موقعیت ═══════════════ */}
             <div className="bg-surface-container-lowest rounded-xl border border-outline-variant/30 p-4 flex items-center justify-between gap-4">
                 <div>
                     <h3 className="text-sm font-semibold flex items-center gap-2">
                         <Lock className="w-4 h-4 text-primary" />
-                        محدودیت عضویت بر اساس موقعیت
+                        محدودیت پیوستن به بازار بر اساس موقعیت
                     </h3>
                     <p className="text-xs text-on-surface-variant mt-1">
                         فقط کسب‌وکارهای مستقر در شهرهای انتخاب‌شده بتوانند در این بازار عضو شوند.

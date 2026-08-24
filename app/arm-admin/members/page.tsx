@@ -290,7 +290,7 @@ export default function ArmAdminMembers() {
                                 <div className="mt-1">{getStatusBadge(selectedMember.status)}</div>
                             </div>
                             <div className="bg-surface-container-low p-3 rounded-xl col-span-2">
-                                <p className="text-xs text-on-surface-variant">تاریخ عضویت</p>
+                                <p className="text-xs text-on-surface-variant">تاریخ پیوند</p>
                                 <p className="text-sm font-medium text-on-surface mt-1">
                                     {new Date(selectedMember.joinedAt).toLocaleDateString('fa-IR')}
                                 </p>
@@ -539,7 +539,7 @@ export default function ArmAdminMembers() {
                     <p className="text-sm text-on-surface-variant">
                         {searchQuery || roleFilter !== 'all' || statusFilter !== 'all'
                             ? 'با فیلترهای اعمال‌شده هیچ عضوی پیدا نشد'
-                            : 'هیچ عضوی در این بازار ثبت نشده است'}
+                            : 'هیچ کسی در این بازار عضو نشده است'}
                     </p>
                 </div>
             ) : (

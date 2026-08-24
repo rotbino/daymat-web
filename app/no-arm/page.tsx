@@ -11,7 +11,7 @@ export default function NoArmPage() {
     const router = useRouter();
     const { currentSlug, currentArm } = useSelector((state: RootState) => state.arm);
 
-    // ⭐ اگه بازو وجود داره، سریع برگرد به صفحه اصلی
+    // ⭐ اگه بازار وجود داره، سریع برگرد به صفحه اصلی
     useEffect(() => {
         if (currentSlug && currentArm) {
             router.replace('/');

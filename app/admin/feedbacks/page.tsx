@@ -36,7 +36,7 @@ export default function AdminFeedbacksPage() {
     const [replyContent, setReplyContent] = useState<Record<string, string>>({});
     const [submittingReply, setSubmittingReply] = useState<Record<string, boolean>>({});
     const [filterType, setFilterType] = useState<string>('');
-    // دریافت لیست بازوها برای فیلتر
+    // دریافت لیست بازارها برای فیلتر
     useEffect(() => {
         const fetchArms = async () => {
             try {

@@ -29,7 +29,7 @@ export function RefreshModal({ isOpen, onClose, ad, onSuccess }: RefreshModalPro
     const [validityHours, setValidityHours] = useState('1');
     const [isBumped, setIsBumped] = useState(false);
 
-    // خواندن bumpCost از تنظیمات بازو
+    // خواندن bumpCost از تنظیمات بازار
     const armConfig = useSelector((state: RootState) => state.arm.currentArm?.config) as any || {};
     const bumpCost = armConfig?.economy?.bumpCost || 10;
 

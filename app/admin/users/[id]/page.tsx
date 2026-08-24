@@ -79,7 +79,7 @@ export default function AdminUserDetailPage() {
         { id: 'businesses', label: 'کسب‌وکارها', icon: Building2, count: userData?.businesses?.length || 0 },
         { id: 'ads', label: 'آگهی‌ها', icon: Package, count: userData?.ads?.length || 0 },
         { id: 'payments', label: 'تراکنش‌ها', icon: CreditCard, count: userData?.allTransactions?.length || 0 },
-        { id: 'memberships', label: 'عضویت در بازارها', icon: Store, count: userData?.armMemberships?.length || 0 },
+        { id: 'memberships', label: 'پیوستن به بازارها', icon: Store, count: userData?.armMemberships?.length || 0 },
     ];
 
     // اسکرول
@@ -267,7 +267,7 @@ export default function AdminUserDetailPage() {
                         <InfoCard label="نقش" value={userData.role === 'system_admin' ? 'ادمین' : userData.role === 'arm_manager' ? 'مالک بازار' : 'کاربر'} icon={Shield} />
                         <InfoCard label="وضعیت" value={userData.status === 'active' ? 'فعال' : userData.status === 'suspended' ? 'تعلیق' : 'مسدود'} icon={userData.status === 'active' ? CheckCircle : XCircle} />
                         <InfoCard label="تأیید موبایل" value={userData.isPhoneVerified ? 'تأیید شده' : 'تأیید نشده'} icon={userData.isPhoneVerified ? CheckCircle : Clock} />
-                        <InfoCard label="تاریخ عضویت" value={formatDate(userData.createdAt)} icon={CalendarIcon} />
+                        <InfoCard label="تاریخ ثبت نام" value={formatDate(userData.createdAt)} icon={CalendarIcon} />
                         <InfoCard label="آخرین ورود" value={userData.lastLoginAt ? formatDate(userData.lastLoginAt) : 'ندارد'} icon={Clock} />
                         <InfoCard label="اشتراک" value={userData.membershipTier === 'free' ? 'رایگان' : userData.membershipTier} icon={Crown} />
                         <InfoCard label="زبان" value={userData.locale === 'fa' ? 'فارسی' : userData.locale} icon={Globe} />
@@ -414,8 +414,8 @@ export default function AdminUserDetailPage() {
                     </div>
                 )}
 
-                {/* ══════════ عضویت در بازارها ══════════ */}
-                {/* ══════════ عضویت در بازارها ══════════ */}
+               
+                {/* ══════════ پیوستن به بازارها ══════════ */}
                 {activeTab === 'memberships' && (
                     userData.armMemberships?.length > 0 ? (
                         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">

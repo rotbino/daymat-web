@@ -39,27 +39,27 @@ export function AccessRulesSection({ watch, setValue, onSave, isSaving, isAdmin 
 
     const ruleGroups = [
         {
-            title: 'عضویت در بازار',
+            title: 'پیوستن به بازار',
             icon: Users,
             rules: [
                 {
                     key: 'autoJoinOnEntry',
-                    label: 'عضویت خودکار هنگام ورود',
+                    label: 'پیوستن به بازار بصورت اتوماتیک هنگام ورود',
                     hint: 'کاربران لاگین‌کرده به‌محض ورود به بازار، عضو می‌شوند',
                     icon: Zap,
                     adminOnly: false,
                 },
                 {
                     key: 'requireBusinessForMembership',
-                    label: 'نیاز به کسب‌وکار برای عضویت',
+                    label: 'نیاز به کسب‌وکار برای پیوستن به باار',
                     hint: 'اگر فعال باشد، کاربر باید کسب‌وکار خود را ثبت کرده و انتخاب کند',
                     icon: Building2,
                     adminOnly: true,
                 },
                 {
                     key: 'requireAdminApprovalForMembership',
-                    label: 'تأیید مدیر برای عضویت',
-                    hint: 'هر درخواست عضویت باید توسط مدیر تأیید شود',
+                    label: 'نیاز به تایید مدیر برای پیوستن به بازار',
+                    hint: 'هر درخواست پیوستن باید توسط مدیر تأیید شود',
                     icon: Lock,
                     adminOnly: false,
                 },
@@ -145,7 +145,7 @@ export function AccessRulesSection({ watch, setValue, onSave, isSaving, isAdmin 
                         قوانین دسترسی
                     </h3>
                     <p className="text-xs text-on-surface-variant">
-                        تنظیمات عضویت و محدودیت‌ها
+                        تنظیمات پیوستن به بازار و محدودیت‌ها
                     </p>
                 </div>
                 {canEdit && (
@@ -166,7 +166,7 @@ export function AccessRulesSection({ watch, setValue, onSave, isSaving, isAdmin 
                 <div className="p-3 bg-amber-50 dark:bg-amber-900/20 border border-amber-200 dark:border-amber-800 rounded-xl flex items-start gap-2">
                     <AlertTriangle className="w-4 h-4 text-amber-600 dark:text-amber-400 mt-0.5 flex-shrink-0" />
                     <p className="text-xs text-amber-800 dark:text-amber-300">
-                        تغییر تنظیمات عضویت برای شما فعال نیست. در صورت نیاز با پشتیبانی تماس بگیرید.
+                        تغییر تنظیمات پیوستن به بازار برای شما فعال نیست. در صورت نیاز با پشتیبانی تماس بگیرید.
                     </p>
                 </div>
             )}

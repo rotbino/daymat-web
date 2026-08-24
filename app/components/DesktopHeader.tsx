@@ -14,6 +14,8 @@ import {
     Info,
     FileText,
     Lightbulb, X,
+    UserPlus,
+    Loader2,
 } from 'lucide-react';
 
 import { RootState } from '@/lib/store/store';
@@ -23,6 +25,7 @@ import { apiService } from '@/lib/api/apiService';
 import Image from 'next/image';
 import { performLogout } from '@/lib/store/slices/authSlice';
 import { ThemeToggle } from '@/app/components/ThemeToggle';
+import JoinArmModal from '@/app/components/JoinArmModal';
 
 interface DesktopHeaderProps {
     showLocation?: boolean;
@@ -52,6 +55,7 @@ export default function DesktopHeader({
     const [isJoining, setIsJoining] = useState(false);
     const [menuOpen, setMenuOpen] = useState(false);
     const [armSwitcherOpen, setArmSwitcherOpen] = useState(false);
+    const [isJoinModalOpen, setIsJoinModalOpen] = useState(false);
 
     const menuRef = useRef<HTMLDivElement>(null);
     const buttonRef = useRef<HTMLButtonElement>(null);
@@ -61,13 +65,15 @@ export default function DesktopHeader({
     const isHomePage = pathname === `/${params.slug}` || pathname === '/';
 
     const { data: arms, isLoading: armsLoading, refetch: refetchArms } = useArms();
-    // ✅ بررسی مالک بودن کاربر در بازوی فعلی با استفاده از arms
+
+    // ✅ بررسی مالک بودن کاربر در بازاری فعلی با استفاده از arms
     const isArmOwner = useMemo(() => {
         if (!user || !currentSlug || !arms) return false;
         return arms.some((a: any) => a.role === 'arm_owner' && a.slug === currentSlug);
     }, [arms, currentSlug, user]);
+
     // ------------------------------------------------------------
-    // بررسی عضویت کاربر در بازوی فعلی
+    // بررسی پیوستن کاربر به بازار فعلی
     // ------------------------------------------------------------
     useEffect(() => {
         if (!isAuthenticated || !currentSlug || !arms) {
@@ -75,14 +81,11 @@ export default function DesktopHeader({
             return;
         }
 
-        const member = arms.some((a: any) => a.slug === currentSlug);
+        const member = arms.some(
+            (a: any) => a.slug === currentSlug && a.status === 'active'
+        );
         setIsMember(member);
     }, [isAuthenticated, currentSlug, arms]);
-
-    // ------------------------------------------------------------
-    // بررسی مالک بودن کاربر در بازوی فعلی
-    // ------------------------------------------------------------
-
 
     // ------------------------------------------------------------
     // بستن منوی کاربر با کلیک بیرون
@@ -106,7 +109,7 @@ export default function DesktopHeader({
     }, [menuOpen]);
 
     // ------------------------------------------------------------
-    // بستن منوی سوئیچر بازو با کلیک بیرون
+    // بستن منوی سوئیچر بازار با کلیک بیرون
     // ------------------------------------------------------------
     useEffect(() => {
         if (!armSwitcherOpen) return;
@@ -127,32 +130,45 @@ export default function DesktopHeader({
     }, [armSwitcherOpen]);
 
     // ------------------------------------------------------------
-    // عضویت در بازو
+    // پیوستن به بازار
     // ------------------------------------------------------------
     const handleJoinClick = async () => {
         if (!isAuthenticated) {
-            router.push(`/login?redirect=/`);
+            router.push(`/login?redirect=/${currentSlug}`);
             return;
         }
 
-        setIsJoining(true);
+        // ✅ بررسی تنظیمات: آیا نیاز به کسبوکار داره؟
+        const armConfig = currentArm?.config as any || {};
+        const requireBusiness = armConfig.accessRules?.requireBusinessForMembership ?? false;
 
-        try {
-            await apiService.arm.join(currentSlug || 'barton');
+        if (requireBusiness) {
+            // ✅ باز کردن مدال انتخاب کسبوکار
+            setIsJoinModalOpen(true);
+        } else {
+            // ✅ مستقیم join کن
+            setIsJoining(true);
+            try {
+                const result = await apiService.arm.join(currentSlug || 'barton');
 
-            toast.success('با موفقیت در بازار عضو شدید');
+                if (result?.status === 'pending') {
+                    toast.success('درخواست پیوستن ثبت شد. در انتظار تأیید مدیر بازار...');
+                } else {
+                    toast.success('با موفقیت به بازار پیوستید');
+                }
 
-            await refetchArms();
-
-            setIsMember(true);
-        } catch (error: any) {
-            if (error?.data?.errorCode === 'ALREADY_MEMBER') {
+                await refetchArms();
                 setIsMember(true);
-            } else {
-                toast.error(error?.message || 'خطا در عضویت');
+            } catch (error: any) {
+                if (error?.data?.errorCode === 'ALREADY_MEMBER') {
+                    setIsMember(true);
+                    toast.info('شما قبلاً به این بازار پیوستهاید');
+                } else {
+                    toast.error(error?.message || 'خطا در پیوستن به بازار');
+                }
+            } finally {
+                setIsJoining(false);
             }
-        } finally {
-            setIsJoining(false);
         }
     };
 
@@ -174,7 +190,7 @@ export default function DesktopHeader({
     };
 
     // ------------------------------------------------------------
-    // اطلاعات بازوی فعلی
+    // اطلاعات بازاری فعلی
     // ------------------------------------------------------------
     const armName = currentArm?.name || 'Daymat';
     const armSlogan = currentArm?.slogan || 'قیمت امروز فروشندگان عمده مصالح';
@@ -192,7 +208,7 @@ export default function DesktopHeader({
     const fullName = user?.fullName || 'کاربر';
     const avatarSrc = user?.avatarFile?.thumbnailPath || user?.avatarFile?.path || null;
 
-    const showJoin = isHomePage && (!isAuthenticated || !isMember) && !armsLoading;
+    const showJoin = isAuthenticated && !isMember && !armsLoading;
 
     const showTestBadge = currentArm?.config?.general?.showTestBadge ?? true;
     const testBadgeText = currentArm?.config?.general?.testBadgeText;
@@ -227,7 +243,7 @@ export default function DesktopHeader({
                 <div className="flex items-center gap-3">
 
                     <div className="flex items-center gap-3">
-                        {/* لوگوی بازو */}
+                        {/* لوگوی بازار */}
                         <div
                             className="
         cursor-pointer
@@ -239,21 +255,21 @@ export default function DesktopHeader({
         p-0.5
         flex-shrink-0
     "
-                            style={{ width: 'auto', height: '60px' }} // ارتفاع ثابت، عرض خودکار
+                            style={{ width: 'auto', height: '60px' }}
                             onClick={() => router.push('/')}
                         >
                             <Image
                                 src={logoSrc}
                                 alt={armName}
-                                width={0} // عرض توسط height کنترل می‌شود
-                                height={60} // ارتفاع ثابت
+                                width={0}
+                                height={60}
                                 className="w-auto h-full object-contain"
                                 unoptimized={logoSrc.startsWith('http')}
                                 sizes="auto"
                             />
                         </div>
 
-                        {/* نام و شعار بازو */}
+                        {/* نام و شعار بازار */}
                         <div className="flex flex-col text-right">
                             <div className="flex items-center gap-1.5">
                                 <button
@@ -271,6 +287,38 @@ export default function DesktopHeader({
                                 >
                                     {armName}
                                 </button>
+
+                                {/* ✅ دکمه پیوستن */}
+                                {showJoin && (
+                                    <button
+                                        onClick={handleJoinClick}
+                                        disabled={isJoining}
+                                        className="
+                                            inline-flex
+                                            items-center
+                                            gap-1
+                                            text-[10px]
+                                            px-2.5
+                                            py-1.5
+                                            rounded-full
+                                            bg-primary
+                                            text-white
+                                            hover:bg-primary/90
+                                            transition-colors
+                                            disabled:opacity-50
+                                            whitespace-nowrap
+                                        "
+                                    >
+                                        {isJoining ? (
+                                            <Loader2 className="w-3 h-3 animate-spin" />
+                                        ) : (
+                                            <>
+                                                <UserPlus className="w-3 h-3" />
+                                                پیوستن به بازار
+                                            </>
+                                        )}
+                                    </button>
+                                )}
 
                                 {showTestBadge && testBadgeText && (
                                     <span
@@ -370,7 +418,7 @@ export default function DesktopHeader({
                                                         <div className="w-6 h-6 relative rounded overflow-hidden flex-shrink-0">
                                                             <Image
                                                                 src={
-                                                                    arm?.logoUrl||'/images/logo.png'
+                                                                    arm?.logoUrl || '/images/logo.png'
                                                                 }
                                                                 alt={arm.name}
                                                                 fill
@@ -396,8 +444,8 @@ export default function DesktopHeader({
                                 )}
                             </div>
 
-                            {/* شعار بازو */}
-                            {armSlogan &&(
+                            {/* شعار بازار */}
+                            {armSlogan && (
                                 <span
                                     className="
                                     text-gray-400
@@ -525,9 +573,7 @@ export default function DesktopHeader({
                                         z-[100]
                                     "
                                 >
-                                    {/* ------------------------------------------------
-    سربرگ کاربر + دکمه بستن
------------------------------------------------ */}
+                                    {/* سربرگ کاربر + دکمه بستن */}
                                     <div
                                         className="
         px-4
@@ -582,9 +628,7 @@ export default function DesktopHeader({
                                         </button>
                                     </div>
 
-                                    {/* ------------------------------------------------
-                                        پروفایل من
-                                    ------------------------------------------------ */}
+                                    {/* پروفایل من */}
                                     <button
                                         onClick={() => {
                                             setMenuOpen(false);
@@ -618,9 +662,7 @@ export default function DesktopHeader({
                                         پروفایل من
                                     </button>
 
-                                    {/* ------------------------------------------------
-                                        مدیریت بازار
-                                    ------------------------------------------------ */}
+                                    {/* مدیریت بازار */}
                                     {isArmOwner && (
                                         <button
                                             onClick={() => {
@@ -654,9 +696,7 @@ export default function DesktopHeader({
                                         </button>
                                     )}
 
-                                    {/* ------------------------------------------------
-                                        پنل ادمین
-                                    ------------------------------------------------ */}
+                                    {/* پنل ادمین */}
                                     {user?.role === 'system_admin' && (
                                         <button
                                             onClick={() => {
@@ -689,9 +729,7 @@ export default function DesktopHeader({
                                         </button>
                                     )}
 
-                                    {/* ------------------------------------------------
-                                        حالت تاریک
-                                    ------------------------------------------------ */}
+                                    {/* حالت تاریک */}
                                     <ThemeToggle />
 
                                     {/* جداکننده */}
@@ -704,9 +742,7 @@ export default function DesktopHeader({
                                         "
                                     />
 
-                                    {/* ------------------------------------------------
-                                        درباره ما
-                                    ------------------------------------------------ */}
+                                    {/* درباره ما */}
                                     <button
                                         onClick={() => {
                                             setMenuOpen(false);
@@ -740,9 +776,7 @@ export default function DesktopHeader({
                                         درباره {armName}
                                     </button>
 
-                                    {/* ------------------------------------------------
-                                        قوانین
-                                    ------------------------------------------------ */}
+                                    {/* قوانین */}
                                     <button
                                         onClick={() => {
                                             setMenuOpen(false);
@@ -776,9 +810,7 @@ export default function DesktopHeader({
                                         قوانین
                                     </button>
 
-                                    {/* ------------------------------------------------
-                                        پیشنهادات و انتقادات
-                                    ------------------------------------------------ */}
+                                    {/* پیشنهادات و انتقادات */}
                                     <button
                                         onClick={() => {
                                             setMenuOpen(false);
@@ -822,9 +854,7 @@ export default function DesktopHeader({
                                         "
                                     />
 
-                                    {/* ------------------------------------------------
-                                        قدرت گرفته از دی مت
-                                    ------------------------------------------------ */}
+                                    {/* قدرت گرفته از دی مت */}
                                     <div
                                         className="
                                             px-4
@@ -845,45 +875,14 @@ export default function DesktopHeader({
                                                     className="w-full h-full object-contain"
                                                 />
                                             </div>
-
                                         </div>
                                     </div>
-
-                                    {/* ------------------------------------------------
-                                        خروج
-                                    ------------------------------------------------ */}
-                                    {/*<button
-                                        onClick={handleLogout}
-                                        className="
-                                            w-full
-                                            flex
-                                            items-center
-                                            gap-2
-                                            px-4
-                                            py-2.5
-                                            text-sm
-                                            text-red-600
-                                            hover:bg-red-50
-                                            dark:hover:bg-red-900/20
-                                            transition-colors
-                                            text-right
-                                        "
-                                    >
-                                        <LogOut
-                                            className="
-                                                w-4
-                                                h-4
-                                            "
-                                        />
-
-                                        خروج
-                                    </button>*/}
                                 </div>
                             )}
                         </div>
                     ) : (
                         <button
-                            onClick={() => router.push('/login')}
+                            onClick={() => router.push(`/login?redirect=/${currentSlug}`)}
                             className="
                                 text-xs
                                 text-gray-500
@@ -898,6 +897,12 @@ export default function DesktopHeader({
                     )}
                 </div>
             </div>
+
+            {/* ✅ مدال پیوستن */}
+            <JoinArmModal
+                isOpen={isJoinModalOpen}
+                onClose={() => setIsJoinModalOpen(false)}
+            />
         </header>
     );
 }

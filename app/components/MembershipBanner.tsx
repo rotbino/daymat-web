@@ -42,17 +42,17 @@ export function MembershipBanner() {
         try {
             const slug = currentSlug || 'barton';
             await apiService.arm.join(slug);
-            toast.success('با موفقیت در بازار عضو شدید');
+            toast.success('با موفقیت به بازار پیوستید');
             await refetchArms();
             setIsMember(true);
             setIsDismissed(true);
         } catch (error: any) {
             if (error?.data?.errorCode === 'ALREADY_MEMBER') {
-               // toast.info('شما قبلاً عضو این بازار هستید');
+               // toast.info('شما قبلاً به این بازار پیوسته اید');
                 setIsMember(true);
                 setIsDismissed(true);
             } else {
-                toast.error(error?.message || 'خطا در عضویت در بازار');
+                toast.error(error?.message || 'خطا در پیوستن به بازار');
             }
         } finally {
             setIsJoining(false);
@@ -74,7 +74,7 @@ export function MembershipBanner() {
                                 <PhoneCall className="w-4 h-4 text-white" />
                             </div>
                             <p className="text-xs text-slate-200 leading-relaxed">
-                                برای تماس با فروشندگان عضو شوید
+                                برای تماس با فروشندگان ابتدا به بازار بپیوندید
                             </p>
                         </div>
 
@@ -90,7 +90,7 @@ export function MembershipBanner() {
                                 ) : (
                                     <>
                                         <UserPlus className="w-3.5 h-3.5" />
-                                        عضویت
+                                        پیوستن
                                     </>
                                 )}
                             </button>
@@ -115,8 +115,8 @@ export function MembershipBanner() {
                         </div>
                         <div className="flex-1 min-w-0">
                             <p className="text-sm  text-slate-100">
-                                برای تماس با فروشندگان عضو بازار{' '}
-                                <span className="font-bold text-white"> {currentArm?.name || ''}</span>{' '}شوید
+                                برای تماس با فروشندگان به بازار بپیوندید{' '}
+                                <span className="font-bold text-white"> {currentArm?.name || ''}</span>{' '}
                             </p>
                         </div>
                     </div>
@@ -133,7 +133,7 @@ export function MembershipBanner() {
                             ) : (
                                 <>
                                     <UserPlus className="w-4 h-4" />
-                                    {" عضویت در "+currentArm?.name || "بازار"}
+                                    {" پیوستن به "+currentArm?.name || "بازار"}
                                 </>
                             )}
                         </button>

@@ -25,28 +25,33 @@ import CreditsCard from './components/CreditsCard';
 import TipsList from './components/TipsList';
 import BusinessList from './components/BusinessList';
 
-// ─── کارت عضویت در بازار ───
-function JoinArmCard({armName, onJoin }: { onJoin: () => void }) {
+// ─── کارت پیوستن به بازار ───
+function JoinArmCard({ armName, onJoin }: { armName: string; onJoin: () => void }) {
     return (
         <div className="bg-gradient-to-r from-primary/5 to-primary/10 border-2 border-primary/20 rounded-2xl p-6 text-center space-y-4">
             <div className="w-14 h-14 rounded-full bg-primary/10 flex items-center justify-center mx-auto">
                 <UserPlus className="w-7 h-7 text-primary" />
             </div>
-            <h3 className="text-base font-semibold text-on-surface">برای ثبت آگهی، عضو این بازار شوید</h3>
+
+            <h3 className="text-base font-semibold text-on-surface">
+                به {armName} بپیوندید
+            </h3>
+
             <p className="text-sm text-on-surface-variant">
-                عضویت رایگان است و فقط چند ثانیه طول می‌کشد.
+                با پیوستن به {armName}، به خریدارن و فروشندگان مرتبط دسترسی پیدا کنید و در بازار تخصصی خود دیده شوید.
             </p>
+
             <button
                 onClick={onJoin}
                 className="px-6 py-2.5 bg-primary text-on-primary rounded-xl text-sm font-bold hover:bg-primary/90 transition-colors"
             >
-                عضویت در {armName}
+                پیوستن به بارتون
             </button>
         </div>
     );
 }
 
-// ─── کارت انتظار تأیید عضویت ───
+// ─── کارت انتظار تأیید پیوستن به بازار ───
 function PendingMembershipCard() {
     return (
         <div className="bg-amber-50 dark:bg-amber-900/20 border border-amber-200 rounded-2xl p-6 text-center space-y-3">
@@ -54,7 +59,7 @@ function PendingMembershipCard() {
                 <Clock className="w-7 h-7 text-amber-600" />
             </div>
             <h3 className="text-base font-semibold text-amber-800 dark:text-amber-300">
-                درخواست عضویت شما در انتظار تأیید است
+                درخواست پیوستن شما در انتظار تأیید است
             </h3>
             <p className="text-sm text-amber-700/80 dark:text-amber-400/80 leading-relaxed">
                 پس از تأیید مدیر بازار، امکان ثبت آگهی برای شما فعال خواهد شد.
@@ -63,7 +68,7 @@ function PendingMembershipCard() {
     );
 }
 
-// ─── کارت رد عضویت ───
+// ─── کارت رد پیوند ───
 function RejectedMembershipCard({
                                     reason,
                                     onReapply,
@@ -79,13 +84,13 @@ function RejectedMembershipCard({
                 <XCircle className="w-7 h-7 text-red-600 dark:text-red-400" />
             </div>
             <h3 className="text-base font-semibold text-red-800 dark:text-red-300">
-             نیاز به اصلاح برای تایید عضویت
+                نیاز به اصلاح برای تایید پیوستن شما به بازار
             </h3>
             <p className="text-sm  leading-relaxed">
-                تایید عضویت شما نیاز به اصلاحات زیر دارد. بعد از انجام اصلاحات درخواست عضویت فشار دهید.
+                تایید پیوستن شما به بازار نیاز به اصلاحات زیر دارد. بعد از انجام اصلاحات دکمه درخواست پیوستن را فشار دهید.
             </p>
             <p className="text-sm text-red-700/80 dark:text-red-400/80 leading-relaxed">
-                {reason ? ` ${reason}` : 'مدیر بازار درخواست عضویت شما را رد کرده است.'}
+                {reason ? ` ${reason}` : 'مدیر بازار درخواست پیوستن شما به بازار را رد کرده است.'}
             </p>
             {onReapply && (
                 <button
@@ -145,6 +150,17 @@ export default function ProfilePage() {
     const isRejected = currentMembership?.status === 'rejected';
     const rejectionReason = currentMembership?.rejectionReason;
 
+    // ✅ بررسی اینکه آیا کسبوکار انتخاب شده عضو بازار فعلی هست
+    const isSelectedBusinessMember = useMemo(() => {
+        if (!currentMembership || !selectedBusinessId) return false;
+        return currentMembership.businessId === selectedBusinessId;
+    }, [currentMembership, selectedBusinessId]);
+
+    // ✅ کیف پول فقط وقتی نمایش داده میشه که:
+    // ۱. کاربر عضو active باشه
+    // ۲. کسبوکار انتخاب شده همان businessId در membership باشه
+    const shouldShowWallet = isMember && isSelectedBusinessMember;
+
     useEffect(() => {
         if (activeBusiness && !selectedBusinessId) {
             setSelectedBusinessId(activeBusiness.id);
@@ -192,8 +208,8 @@ export default function ProfilePage() {
                 businessId: selectedBusinessId,
                 roleType: 'seller',
             });
-            await refetchArms();   // ✅ مهم: رفرش لیست بازوها
-            toast.success('درخواست عضویت مجدد ثبت شد');
+            await refetchArms();   // ✅ مهم: رفرش لیست بازارها
+            toast.success('درخواست پیوستن مجدد ثبت شد');
         } catch (error: any) {
             toast.error(error?.message || 'خطا در ارسال درخواست');
         } finally {
@@ -251,7 +267,7 @@ export default function ProfilePage() {
         }
     };
 
-    // ⭐ عضویت در بازار
+    // ⭐ پیوستن به بازار
     const handleJoinArm = async () => {
 
         if (!currentSlug || !selectedBusinessId) return;
@@ -261,9 +277,9 @@ export default function ProfilePage() {
                 roleType: 'seller',
             });
             await refetchArms();
-            toast.success('درخواست عضویت ثبت شد');
+            toast.success('درخواست پیوستن ثبت شد');
         } catch (error: any) {
-            toast.error(error?.message || 'خطا در عضویت');
+            toast.error(error?.message || 'خطا در پیوستن به بازار');
         }
     };
 
@@ -315,8 +331,13 @@ export default function ProfilePage() {
                 <div className="hidden lg:grid lg:grid-cols-3 gap-6 mb-8">
                     <div className="lg:col-span-1 space-y-6">
                         <ProfileHeader user={user} business={selectedBusiness} isArmOwner={isArmOwner} isSystemAdmin={isSystemAdmin} onEditClick={() => setIsEditModalOpen(true)} />
-                        <CreditsCard balance={creditBalance?.balance} />
-                        <TipsList />
+                        {/* ✅ کیف پول فقط وقتی نمایش داده میشه که business عضو باشه */}
+                        {shouldShowWallet && (
+                            <CreditsCard balance={creditBalance?.balance} />
+                        )}
+                        {hasBusiness &&(
+                            <TipsList />
+                        )}
                     </div>
                     <div className="lg:col-span-2 space-y-6">
                         {!hasBusiness ? (
@@ -326,7 +347,7 @@ export default function ProfilePage() {
                                         <div className="w-12 h-12 rounded-full bg-primary/20 dark:bg-primary/30 flex items-center justify-center"><Factory className="w-6 h-6 text-primary" /></div>
                                         <div>
                                             <h3 className="text-base font-semibold text-on-surface dark:text-gray-100">شروع فعالیت تجاری</h3>
-                                            <p className="text-sm text-on-surface-variant dark:text-gray-400">کسب و کار خود را در یک دقیقه ثبت کنید و قیمتهای خود را روی تابلو قرار دهید.</p>
+                                            <p className="text-sm text-on-surface-variant dark:text-gray-400">کسب و کار خود را در یک دقیقه ثبت کنید و قیمت‌های خود را روی تابلو قرار دهید.</p>
                                         </div>
                                     </div>
                                     <button onClick={() => router.push('/business/register')} className="px-6 py-2.5 bg-primary text-on-primary rounded-xl text-sm font-medium">ثبت کسب‌وکار</button>
@@ -355,7 +376,7 @@ export default function ProfilePage() {
                                 )}
 
                                 {/* ⭐ گیت عضویت برای آگهی‌ها */}
-                                {isMember ? (
+                                {isMember && isSelectedBusinessMember ? (
                                     <AdsList
                                         ads={selectedBusiness?.ads || []}
                                         businessId={selectedBusinessId || ''}
@@ -371,6 +392,8 @@ export default function ProfilePage() {
                                         creditBalance={creditBalance?.balance || 0}
                                         bumpCost={bumpCost}
                                     />
+                                ) : isMember && !isSelectedBusinessMember ? (
+                                    <JoinArmCard onJoin={handleJoinArm} armName={currentArm.name} />
                                 ) : isPending ? (
                                     <PendingMembershipCard />
                                 ) : isRejected ? (
@@ -391,13 +414,16 @@ export default function ProfilePage() {
                 {/* موبایل */}
                 <div className="lg:hidden space-y-6">
                     <ProfileHeader user={user} business={selectedBusiness} isArmOwner={isArmOwner} isSystemAdmin={isSystemAdmin} onEditClick={() => setIsEditModalOpen(true)} />
-                    <CreditsCard balance={creditBalance?.balance} />
+                    {/* ✅ کیف پول فقط وقتی نمایش داده میشه که business عضو باشه */}
+                    {shouldShowWallet && (
+                        <CreditsCard balance={creditBalance?.balance} />
+                    )}
                     {!hasBusiness ? (
                         <div className="bg-gradient-to-r from-primary/5 via-primary/10 to-primary/5 dark:from-primary/10 dark:via-primary/15 dark:to-primary/10 border-2 border-primary/30 dark:border-primary/20 rounded-2xl p-6">
                             <div className="flex flex-col sm:flex-row items-center justify-between gap-4">
                                 <div className="flex items-center gap-4">
                                     <Factory className="w-6 h-6 text-primary" />
-                                    <div><h3 className="text-base font-semibold text-on-surface dark:text-gray-100">شروع فعالیت تجاری</h3><p className="text-sm text-on-surface-variant dark:text-gray-400">در یک دقیقه کسب و کار خود را ثبت کنید و قیمتهای خود را روی تابلو قرار دهید.</p></div>
+                                    <div><h3 className="text-base font-semibold text-on-surface dark:text-gray-100">شروع فعالیت تجاری</h3><p className="text-sm text-on-surface-variant dark:text-gray-400">در یک دقیقه کسب و کار خود را ثبت کنید و قیمت‌های خود را روی تابلو قرار دهید.</p></div>
                                 </div>
                                 <button onClick={() => router.push('/business/register')} className="px-6 py-2.5 bg-primary text-on-primary rounded-xl text-sm">ثبت کسب‌وکار</button>
                             </div>
@@ -425,7 +451,7 @@ export default function ProfilePage() {
                             )}
 
                             {/* ⭐ گیت عضویت برای آگهی‌ها */}
-                            {isMember ? (
+                            {isMember && isSelectedBusinessMember ? (
                                 <AdsList
                                     ads={selectedBusiness?.ads || []}
                                     businessId={selectedBusinessId || ''}
@@ -441,6 +467,8 @@ export default function ProfilePage() {
                                     creditBalance={creditBalance?.balance || 0}
                                     bumpCost={bumpCost}
                                 />
+                            ) : isMember && !isSelectedBusinessMember ? (
+                                <JoinArmCard onJoin={handleJoinArm} />
                             ) : isPending ? (
                                 <PendingMembershipCard />
                             ) : isRejected ? (
@@ -455,7 +483,9 @@ export default function ProfilePage() {
                         </>
                     )}
                     <ManagedArmsList onRefresh={() => refetch()} />
-                    <TipsList />
+                    {hasBusiness &&(
+                        <TipsList />
+                    )}
                 </div>
             </main>
 

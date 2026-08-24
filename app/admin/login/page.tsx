@@ -220,7 +220,7 @@ export default function AdminLoginPage() {
                                             setPassword(e.target.value);
                                             if (errors.password) setErrors({ ...errors, password: undefined });
                                         }}
-                                        placeholder="••••••"
+                                        placeholder=""
                                         className={`w-full bg-surface-container-lowest border h-14 px-4 pr-12 font-mono-data text-right focus:ring-1 focus:ring-primary focus:border-primary outline-none transition-all ${
                                             errors.password ? 'border-error' : 'border-outline'
                                         }`}

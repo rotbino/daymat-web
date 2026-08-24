@@ -119,11 +119,11 @@ export default function HomeContent() {
             if (!isMemberOfArm) {
                 try {
                     await apiService.arm.join(currentSlug || 'barton');
-                    // ✅ بعد از عضویت، کش رو رفرش کن
+                    // ✅ بعد از پیوستن، کش رو رفرش کن
                     await refetchArms();
                 } catch (joinError: any) {
                     if (joinError?.data?.errorCode !== 'ALREADY_MEMBER') {
-                        toast.error('برای مشاهده شماره تماس، ابتدا عضو بازار شوید');
+                        toast.error('برای مشاهده شماره تماس، ابتدا به بازار بپیوندید');
                         setIsCalling(false);
                         return;
                     }
@@ -141,7 +141,7 @@ export default function HomeContent() {
             if (error?.data?.errorCode === 'DAILY_CALL_LIMIT_EXCEEDED') {
                 toast.error(error?.data?.message || 'محدودیت تماس روزانه');
             } else if (error?.data?.errorCode === 'NOT_MEMBER') {
-                toast.error('برای مشاهده شماره تماس، ابتدا عضو بازار شوید');
+                toast.error('برای مشاهده شماره تماس، ابتدا به بازار بپوندید');
             } else {
                 toast.error(error?.message || 'خطا');
             }

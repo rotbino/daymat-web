@@ -41,7 +41,7 @@ function VerifyPaymentContent() {
     const bank = searchParams.get('bank') || '';
     const cardnumber = searchParams.get('cardnumber') || '';
 
-    // ⭐ تنظیمات بازو
+    // ⭐ تنظیمات بازار
     const armName = currentArm?.name || 'Daymat';
     const API_BASE = process.env.NEXT_PUBLIC_API_BASE_URL?.replace(/\/$/, '') || 'http://localhost:3011';
     const armLogo = currentArm?.config?.general?.logoFileId

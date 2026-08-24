@@ -46,7 +46,7 @@ export function LocationFilter({
         }).catch(() => {});
     }, []);
 
-    // درخت بازو (در صورت وجود)
+    // درخت بازار (در صورت وجود)
     useEffect(() => {
         if (!armSlug) {
             setArmTree([]);
@@ -57,13 +57,13 @@ export function LocationFilter({
         }).catch(() => setArmTree([]));
     }, [armSlug]);
 
-    // استان‌ها (غیر بازو)
+    // استان‌ها (غیر بازار)
     useEffect(() => {
         if (armSlug || !countryId) return;
         apiService.admin.locations.getChildren(countryId).then(d => setAllProvinces(d || [])).catch(() => {});
     }, [countryId, armSlug]);
 
-    // شهرها (غیر بازو)
+    // شهرها (غیر بازار)
     useEffect(() => {
         if (armSlug || !provinceId) return;
         apiService.admin.locations.getChildren(provinceId).then(d => setAllCities(d || [])).catch(() => {});

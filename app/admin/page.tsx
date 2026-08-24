@@ -105,7 +105,7 @@ export default function AdminDashboard() {
                             <UserPlus className="w-6 h-6 text-purple-600" />
                             <div>
                                 <p className="font-semibold text-purple-800 dark:text-purple-200">
-                                    {stats.pendingMemberships} عضویت در انتظار تأیید
+                                    {stats.pendingMemberships} درخواست پیوستن  در انتظار تأیید
                                 </p>
                                 <p className="text-xs text-purple-600/80 dark:text-purple-400/80 mt-0.5">
                                     مشاهده اعضای در انتظار
@@ -162,7 +162,7 @@ export default function AdminDashboard() {
                         <p className="text-sm text-on-surface-variant mt-1">ایجاد یک بازارتخصصی با تنظیمات کامل</p>
                     </a>
                     <a href="/admin/arm" className="bg-surface-container-low border border-outline-variant p-4 hover:bg-surface-container transition-colors">
-                        <h3 className="font-semibold text-on-surface">بازوها</h3>
+                        <h3 className="font-semibold text-on-surface">بازارها</h3>
                         <p className="text-sm text-on-surface-variant mt-1">لیست و ویرایش بازارهای موجود</p>
                     </a>
                     <a href="/admin/categories" className="bg-surface-container-low border border-outline-variant p-4 hover:bg-surface-container transition-colors">

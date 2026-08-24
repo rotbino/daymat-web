@@ -139,7 +139,7 @@ export default function AboutPage() {
                                 <h3 className="font-bold text-emerald-600">خریداران</h3>
                             </div>
                             <p className="text-sm text-on-surface-variant dark:text-gray-300 leading-relaxed">
-                                خریداران بدون نیاز به ثبت‌نام می‌توانند قیمت‌ها را در تابلوی شفاف {armName} مشاهده کنند. پس از عضویت در
+                                خریداران بدون نیاز به ثبت‌نام می‌توانند قیمت‌ها را در تابلوی شفاف {armName} مشاهده کنند. پس از پیوستن به
                                 {armName}، امکان تماس مستقیم با فروشنده و همچنین ثبت درخواست خرید (Buy Lead) فراهم می‌شود. هر آگهی پس از{' '}
                                 <strong>{adValidity} ساعت</strong> به‌طور خودکار منقضی می‌شود و خریداران همواره به‌روزترین قیمت‌ها را
                                 مشاهده می‌کنند.

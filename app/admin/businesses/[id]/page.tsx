@@ -93,7 +93,7 @@ export default function AdminBusinessDetailPage() {
         { id: 'verification', label: 'مدارک', icon: Shield, badge: business?.verificationStatus === 'pending' },
         { id: 'ads', label: 'آگهی‌ها', icon: Package, count: business?.ads?.length || 0 },
         { id: 'payments', label: 'تراکنش‌ها', icon: CreditCard, count: (business?.credits?.length || 0) + (business?.creditRequests?.length || 0) },
-        { id: 'arms', label: 'بازوها', icon: Store, count: business?.armMemberships?.length || 0 },
+        { id: 'arms', label: 'بازارها', icon: Store, count: business?.armMemberships?.length || 0 },
     ];
 
     // اسکرول تب‌ها
@@ -480,7 +480,7 @@ export default function AdminBusinessDetailPage() {
                     </div>
                 )}
 
-                {/* ══════ بازوها ══════ */}
+                {/* ══════ بازارها ══════ */}
                 {activeTab === 'arms' && (
                     business.armMemberships?.length > 0 ? (
                         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
@@ -504,7 +504,7 @@ export default function AdminBusinessDetailPage() {
                                 </div>
                             ))}
                         </div>
-                    ) : <EmptyState icon={Store} text="در هیچ بازوی عضو نیست" />
+                    ) : <EmptyState icon={Store} text="در هیچ بازاری عضو نیست" />
                 )}
             </div>
         </div>

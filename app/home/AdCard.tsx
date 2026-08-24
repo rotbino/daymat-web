@@ -4,7 +4,7 @@ import React, { useState } from 'react';
 import Image from 'next/image';
 import {
     Clock, MapPin, Star, Verified, Lock,
-    Banknote, Layers, Store
+    Banknote, Layers, Store, Package
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { useRouter } from "next/navigation";
@@ -14,10 +14,6 @@ interface AdCardProps {
     onContact: (adId: string) => void;
     onDetail: (ad: any) => void;
 }
-
-/* ═══════════════════════════════════════════
-   ابزارها
-   ═══════════════════════════════════════════ */
 
 function formatNum(n: number | undefined) {
     return n?.toLocaleString('fa-IR') ?? '—';
@@ -33,10 +29,6 @@ function getRelativeTime(date: string) {
     if (diffDays <= 7) return `${diffDays} روز`;
     return `${diffDays} روز`;
 }
-
-/* ═══════════════════════════════════════════
-   نقشه‌ها
-   ═══════════════════════════════════════════ */
 
 const BIZ_TYPE: Record<string, { label: string; cls: string }> = {
     producer:         { label: 'تولیدی',       cls: 'bg-blue-50 text-blue-700 dark:bg-blue-900/30 dark:text-blue-400' },
@@ -56,47 +48,41 @@ const TIER: Record<string, { label: string; color: string; border: string }> = {
     blue:  { label: 'آبی',     color: 'text-blue-500 dark:text-blue-400',      border: 'border-r-blue-500' },
 };
 
-/* ═══════════════════════════════════════════
-   کامپوننت اصلی
-   ═══════════════════════════════════════════ */
-
 export default function AdCard({ ad, onContact, onDetail }: AdCardProps) {
     const router = useRouter();
     const [imgLoading, setImgLoading] = useState(true);
     const unit = ad.unit?.shortCode || '';
 
-    /* ── پرداخت ── */
+    // ✅ اطلاعات تعداد
+    const unitQty = ad.unitQty ?? null;
+    const unitTitle = ad.unit?.title || unit;
+    const unitBaseTitle = ad.unitBaseTitle || 'واحد'; // ✅ این خط اضافه شد
+    // ✅ پرداخت
     const pm  = ad.paymentMethods;
     const lpm = ad.customFields?.paymentMethods;
     const hasCheque      = (pm?.cheque?.length ?? 0) > 0 || (lpm?.cheque?.enabled ?? false);
     const hasInstallment = (pm?.installment?.length ?? 0) > 0 || (lpm?.installment?.enabled ?? false);
 
-    /* ── تاییدیه ── */
+    // ✅ تاییدیه
     const tier       = ad.business?.verificationTier;
     const tierActive = tier && tier !== 'none';
     const tierInfo   = tierActive ? TIER[tier] : null;
 
-
-    const file = ad.files?.[0]; // فقط اولین فایل را بگیر
+    const file = ad.files?.[0];
     const imgUrl = file?.path || file?.thumbnailPath || '/images/no_product_image.jpg';
     const thumbUrl = file?.thumbnailPath || imgUrl;
     const isExternal = imgUrl.startsWith('https://');
 
-    /* ── زمان ── */
+    // ✅ زمان
     const relTime = getRelativeTime(ad.updatedAt || ad.createdAt);
     const isFresh = relTime === 'امروز' || relTime === 'دیروز';
 
-    /* ── نوع کسب‌وکار ── */
+    // ✅ نوع کسب‌وکار
     const bizInfo = BIZ_TYPE[ad.business?.type || ''] || BIZ_TYPE.other;
 
-    /* ── کلیک ── */
     const handleClick = () => {
         ad.isAnonymous ? onContact(ad.id) : router.push(`/ad/${ad.id}`);
     };
-
-    /* ──────────────────────────────────────
-       زیرکامپوننت‌های مشترک
-       ────────────────────────────────────── */
 
     const PaymentTags = ({ className }: { className?: string }) => (
         <div className={cn('flex items-center gap-1 flex-wrap', className)}>
@@ -113,11 +99,6 @@ export default function AdCard({ ad, onContact, onDetail }: AdCardProps) {
         </div>
     );
 
-    /**
-     * ★ بخش اطلاعات فروشنده ★
-     * — ناشناس: آیکون قفل
-     * — عادی: نام (خط کامل) + تیک اعتماد + نوع کسب‌وکار + شهر + تلفن
-     */
     const SellerBox = () => {
         if (ad.isAnonymous) {
             return (
@@ -133,7 +114,6 @@ export default function AdCard({ ad, onContact, onDetail }: AdCardProps) {
                 "bg-gray-50 dark:bg-gray-800/50 rounded-lg border border-gray-200/60 dark:border-gray-700/40 overflow-hidden",
                 tierActive && tierInfo && "border-r-[3px]"
             )}>
-                {/* خط ۱: نام + تیک + نوع */}
                 <div className="flex items-center gap-1.5 px-2.5 py-1.5">
                     <Store className="w-3 h-3 text-gray-400 dark:text-gray-500 flex-shrink-0" />
                     <span className="text-[11px] font-bold text-gray-800 dark:text-gray-200 truncate flex-1">
@@ -152,7 +132,6 @@ export default function AdCard({ ad, onContact, onDetail }: AdCardProps) {
                         {bizInfo.label}
                     </span>
                 </div>
-                {/* خط ۲: شهر + تلفن */}
                 {(ad.business?.city || ad.business?.phone) && (
                     <div className="flex items-center gap-2.5 px-2.5 pb-1.5 text-[9px] text-gray-400 dark:text-gray-500">
                         {ad.business?.city && (
@@ -169,13 +148,25 @@ export default function AdCard({ ad, onContact, onDetail }: AdCardProps) {
         );
     };
 
-    /* ═══════════════════════════════════════
-       طرح موبایل — افقی (تصویر راست، محتوا چپ)
-       ═══════════════════════════════════════ */
+    // ✅ کامپوننت نمایش تعداد در واحد
+    const UnitQtyBadge = ({ compact = false }: { compact?: boolean }) => {
+        if (!unitQty) return null;
+
+        return (
+            <span className={cn(
+                "inline-flex items-center gap-1 bg-surface-container-high/80 text-on-surface-variant rounded-full font-medium",
+                compact ? "text-[9px] px-1.5 py-0.5" : "text-[10px] px-2 py-0.5"
+            )}>
+                <Package className={cn(compact ? "w-2.5 h-2.5" : "w-3 h-3")} />
+                {unitQty.toLocaleString()} عدد
+            </span>
+        );
+    };
+
     const MobileLayout = () => (
         <div className="flex flex-row-reverse bg-white dark:bg-gray-900 rounded-xl border border-gray-200/60 dark:border-gray-800 overflow-hidden shadow-sm hover:shadow-md transition-all duration-300 group">
 
-            {/* ── تصویر (راست) ── */}
+            {/* تصویر */}
             <div className="w-28 flex-shrink-0 relative bg-gray-100 dark:bg-gray-800">
                 {imgLoading && (
                     <div className="absolute inset-0 flex items-center justify-center z-[5]">
@@ -201,6 +192,14 @@ export default function AdCard({ ad, onContact, onDetail }: AdCardProps) {
                         <Star className="w-2.5 h-2.5 text-white fill-white" />
                     </div>
                 )}
+
+                {/* ✅ زمان - ابزولوت بالای عکس */}
+                {isFresh && (
+                    <div className="absolute top-1.5 left-1.5 bg-primary/90 text-white px-1.5 py-0.5 rounded-full text-[8px] font-medium shadow-sm z-10">
+                        {relTime === 'امروز' ? '📌 امروز' : '🔄 دیروز'}
+                    </div>
+                )}
+
                 {/* گرادیان موقعیت */}
                 <div className="absolute bottom-0 inset-x-0 bg-gradient-to-t from-black/60 to-transparent px-1.5 pb-1 pt-4">
                     <div className="flex items-center gap-0.5">
@@ -210,21 +209,30 @@ export default function AdCard({ ad, onContact, onDetail }: AdCardProps) {
                 </div>
             </div>
 
-            {/* ── محتوا (چپ) ── */}
+            {/* محتوا */}
             <div className="flex-1 flex flex-col justify-between p-2.5 min-w-0 gap-1">
 
-                {/* عنوان */}
                 <h3 className="font-bold text-[13px] text-gray-900 dark:text-gray-100 line-clamp-2 leading-snug">
                     {ad.productType || ad.title}
                 </h3>
 
                 {/* قیمت */}
                 <div className="flex items-baseline gap-1">
-                    <span className="text-[16px] font-bold text-primary leading-none">
-                        {formatNum(ad.unitPrice)}
-                    </span>
+                <span className="text-[16px] font-bold text-primary leading-none">
+                    {formatNum(ad.unitPrice)}
+                </span>
                     <span className="text-[9px] text-gray-500 dark:text-gray-400">تومان/{unit}</span>
                 </div>
+
+                {/* ✅ تعداد در واحد - خط جدا */}
+                {unitQty && (
+                    <div className="flex items-center gap-1.5 text-[10px] text-gray-600 dark:text-gray-400 bg-gray-50 dark:bg-gray-800/50 rounded-lg px-2 py-1">
+                        <Package className="w-3 h-3 text-primary flex-shrink-0" />
+                        <span>
+                        تعداد در هر {unit}: <span className="font-bold text-gray-800 dark:text-gray-200">{unitQty.toLocaleString()} {unitBaseTitle}</span>
+                    </span>
+                    </div>
+                )}
 
                 {/* حداقل + موجودی */}
                 <div className="flex items-center gap-2 text-[9px] text-gray-500 dark:text-gray-400">
@@ -233,28 +241,19 @@ export default function AdCard({ ad, onContact, onDetail }: AdCardProps) {
                     <span>موجودی: <span className="font-semibold text-gray-700 dark:text-gray-300">{ad.availableQuantity ? `${formatNum(ad.availableQuantity)} ${unit}` : 'موجود'}</span></span>
                 </div>
 
-                {/* ★ فروشنده ★ */}
                 <SellerBox />
 
-                {/* زمان + پرداخت */}
-                <div className="flex items-center justify-between gap-1">
-                    <div className="flex items-center gap-0.5">
-                        <Clock className="w-2.5 h-2.5 text-gray-400" />
-                        <span className="text-[9px] text-gray-400">{relTime}</span>
-                    </div>
+                <div className="flex items-center justify-end gap-1">
                     <PaymentTags />
                 </div>
             </div>
         </div>
     );
 
-    /* ═══════════════════════════════════════
-       طرح دسکتاپ — عمودی (تصویر بالا، محتوا پایین)
-       ═══════════════════════════════════════ */
     const DesktopLayout = () => (
         <div className="bg-white dark:bg-gray-900 border border-gray-200/60 dark:border-gray-800 rounded-xl overflow-hidden shadow-sm hover:shadow-lg transition-all duration-300 group flex flex-col h-full">
 
-            {/* ── تصویر ── */}
+            {/* تصویر */}
             <div className="relative h-44 overflow-hidden bg-gray-100 dark:bg-gray-800">
                 {imgLoading && (
                     <div className="absolute inset-0 flex items-center justify-center z-[5]">
@@ -290,9 +289,8 @@ export default function AdCard({ ad, onContact, onDetail }: AdCardProps) {
                 </div>
             </div>
 
-            {/* ── بدنه ── */}
+            {/* بدنه */}
             <div className="p-3 flex-1 flex flex-col gap-1.5">
-                {/* عنوان */}
                 <h4 className="font-bold text-[13px] text-gray-900 dark:text-gray-100 line-clamp-2 leading-snug">
                     {ad.productType || ad.title}
                 </h4>
@@ -306,6 +304,16 @@ export default function AdCard({ ad, onContact, onDetail }: AdCardProps) {
                     </div>
                 </div>
 
+                {/* ✅ تعداد در واحد - خط جدا */}
+                {unitQty && (
+                    <div className="flex items-center gap-1.5 text-[11px] text-gray-600 dark:text-gray-400 bg-gray-50 dark:bg-gray-800/50 rounded-lg px-2.5 py-1.5">
+                        <Package className="w-3.5 h-3.5 text-primary flex-shrink-0" />
+                        <span>
+                        تعداد در هر {unit}: <span className="font-bold text-gray-800 dark:text-gray-200">{unitQty.toLocaleString()} {unitBaseTitle}</span>
+                    </span>
+                    </div>
+                )}
+
                 {/* حداقل + موجودی */}
                 <div className="flex items-center gap-3 text-[10px] text-gray-500 dark:text-gray-400">
                     <span>حداقل: <span className="font-semibold text-gray-700 dark:text-gray-300">{formatNum(ad.minQuantity)} {unit}</span></span>
@@ -313,7 +321,6 @@ export default function AdCard({ ad, onContact, onDetail }: AdCardProps) {
                     <span>موجودی: <span className="font-semibold text-gray-700 dark:text-gray-300">{ad.availableQuantity ? `${formatNum(ad.availableQuantity)} ${unit}` : 'موجود'}</span></span>
                 </div>
 
-                {/* ★ فروشنده ★ */}
                 <div className="mt-auto pt-1.5 border-t border-gray-100 dark:border-gray-800">
                     <SellerBox />
                 </div>
@@ -321,9 +328,6 @@ export default function AdCard({ ad, onContact, onDetail }: AdCardProps) {
         </div>
     );
 
-    /* ═══════════════════════════════════════
-       رندر
-       ═══════════════════════════════════════ */
     return (
         <div onClick={handleClick} className="cursor-pointer">
             <div className="block md:hidden"><MobileLayout /></div>

@@ -56,7 +56,7 @@ export default function RegisterPage() {
             if (armSlug) {
                 try {
                     await apiService.arm.join(armSlug);
-                    toast.success(`با موفقیت در بازار عضو شدید`);
+                    toast.success(`با موفقیت به بازار پیوستید`);
                 } catch (error: any) {
                     if (error?.data?.errorCode !== 'ALREADY_MEMBER') {
                         console.error('Join error:', error);
@@ -86,7 +86,7 @@ export default function RegisterPage() {
                 <div className="flex items-center gap-3">
                     <div className="flex flex-col text-right">
                         <span className="font-headline-sm text-headline-sm text-on-surface leading-tight">
-                            عضویت سریع
+                            ثبت نام سریع
                         </span>
                         <span className="text-[10px] text-on-surface-variant leading-tight">
                             با شماره موبایل ثبت‌نام کنید
@@ -105,10 +105,10 @@ export default function RegisterPage() {
                     <form onSubmit={handleSubmit} className="space-y-6">
                         <div className="text-right mb-8">
                             <h2 className="font-headline-md text-headline-md text-on-surface">
-                                عضویت سریع
+                                ثبت نام سریع
                             </h2>
                             <p className="text-body-md text-on-surface-variant mt-1">
-                                برای عضویت در پلتفرم، شماره موبایل خود را وارد کنید
+                                برای پیوستن به پلتفرم، شماره موبایل خود را وارد کنید
                             </p>
                             <p className="text-xs text-on-surface-variant mt-2 text-primary">
                                 رمز عبور موقت ۱۲۳۴۵۶ برای شما تنظیم شده است
@@ -145,7 +145,7 @@ export default function RegisterPage() {
                                 'در حال ثبت...'
                             ) : (
                                 <>
-                                    عضویت سریع
+                                    ثبت نام سریع
                                     <UserPlus className="w-5 h-5" />
                                 </>
                             )}

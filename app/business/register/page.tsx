@@ -97,7 +97,7 @@ export default function RegisterBusinessPage() {
                                 type="text"
                                 value={formData.shortDescription}
                                 onChange={(e) => setFormData(prev => ({ ...prev, shortDescription: e.target.value }))}
-                                placeholder="تولید کننده انواع آجر فشاری"
+                                placeholder={labels['business.description.placeholder'] || 'مثال: تولید انواع بلوک'}
                                 className="w-full bg-white dark:bg-gray-800 border border-outline-variant/30 dark:border-gray-700 h-11 px-4 text-sm text-right rounded-xl focus:ring-2 focus:ring-primary/20 focus:border-primary outline-none transition-all"
                             />
                         </div>

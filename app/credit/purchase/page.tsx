@@ -34,7 +34,7 @@ export default function PurchaseCreditPage() {
     const [showSuccess, setShowSuccess] = useState(false);
     const [isExpanded, setIsExpanded] = useState(false);
     // ============================================================
-    // ✅ خواندن تنظیمات از config بازو
+    // ✅ خواندن تنظیمات از config بازار
     // ============================================================
     const armConfig = currentArm?.config as any || {};
     const paymentConfig = armConfig.payment || {};
@@ -70,7 +70,7 @@ export default function PurchaseCreditPage() {
         'rayanpay': 'رایان‌پی',
     };
 
-    // ✅ شماره پشتیبان از تنظیمات بازو
+    // ✅ شماره پشتیبان از تنظیمات بازار
     const supportPhone = supportConfig.mobile || supportConfig.phone || null;
     const supportName = supportConfig.name || 'پشتیبانی';
 

@@ -128,7 +128,7 @@ export const apiService = {
         update: (id: string, data: Partial<CreateArmDto>): Promise<Arm> =>
             apiRequest(`/arm/${id}`, { method: 'PUT', data }),
 
-        // جدید: دریافت بازو با id
+        // جدید: دریافت بازار با id
         findById: (id: string): Promise<Arm> =>
             apiRequest(`/arm/${id}`),   // بک‌اند باید این route را پشتیبانی کند
     },
@@ -245,7 +245,7 @@ export const apiService = {
 
         getBankInfo: (armId: string): Promise<{ paymentMethods: string[]; bankAccountNumber?: string; bankShebaNumber?: string; bankAccountOwner?: string }> =>
             apiRequest(`/credit/bank-info/${armId}`),
-        // 🆕 متدهای جدید برای مدیر بازو
+        // 🆕 متدهای جدید برای مدیر بازار
         getArmPayments: (slug: string, status?: string): Promise<any> =>
             apiRequest(`/credit/arm/${slug}/payments`, { params: { status } }),
 
@@ -530,11 +530,11 @@ export const apiService = {
     // ✅ سرویس‌های مالک بازار (arm-admin)
     // ============================================================
     armAdmin: {
-        // دریافت اطلاعات کامل بازو
+        // دریافت اطلاعات کامل بازار
         getArm: (slug: string): Promise<any> =>
             apiRequest(`/arm-admin/${slug}`),
 
-        // دریافت آمار بازو
+        // دریافت آمار بازار
         getStats: (slug: string): Promise<{
             totalMembers: number;
             activeMembers: number;
@@ -565,29 +565,29 @@ export const apiService = {
                 data: { reason },
             }),
 
-        // دریافت تنظیمات بازو
+        // دریافت تنظیمات بازار
         getSettings: (slug: string): Promise<any> =>
             apiRequest(`/arm-admin/${slug}/settings`),
 
-        // به‌روزرسانی تنظیمات بازو
+        // به‌روزرسانی تنظیمات بازار
         updateSettings: (slug: string, data: any): Promise<any> =>
             apiRequest(`/arm-admin/${slug}/settings`, {
                 method: 'PUT',
                 data,
             }),
 
-        // ✅ به‌روزرسانی تنظیمات پرداخت بازو
+        // ✅ به‌روزرسانی تنظیمات پرداخت بازار
         updatePaymentSettings: (slug: string, data: any): Promise<any> =>
             apiRequest(`/arm-admin/${slug}/settings/payments`, {
                 method: 'PUT',
                 data,
             }),
 
-        // ✅ دریافت تنظیمات پرداخت بازو
+        // ✅ دریافت تنظیمات پرداخت بازار
         getPaymentSettings: (slug: string): Promise<any> =>
             apiRequest(`/arm-admin/${slug}/settings/payments`),
 
-        // ✅ دریافت گزارش مالی بازو
+        // ✅ دریافت گزارش مالی بازار
         getFinancialReport: (slug: string, params?: { startDate?: string; endDate?: string }): Promise<any> =>
             apiRequest(`/arm-admin/${slug}/financial/report`, { params }),
         getCategories: (slug: string): Promise<any[]> =>

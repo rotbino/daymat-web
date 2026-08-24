@@ -84,11 +84,11 @@ export default function LoginPage() {
                 dispatch(setUser(registerResponse.user));
                 dispatch(setAccessToken(registerResponse.access_token));
 
-                // عضویت در بازار
+                // پیوستن به بازار
                 if (armSlug) {
                     try {
                         await apiService.arm.join(armSlug);
-                        toast.success(`با موفقیت در بازار عضو شدید`);
+                        toast.success(`با موفقیت به بازار پیوستید`);
                     } catch (error: any) {
                         if (error?.data?.errorCode !== 'ALREADY_MEMBER') {
                             console.error('Join error:', error);
@@ -180,7 +180,7 @@ export default function LoginPage() {
                     )}
                     <div className="flex flex-col text-right">
                         <span className="font-headline-sm text-headline-sm text-on-surface leading-tight">
-                            {step === 'phone' ? 'ورود / عضویت' : 'ورود'}
+                            {step === 'phone' ? 'ورود / ثبت نام' : 'ورود'}
                         </span>
                         <span className="text-[10px] text-on-surface-variant leading-tight">
                             {step === 'phone' ? 'شماره موبایل خود را وارد کنید' : 'رمز عبور خود را وارد کنید'}

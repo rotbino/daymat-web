@@ -163,7 +163,7 @@ export function ArmLocationSelector({
                     </div>
                 </div>
                 <p className="text-xs text-on-surface-variant/70">
-                    * این بازار فقط در یک شهر فعال است
+                    * این بازار فقط در شهر {singleCity?.label} فعال است
                 </p>
             </div>
         );
@@ -190,7 +190,7 @@ export function ArmLocationSelector({
                         <label className="font-label-md text-label-md text-on-surface-variant block">
                             استان <span className="text-primary">*</span>
                         </label>
-                        <div className="flex items-center gap-2 px-4 py-2.5 bg-surface-container-low border border-outline-variant rounded-lg text-sm text-on-surface">
+                        <div className="flex items-center gap-2 px-4 py-2.5 bg-surface-container-low border border-outline-variant rounded text-sm text-on-surface">
                             <Building2 className="w-4 h-4 text-primary" />
                             <span>{province.label}</span>
                         </div>
@@ -210,7 +210,7 @@ export function ArmLocationSelector({
                                     setSelectedCity(code);
                                     onCityChange(code, label);
                                 }}
-                                className={`w-full bg-surface-container-lowest border h-12 px-4 pr-12 font-body-md text-right appearance-none focus:ring-1 focus:ring-primary focus:border-primary outline-none transition-all ${
+                                className={`w-full  px-4 py-2.5 pr-12 font-body-md text-right appearance-none focus:ring-1 focus:ring-primary  outline-none transition-all  border border-outline-variant rounded text-sm text-on-surface ${
                                     error ? 'border-error' : 'border-outline'
                                 }`}
                             >
