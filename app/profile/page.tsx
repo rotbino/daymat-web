@@ -10,7 +10,7 @@ import { AppHeader, AppFooter } from '@/app/components';
 import { setUser } from '@/lib/store/slices/authSlice';
 import { EditProfileModal } from '@/app/profile/components/EditProfileModal';
 import { RefreshModal } from '@/app/ad/RefreshModal';
-import { Key, Factory, Store, AlertCircle, UserPlus, XCircle, CheckCircle, Clock } from 'lucide-react';
+import { Key, Factory, Store, UserPlus, XCircle, Clock } from 'lucide-react';
 import { ChangePasswordModal } from '@/app/register/ChangePasswordModal';
 import { toast } from 'sonner';
 import { VerificationModal } from '../business/VerificationModal';
@@ -20,7 +20,7 @@ import { apiService } from '@/lib/api/apiService';
 
 import ProfileHeader from './components/ProfileHeader';
 import BusinessCard from './components/BusinessCard';
-import AdsList from './components/AdsList';
+import BusinessAdsList from './components/BusinessAdsList';
 import CreditsCard from './components/CreditsCard';
 import TipsList from './components/TipsList';
 import BusinessList from './components/BusinessList';
@@ -32,26 +32,50 @@ function JoinArmCard({ armName, onJoin }: { armName: string; onJoin: () => void 
             <div className="w-14 h-14 rounded-full bg-primary/10 flex items-center justify-center mx-auto">
                 <UserPlus className="w-7 h-7 text-primary" />
             </div>
-
             <h3 className="text-base font-semibold text-on-surface">
                 به {armName} بپیوندید
             </h3>
-
             <p className="text-sm text-on-surface-variant">
-                با پیوستن به {armName}، به خریدارن و فروشندگان مرتبط دسترسی پیدا کنید و در بازار تخصصی خود دیده شوید.
+                با پیوستن به {armName}، به خریداران و فروشندگان مرتبط دسترسی پیدا کنید و در بازار تخصصی خود دیده شوید.
             </p>
-
             <button
                 onClick={onJoin}
                 className="px-6 py-2.5 bg-primary text-on-primary rounded-xl text-sm font-bold hover:bg-primary/90 transition-colors"
             >
-                پیوستن به بارتون
+                پیوستن به {armName}
             </button>
         </div>
     );
 }
 
-// ─── کارت انتظار تأیید پیوستن به بازار ───
+// ─── کارت: کسب‌وکار انتخاب شده عضو بازار نیست ───
+function BusinessNotMemberCard({ armName, businessName, onJoin }: {
+    armName: string;
+    businessName: string;
+    onJoin: () => void;
+}) {
+    return (
+        <div className="bg-orange-50 dark:bg-orange-900/20 border-2 border-orange-200 dark:border-orange-800 rounded-2xl p-6 text-center space-y-4">
+            <div className="w-14 h-14 rounded-full bg-orange-100 dark:bg-orange-800 flex items-center justify-center mx-auto">
+                <Store className="w-7 h-7 text-orange-600 dark:text-orange-400" />
+            </div>
+            <h3 className="text-base font-semibold text-orange-800 dark:text-orange-300">
+                 «{businessName}» عضو {armName} نیست
+            </h3>
+            <p className="text-sm text-orange-700/80 dark:text-orange-400/80">
+                برای ثبت آگهی، کسب و کار شما باید عضو بازار {armName} باشد.
+            </p>
+            <button
+                onClick={onJoin}
+                className="px-6 py-2.5 bg-orange-500 text-white rounded-xl text-sm font-bold hover:bg-orange-600 transition-colors"
+            >
+                پیوستن {businessName} به {armName}
+            </button>
+        </div>
+    );
+}
+
+// ─── کارت انتظار تأیید پیوستن ───
 function PendingMembershipCard() {
     return (
         <div className="bg-amber-50 dark:bg-amber-900/20 border border-amber-200 rounded-2xl p-6 text-center space-y-3">
@@ -86,7 +110,7 @@ function RejectedMembershipCard({
             <h3 className="text-base font-semibold text-red-800 dark:text-red-300">
                 نیاز به اصلاح برای تایید پیوستن شما به بازار
             </h3>
-            <p className="text-sm  leading-relaxed">
+            <p className="text-sm leading-relaxed">
                 تایید پیوستن شما به بازار نیاز به اصلاحات زیر دارد. بعد از انجام اصلاحات دکمه درخواست پیوستن را فشار دهید.
             </p>
             <p className="text-sm text-red-700/80 dark:text-red-400/80 leading-relaxed">
@@ -96,7 +120,7 @@ function RejectedMembershipCard({
                 <button
                     onClick={onReapply}
                     disabled={isSubmitting}
-                    className="px-6 py-2.5 bg-green-500 text-on-primary rounded-xl text-sm font-bold hover:bg-primary/90 transition-colors disabled:opacity-50"
+                    className="px-6 py-2.5 bg-green-500 text-white rounded-xl text-sm font-bold hover:bg-green-600 transition-colors disabled:opacity-50"
                 >
                     {isSubmitting ? 'در حال ارسال...' : 'اصلاحات انجام شد؛ درخواست مجدد'}
                 </button>
@@ -113,7 +137,6 @@ export default function ProfilePage() {
     const { data: activeBusiness, isLoading: activeLoading, refetch } = useActiveBusiness();
     const { data: creditBalance, refetch: refetchBalance } = useCreditBalance();
 
-
     const [isEditModalOpen, setIsEditModalOpen] = useState(false);
     const [isPasswordModalOpen, setIsPasswordModalOpen] = useState(false);
     const [isVerificationModalOpen, setIsVerificationModalOpen] = useState(false);
@@ -129,7 +152,6 @@ export default function ProfilePage() {
     const hasBusiness = !!activeBusiness;
     const isSystemAdmin = user?.role === 'system_admin';
 
-
     const { data: userArms, isLoading: armsLoading, refetch: refetchArms } = useArms();
 
     const isArmOwner = useMemo(() => {
@@ -139,27 +161,61 @@ export default function ProfilePage() {
         );
     }, [userArms, currentSlug, user]);
 
-
-    const currentMembership = useMemo(() => {
-        if (!userArms || !currentSlug) return null;
-        return userArms.find((a: any) => a.slug === currentSlug) || null;
+    // ✅ عضویت کاربر (هر کسب‌وکاری) در بازو
+    const isUserMemberOfArm = useMemo(() => {
+        if (!userArms || !currentSlug) return false;
+        return userArms.some(
+            (a: any) => a.slug === currentSlug && a.status === 'active'
+        );
     }, [userArms, currentSlug]);
 
-    const isMember = currentMembership?.status === 'active';
-    const isPending = currentMembership?.status === 'pending';
-    const isRejected = currentMembership?.status === 'rejected';
-    const rejectionReason = currentMembership?.rejectionReason;
-
-    // ✅ بررسی اینکه آیا کسبوکار انتخاب شده عضو بازار فعلی هست
+    // ✅ عضویت کسب‌وکار انتخاب شده در بازو
     const isSelectedBusinessMember = useMemo(() => {
-        if (!currentMembership || !selectedBusinessId) return false;
-        return currentMembership.businessId === selectedBusinessId;
-    }, [currentMembership, selectedBusinessId]);
+        if (!userArms || !currentSlug || !selectedBusinessId) return false;
+        return userArms.some(
+            (a: any) =>
+                a.slug === currentSlug &&
+                a.businessId === selectedBusinessId &&
+                a.status === 'active'
+        );
+    }, [userArms, currentSlug, selectedBusinessId]);
 
-    // ✅ کیف پول فقط وقتی نمایش داده میشه که:
-    // ۱. کاربر عضو active باشه
-    // ۲. کسبوکار انتخاب شده همان businessId در membership باشه
-    const shouldShowWallet = isMember && isSelectedBusinessMember;
+    // ✅ pending برای کسب‌وکار انتخاب شده
+    const isSelectedBusinessPending = useMemo(() => {
+        if (!userArms || !currentSlug || !selectedBusinessId) return false;
+        return userArms.some(
+            (a: any) =>
+                a.slug === currentSlug &&
+                a.businessId === selectedBusinessId &&
+                a.status === 'pending'
+        );
+    }, [userArms, currentSlug, selectedBusinessId]);
+
+    // ✅ rejected برای کسب‌وکار انتخاب شده
+    const isSelectedBusinessRejected = useMemo(() => {
+        if (!userArms || !currentSlug || !selectedBusinessId) return false;
+        return userArms.some(
+            (a: any) =>
+                a.slug === currentSlug &&
+                a.businessId === selectedBusinessId &&
+                a.status === 'rejected'
+        );
+    }, [userArms, currentSlug, selectedBusinessId]);
+
+    // ✅ دلیل رد
+    const rejectionReasonForSelectedBusiness = useMemo(() => {
+        if (!userArms || !currentSlug || !selectedBusinessId) return null;
+        const rejected = userArms.find(
+            (a: any) =>
+                a.slug === currentSlug &&
+                a.businessId === selectedBusinessId &&
+                a.status === 'rejected'
+        );
+        return rejected?.rejectionReason || null;
+    }, [userArms, currentSlug, selectedBusinessId]);
+
+    // ✅ کیف پول فقط وقتی نمایش داده میشه که کسب‌وکار عضو باشه
+    const shouldShowWallet = isSelectedBusinessMember;
 
     useEffect(() => {
         if (activeBusiness && !selectedBusinessId) {
@@ -199,7 +255,6 @@ export default function ProfilePage() {
     const bumpCost = armConfig?.economy?.bumpCost || 10;
     const maxActiveAds = armConfig?.modules?.priceTable?.maxActiveAdsPerUser || 5;
 
-
     const handleReapply = async () => {
         if (!currentSlug || !selectedBusinessId) return;
         setReapplying(true);
@@ -208,7 +263,7 @@ export default function ProfilePage() {
                 businessId: selectedBusinessId,
                 roleType: 'seller',
             });
-            await refetchArms();   // ✅ مهم: رفرش لیست بازارها
+            await refetchArms();
             toast.success('درخواست پیوستن مجدد ثبت شد');
         } catch (error: any) {
             toast.error(error?.message || 'خطا در ارسال درخواست');
@@ -216,8 +271,6 @@ export default function ProfilePage() {
             setReapplying(false);
         }
     };
-
-
 
     const handleProfileUpdate = async (data: any) => {
         try {
@@ -267,9 +320,7 @@ export default function ProfilePage() {
         }
     };
 
-    // ⭐ پیوستن به بازار
     const handleJoinArm = async () => {
-
         if (!currentSlug || !selectedBusinessId) return;
         try {
             await apiService.arm.join(currentSlug, {
@@ -279,7 +330,12 @@ export default function ProfilePage() {
             await refetchArms();
             toast.success('درخواست پیوستن ثبت شد');
         } catch (error: any) {
-            toast.error(error?.message || 'خطا در پیوستن به بازار');
+            if (error?.data?.errorCode === 'ALREADY_MEMBER') {
+                toast.info('این کسب‌وکار قبلاً عضو شده است');
+                await refetchArms();
+            } else {
+                toast.error(error?.message || 'خطا در پیوستن به بازار');
+            }
         }
     };
 
@@ -297,6 +353,45 @@ export default function ProfilePage() {
             </div>
         );
     }
+
+    // ✅ گیت عضویت مشترک
+    const membershipGate = (
+        <>
+            {isSelectedBusinessMember ? (
+                <BusinessAdsList
+                    ads={selectedBusiness?.ads || []}
+                    businessId={selectedBusinessId || ''}
+                    totalAds={totalAds}
+                    activeAds={activeAds}
+                    expiredAds={expiredAds}
+                    onRefreshClick={(ad) => { setSelectedAd(ad); setIsRefreshModalOpen(true); }}
+                    onEditClick={(ad) => { router.push(`/ad/edit/${ad.id}`); }}
+                    onRepublishClick={(ad) => { setSelectedAd(ad); setIsRefreshModalOpen(true); }}
+                    onToggleActive={handleToggleActive}
+                    onDeleteClick={handleDeleteAd}
+                    maxActiveAds={maxActiveAds}
+                    creditBalance={creditBalance?.balance || 0}
+                    bumpCost={bumpCost}
+                />
+            ) : isSelectedBusinessPending ? (
+                <PendingMembershipCard />
+            ) : isSelectedBusinessRejected ? (
+                <RejectedMembershipCard
+                    reason={rejectionReasonForSelectedBusiness}
+                    onReapply={handleReapply}
+                    isSubmitting={reapplying}
+                />
+            ) : isUserMemberOfArm ? (
+                <BusinessNotMemberCard
+                    armName={currentArm?.name || ''}
+                    businessName={selectedBusiness?.name || ''}
+                    onJoin={handleJoinArm}
+                />
+            ) : (
+                <JoinArmCard armName={currentArm?.name || ''} onJoin={handleJoinArm} />
+            )}
+        </>
+    );
 
     return (
         <div className="min-h-screen bg-gradient-to-br from-surface via-surface to-surface-container-low/30 dark:from-gray-950 dark:via-gray-950 dark:to-gray-900/30">
@@ -318,7 +413,7 @@ export default function ProfilePage() {
                         <div className="flex gap-3 w-full sm:w-auto">
                             <button
                                 onClick={() => setIsPasswordModalOpen(true)}
-                                className="flex-1 sm:flex-none bg-error text-white px-6 py-2.5 text-sm font-bold rounded-lg hover:bg-error/90 transition-colors shadow-lg shadow-error/30 flex items-center justify-center gap-2 animate-pulse"
+                                className="flex-1 sm:flex-none bg-error text-white px-6 py-2.5 text-sm font-bold rounded-lg hover:bg-error/90 transition-colors shadow-lg shadow-error/30 flex items-center justify-center gap-2"
                             >
                                 <Key className="w-4 h-4" />
                                 تغییر رمز
@@ -331,11 +426,10 @@ export default function ProfilePage() {
                 <div className="hidden lg:grid lg:grid-cols-3 gap-6 mb-8">
                     <div className="lg:col-span-1 space-y-6">
                         <ProfileHeader user={user} business={selectedBusiness} isArmOwner={isArmOwner} isSystemAdmin={isSystemAdmin} onEditClick={() => setIsEditModalOpen(true)} />
-                        {/* ✅ کیف پول فقط وقتی نمایش داده میشه که business عضو باشه */}
                         {shouldShowWallet && (
                             <CreditsCard balance={creditBalance?.balance} />
                         )}
-                        {hasBusiness &&(
+                        {hasBusiness && (
                             <TipsList />
                         )}
                     </div>
@@ -374,37 +468,7 @@ export default function ProfilePage() {
                                         onVerificationClick={() => setIsVerificationModalOpen(true)}
                                     />
                                 )}
-
-                                {/* ⭐ گیت عضویت برای آگهی‌ها */}
-                                {isMember && isSelectedBusinessMember ? (
-                                    <AdsList
-                                        ads={selectedBusiness?.ads || []}
-                                        businessId={selectedBusinessId || ''}
-                                        totalAds={totalAds}
-                                        activeAds={activeAds}
-                                        expiredAds={expiredAds}
-                                        onRefreshClick={(ad) => { setSelectedAd(ad); setIsRefreshModalOpen(true); }}
-                                        onEditClick={(ad) => { router.push(`/ad/edit/${ad.id}`); }}
-                                        onRepublishClick={(ad) => { setSelectedAd(ad); setIsRefreshModalOpen(true); }}
-                                        onToggleActive={handleToggleActive}
-                                        onDeleteClick={handleDeleteAd}
-                                        maxActiveAds={maxActiveAds}
-                                        creditBalance={creditBalance?.balance || 0}
-                                        bumpCost={bumpCost}
-                                    />
-                                ) : isMember && !isSelectedBusinessMember ? (
-                                    <JoinArmCard onJoin={handleJoinArm} armName={currentArm.name} />
-                                ) : isPending ? (
-                                    <PendingMembershipCard />
-                                ) : isRejected ? (
-                                    <RejectedMembershipCard
-                                        reason={rejectionReason}
-                                        onReapply={handleReapply}
-                                        isSubmitting={reapplying}
-                                    />
-                                ) : (
-                                    <JoinArmCard onJoin={handleJoinArm} armName={currentArm.name} />
-                                )}
+                                {membershipGate}
                             </>
                         )}
                         <ManagedArmsList onRefresh={() => refetch()} />
@@ -414,7 +478,6 @@ export default function ProfilePage() {
                 {/* موبایل */}
                 <div className="lg:hidden space-y-6">
                     <ProfileHeader user={user} business={selectedBusiness} isArmOwner={isArmOwner} isSystemAdmin={isSystemAdmin} onEditClick={() => setIsEditModalOpen(true)} />
-                    {/* ✅ کیف پول فقط وقتی نمایش داده میشه که business عضو باشه */}
                     {shouldShowWallet && (
                         <CreditsCard balance={creditBalance?.balance} />
                     )}
@@ -449,41 +512,11 @@ export default function ProfilePage() {
                                     onVerificationClick={() => setIsVerificationModalOpen(true)}
                                 />
                             )}
-
-                            {/* ⭐ گیت عضویت برای آگهی‌ها */}
-                            {isMember && isSelectedBusinessMember ? (
-                                <AdsList
-                                    ads={selectedBusiness?.ads || []}
-                                    businessId={selectedBusinessId || ''}
-                                    totalAds={totalAds}
-                                    activeAds={activeAds}
-                                    expiredAds={expiredAds}
-                                    onRefreshClick={(ad) => { setSelectedAd(ad); setIsRefreshModalOpen(true); }}
-                                    onEditClick={(ad) => { router.push(`/ad/edit/${ad.id}`); }}
-                                    onRepublishClick={(ad) => { setSelectedAd(ad); setIsRefreshModalOpen(true); }}
-                                    onToggleActive={handleToggleActive}
-                                    onDeleteClick={handleDeleteAd}
-                                    maxActiveAds={maxActiveAds}
-                                    creditBalance={creditBalance?.balance || 0}
-                                    bumpCost={bumpCost}
-                                />
-                            ) : isMember && !isSelectedBusinessMember ? (
-                                <JoinArmCard onJoin={handleJoinArm} />
-                            ) : isPending ? (
-                                <PendingMembershipCard />
-                            ) : isRejected ? (
-                                <RejectedMembershipCard
-                                    reason={rejectionReason}
-                                    onReapply={handleReapply}
-                                    isSubmitting={reapplying}
-                                />
-                            ) : (
-                                <JoinArmCard onJoin={handleJoinArm} />
-                            )}
+                            {membershipGate}
                         </>
                     )}
                     <ManagedArmsList onRefresh={() => refetch()} />
-                    {hasBusiness &&(
+                    {hasBusiness && (
                         <TipsList />
                     )}
                 </div>

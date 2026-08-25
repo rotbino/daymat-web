@@ -1,9 +1,8 @@
-// app/profile/components/AdsList.tsx
+// app/profile/components/BusinessAdsList.tsx
 'use client';
 
 import React, { useState, useMemo } from 'react';
 import { useRouter } from 'next/navigation';
-import Image from 'next/image'; // ✅ اضافه کردن
 import { useSelector } from 'react-redux';
 import { RootState } from '@/lib/store/store';
 import {
@@ -16,7 +15,7 @@ import { NumberInput } from "@/components/common";
 import { toast } from 'sonner';
 import { AdListItem } from './AdListItem';
 
-interface AdsListProps {
+interface BusinessAdsListProps {
     ads: any[];
     totalAds: number;
     activeAds: number;
@@ -45,16 +44,23 @@ const CURRENCY_MAP: Record<string, string> = {
 
 type TabType = 'active' | 'pending' | 'archived';
 
-export default function AdsList({
-                                    ads, totalAds, activeAds, expiredAds, pendingAds = 0, rejectedAds = 0,
-                                    businessId,
-                                    onRefreshClick, onEditClick, onRepublishClick,
-                                    onToggleActive,
-                                    onDeleteClick,
-                                    maxActiveAds = 5,
-                                    creditBalance = 0,
-                                    bumpCost = 10,
-                                }: AdsListProps) {
+export default function BusinessAdsList({
+                                            ads,
+                                            totalAds,
+                                            activeAds,
+                                            expiredAds,
+                                            pendingAds = 0,
+                                            rejectedAds = 0,
+                                            businessId,
+                                            onRefreshClick,
+                                            onEditClick,
+                                            onRepublishClick,
+                                            onToggleActive,
+                                            onDeleteClick,
+                                            maxActiveAds = 5,
+                                            creditBalance = 0,
+                                            bumpCost = 10,
+                                        }: BusinessAdsListProps) {
     const router = useRouter();
     const queryClient = useQueryClient();
     const bulkUpdateMutation = useBulkUpdateAd();
@@ -64,6 +70,12 @@ export default function AdsList({
     const currencyUnit = CURRENCY_MAP[currency] || currency || 'تومان';
 
     const [activeTab, setActiveTab] = useState<TabType>('active');
+
+    // ✅ فیلتر آگهی‌های فقط همین کسب‌وکار
+    const businessAds = useMemo(() => {
+        if (!businessId) return ads;
+        return ads.filter((ad: any) => ad.businessId === businessId);
+    }, [ads, businessId]);
 
     const refreshAds = () => {
         if (businessId) {
@@ -78,22 +90,20 @@ export default function AdsList({
     const [deactivateConfirm, setDeactivateConfirm] = useState<{ ad: any; open: boolean }>({ ad: null, open: false });
 
     const activeAdsList = useMemo(() =>
-            ads.filter(ad => !isAdExpired(ad) && ad.status === 'active'),
-        [ads]);
+            businessAds.filter(ad => !isAdExpired(ad) && ad.status === 'active'),
+        [businessAds]);
 
     const pendingAdsList = useMemo(() =>
-            ads.filter(ad => ad.status === 'pending' || ad.status === 'rejected'),
-        [ads]);
+            businessAds.filter(ad => ad.status === 'pending' || ad.status === 'rejected'),
+        [businessAds]);
 
     const archivedAdsList = useMemo(() =>
-            ads.filter(ad =>
+            businessAds.filter(ad =>
                 ad.status !== 'pending' &&
                 ad.status !== 'rejected' &&
-                (ad.status === 'inactive' ||
-                    isAdExpired(ad) ||
-                    ad.status === 'expired')
+                (ad.status === 'inactive' || isAdExpired(ad) || ad.status === 'expired')
             ),
-        [ads]);
+        [businessAds]);
 
     const reallyActiveCount = activeAdsList.length;
     const currentList = activeTab === 'active' ? activeAdsList :
@@ -183,7 +193,7 @@ export default function AdsList({
                 <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 sm:gap-0 px-4 py-3 border-b border-outline-variant/20 dark:border-gray-700 bg-surface-container-lowest/50 dark:bg-gray-800/50">
                     <div className="flex flex-wrap items-center gap-2">
                         <h3 className="text-[12px] font-semibold text-on-surface dark:text-gray-200 flex items-center gap-1.5">
-                            آگهی‌های من
+                            آگهی‌های این کسب‌وکار
                             <span className="text-[10px] font-normal text-on-surface-variant/60">
                                 ({reallyActiveCount}/{maxActiveAds} فعال)
                             </span>
@@ -234,7 +244,6 @@ export default function AdsList({
                         </button>
                     )}
 
-                    {/* تب آرشیو با رنگ قرمز */}
                     <button
                         onClick={() => setActiveTab('archived')}
                         className={cn(

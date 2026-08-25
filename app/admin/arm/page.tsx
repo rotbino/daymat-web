@@ -4,8 +4,9 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
-import { useSelector } from 'react-redux';
+import { useSelector, useDispatch } from 'react-redux';
 import { RootState } from '@/lib/store/store';
+import { setArm } from '@/lib/store/slices/armSlice';
 import {
     Plus,
     Edit,
@@ -22,12 +23,9 @@ import { toast } from 'sonner';
 import { apiService } from '@/lib/api/apiService';
 import { cn } from '@/lib/utils';
 
-// ============================================================
-// 🎨 کامپوننت اصلی
-// ============================================================
-
 export default function AdminArmsPage() {
     const router = useRouter();
+    const dispatch = useDispatch();
     const { isAuthenticated } = useSelector((state: RootState) => state.auth);
     const [arms, setArms] = useState<any[]>([]);
     const [loading, setLoading] = useState(true);
@@ -69,6 +67,36 @@ export default function AdminArmsPage() {
         if (isAuthenticated) fetchArms();
     }, [pagination.page]);
 
+    // ✅ ست کردن بازار به عنوان کارنت
+    const handleSetCurrentArm = async (slug: string) => {
+        try {
+            const arm = await apiService.arm.fetchArmData(slug);
+            if (arm) {
+                dispatch(setArm({ arm, slug }));
+                localStorage.setItem('lastArmSlug', slug);
+            }
+        } catch (e) {
+            console.error('Error setting current arm:', e);
+        }
+    };
+
+    // ✅ مشاهده — ست کردن کارنت + باز کردن تب جدید
+    const handleViewArm = async (slug: string) => {
+        await handleSetCurrentArm(slug);
+        window.open(`/${slug}`, '_blank');
+    };
+
+    // ✅ ویرایش — ست کردن کارنت + رفتن به صفحه ویرایش
+    const handleEditArm = async (slug: string, armData?: any) => {
+        await handleSetCurrentArm(slug);
+
+        if (armData?.status === 'draft') {
+            router.push(`/admin/arm/create?slug=${slug}&step=${armData.config?.wizardStep || 'basics'}`);
+        } else {
+            router.push(`/admin/arm/${armData?.id}/edit`);
+        }
+    };
+
     const handleCopySlug = async (slug: string) => {
         try {
             await navigator.clipboard.writeText(`${window.location.origin}/${slug}`);
@@ -95,10 +123,8 @@ export default function AdminArmsPage() {
         );
     };
 
-    // ⭐ اسکلتون لودینگ
     const Skeleton = () => (
         <>
-            {/* دسکتاپ */}
             <div className="hidden md:block overflow-hidden bg-white dark:bg-gray-900 border border-outline-variant/20 dark:border-gray-800 rounded-2xl">
                 <div className="animate-pulse p-4 space-y-3">
                     {[...Array(5)].map((_, i) => (
@@ -115,7 +141,6 @@ export default function AdminArmsPage() {
                     ))}
                 </div>
             </div>
-            {/* موبایل */}
             <div className="md:hidden grid grid-cols-1 gap-3">
                 {[...Array(3)].map((_, i) => (
                     <div key={i} className="bg-white dark:bg-gray-900 border border-outline-variant/20 dark:border-gray-800 rounded-2xl p-4 animate-pulse">
@@ -141,7 +166,7 @@ export default function AdminArmsPage() {
 
     return (
         <div className="space-y-5">
-            {/* ⭐ نوار ابزار */}
+            {/* نوار ابزار */}
             <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-3">
                 <div className="relative flex-1 max-w-md">
                     <Search className="absolute right-3 top-1/2 -translate-y-1/2 w-4 h-4 text-on-surface-variant/50 dark:text-gray-500" />
@@ -174,7 +199,7 @@ export default function AdminArmsPage() {
                 </Link>
             </div>
 
-            {/* ⭐ حالت خالی */}
+            {/* حالت خالی */}
             {!loading && arms.length === 0 && (
                 <div className="text-center py-16 bg-white dark:bg-gray-900 border border-outline-variant/20 dark:border-gray-800 rounded-2xl">
                     <Store className="w-12 h-12 text-on-surface-variant/20 dark:text-gray-700 mx-auto mb-3" />
@@ -185,7 +210,7 @@ export default function AdminArmsPage() {
                 </div>
             )}
 
-            {/* ⭐══════════════ جدول - دسکتاپ ═══════════════ */}
+            {/* جدول - دسکتاپ */}
             {arms.length > 0 && (
                 <>
                     <div className="hidden md:block overflow-hidden bg-white dark:bg-gray-900 border border-outline-variant/20 dark:border-gray-800 rounded-2xl">
@@ -207,7 +232,6 @@ export default function AdminArmsPage() {
                                     key={arm.id}
                                     className="border-b border-outline-variant/10 dark:border-gray-800/50 hover:bg-surface-container-low/30 dark:hover:bg-gray-800/30 transition-colors group"
                                 >
-                                    {/* نام بازار */}
                                     <td className="py-3 px-5">
                                         <div className="flex items-center gap-3">
                                             <div className="w-8 h-8 rounded-lg bg-primary/10 dark:bg-primary/20 flex items-center justify-center flex-shrink-0">
@@ -226,7 +250,6 @@ export default function AdminArmsPage() {
                                         </div>
                                     </td>
 
-                                    {/* شناسه */}
                                     <td className="py-3 px-5">
                                         <button
                                             onClick={() => handleCopySlug(arm.slug)}
@@ -241,52 +264,44 @@ export default function AdminArmsPage() {
                                         </button>
                                     </td>
 
-                                    {/* وضعیت */}
                                     <td className="py-3 px-5 text-center">{getStatusBadge(arm.status)}</td>
 
-                                    {/* اعضا */}
                                     <td className="py-3 px-5 text-center">
-                                            <span className="inline-flex items-center gap-1 text-xs text-on-surface-variant/70 dark:text-gray-400">
-                                                <Users className="w-3.5 h-3.5" />
-                                                {arm._count?.memberships || 0}
-                                            </span>
+                                        <span className="inline-flex items-center gap-1 text-xs text-on-surface-variant/70 dark:text-gray-400">
+                                            <Users className="w-3.5 h-3.5" />
+                                            {arm._count?.memberships || 0}
+                                        </span>
                                     </td>
 
-                                    {/* آگهی‌ها */}
                                     <td className="py-3 px-5 text-center">
-                                            <span className="inline-flex items-center gap-1 text-xs text-on-surface-variant/70 dark:text-gray-400">
-                                                <Package className="w-3.5 h-3.5" />
-                                                {arm._count?.ads || 0}
-                                            </span>
+                                        <span className="inline-flex items-center gap-1 text-xs text-on-surface-variant/70 dark:text-gray-400">
+                                            <Package className="w-3.5 h-3.5" />
+                                            {arm._count?.ads || 0}
+                                        </span>
                                     </td>
 
-                                    {/* تاریخ */}
                                     <td className="py-3 px-5 text-center text-xs text-on-surface-variant/50 dark:text-gray-500">
                                         {new Date(arm.createdAt).toLocaleDateString('fa-IR')}
                                     </td>
 
-                                    {/* عملیات */}
                                     <td className="py-3 px-5">
                                         <div className="flex items-center justify-center gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
-                                            <Link
-                                                href={`/${arm.slug}`}
-                                                target="_blank"
+                                            {/* مشاهده */}
+                                            <button
+                                                onClick={() => handleViewArm(arm.slug)}
                                                 className="p-1.5 hover:bg-primary/10 dark:hover:bg-primary/20 rounded-lg transition-colors"
                                                 title="مشاهده بازار"
                                             >
                                                 <ExternalLink className="w-4 h-4 text-on-surface-variant/50 dark:text-gray-500 hover:text-primary dark:hover:text-primary-400" />
-                                            </Link>
-                                            <Link
-                                                href={
-                                                    arm.status === 'draft'
-                                                        ? `/admin/arm/create?slug=${arm.slug}&step=${arm.config?.wizardStep || 'basics'}`
-                                                        : `/admin/arm/${arm.id}/edit`
-                                                }
+                                            </button>
+                                            {/* ویرایش */}
+                                            <button
+                                                onClick={() => handleEditArm(arm.slug, arm)}
                                                 className="p-1.5 hover:bg-primary/10 dark:hover:bg-primary/20 rounded-lg transition-colors"
                                                 title="ویرایش"
                                             >
                                                 <Edit className="w-4 h-4 text-on-surface-variant/50 dark:text-gray-500 hover:text-primary dark:hover:text-primary-400" />
-                                            </Link>
+                                            </button>
                                         </div>
                                     </td>
                                 </tr>
@@ -295,7 +310,7 @@ export default function AdminArmsPage() {
                         </table>
                     </div>
 
-                    {/* ⭐══════════════ کارت‌ها - موبایل ═══════════════ */}
+                    {/* کارت‌ها - موبایل */}
                     <div className="md:hidden grid grid-cols-1 gap-3">
                         {arms.map((arm) => (
                             <div
@@ -342,25 +357,20 @@ export default function AdminArmsPage() {
                                 </div>
 
                                 <div className="flex items-center gap-1 pt-3 border-t border-outline-variant/10 dark:border-gray-800">
-                                    <Link
-                                        href={`/${arm.slug}`}
-                                        target="_blank"
+                                    <button
+                                        onClick={() => handleViewArm(arm.slug)}
                                         className="flex items-center gap-1.5 px-3 py-1.5 text-[11px] text-on-surface-variant dark:text-gray-400 hover:text-primary dark:hover:text-primary-400 hover:bg-primary/5 dark:hover:bg-primary/10 rounded-lg transition-colors"
                                     >
                                         <ExternalLink className="w-3.5 h-3.5" />
                                         مشاهده
-                                    </Link>
-                                    <Link
-                                        href={
-                                            arm.status === 'draft'
-                                                ? `/admin/arm/create?slug=${arm.slug}&step=${arm.config?.wizardStep || 'basics'}`
-                                                : `/admin/arm/${arm.id}/edit`
-                                        }
+                                    </button>
+                                    <button
+                                        onClick={() => handleEditArm(arm.slug, arm)}
                                         className="flex items-center gap-1.5 px-3 py-1.5 text-[11px] text-on-surface-variant dark:text-gray-400 hover:text-primary dark:hover:text-primary-400 hover:bg-primary/5 dark:hover:bg-primary/10 rounded-lg transition-colors"
                                     >
                                         <Edit className="w-3.5 h-3.5" />
                                         ویرایش
-                                    </Link>
+                                    </button>
                                 </div>
                             </div>
                         ))}
@@ -368,7 +378,7 @@ export default function AdminArmsPage() {
                 </>
             )}
 
-            {/* ⭐ صفحه‌بندی */}
+            {/* صفحه‌بندی */}
             {pagination.totalPages > 1 && (
                 <div className="flex items-center justify-between pt-2">
                     <span className="text-[11px] text-on-surface-variant/60 dark:text-gray-500">

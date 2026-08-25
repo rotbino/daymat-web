@@ -54,7 +54,7 @@ export function ArmProvider({ children }: ArmProviderProps) {
 
     // ⭐ ست کردن بازار توی Redux
     useEffect(() => {
-        if (armData && currentSlug) {
+        if (armData && currentSlug && armData.slug === currentSlug) {
             dispatch(setArm({ arm: armData, slug: currentSlug }));
             localStorage.setItem('lastArmSlug', currentSlug);
         }

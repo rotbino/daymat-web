@@ -60,6 +60,29 @@ function getCategoryConstraintsFromTree(
     armConfig: any,
     categoryTree: any[]
 ): QuantityConstraints {
+    // ✅ جستجو در categoryTree
+    const findNodeInTree = (nodes: any[], id: string): any => {
+        for (const node of nodes) {
+            if (node.id === id || node.categoryId === id) return node;
+            if (node.children) {
+                const found = findNodeInTree(node.children, id);
+                if (found) return found;
+            }
+        }
+        return null;
+    };
+
+    const node = findNodeInTree(categoryTree, categoryId);
+
+    if (node) {
+        const min = node.minQuantityOverride ?? null;
+        const max = node.maxQuantityOverride ?? null;
+        if (min !== null || max !== null) {
+            return { min, max };
+        }
+    }
+
+    // Fallback به categorySelections
     const selection = armConfig?.categorySelections?.find(
         (s: any) => s.categoryId === categoryId
     );
@@ -71,9 +94,20 @@ function getCategoryConstraintsFromTree(
         }
     }
 
+    return { min: null, max: null };
+}
+
+
+// ✅ دریافت واحدهای قابل انتخاب برای کتگوری — از categoryTree + fallback
+function getAvailableUnits(
+    categoryId: string,
+    armConfig: any,
+    categoryTree: any[]
+): UnitOption[] {
+    // ✅ جستجو در categoryTree
     const findNodeInTree = (nodes: any[], id: string): any => {
         for (const node of nodes) {
-            if (node.id === id) return node;
+            if (node.id === id || node.categoryId === id) return node;
             if (node.children) {
                 const found = findNodeInTree(node.children, id);
                 if (found) return found;
@@ -83,19 +117,38 @@ function getCategoryConstraintsFromTree(
     };
 
     const node = findNodeInTree(categoryTree, categoryId);
-    if (node?.parentId) {
-        return getCategoryConstraintsFromTree(node.parentId, armConfig, categoryTree);
+
+    if (node && (node.overrideUnitId || node.alternativeUnits?.length > 0)) {
+        const units: UnitOption[] = [];
+
+        if (node.overrideUnitId) {
+            units.push({
+                unitId: node.overrideUnitId,
+                unitTitle: node.overrideUnitTitle || '',
+                unitShortCode: node.overrideUnitShortCode || '',
+                isVariableQty: node.overrideUnitIsVariableQty === true,
+                qty: node.overrideUnitQty ?? null,
+                isDefault: true,
+            });
+        }
+
+        (node.alternativeUnits || []).forEach((au: any) => {
+            if (au.unitId && au.isActive !== false) {
+                units.push({
+                    unitId: au.unitId,
+                    unitTitle: au.unitTitle || '',
+                    unitShortCode: au.unitShortCode || '',
+                    isVariableQty: au.isVariableQty === true,
+                    qty: au.qty ?? null,
+                    isDefault: false,
+                });
+            }
+        });
+
+        return units;
     }
 
-    return { min: null, max: null };
-}
-
-// ✅ دریافت واحدهای قابل انتخاب برای کتگوری
-function getAvailableUnits(
-    categoryId: string,
-    armConfig: any,
-    categoryTree: any[]
-): UnitOption[] {
+    // ✅ Fallback: categorySelections
     const selection = armConfig?.categorySelections?.find(
         (s: any) => s.categoryId === categoryId
     );
@@ -104,27 +157,24 @@ function getAvailableUnits(
 
     const units: UnitOption[] = [];
 
-    // ✅ واحد پیش‌فرض
     if (selection.overrideUnitId) {
         units.push({
             unitId: selection.overrideUnitId,
             unitTitle: selection.overrideUnitTitle || '',
             unitShortCode: selection.overrideUnitShortCode || '',
-            isVariableQty: selection.overrideUnitIsVariableQty !== false,
+            isVariableQty: selection.overrideUnitIsVariableQty === true,
             qty: selection.overrideUnitQty ?? null,
             isDefault: true,
         });
     }
 
-    // ✅ واحدهای فرعی
-    const altUnits = selection.alternativeUnits || [];
-    altUnits.forEach((au: any) => {
+    (selection.alternativeUnits || []).forEach((au: any) => {
         if (au.unitId && au.isActive !== false) {
             units.push({
                 unitId: au.unitId,
                 unitTitle: au.unitTitle || '',
                 unitShortCode: au.unitShortCode || '',
-                isVariableQty: au.isVariableQty !== false,
+                isVariableQty: au.isVariableQty === true,
                 qty: au.qty ?? null,
                 isDefault: false,
             });
@@ -139,7 +189,7 @@ export function AdForm({ adId, onSuccess }: AdFormProps) {
     const { user, isAuthenticated } = useSelector((state: RootState) => state.auth);
     const { currentSlug, currentArm } = useSelector((state: RootState) => state.arm);
     const { data: business, isLoading: businessLoading } = useActiveBusiness();
-    const { data: categoryTree, isLoading: categoriesLoading } = useArmCategoryTree(currentSlug || 'barton');
+
     const { data: creditBalance, refetch: refetchBalance, isLoading: creditLoading } = useCreditBalance();
     const { data: existingAd, isLoading: adLoading } = useAd(adId || '');
     const uploadMutation = useUploadFile();
@@ -166,7 +216,10 @@ export function AdForm({ adId, onSuccess }: AdFormProps) {
         };
         return currencyMap[code] || code || 'تومان';
     }, [armConfig.economy?.currency]);
-
+    const categoryTree = useMemo(
+        () => (Array.isArray(currentArm?.categoryTree) ? currentArm.categoryTree : []),
+        [currentArm?.categoryTree]
+    );
     const maxActiveAdsPerUser = useMemo(() => priceTable.maxActiveAdsPerUser ?? 5, [priceTable.maxActiveAdsPerUser]);
     const maxTotalFreeAdPerUser = useMemo(() => priceTable.maxTotalFreeAdPerUser ?? 50, [priceTable.maxTotalFreeAdPerUser]);
     const bumpCost = useMemo(() => priceTable.bumpCost ?? 10, [priceTable.bumpCost]);
@@ -274,7 +327,7 @@ export function AdForm({ adId, onSuccess }: AdFormProps) {
         fetchActiveAdsCount();
     }, [business, currentSlug, currentArm]);
 
-    const isLoading = businessLoading || categoriesLoading || creditLoading || (isEditMode && adLoading) || loadingActiveAds;
+    const isLoading = businessLoading  || creditLoading || (isEditMode && adLoading) || loadingActiveAds;
 
     const remainingActiveSlots = Math.max(0, maxActiveAdsPerUser - activeAdsCount);
     const remainingTotalSlots = Math.max(0, maxTotalFreeAdPerUser - activeAdsCount);
