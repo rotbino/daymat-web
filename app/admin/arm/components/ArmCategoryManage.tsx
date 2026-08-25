@@ -1,4 +1,4 @@
-// app/admin/arm/components/CategorySection/ArmCategoryManager.tsx
+// app/admin/arm/components/ArmCategoryManager.tsx
 'use client';
 
 import React, { useState, useMemo, useCallback, useEffect } from 'react';
@@ -56,6 +56,1027 @@ interface DeleteConfirmData {
     title: string;
     tree: 'scope' | 'final';
 }
+
+
+// ============================================================
+// کامپوننت اصلی
+// ============================================================
+export function ArmCategoryManager({ onSave, isAdmin = false }: ArmCategoryManagerProps) {
+    const { setValue } = useFormContext();
+
+    const { data: allCategories = [], isLoading: isCategoriesLoading } = useCategoriesFlat();
+    const { data: allUnitsList = [] } = useUnits();
+
+    const formAllowedCategoryScopeTree = useWatch({ name: 'allowedCategoryScopeTree' }) || [];
+    const formCategoryTree = useWatch({ name: 'categoryTree' }) || [];
+    const armAdminPermission = useWatch({ name: 'config.armAdminPermission' }) || {};
+
+    const categoriesAccess = armAdminPermission.categories || {};
+    const canAdd = isAdmin || categoriesAccess.canAdd === true;
+    const canRemove = isAdmin || categoriesAccess.canRemove === true;
+
+    // ─────────── State ───────────
+    const [mobileTab, setMobileTab] = useState<'scope' | 'final'>('scope');
+    const [expandedNodes, setExpandedNodes] = useState<Set<string>>(new Set());
+    const [searchTerm, setSearchTerm] = useState('');
+
+    const [showReferencePicker, setShowReferencePicker] = useState(false);
+    const [showCategoryPicker, setShowCategoryPicker] = useState(false);
+    const [pickerParentId, setPickerParentId] = useState<string | null>(null);
+
+    // ✅ مودال افزودن سریع (سناریوی پفک/چیپس)
+    const [showQuickAdd, setShowQuickAdd] = useState(false);
+    const [quickAddParentId, setQuickAddParentId] = useState<string | null>(null);
+
+    const [showUnitSettings, setShowUnitSettings] = useState(false);
+    const [unitSettingsNodeId, setUnitSettingsNodeId] = useState<string | null>(null);
+
+    const [deleteConfirm, setDeleteConfirm] = useState<DeleteConfirmData | null>(null);
+
+    const [draggedNodeId, setDraggedNodeId] = useState<string | null>(null);
+    const [dragOverNodeId, setDragOverNodeId] = useState<string | null>(null);
+    const [dragOverPosition, setDragOverPosition] = useState<'before' | 'after' | 'inside' | null>(null);
+
+    const [editingNodeId, setEditingNodeId] = useState<string | null>(null);
+    const [editingLabel, setEditingLabel] = useState('');
+    const [editingTree, setEditingTree] = useState<'scope' | 'final'>('final');
+
+    // ✅ جستجوی اصلی: دیبانس + حداقل ۲ حرف
+    const debouncedSearchTerm = useDebouncedValue(searchTerm, MAIN_SEARCH_DEBOUNCE_MS);
+    const isMainSearchActive = normalizeFa(debouncedSearchTerm.trim()).length >= MIN_SEARCH_CHARS;
+    const mainSearchRawLen = normalizeFa(searchTerm.trim()).length;
+
+    // ─────────── Computed ───────────
+    const allowedCategoryScopeTree = useMemo(
+        () => (Array.isArray(formAllowedCategoryScopeTree) ? formAllowedCategoryScopeTree : []),
+        [formAllowedCategoryScopeTree],
+    );
+
+    const categoryTree = useMemo(
+        () => (Array.isArray(formCategoryTree) ? formCategoryTree : []),
+        [formCategoryTree],
+    );
+
+    const referenceChildrenMap = useMemo(() => buildChildrenMap(allCategories), [allCategories]);
+
+    const scopeTreeIds = useMemo(() => collectTreeIds(allowedCategoryScopeTree), [allowedCategoryScopeTree]);
+
+    const finalTreeIds = useMemo(() => {
+        const ids = new Set<string>();
+        const collect = (nodes: TreeNode[]) => {
+            for (const node of nodes) {
+                ids.add(node.categoryId || node.id);
+                if (node.children) collect(node.children);
+            }
+        };
+        collect(categoryTree);
+        return ids;
+    }, [categoryTree]);
+
+    const scopeLeafCount = useMemo(() => {
+        let count = 0;
+        const countLeaves = (nodes: TreeNode[]) => {
+            for (const node of nodes) {
+                if ((node.children?.length ?? 0) === 0) count++;
+                if (node.children) countLeaves(node.children);
+            }
+        };
+        countLeaves(allowedCategoryScopeTree);
+        return count;
+    }, [allowedCategoryScopeTree]);
+
+    const finalLeafCount = useMemo(() => {
+        let count = 0;
+        const countLeaves = (nodes: TreeNode[]) => {
+            for (const node of nodes) {
+                if (node.isLeaf) count++;
+                if (node.children) countLeaves(node.children);
+            }
+        };
+        countLeaves(categoryTree);
+        return count;
+    }, [categoryTree]);
+
+    const filteredScopeTree = useMemo(() => {
+        if (!isMainSearchActive) return allowedCategoryScopeTree;
+        return filterTreeBySearch(allowedCategoryScopeTree, debouncedSearchTerm);
+    }, [allowedCategoryScopeTree, debouncedSearchTerm, isMainSearchActive]);
+
+    const filteredFinalTree = useMemo(() => {
+        if (!isMainSearchActive) return categoryTree;
+        return filterTreeBySearch(categoryTree, debouncedSearchTerm);
+    }, [categoryTree, debouncedSearchTerm, isMainSearchActive]);
+
+    // باز شدن خودکار نتایج هنگام جستجو
+    useEffect(() => {
+        if (!isMainSearchActive) return;
+        setExpandedNodes(prev => {
+            const next = new Set(prev);
+            const collect = (nodes: TreeNode[]) => {
+                for (const n of nodes) {
+                    next.add(n.id);
+                    if (n.children && n.children.length > 0) collect(n.children);
+                }
+            };
+            collect(filteredScopeTree);
+            collect(filteredFinalTree);
+            return next;
+        });
+    }, [isMainSearchActive, filteredScopeTree, filteredFinalTree]);
+
+    // نودهای هدف مودال‌ها
+    const quickAddParentNode = useMemo(
+        () => (quickAddParentId ? findNodeInTree(allowedCategoryScopeTree, quickAddParentId) : null),
+        [quickAddParentId, allowedCategoryScopeTree],
+    );
+
+    const unitSettingsNode = useMemo(
+        () => (unitSettingsNodeId ? findNodeInTree(categoryTree, unitSettingsNodeId) : null),
+        [unitSettingsNodeId, categoryTree],
+    );
+
+    const deleteDescendantCount = useMemo(() => {
+        if (!deleteConfirm) return 0;
+        const source = deleteConfirm.tree === 'final' ? categoryTree : allowedCategoryScopeTree;
+        const node = findNodeInTree(source, deleteConfirm.nodeId);
+        return node ? getAllDescendantIds(node).length : 0;
+    }, [deleteConfirm, categoryTree, allowedCategoryScopeTree]);
+
+    // ─────────── Scope Tree Actions ───────────
+    const saveScopeTree = useCallback((newTree: TreeNode[]) => {
+        setValue('allowedCategoryScopeTree', newTree, { shouldDirty: true });
+        if (onSave) onSave();
+    }, [setValue, onSave]);
+
+    const handleReferencePickerConfirm = useCallback((newTree: TreeNode[]) => {
+        saveScopeTree(newTree);
+        setShowReferencePicker(false);
+        toast.success('درخت مجاز به‌روزرسانی شد');
+    }, [saveScopeTree]);
+
+    // ✅ تأیید افزودن سریع (مودال چیپس)
+    const handleQuickAddConfirm = useCallback((newTree: TreeNode[], addedCount: number) => {
+        saveScopeTree(newTree);
+        setShowQuickAdd(false);
+        if (quickAddParentId) {
+            setExpandedNodes(prev => new Set([...prev, quickAddParentId]));
+        }
+        setQuickAddParentId(null);
+        toast.success(`${toFa(addedCount)} مورد به درخت مجاز اضافه شد`);
+    }, [saveScopeTree, quickAddParentId]);
+
+    const handleRemoveFromScope = useCallback((nodeId: string) => {
+        let newTree = removeNodeFromTree(allowedCategoryScopeTree, nodeId);
+        newTree = removeEmptyFolders(newTree, referenceChildrenMap);
+        saveScopeTree(newTree);
+        toast.success('حذف شد');
+    }, [allowedCategoryScopeTree, saveScopeTree, referenceChildrenMap]);
+
+    // ─────────── Final Tree Actions ───────────
+    const saveFinalTree = useCallback((newTree: TreeNode[]) => {
+        setValue('categoryTree', newTree, { shouldDirty: true });
+        if (onSave) onSave();
+    }, [setValue, onSave]);
+
+    const handleAddToFinal = useCallback((leaf: TreeNode) => {
+        if (finalTreeIds.has(leaf.id)) return;
+        const leafNode: TreeNode = { id: leaf.id, title: leaf.title, categoryId: leaf.id, isLeaf: true };
+        saveFinalTree([...categoryTree, leafNode]);
+        toast.success('دسته‌بندی اضافه شد');
+    }, [categoryTree, finalTreeIds, saveFinalTree]);
+
+    const handleAddGroup = useCallback((parentId: string | null) => {
+        const newNode: TreeNode = {
+            id: `grp_${Date.now()}_${Math.random().toString(36).substring(2, 7)}`,
+            title: 'گروه جدید',
+            children: [],
+            isLeaf: false,
+        };
+        const newTree = addNodeToTree(categoryTree, parentId, newNode);
+        saveFinalTree(newTree);
+        if (parentId) setExpandedNodes(prev => new Set([...prev, parentId]));
+        setEditingNodeId(newNode.id);
+        setEditingLabel('گروه جدید');
+        setEditingTree('final');
+    }, [categoryTree, saveFinalTree]);
+
+    const handleConfirmCategoryPicker = useCallback((categories: TreeNode[]) => {
+        if (categories.length === 0) {
+            setShowCategoryPicker(false);
+            setPickerParentId(null);
+            return;
+        }
+        let newTree = categoryTree;
+        for (const cat of categories) {
+            const leafNode: TreeNode = { id: cat.id, title: cat.title, categoryId: cat.id, isLeaf: true };
+            newTree = addNodeToTree(newTree, pickerParentId, leafNode);
+        }
+        saveFinalTree(newTree);
+        if (pickerParentId) setExpandedNodes(prev => new Set([...prev, pickerParentId]));
+        setShowCategoryPicker(false);
+        setPickerParentId(null);
+        toast.success(`${toFa(categories.length)} دسته‌بندی اضافه شد`);
+    }, [categoryTree, pickerParentId, saveFinalTree]);
+
+    const handleRemoveFromFinal = useCallback((nodeId: string) => {
+        const newTree = removeNodeFromTree(categoryTree, nodeId);
+        saveFinalTree(newTree);
+        toast.success('حذف شد');
+    }, [categoryTree, saveFinalTree]);
+
+    const handleSaveLabel = useCallback((nodeId: string) => {
+        const value = editingLabel.trim();
+        if (!value) return;
+        const sourceTree = editingTree === 'final' ? categoryTree : allowedCategoryScopeTree;
+        const newTree = updateNodeInTree(sourceTree, nodeId, { title: value });
+        if (editingTree === 'final') saveFinalTree(newTree);
+        else saveScopeTree(newTree);
+        setEditingNodeId(null);
+        setEditingLabel('');
+        toast.success('عنوان ذخیره شد');
+    }, [editingLabel, editingTree, categoryTree, allowedCategoryScopeTree, saveFinalTree, saveScopeTree]);
+
+    const saveUnitSettings = useCallback((nodeId: string, settings: Partial<TreeNode>) => {
+        const newTree = updateNodeInTree(categoryTree, nodeId, settings);
+        saveFinalTree(newTree);
+        setShowUnitSettings(false);
+        setUnitSettingsNodeId(null);
+        toast.success('تنظیمات واحد ذخیره شد');
+    }, [categoryTree, saveFinalTree]);
+
+    // ─────────── Drag & Drop (با رفع باگ حذف بچه‌ها) ───────────
+    const insertNodeAtPosition = useCallback((
+        nodes: TreeNode[],
+        targetId: string,
+        draggedNode: TreeNode,
+        position: 'before' | 'after' | 'inside',
+    ): TreeNode[] => {
+        const result: TreeNode[] = [];
+        for (const node of nodes) {
+            if (node.id === targetId) {
+                if (position === 'before') {
+                    // ✅ نود با تمام بچه‌ها و نوه‌هایش جابجا می‌شود (قبلاً children: [] بود!)
+                    result.push(draggedNode);
+                    result.push(node);
+                } else if (position === 'after') {
+                    result.push(node);
+                    result.push(draggedNode);
+                } else {
+                    result.push({ ...node, children: [...(node.children || []), draggedNode] });
+                }
+            } else {
+                result.push({
+                    ...node,
+                    children: node.children ? insertNodeAtPosition(node.children, targetId, draggedNode, position) : [],
+                });
+            }
+        }
+        return result;
+    }, []);
+
+    const isInSubtree = useCallback((ancestorId: string, candidateId: string): boolean => {
+        const ancestor = findNodeInTree(categoryTree, ancestorId);
+        if (!ancestor) return false;
+        return !!findNodeInTree(ancestor.children || [], candidateId);
+    }, [categoryTree]);
+
+    const handleDragStart = (e: React.DragEvent, nodeId: string) => {
+        setDraggedNodeId(nodeId);
+        e.dataTransfer.effectAllowed = 'move';
+        e.dataTransfer.setData('text/plain', nodeId);
+    };
+
+    const handleDragEnd = () => {
+        setDraggedNodeId(null);
+        setDragOverNodeId(null);
+        setDragOverPosition(null);
+    };
+
+    const handleDragOver = (e: React.DragEvent, nodeId: string) => {
+        e.preventDefault();
+        e.stopPropagation();
+        if (!draggedNodeId || draggedNodeId === nodeId) return;
+        const rect = (e.currentTarget as HTMLElement).getBoundingClientRect();
+        const y = e.clientY - rect.top;
+        const height = rect.height;
+        let position: 'before' | 'after' | 'inside';
+        if (y < height * 0.25) position = 'before';
+        else if (y > height * 0.75) position = 'after';
+        else position = 'inside';
+        setDragOverNodeId(nodeId);
+        setDragOverPosition(position);
+    };
+
+    const handleDrop = (e: React.DragEvent, targetId: string) => {
+        e.preventDefault();
+        e.stopPropagation();
+        if (!draggedNodeId || draggedNodeId === targetId || !dragOverPosition) return;
+
+        // ✅ جلوگیری از انداختن گروه داخل زیرمجموعه خودش
+        if (dragOverPosition === 'inside' && isInSubtree(draggedNodeId, targetId)) {
+            toast.error('نمی‌توانید یک گروه را داخل زیرمجموعه خودش قرار دهید');
+            handleDragEnd();
+            return;
+        }
+
+        const draggedNode = findNodeInTree(categoryTree, draggedNodeId);
+        if (!draggedNode) return;
+
+        // ✅ کپی عمیق برای جلوگیری از تداخل رفرنس
+        const nodeCopy: TreeNode = JSON.parse(JSON.stringify(draggedNode));
+        let newTree = removeNodeFromTree(categoryTree, draggedNodeId);
+        newTree = insertNodeAtPosition(newTree, targetId, nodeCopy, dragOverPosition);
+        saveFinalTree(newTree);
+        handleDragEnd();
+        toast.success('جابجا شد');
+    };
+
+    // ─────────── Misc ───────────
+    const toggleNode = (nodeId: string) => {
+        setExpandedNodes(prev => {
+            const next = new Set(prev);
+            if (next.has(nodeId)) next.delete(nodeId);
+            else next.add(nodeId);
+            return next;
+        });
+    };
+
+    const openQuickAdd = useCallback((nodeId: string) => {
+        setQuickAddParentId(nodeId);
+        setShowQuickAdd(true);
+    }, []);
+
+    // ============================================================
+    // Render Scope Node (درخت مجاز)
+    // ============================================================
+    const renderScopeNode = (node: TreeNode, depth: number = 0) => {
+        const isExpanded = expandedNodes.has(node.id);
+        const hasChildren = node.children && node.children.length > 0;
+        const isLeaf = !hasChildren;
+        const isAdded = isLeaf && finalTreeIds.has(node.id);
+        const isEditing = editingNodeId === node.id && editingTree === 'scope';
+
+        // ✅ نودهایی که در مرجع بچه دارند → دکمه افزودن سریع
+        const refChildCount = (referenceChildrenMap.get(node.id) || []).length;
+        const canQuickAdd = canAdd && refChildCount > 0;
+
+        return (
+            <div key={node.id} className="group/node">
+                <div
+                    className={cn(
+                        'flex items-center gap-1 sm:gap-2 px-2 sm:px-3 py-2 sm:py-2.5 rounded-xl transition-all duration-200',
+                        'hover:bg-gradient-to-r hover:from-amber-50/80 hover:to-transparent dark:hover:from-amber-900/20',
+                        isEditing && 'bg-amber-50 dark:bg-amber-900/20 ring-2 ring-amber-200 dark:ring-amber-800',
+                    )}
+                    style={{ paddingRight: depth * 16 + 8 }}
+                >
+                    {hasChildren ? (
+                        <button
+                            type="button"
+                            onClick={() => toggleNode(node.id)}
+                            className="p-1 hover:bg-amber-100 dark:hover:bg-amber-800/30 rounded-lg transition-colors flex-shrink-0"
+                        >
+                            <div className={cn('transition-transform duration-200', !isExpanded ? 'rotate-0' : '-rotate-90')}>
+                                <ChevronLeft className="w-4 h-4 text-amber-600 dark:text-amber-400" />
+                            </div>
+                        </button>
+                    ) : (
+                        <div className="w-6 flex-shrink-0" />
+                    )}
+
+                    {isLeaf ? (
+                        <div className="p-1 bg-emerald-50 dark:bg-emerald-900/30 rounded-lg flex-shrink-0">
+                            <Package className="w-3.5 h-3.5 text-emerald-600 dark:text-emerald-400" />
+                        </div>
+                    ) : (
+                        <div className="p-1 bg-amber-50 dark:bg-amber-900/30 rounded-lg flex-shrink-0">
+                            <Layers className="w-3.5 h-3.5 text-amber-600 dark:text-amber-400" />
+                        </div>
+                    )}
+
+                    {isEditing ? (
+                        <div className="flex items-center gap-1.5 flex-1 min-w-0">
+                            <input
+                                type="text"
+                                value={editingLabel}
+                                onChange={(e) => setEditingLabel(e.target.value)}
+                                onBlur={() => handleSaveLabel(node.id)}
+                                onKeyDown={(e) => {
+                                    if (e.key === 'Enter') { e.preventDefault(); handleSaveLabel(node.id); }
+                                    if (e.key === 'Escape') { e.preventDefault(); setEditingNodeId(null); }
+                                }}
+                                autoFocus
+                                className="flex-1 min-w-0 h-8 px-3 border-2 border-amber-300 dark:border-amber-600 rounded-lg text-sm bg-white dark:bg-gray-800 focus:ring-2 focus:ring-amber-200 outline-none"
+                            />
+                            <button onClick={() => handleSaveLabel(node.id)} className="p-1.5 hover:bg-emerald-100 dark:hover:bg-emerald-800/30 rounded-lg text-emerald-600">
+                                <Check className="w-4 h-4" />
+                            </button>
+                            <button onClick={() => setEditingNodeId(null)} className="p-1.5 hover:bg-red-100 dark:hover:bg-red-800/30 rounded-lg text-red-500">
+                                <X className="w-4 h-4" />
+                            </button>
+                        </div>
+                    ) : (
+                        <span className="flex-1 min-w-0 text-right text-sm font-medium truncate">{node.title}</span>
+                    )}
+
+                    {/* ✅ دکمه افزودن سریع زیرمجموعه‌ها (ویژگی جدید) */}
+                    {canQuickAdd && !isEditing && (
+                        <button
+                            type="button"
+                            onClick={() => openQuickAdd(node.id)}
+                            className="flex items-center gap-1 p-1.5 sm:px-2 rounded-lg bg-amber-100/80 dark:bg-amber-900/40 text-amber-600 dark:text-amber-400 hover:bg-amber-200 dark:hover:bg-amber-900/60 transition-colors flex-shrink-0"
+                            title={`افزودن سریع زیرمجموعه‌های «${node.title}» بدون مراجعه به درخت مرجع`}
+                        >
+                            <ListPlus className="w-4 h-4" />
+                            {/* <span className="hidden md:inline text-[10px] font-bold">زیرمجموعه</span>*/}
+                        </button>
+                    )}
+
+                    {isLeaf && (
+                        isAdded ? (
+                            <span className="hidden sm:inline-flex items-center gap-1 text-[10px] font-medium px-2 py-0.5 rounded-full bg-emerald-100 dark:bg-emerald-900/40 text-emerald-700 dark:text-emerald-300 flex-shrink-0">
+                                <Check className="w-3 h-3" />
+                                فعال
+                            </span>
+                        ) : canAdd ? (
+                            <button
+                                type="button"
+                                onClick={() => handleAddToFinal(node)}
+                                className="hidden sm:inline-flex items-center gap-1 text-[11px] font-medium px-2.5 py-1 rounded-full flex-shrink-0 opacity-0 group-hover/node:opacity-100 transition-all duration-200 bg-emerald-50 dark:bg-emerald-900/30 text-emerald-600 dark:text-emerald-400 hover:bg-emerald-100 dark:hover:bg-emerald-900/50 hover:shadow-sm"
+                            >
+                                <Plus className="w-3 h-3" />
+                                افزودن
+                            </button>
+                        ) : null
+                    )}
+
+                    {isLeaf && !isAdded && canAdd && (
+                        <button
+                            type="button"
+                            onClick={() => handleAddToFinal(node)}
+                            className="sm:hidden p-1.5 hover:bg-emerald-100 dark:hover:bg-emerald-800/30 rounded-lg text-emerald-600 flex-shrink-0"
+                        >
+                            <Plus className="w-4 h-4" />
+                        </button>
+                    )}
+
+                    {canAdd && !isEditing && (
+                        <button
+                            type="button"
+                            onClick={() => { setEditingNodeId(node.id); setEditingLabel(node.title); setEditingTree('scope'); }}
+                            className="hidden sm:block p-1.5 hover:bg-amber-100 dark:hover:bg-amber-800/30 rounded-lg text-gray-400 hover:text-amber-600 transition-colors opacity-0 group-hover/node:opacity-100 flex-shrink-0"
+                            title="ویرایش عنوان"
+                        >
+                            <Edit3 className="w-3.5 h-3.5" />
+                        </button>
+                    )}
+
+                    {canRemove && (
+                        <button
+                            type="button"
+                            onClick={() => setDeleteConfirm({ nodeId: node.id, title: node.title, tree: 'scope' })}
+                            className="p-1.5 hover:bg-red-50 dark:hover:bg-red-900/20 rounded-lg text-red-400 hover:text-red-600 transition-colors flex-shrink-0 sm:opacity-0 sm:group-hover/node:opacity-100"
+                            title="حذف"
+                        >
+                            <Trash2 className="w-3.5 h-3.5" />
+                        </button>
+                    )}
+                </div>
+
+                {hasChildren && isExpanded && (
+                    <div className="mr-3 sm:mr-4 border-r-2 border-amber-100 dark:border-amber-800/30 rounded-r-lg overflow-hidden">
+                        {node.children!.map(child => renderScopeNode(child, depth + 1))}
+                    </div>
+                )}
+            </div>
+        );
+    };
+
+    // ============================================================
+    // Render Final Node (درخت نهایی)
+    // ============================================================
+    const renderFinalNode = (node: TreeNode, depth: number = 0) => {
+        const isExpanded = expandedNodes.has(node.id);
+        const hasChildren = node.children && node.children.length > 0;
+        const isEditing = editingNodeId === node.id && editingTree === 'final';
+        const isDragging = draggedNodeId === node.id;
+        const isDragOver = dragOverNodeId === node.id;
+
+        // ✅ واحدهای فرعی
+        const alternativeUnits = node.alternativeUnits || [];
+        const baseUnitTitle = node.baseUnitTitle || 'واحد';
+
+        return (
+            <div key={node.id} className="group/node">
+                <div
+                    draggable
+                    onDragStart={(e) => handleDragStart(e, node.id)}
+                    onDragEnd={handleDragEnd}
+                    onDragOver={(e) => handleDragOver(e, node.id)}
+                    onDrop={(e) => handleDrop(e, node.id)}
+                    className={cn(
+                        'flex items-center gap-1 sm:gap-2 px-2 sm:px-3 py-2 sm:py-2.5 rounded-xl transition-all duration-200 border-2',
+                        isDragging && 'opacity-40 border-dashed border-primary',
+                        isDragOver && dragOverPosition === 'inside' && 'border-primary bg-primary/5',
+                        isDragOver && dragOverPosition === 'before' && 'border-t-4 border-t-primary border-x-transparent border-b-transparent',
+                        isDragOver && dragOverPosition === 'after' && 'border-b-4 border-b-primary border-x-transparent border-t-transparent',
+                        !isDragging && !isDragOver && !isEditing && 'border-transparent hover:bg-gradient-to-r hover:from-blue-50/80 hover:to-transparent dark:hover:from-blue-900/20',
+                        isEditing && 'border-primary/50 bg-blue-50/50 dark:bg-blue-900/20',
+                    )}
+                    style={{ paddingRight: depth * 16 + 8 }}
+                >
+                    <div className="hidden sm:block cursor-grab active:cursor-grabbing flex-shrink-0">
+                        <GripVertical className="w-4 h-4 text-gray-300 dark:text-gray-600" />
+                    </div>
+
+                    {hasChildren || !node.isLeaf ? (
+                        <button
+                            type="button"
+                            onClick={(e) => { e.stopPropagation(); toggleNode(node.id); }}
+                            className="p-1 hover:bg-blue-100 dark:hover:bg-blue-800/30 rounded-lg transition-colors flex-shrink-0"
+                        >
+                            <div className={cn('transition-transform duration-200', !isExpanded ? 'rotate-0' : '-rotate-90')}>
+                                <ChevronLeft className="w-4 h-4 text-blue-600 dark:text-blue-400" />
+                            </div>
+                        </button>
+                    ) : (
+                        <div className="w-6 flex-shrink-0" />
+                    )}
+
+                    {node.isLeaf ? (
+                        <div className="p-1 bg-primary/10 rounded-lg flex-shrink-0">
+                            <Package className="w-3.5 h-3.5 text-primary" />
+                        </div>
+                    ) : isExpanded ? (
+                        <div className="p-1 bg-blue-50 dark:bg-blue-900/30 rounded-lg flex-shrink-0">
+                            <FolderOpen className="w-3.5 h-3.5 text-blue-600 dark:text-blue-400" />
+                        </div>
+                    ) : (
+                        <div className="p-1 bg-blue-50 dark:bg-blue-900/30 rounded-lg flex-shrink-0">
+                            <Folder className="w-3.5 h-3.5 text-blue-600 dark:text-blue-400" />
+                        </div>
+                    )}
+
+                    {isEditing ? (
+                        <div className="flex items-center gap-1.5 flex-1 min-w-0">
+                            <input
+                                type="text"
+                                value={editingLabel}
+                                onChange={(e) => setEditingLabel(e.target.value)}
+                                onBlur={() => handleSaveLabel(node.id)}
+                                onKeyDown={(e) => {
+                                    if (e.key === 'Enter') { e.preventDefault(); handleSaveLabel(node.id); }
+                                    if (e.key === 'Escape') { e.preventDefault(); setEditingNodeId(null); }
+                                }}
+                                autoFocus
+                                className="flex-1 min-w-0 h-8 px-3 border-2 border-primary/50 rounded-lg text-sm bg-white dark:bg-gray-800 focus:ring-2 focus:ring-primary/20 outline-none"
+                            />
+                            <button onClick={() => handleSaveLabel(node.id)} className="p-1.5 hover:bg-emerald-100 dark:hover:bg-emerald-800/30 rounded-lg text-emerald-600">
+                                <Check className="w-4 h-4" />
+                            </button>
+                            <button onClick={() => setEditingNodeId(null)} className="p-1.5 hover:bg-red-100 dark:hover:bg-red-800/30 rounded-lg text-red-500">
+                                <X className="w-4 h-4" />
+                            </button>
+                        </div>
+                    ) : (
+                        <>
+                            <div className="flex-1 min-w-0">
+                                <span className="block text-right text-sm font-medium truncate">{node.title}</span>
+
+                                {/* ✅ نمایش اطلاعات واحدها زیر عنوان */}
+                                {node.isLeaf && !isEditing && (
+                                    <div className="flex items-center gap-1.5 flex-wrap mt-1">
+                                        {/* ✅ واحد اصلی */}
+                                        {baseUnitTitle && node.baseUnitTitle && (
+                                            <span className="inline-flex items-center gap-0.5 text-[9px] font-medium px-1.5 py-0.5 rounded-full bg-blue-50 dark:bg-blue-900/30 text-blue-600 dark:text-blue-400">
+                                            <Ruler className="w-2.5 h-2.5" />
+                                                {node.baseUnitTitle}
+                                        </span>
+                                        )}
+
+                                        {/* ✅ واحد پیش‌فرض با ستاره */}
+                                        {node.overrideUnitTitle && (
+                                            <span className="inline-flex items-center gap-0.5 text-[9px] font-bold px-1.5 py-0.5 rounded-full bg-violet-50 dark:bg-violet-900/30 text-violet-600 dark:text-violet-400">
+                                            <Star className="w-2.5 h-2.5 fill-violet-500" />
+                                                {node.overrideUnitTitle}
+                                                {node.overrideUnitQty != null && (
+                                                    <span className="font-normal text-violet-400">
+                                                    = {node.overrideUnitQty} {node.baseUnitTitle || 'واحد'}
+                                                </span>
+                                                )}
+                                        </span>
+                                        )}
+
+                                        {/* ✅ واحدهای فرعی */}
+                                        {alternativeUnits.map((au: any, idx: number) => (
+                                            <span
+                                                key={idx}
+                                                className="inline-flex items-center gap-0.5 text-[9px] font-medium px-1.5 py-0.5 rounded-full bg-gray-50 dark:bg-gray-700/40 text-gray-500 dark:text-gray-400"
+                                            >
+                                            <Package className="w-2.5 h-2.5" />
+                                                {au.unitTitle}
+                                                {au.qty != null && (
+                                                    <span className="text-gray-400">
+                                                    = {au.qty} {node.baseUnitTitle || 'واحد'}
+                                                </span>
+                                                )}
+                                                {au.isVariableQty && (
+                                                    <span className="text-[8px] text-amber-500" title="قابل تغییر توسط کاربر">🔧</span>
+                                                )}
+                                        </span>
+                                        ))}
+                                    </div>
+                                )}
+                            </div>
+                        </>
+                    )}
+
+                    {/* ✅ بج واحد پیش‌فرض در سمت راست (وقتی ویرایش نیست) */}
+                    {node.isLeaf && node.overrideUnitTitle && !isEditing && (
+                        <span className="hidden sm:inline-flex text-[10px] font-medium px-2 py-0.5 rounded-full bg-violet-50 dark:bg-violet-900/30 text-violet-600 dark:text-violet-400 flex-shrink-0">
+                        {node.overrideUnitTitle}
+                    </span>
+                    )}
+
+                    {/* ✅ بج تعداد واحدهای فرعی */}
+                    {node.isLeaf && alternativeUnits.length > 0 && !isEditing && (
+                        <span className="hidden sm:inline-flex text-[9px] font-medium px-2 py-0.5 rounded-full bg-amber-50 dark:bg-amber-900/30 text-amber-600 dark:text-amber-400 flex-shrink-0">
+                        +{alternativeUnits.length}
+                    </span>
+                    )}
+
+                    <div className="flex items-center gap-0.5 flex-shrink-0" onClick={(e) => e.stopPropagation()}>
+                        <button
+                            type="button"
+                            onClick={() => { setEditingNodeId(node.id); setEditingLabel(node.title); setEditingTree('final'); }}
+                            className="p-1.5 hover:bg-blue-100 dark:hover:bg-blue-800/30 rounded-lg text-gray-400 hover:text-blue-600 transition-colors"
+                            title="ویرایش عنوان"
+                        >
+                            <Edit3 className="w-3.5 h-3.5" />
+                        </button>
+
+                        {node.isLeaf && (
+                            <button
+                                type="button"
+                                onClick={() => { setUnitSettingsNodeId(node.id); setShowUnitSettings(true); }}
+                                className="p-1.5 hover:bg-violet-100 dark:hover:bg-violet-800/30 rounded-lg text-gray-400 hover:text-violet-600 transition-colors"
+                                title="تنظیمات واحد"
+                            >
+                                <Settings className="w-3.5 h-3.5" />
+                            </button>
+                        )}
+
+                        {!node.isLeaf && (
+                            <>
+                                <button
+                                    type="button"
+                                    onClick={() => handleAddGroup(node.id)}
+                                    className="p-1.5 hover:bg-blue-100 dark:hover:bg-blue-800/30 rounded-lg text-gray-400 hover:text-blue-600 transition-colors"
+                                    title="افزودن زیرگروه"
+                                >
+                                    <FolderPlus className="w-3.5 h-3.5" />
+                                </button>
+                                <button
+                                    type="button"
+                                    onClick={() => { setPickerParentId(node.id); setShowCategoryPicker(true); }}
+                                    className="p-1.5 hover:bg-emerald-100 dark:hover:bg-emerald-800/30 rounded-lg text-gray-400 hover:text-emerald-600 transition-colors"
+                                    title="افزودن دسته‌بندی"
+                                >
+                                    <Plus className="w-3.5 h-3.5" />
+                                </button>
+                            </>
+                        )}
+
+                        <button
+                            type="button"
+                            onClick={() => setDeleteConfirm({ nodeId: node.id, title: node.title, tree: 'final' })}
+                            className="p-1.5 hover:bg-red-50 dark:hover:bg-red-900/20 rounded-lg text-gray-400 hover:text-red-500 transition-colors"
+                            title="حذف"
+                        >
+                            <Trash2 className="w-3.5 h-3.5" />
+                        </button>
+                    </div>
+                </div>
+
+                {hasChildren && isExpanded && (
+                    <div className="mr-3 sm:mr-6 border-r-2 border-blue-100 dark:border-blue-800/30 rounded-r-lg overflow-hidden">
+                        {node.children!.map(child => renderFinalNode(child, depth + 1))}
+                    </div>
+                )}
+            </div>
+        );
+    };
+
+    // ============================================================
+    // Loading State
+    // ============================================================
+    if (isCategoriesLoading) {
+        return (
+            <div className="flex items-center justify-center py-20">
+                <div className="flex flex-col items-center gap-4">
+                    <div className="relative">
+                        <div className="w-12 h-12 border-4 border-primary/20 rounded-full" />
+                        <div className="absolute top-0 left-0 w-12 h-12 border-4 border-primary border-t-transparent rounded-full animate-spin" />
+                    </div>
+                    <span className="text-sm text-gray-500 dark:text-gray-400">در حال بارگذاری...</span>
+                </div>
+            </div>
+        );
+    }
+
+    // ============================================================
+    // Main Render
+    // ============================================================
+    return (
+        <div className="space-y-4 sm:space-y-6">
+            {/* Stats Bar */}
+            <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
+                <StatCard icon={<TreePine className="w-5 h-5" />} label="دسته‌بندی مرجع" value={toFa(allCategories.length)} color="amber" />
+                <StatCard icon={<Layers className="w-5 h-5" />} label="مجاز بازار" value={toFa(scopeTreeIds.size)} color="orange" />
+                <StatCard icon={<ShoppingCart className="w-5 h-5" />} label="برگ نهایی" value={toFa(finalLeafCount)} color="emerald" />
+                <StatCard
+                    icon={<Sparkles className="w-5 h-5" />}
+                    label="پوشش دهی"
+                    value={`${scopeLeafCount > 0 ? Math.round((finalLeafCount / scopeLeafCount) * 100) : 0}%`}
+                    color="blue"
+                />
+            </div>
+
+            {/* ✅ Search Bar (دیبانس + حداقل ۲ حرف + دکمه پاک کردن) */}
+            <div>
+                <div className="relative">
+                    <Search className="absolute right-3 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-400" />
+                    <input
+                        type="text"
+                        value={searchTerm}
+                        onChange={(e) => setSearchTerm(e.target.value)}
+                        placeholder="جستجو در دسته‌بندی‌ها..."
+                        className="w-full h-12 pr-11 pl-11 bg-white dark:bg-gray-800 border-2 border-gray-200 dark:border-gray-700 rounded-2xl text-sm focus:border-primary/50 focus:ring-4 focus:ring-primary/10 outline-none transition-all"
+                    />
+                    {searchTerm && (
+                        <button
+                            type="button"
+                            onClick={() => setSearchTerm('')}
+                            className="absolute left-3 top-1/2 -translate-y-1/2 p-1.5 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-lg text-gray-400 hover:text-gray-600 dark:hover:text-gray-200 transition-colors"
+                            title="پاک کردن جستجو"
+                        >
+                            <X className="w-4 h-4" />
+                        </button>
+                    )}
+                </div>
+                {mainSearchRawLen > 0 && mainSearchRawLen < MIN_SEARCH_CHARS && (
+                    <p className="text-[11px] text-gray-400 mt-1.5 text-right">
+                        برای فعال شدن جستجو حداقل {toFa(MIN_SEARCH_CHARS)} حرف وارد کنید...
+                    </p>
+                )}
+            </div>
+
+            {/* Mobile Tabs */}
+            <div className="sm:hidden flex bg-gray-100 dark:bg-gray-800 rounded-2xl p-1">
+                <button
+                    onClick={() => setMobileTab('scope')}
+                    className={cn(
+                        'flex-1 flex items-center justify-center gap-2 py-3 rounded-xl text-sm font-medium transition-all duration-300',
+                        mobileTab === 'scope' ? 'bg-white dark:bg-gray-700 text-amber-600 dark:text-amber-400 shadow-sm' : 'text-gray-500',
+                    )}
+                >
+                    <Layers className="w-4 h-4" />
+                    مجاز بازار
+                    <span className="text-xs px-1.5 py-0.5 rounded-full bg-amber-100 dark:bg-amber-900/30">{toFa(scopeTreeIds.size)}</span>
+                </button>
+                <button
+                    onClick={() => setMobileTab('final')}
+                    className={cn(
+                        'flex-1 flex items-center justify-center gap-2 py-3 rounded-xl text-sm font-medium transition-all duration-300',
+                        mobileTab === 'final' ? 'bg-white dark:bg-gray-700 text-blue-600 dark:text-blue-400 shadow-sm' : 'text-gray-500',
+                    )}
+                >
+                    <ShoppingCart className="w-4 h-4" />
+                    درخت نهایی
+                    <span className="text-xs px-1.5 py-0.5 rounded-full bg-blue-100 dark:bg-blue-900/30">{toFa(finalLeafCount)}</span>
+                </button>
+            </div>
+
+            {/* Desktop: Two Panels */}
+            <div className="hidden sm:grid sm:grid-cols-2 gap-4 lg:gap-6">
+                {/* Scope Tree Panel */}
+                <div className="bg-white dark:bg-gray-800 rounded-2xl border-2 border-gray-100 dark:border-gray-700 overflow-hidden shadow-sm">
+                    <PanelHeader
+                        icon={<Layers className="w-5 h-5" />}
+                        title="گروه‌های مجاز بازار"
+                        subtitle="انتخاب از درخت مرجع"
+                        count={scopeTreeIds.size}
+                        color="amber"
+                    >
+                        {canAdd && (
+                            <button
+                                onClick={() => setShowReferencePicker(true)}
+                                className="flex items-center gap-1.5 px-3 py-2 bg-amber-50 dark:bg-amber-900/30 text-amber-600 dark:text-amber-400 rounded-xl text-xs font-medium hover:bg-amber-100 dark:hover:bg-amber-900/50 transition-colors"
+                            >
+                                <Plus className="w-4 h-4" />
+                                افزودن از مرجع
+                            </button>
+                        )}
+                    </PanelHeader>
+                    <div className="max-h-[500px] overflow-y-auto p-3">
+                        {filteredScopeTree.length === 0 ? (
+                            <EmptyState
+                                icon={<TreePine className="w-12 h-12" />}
+                                title={isMainSearchActive ? 'نتیجه‌ای یافت نشد' : 'هیچ گروهی انتخاب نشده'}
+                                description={isMainSearchActive ? 'عبارت جستجو را تغییر دهید' : 'از درخت مرجع دسته‌بندی‌های مجاز را انتخاب کنید'}
+                                action={canAdd && !isMainSearchActive ? {
+                                    label: 'انتخاب از مرجع',
+                                    onClick: () => setShowReferencePicker(true),
+                                } : undefined}
+                                color="amber"
+                            />
+                        ) : (
+                            <div className="space-y-1">
+                                {filteredScopeTree.map(node => renderScopeNode(node))}
+                            </div>
+                        )}
+                    </div>
+                </div>
+
+                {/* Final Tree Panel */}
+                <div className="bg-white dark:bg-gray-800 rounded-2xl border-2 border-gray-100 dark:border-gray-700 overflow-hidden shadow-sm">
+                    <PanelHeader
+                        icon={<ShoppingCart className="w-5 h-5" />}
+                        title="درخت دسته‌بندی نهایی"
+                        subtitle="ساختار نمایش به کاربر"
+                        count={finalLeafCount}
+                        color="blue"
+                    >
+                        <div className="flex items-center gap-2">
+                            <button
+                                onClick={() => handleAddGroup(null)}
+                                className="flex items-center gap-1.5 px-3 py-2 bg-blue-50 dark:bg-blue-900/30 text-blue-600 dark:text-blue-400 rounded-xl text-xs font-medium hover:bg-blue-100 dark:hover:bg-blue-900/50 transition-colors"
+                            >
+                                <FolderPlus className="w-4 h-4" />
+                                گروه جدید
+                            </button>
+                            <button
+                                onClick={() => { setPickerParentId(null); setShowCategoryPicker(true); }}
+                                className="flex items-center gap-1.5 px-3 py-2 bg-emerald-50 dark:bg-emerald-900/30 text-emerald-600 dark:text-emerald-400 rounded-xl text-xs font-medium hover:bg-emerald-100 dark:hover:bg-emerald-900/50 transition-colors"
+                            >
+                                <Plus className="w-4 h-4" />
+                                دسته‌بندی
+                            </button>
+                        </div>
+                    </PanelHeader>
+                    <div className="max-h-[500px] overflow-y-auto p-3">
+                        {filteredFinalTree.length === 0 ? (
+                            <EmptyState
+                                icon={<ShoppingCart className="w-12 h-12" />}
+                                title={isMainSearchActive ? 'نتیجه‌ای یافت نشد' : 'درخت نهایی خالی است'}
+                                description={isMainSearchActive ? 'عبارت جستجو را تغییر دهید' : 'گروه‌ها و دسته‌بندی‌ها را ایجاد کنید'}
+                                action={!isMainSearchActive ? {
+                                    label: 'ایجاد گروه جدید',
+                                    onClick: () => handleAddGroup(null),
+                                } : undefined}
+                                color="blue"
+                            />
+                        ) : (
+                            <div className="space-y-1">
+                                {filteredFinalTree.map(node => renderFinalNode(node))}
+                            </div>
+                        )}
+                    </div>
+                </div>
+            </div>
+
+            {/* Mobile: Single Panel */}
+            <div className="sm:hidden bg-white dark:bg-gray-800 rounded-2xl border-2 border-gray-100 dark:border-gray-700 overflow-hidden shadow-sm">
+                {mobileTab === 'scope' ? (
+                    <>
+                        <PanelHeader
+                            icon={<Layers className="w-5 h-5" />}
+                            title="گروه‌های مجاز"
+                            count={scopeTreeIds.size}
+                            color="amber"
+                        >
+                            {canAdd && (
+                                <button
+                                    onClick={() => setShowReferencePicker(true)}
+                                    className="p-2 bg-amber-50 dark:bg-amber-900/30 text-amber-600 rounded-xl"
+                                >
+                                    <Plus className="w-5 h-5" />
+                                </button>
+                            )}
+                        </PanelHeader>
+                        <div className="max-h-[60vh] overflow-y-auto p-3">
+                            {filteredScopeTree.length === 0 ? (
+                                <EmptyState
+                                    icon={<TreePine className="w-10 h-10" />}
+                                    title="خالی است"
+                                    description="از مرجع انتخاب کنید"
+                                    action={canAdd ? { label: 'انتخاب', onClick: () => setShowReferencePicker(true) } : undefined}
+                                    color="amber"
+                                    compact
+                                />
+                            ) : (
+                                <div className="space-y-1">
+                                    {filteredScopeTree.map(node => renderScopeNode(node))}
+                                </div>
+                            )}
+                        </div>
+                    </>
+                ) : (
+                    <>
+                        <PanelHeader
+                            icon={<ShoppingCart className="w-5 h-5" />}
+                            title="درخت نهایی"
+                            count={finalLeafCount}
+                            color="blue"
+                        >
+                            <div className="flex items-center gap-1.5">
+                                <button onClick={() => handleAddGroup(null)} className="p-2 bg-blue-50 dark:bg-blue-900/30 text-blue-600 rounded-xl">
+                                    <FolderPlus className="w-5 h-5" />
+                                </button>
+                                <button
+                                    onClick={() => { setPickerParentId(null); setShowCategoryPicker(true); }}
+                                    className="p-2 bg-emerald-50 dark:bg-emerald-900/30 text-emerald-600 rounded-xl"
+                                >
+                                    <Plus className="w-5 h-5" />
+                                </button>
+                            </div>
+                        </PanelHeader>
+                        <div className="max-h-[60vh] overflow-y-auto p-3">
+                            {filteredFinalTree.length === 0 ? (
+                                <EmptyState
+                                    icon={<ShoppingCart className="w-10 h-10" />}
+                                    title="خالی است"
+                                    description="گروه‌ها و دسته‌بندی‌ها را ایجاد کنید"
+                                    color="blue"
+                                    compact
+                                />
+                            ) : (
+                                <div className="space-y-1">
+                                    {filteredFinalTree.map(node => renderFinalNode(node))}
+                                </div>
+                            )}
+                        </div>
+                    </>
+                )}
+            </div>
+
+            {/* ═══════════ Modals ═══════════ */}
+            <ReferencePickerModal
+                open={showReferencePicker}
+                onClose={() => setShowReferencePicker(false)}
+                allCategories={allCategories}
+                currentScopeTree={allowedCategoryScopeTree}
+                onConfirm={handleReferencePickerConfirm}
+            />
+
+            <QuickAddChildrenModal
+                open={showQuickAdd}
+                onClose={() => { setShowQuickAdd(false); setQuickAddParentId(null); }}
+                parentNode={quickAddParentNode}
+                allCategories={allCategories}
+                currentScopeTree={allowedCategoryScopeTree}
+                onConfirm={handleQuickAddConfirm}
+            />
+
+            <CategoryPickerModal
+                open={showCategoryPicker}
+                onClose={() => { setShowCategoryPicker(false); setPickerParentId(null); }}
+                scopeTree={allowedCategoryScopeTree}
+                finalUsedIds={finalTreeIds}
+                onConfirm={handleConfirmCategoryPicker}
+            />
+
+            <UnitSettingsModal
+                open={showUnitSettings}
+                onClose={() => { setShowUnitSettings(false); setUnitSettingsNodeId(null); }}
+                node={unitSettingsNode}
+                units={allUnitsList}
+                onSave={saveUnitSettings}
+            />
+
+            <DeleteConfirmModal
+                open={!!deleteConfirm}
+                data={deleteConfirm}
+                descendantCount={deleteDescendantCount}
+                onClose={() => setDeleteConfirm(null)}
+                onConfirm={(nodeId, tree) => {
+                    if (tree === 'final') handleRemoveFromFinal(nodeId);
+                    else handleRemoveFromScope(nodeId);
+                    setDeleteConfirm(null);
+                }}
+            />
+        </div>
+    );
+}
+
+
+
+
+
+
+
+
+
 
 // ============================================================
 // توابع کمکی عمومی
@@ -1881,1016 +2902,5 @@ function DeleteConfirmModal({ open, data, descendantCount, onClose, onConfirm }:
                 )}
             </div>
         </ModalShell>
-    );
-}
-
-// ============================================================
-// کامپوننت اصلی
-// ============================================================
-export function ArmCategoryManager({ onSave, isAdmin = false }: ArmCategoryManagerProps) {
-    const { setValue } = useFormContext();
-
-    const { data: allCategories = [], isLoading: isCategoriesLoading } = useCategoriesFlat();
-    const { data: allUnitsList = [] } = useUnits();
-
-    const formAllowedCategoryScopeTree = useWatch({ name: 'allowedCategoryScopeTree' }) || [];
-    const formCategoryTree = useWatch({ name: 'categoryTree' }) || [];
-    const armAdminPermission = useWatch({ name: 'config.armAdminPermission' }) || {};
-
-    const categoriesAccess = armAdminPermission.categories || {};
-    const canAdd = isAdmin || categoriesAccess.canAdd === true;
-    const canRemove = isAdmin || categoriesAccess.canRemove === true;
-
-    // ─────────── State ───────────
-    const [mobileTab, setMobileTab] = useState<'scope' | 'final'>('scope');
-    const [expandedNodes, setExpandedNodes] = useState<Set<string>>(new Set());
-    const [searchTerm, setSearchTerm] = useState('');
-
-    const [showReferencePicker, setShowReferencePicker] = useState(false);
-    const [showCategoryPicker, setShowCategoryPicker] = useState(false);
-    const [pickerParentId, setPickerParentId] = useState<string | null>(null);
-
-    // ✅ مودال افزودن سریع (سناریوی پفک/چیپس)
-    const [showQuickAdd, setShowQuickAdd] = useState(false);
-    const [quickAddParentId, setQuickAddParentId] = useState<string | null>(null);
-
-    const [showUnitSettings, setShowUnitSettings] = useState(false);
-    const [unitSettingsNodeId, setUnitSettingsNodeId] = useState<string | null>(null);
-
-    const [deleteConfirm, setDeleteConfirm] = useState<DeleteConfirmData | null>(null);
-
-    const [draggedNodeId, setDraggedNodeId] = useState<string | null>(null);
-    const [dragOverNodeId, setDragOverNodeId] = useState<string | null>(null);
-    const [dragOverPosition, setDragOverPosition] = useState<'before' | 'after' | 'inside' | null>(null);
-
-    const [editingNodeId, setEditingNodeId] = useState<string | null>(null);
-    const [editingLabel, setEditingLabel] = useState('');
-    const [editingTree, setEditingTree] = useState<'scope' | 'final'>('final');
-
-    // ✅ جستجوی اصلی: دیبانس + حداقل ۲ حرف
-    const debouncedSearchTerm = useDebouncedValue(searchTerm, MAIN_SEARCH_DEBOUNCE_MS);
-    const isMainSearchActive = normalizeFa(debouncedSearchTerm.trim()).length >= MIN_SEARCH_CHARS;
-    const mainSearchRawLen = normalizeFa(searchTerm.trim()).length;
-
-    // ─────────── Computed ───────────
-    const allowedCategoryScopeTree = useMemo(
-        () => (Array.isArray(formAllowedCategoryScopeTree) ? formAllowedCategoryScopeTree : []),
-        [formAllowedCategoryScopeTree],
-    );
-
-    const categoryTree = useMemo(
-        () => (Array.isArray(formCategoryTree) ? formCategoryTree : []),
-        [formCategoryTree],
-    );
-
-    const referenceChildrenMap = useMemo(() => buildChildrenMap(allCategories), [allCategories]);
-
-    const scopeTreeIds = useMemo(() => collectTreeIds(allowedCategoryScopeTree), [allowedCategoryScopeTree]);
-
-    const finalTreeIds = useMemo(() => {
-        const ids = new Set<string>();
-        const collect = (nodes: TreeNode[]) => {
-            for (const node of nodes) {
-                ids.add(node.categoryId || node.id);
-                if (node.children) collect(node.children);
-            }
-        };
-        collect(categoryTree);
-        return ids;
-    }, [categoryTree]);
-
-    const scopeLeafCount = useMemo(() => {
-        let count = 0;
-        const countLeaves = (nodes: TreeNode[]) => {
-            for (const node of nodes) {
-                if ((node.children?.length ?? 0) === 0) count++;
-                if (node.children) countLeaves(node.children);
-            }
-        };
-        countLeaves(allowedCategoryScopeTree);
-        return count;
-    }, [allowedCategoryScopeTree]);
-
-    const finalLeafCount = useMemo(() => {
-        let count = 0;
-        const countLeaves = (nodes: TreeNode[]) => {
-            for (const node of nodes) {
-                if (node.isLeaf) count++;
-                if (node.children) countLeaves(node.children);
-            }
-        };
-        countLeaves(categoryTree);
-        return count;
-    }, [categoryTree]);
-
-    const filteredScopeTree = useMemo(() => {
-        if (!isMainSearchActive) return allowedCategoryScopeTree;
-        return filterTreeBySearch(allowedCategoryScopeTree, debouncedSearchTerm);
-    }, [allowedCategoryScopeTree, debouncedSearchTerm, isMainSearchActive]);
-
-    const filteredFinalTree = useMemo(() => {
-        if (!isMainSearchActive) return categoryTree;
-        return filterTreeBySearch(categoryTree, debouncedSearchTerm);
-    }, [categoryTree, debouncedSearchTerm, isMainSearchActive]);
-
-    // باز شدن خودکار نتایج هنگام جستجو
-    useEffect(() => {
-        if (!isMainSearchActive) return;
-        setExpandedNodes(prev => {
-            const next = new Set(prev);
-            const collect = (nodes: TreeNode[]) => {
-                for (const n of nodes) {
-                    next.add(n.id);
-                    if (n.children && n.children.length > 0) collect(n.children);
-                }
-            };
-            collect(filteredScopeTree);
-            collect(filteredFinalTree);
-            return next;
-        });
-    }, [isMainSearchActive, filteredScopeTree, filteredFinalTree]);
-
-    // نودهای هدف مودال‌ها
-    const quickAddParentNode = useMemo(
-        () => (quickAddParentId ? findNodeInTree(allowedCategoryScopeTree, quickAddParentId) : null),
-        [quickAddParentId, allowedCategoryScopeTree],
-    );
-
-    const unitSettingsNode = useMemo(
-        () => (unitSettingsNodeId ? findNodeInTree(categoryTree, unitSettingsNodeId) : null),
-        [unitSettingsNodeId, categoryTree],
-    );
-
-    const deleteDescendantCount = useMemo(() => {
-        if (!deleteConfirm) return 0;
-        const source = deleteConfirm.tree === 'final' ? categoryTree : allowedCategoryScopeTree;
-        const node = findNodeInTree(source, deleteConfirm.nodeId);
-        return node ? getAllDescendantIds(node).length : 0;
-    }, [deleteConfirm, categoryTree, allowedCategoryScopeTree]);
-
-    // ─────────── Scope Tree Actions ───────────
-    const saveScopeTree = useCallback((newTree: TreeNode[]) => {
-        setValue('allowedCategoryScopeTree', newTree, { shouldDirty: true });
-        if (onSave) onSave();
-    }, [setValue, onSave]);
-
-    const handleReferencePickerConfirm = useCallback((newTree: TreeNode[]) => {
-        saveScopeTree(newTree);
-        setShowReferencePicker(false);
-        toast.success('درخت مجاز به‌روزرسانی شد');
-    }, [saveScopeTree]);
-
-    // ✅ تأیید افزودن سریع (مودال چیپس)
-    const handleQuickAddConfirm = useCallback((newTree: TreeNode[], addedCount: number) => {
-        saveScopeTree(newTree);
-        setShowQuickAdd(false);
-        if (quickAddParentId) {
-            setExpandedNodes(prev => new Set([...prev, quickAddParentId]));
-        }
-        setQuickAddParentId(null);
-        toast.success(`${toFa(addedCount)} مورد به درخت مجاز اضافه شد`);
-    }, [saveScopeTree, quickAddParentId]);
-
-    const handleRemoveFromScope = useCallback((nodeId: string) => {
-        let newTree = removeNodeFromTree(allowedCategoryScopeTree, nodeId);
-        newTree = removeEmptyFolders(newTree, referenceChildrenMap);
-        saveScopeTree(newTree);
-        toast.success('حذف شد');
-    }, [allowedCategoryScopeTree, saveScopeTree, referenceChildrenMap]);
-
-    // ─────────── Final Tree Actions ───────────
-    const saveFinalTree = useCallback((newTree: TreeNode[]) => {
-        setValue('categoryTree', newTree, { shouldDirty: true });
-        if (onSave) onSave();
-    }, [setValue, onSave]);
-
-    const handleAddToFinal = useCallback((leaf: TreeNode) => {
-        if (finalTreeIds.has(leaf.id)) return;
-        const leafNode: TreeNode = { id: leaf.id, title: leaf.title, categoryId: leaf.id, isLeaf: true };
-        saveFinalTree([...categoryTree, leafNode]);
-        toast.success('دسته‌بندی اضافه شد');
-    }, [categoryTree, finalTreeIds, saveFinalTree]);
-
-    const handleAddGroup = useCallback((parentId: string | null) => {
-        const newNode: TreeNode = {
-            id: `grp_${Date.now()}_${Math.random().toString(36).substring(2, 7)}`,
-            title: 'گروه جدید',
-            children: [],
-            isLeaf: false,
-        };
-        const newTree = addNodeToTree(categoryTree, parentId, newNode);
-        saveFinalTree(newTree);
-        if (parentId) setExpandedNodes(prev => new Set([...prev, parentId]));
-        setEditingNodeId(newNode.id);
-        setEditingLabel('گروه جدید');
-        setEditingTree('final');
-    }, [categoryTree, saveFinalTree]);
-
-    const handleConfirmCategoryPicker = useCallback((categories: TreeNode[]) => {
-        if (categories.length === 0) {
-            setShowCategoryPicker(false);
-            setPickerParentId(null);
-            return;
-        }
-        let newTree = categoryTree;
-        for (const cat of categories) {
-            const leafNode: TreeNode = { id: cat.id, title: cat.title, categoryId: cat.id, isLeaf: true };
-            newTree = addNodeToTree(newTree, pickerParentId, leafNode);
-        }
-        saveFinalTree(newTree);
-        if (pickerParentId) setExpandedNodes(prev => new Set([...prev, pickerParentId]));
-        setShowCategoryPicker(false);
-        setPickerParentId(null);
-        toast.success(`${toFa(categories.length)} دسته‌بندی اضافه شد`);
-    }, [categoryTree, pickerParentId, saveFinalTree]);
-
-    const handleRemoveFromFinal = useCallback((nodeId: string) => {
-        const newTree = removeNodeFromTree(categoryTree, nodeId);
-        saveFinalTree(newTree);
-        toast.success('حذف شد');
-    }, [categoryTree, saveFinalTree]);
-
-    const handleSaveLabel = useCallback((nodeId: string) => {
-        const value = editingLabel.trim();
-        if (!value) return;
-        const sourceTree = editingTree === 'final' ? categoryTree : allowedCategoryScopeTree;
-        const newTree = updateNodeInTree(sourceTree, nodeId, { title: value });
-        if (editingTree === 'final') saveFinalTree(newTree);
-        else saveScopeTree(newTree);
-        setEditingNodeId(null);
-        setEditingLabel('');
-        toast.success('عنوان ذخیره شد');
-    }, [editingLabel, editingTree, categoryTree, allowedCategoryScopeTree, saveFinalTree, saveScopeTree]);
-
-    const saveUnitSettings = useCallback((nodeId: string, settings: Partial<TreeNode>) => {
-        const newTree = updateNodeInTree(categoryTree, nodeId, settings);
-        saveFinalTree(newTree);
-        setShowUnitSettings(false);
-        setUnitSettingsNodeId(null);
-        toast.success('تنظیمات واحد ذخیره شد');
-    }, [categoryTree, saveFinalTree]);
-
-    // ─────────── Drag & Drop (با رفع باگ حذف بچه‌ها) ───────────
-    const insertNodeAtPosition = useCallback((
-        nodes: TreeNode[],
-        targetId: string,
-        draggedNode: TreeNode,
-        position: 'before' | 'after' | 'inside',
-    ): TreeNode[] => {
-        const result: TreeNode[] = [];
-        for (const node of nodes) {
-            if (node.id === targetId) {
-                if (position === 'before') {
-                    // ✅ نود با تمام بچه‌ها و نوه‌هایش جابجا می‌شود (قبلاً children: [] بود!)
-                    result.push(draggedNode);
-                    result.push(node);
-                } else if (position === 'after') {
-                    result.push(node);
-                    result.push(draggedNode);
-                } else {
-                    result.push({ ...node, children: [...(node.children || []), draggedNode] });
-                }
-            } else {
-                result.push({
-                    ...node,
-                    children: node.children ? insertNodeAtPosition(node.children, targetId, draggedNode, position) : [],
-                });
-            }
-        }
-        return result;
-    }, []);
-
-    const isInSubtree = useCallback((ancestorId: string, candidateId: string): boolean => {
-        const ancestor = findNodeInTree(categoryTree, ancestorId);
-        if (!ancestor) return false;
-        return !!findNodeInTree(ancestor.children || [], candidateId);
-    }, [categoryTree]);
-
-    const handleDragStart = (e: React.DragEvent, nodeId: string) => {
-        setDraggedNodeId(nodeId);
-        e.dataTransfer.effectAllowed = 'move';
-        e.dataTransfer.setData('text/plain', nodeId);
-    };
-
-    const handleDragEnd = () => {
-        setDraggedNodeId(null);
-        setDragOverNodeId(null);
-        setDragOverPosition(null);
-    };
-
-    const handleDragOver = (e: React.DragEvent, nodeId: string) => {
-        e.preventDefault();
-        e.stopPropagation();
-        if (!draggedNodeId || draggedNodeId === nodeId) return;
-        const rect = (e.currentTarget as HTMLElement).getBoundingClientRect();
-        const y = e.clientY - rect.top;
-        const height = rect.height;
-        let position: 'before' | 'after' | 'inside';
-        if (y < height * 0.25) position = 'before';
-        else if (y > height * 0.75) position = 'after';
-        else position = 'inside';
-        setDragOverNodeId(nodeId);
-        setDragOverPosition(position);
-    };
-
-    const handleDrop = (e: React.DragEvent, targetId: string) => {
-        e.preventDefault();
-        e.stopPropagation();
-        if (!draggedNodeId || draggedNodeId === targetId || !dragOverPosition) return;
-
-        // ✅ جلوگیری از انداختن گروه داخل زیرمجموعه خودش
-        if (dragOverPosition === 'inside' && isInSubtree(draggedNodeId, targetId)) {
-            toast.error('نمی‌توانید یک گروه را داخل زیرمجموعه خودش قرار دهید');
-            handleDragEnd();
-            return;
-        }
-
-        const draggedNode = findNodeInTree(categoryTree, draggedNodeId);
-        if (!draggedNode) return;
-
-        // ✅ کپی عمیق برای جلوگیری از تداخل رفرنس
-        const nodeCopy: TreeNode = JSON.parse(JSON.stringify(draggedNode));
-        let newTree = removeNodeFromTree(categoryTree, draggedNodeId);
-        newTree = insertNodeAtPosition(newTree, targetId, nodeCopy, dragOverPosition);
-        saveFinalTree(newTree);
-        handleDragEnd();
-        toast.success('جابجا شد');
-    };
-
-    // ─────────── Misc ───────────
-    const toggleNode = (nodeId: string) => {
-        setExpandedNodes(prev => {
-            const next = new Set(prev);
-            if (next.has(nodeId)) next.delete(nodeId);
-            else next.add(nodeId);
-            return next;
-        });
-    };
-
-    const openQuickAdd = useCallback((nodeId: string) => {
-        setQuickAddParentId(nodeId);
-        setShowQuickAdd(true);
-    }, []);
-
-    // ============================================================
-    // Render Scope Node (درخت مجاز)
-    // ============================================================
-    const renderScopeNode = (node: TreeNode, depth: number = 0) => {
-        const isExpanded = expandedNodes.has(node.id);
-        const hasChildren = node.children && node.children.length > 0;
-        const isLeaf = !hasChildren;
-        const isAdded = isLeaf && finalTreeIds.has(node.id);
-        const isEditing = editingNodeId === node.id && editingTree === 'scope';
-
-        // ✅ نودهایی که در مرجع بچه دارند → دکمه افزودن سریع
-        const refChildCount = (referenceChildrenMap.get(node.id) || []).length;
-        const canQuickAdd = canAdd && refChildCount > 0;
-
-        return (
-            <div key={node.id} className="group/node">
-                <div
-                    className={cn(
-                        'flex items-center gap-1 sm:gap-2 px-2 sm:px-3 py-2 sm:py-2.5 rounded-xl transition-all duration-200',
-                        'hover:bg-gradient-to-r hover:from-amber-50/80 hover:to-transparent dark:hover:from-amber-900/20',
-                        isEditing && 'bg-amber-50 dark:bg-amber-900/20 ring-2 ring-amber-200 dark:ring-amber-800',
-                    )}
-                    style={{ paddingRight: depth * 16 + 8 }}
-                >
-                    {hasChildren ? (
-                        <button
-                            type="button"
-                            onClick={() => toggleNode(node.id)}
-                            className="p-1 hover:bg-amber-100 dark:hover:bg-amber-800/30 rounded-lg transition-colors flex-shrink-0"
-                        >
-                            <div className={cn('transition-transform duration-200', !isExpanded ? 'rotate-0' : '-rotate-90')}>
-                                <ChevronLeft className="w-4 h-4 text-amber-600 dark:text-amber-400" />
-                            </div>
-                        </button>
-                    ) : (
-                        <div className="w-6 flex-shrink-0" />
-                    )}
-
-                    {isLeaf ? (
-                        <div className="p-1 bg-emerald-50 dark:bg-emerald-900/30 rounded-lg flex-shrink-0">
-                            <Package className="w-3.5 h-3.5 text-emerald-600 dark:text-emerald-400" />
-                        </div>
-                    ) : (
-                        <div className="p-1 bg-amber-50 dark:bg-amber-900/30 rounded-lg flex-shrink-0">
-                            <Layers className="w-3.5 h-3.5 text-amber-600 dark:text-amber-400" />
-                        </div>
-                    )}
-
-                    {isEditing ? (
-                        <div className="flex items-center gap-1.5 flex-1 min-w-0">
-                            <input
-                                type="text"
-                                value={editingLabel}
-                                onChange={(e) => setEditingLabel(e.target.value)}
-                                onBlur={() => handleSaveLabel(node.id)}
-                                onKeyDown={(e) => {
-                                    if (e.key === 'Enter') { e.preventDefault(); handleSaveLabel(node.id); }
-                                    if (e.key === 'Escape') { e.preventDefault(); setEditingNodeId(null); }
-                                }}
-                                autoFocus
-                                className="flex-1 min-w-0 h-8 px-3 border-2 border-amber-300 dark:border-amber-600 rounded-lg text-sm bg-white dark:bg-gray-800 focus:ring-2 focus:ring-amber-200 outline-none"
-                            />
-                            <button onClick={() => handleSaveLabel(node.id)} className="p-1.5 hover:bg-emerald-100 dark:hover:bg-emerald-800/30 rounded-lg text-emerald-600">
-                                <Check className="w-4 h-4" />
-                            </button>
-                            <button onClick={() => setEditingNodeId(null)} className="p-1.5 hover:bg-red-100 dark:hover:bg-red-800/30 rounded-lg text-red-500">
-                                <X className="w-4 h-4" />
-                            </button>
-                        </div>
-                    ) : (
-                        <span className="flex-1 min-w-0 text-right text-sm font-medium truncate">{node.title}</span>
-                    )}
-
-                    {/* ✅ دکمه افزودن سریع زیرمجموعه‌ها (ویژگی جدید) */}
-                    {canQuickAdd && !isEditing && (
-                        <button
-                            type="button"
-                            onClick={() => openQuickAdd(node.id)}
-                            className="flex items-center gap-1 p-1.5 sm:px-2 rounded-lg bg-amber-100/80 dark:bg-amber-900/40 text-amber-600 dark:text-amber-400 hover:bg-amber-200 dark:hover:bg-amber-900/60 transition-colors flex-shrink-0"
-                            title={`افزودن سریع زیرمجموعه‌های «${node.title}» بدون مراجعه به درخت مرجع`}
-                        >
-                            <ListPlus className="w-4 h-4" />
-                           {/* <span className="hidden md:inline text-[10px] font-bold">زیرمجموعه</span>*/}
-                        </button>
-                    )}
-
-                    {isLeaf && (
-                        isAdded ? (
-                            <span className="hidden sm:inline-flex items-center gap-1 text-[10px] font-medium px-2 py-0.5 rounded-full bg-emerald-100 dark:bg-emerald-900/40 text-emerald-700 dark:text-emerald-300 flex-shrink-0">
-                                <Check className="w-3 h-3" />
-                                فعال
-                            </span>
-                        ) : canAdd ? (
-                            <button
-                                type="button"
-                                onClick={() => handleAddToFinal(node)}
-                                className="hidden sm:inline-flex items-center gap-1 text-[11px] font-medium px-2.5 py-1 rounded-full flex-shrink-0 opacity-0 group-hover/node:opacity-100 transition-all duration-200 bg-emerald-50 dark:bg-emerald-900/30 text-emerald-600 dark:text-emerald-400 hover:bg-emerald-100 dark:hover:bg-emerald-900/50 hover:shadow-sm"
-                            >
-                                <Plus className="w-3 h-3" />
-                                افزودن
-                            </button>
-                        ) : null
-                    )}
-
-                    {isLeaf && !isAdded && canAdd && (
-                        <button
-                            type="button"
-                            onClick={() => handleAddToFinal(node)}
-                            className="sm:hidden p-1.5 hover:bg-emerald-100 dark:hover:bg-emerald-800/30 rounded-lg text-emerald-600 flex-shrink-0"
-                        >
-                            <Plus className="w-4 h-4" />
-                        </button>
-                    )}
-
-                    {canAdd && !isEditing && (
-                        <button
-                            type="button"
-                            onClick={() => { setEditingNodeId(node.id); setEditingLabel(node.title); setEditingTree('scope'); }}
-                            className="hidden sm:block p-1.5 hover:bg-amber-100 dark:hover:bg-amber-800/30 rounded-lg text-gray-400 hover:text-amber-600 transition-colors opacity-0 group-hover/node:opacity-100 flex-shrink-0"
-                            title="ویرایش عنوان"
-                        >
-                            <Edit3 className="w-3.5 h-3.5" />
-                        </button>
-                    )}
-
-                    {canRemove && (
-                        <button
-                            type="button"
-                            onClick={() => setDeleteConfirm({ nodeId: node.id, title: node.title, tree: 'scope' })}
-                            className="p-1.5 hover:bg-red-50 dark:hover:bg-red-900/20 rounded-lg text-red-400 hover:text-red-600 transition-colors flex-shrink-0 sm:opacity-0 sm:group-hover/node:opacity-100"
-                            title="حذف"
-                        >
-                            <Trash2 className="w-3.5 h-3.5" />
-                        </button>
-                    )}
-                </div>
-
-                {hasChildren && isExpanded && (
-                    <div className="mr-3 sm:mr-4 border-r-2 border-amber-100 dark:border-amber-800/30 rounded-r-lg overflow-hidden">
-                        {node.children!.map(child => renderScopeNode(child, depth + 1))}
-                    </div>
-                )}
-            </div>
-        );
-    };
-
-    // ============================================================
-    // Render Final Node (درخت نهایی)
-    // ============================================================
-    const renderFinalNode = (node: TreeNode, depth: number = 0) => {
-        const isExpanded = expandedNodes.has(node.id);
-        const hasChildren = node.children && node.children.length > 0;
-        const isEditing = editingNodeId === node.id && editingTree === 'final';
-        const isDragging = draggedNodeId === node.id;
-        const isDragOver = dragOverNodeId === node.id;
-
-        // ✅ واحدهای فرعی
-        const alternativeUnits = node.alternativeUnits || [];
-        const baseUnitTitle = node.baseUnitTitle || 'واحد';
-
-        return (
-            <div key={node.id} className="group/node">
-                <div
-                    draggable
-                    onDragStart={(e) => handleDragStart(e, node.id)}
-                    onDragEnd={handleDragEnd}
-                    onDragOver={(e) => handleDragOver(e, node.id)}
-                    onDrop={(e) => handleDrop(e, node.id)}
-                    className={cn(
-                        'flex items-center gap-1 sm:gap-2 px-2 sm:px-3 py-2 sm:py-2.5 rounded-xl transition-all duration-200 border-2',
-                        isDragging && 'opacity-40 border-dashed border-primary',
-                        isDragOver && dragOverPosition === 'inside' && 'border-primary bg-primary/5',
-                        isDragOver && dragOverPosition === 'before' && 'border-t-4 border-t-primary border-x-transparent border-b-transparent',
-                        isDragOver && dragOverPosition === 'after' && 'border-b-4 border-b-primary border-x-transparent border-t-transparent',
-                        !isDragging && !isDragOver && !isEditing && 'border-transparent hover:bg-gradient-to-r hover:from-blue-50/80 hover:to-transparent dark:hover:from-blue-900/20',
-                        isEditing && 'border-primary/50 bg-blue-50/50 dark:bg-blue-900/20',
-                    )}
-                    style={{ paddingRight: depth * 16 + 8 }}
-                >
-                    <div className="hidden sm:block cursor-grab active:cursor-grabbing flex-shrink-0">
-                        <GripVertical className="w-4 h-4 text-gray-300 dark:text-gray-600" />
-                    </div>
-
-                    {hasChildren || !node.isLeaf ? (
-                        <button
-                            type="button"
-                            onClick={(e) => { e.stopPropagation(); toggleNode(node.id); }}
-                            className="p-1 hover:bg-blue-100 dark:hover:bg-blue-800/30 rounded-lg transition-colors flex-shrink-0"
-                        >
-                            <div className={cn('transition-transform duration-200', !isExpanded ? 'rotate-0' : '-rotate-90')}>
-                                <ChevronLeft className="w-4 h-4 text-blue-600 dark:text-blue-400" />
-                            </div>
-                        </button>
-                    ) : (
-                        <div className="w-6 flex-shrink-0" />
-                    )}
-
-                    {node.isLeaf ? (
-                        <div className="p-1 bg-primary/10 rounded-lg flex-shrink-0">
-                            <Package className="w-3.5 h-3.5 text-primary" />
-                        </div>
-                    ) : isExpanded ? (
-                        <div className="p-1 bg-blue-50 dark:bg-blue-900/30 rounded-lg flex-shrink-0">
-                            <FolderOpen className="w-3.5 h-3.5 text-blue-600 dark:text-blue-400" />
-                        </div>
-                    ) : (
-                        <div className="p-1 bg-blue-50 dark:bg-blue-900/30 rounded-lg flex-shrink-0">
-                            <Folder className="w-3.5 h-3.5 text-blue-600 dark:text-blue-400" />
-                        </div>
-                    )}
-
-                    {isEditing ? (
-                        <div className="flex items-center gap-1.5 flex-1 min-w-0">
-                            <input
-                                type="text"
-                                value={editingLabel}
-                                onChange={(e) => setEditingLabel(e.target.value)}
-                                onBlur={() => handleSaveLabel(node.id)}
-                                onKeyDown={(e) => {
-                                    if (e.key === 'Enter') { e.preventDefault(); handleSaveLabel(node.id); }
-                                    if (e.key === 'Escape') { e.preventDefault(); setEditingNodeId(null); }
-                                }}
-                                autoFocus
-                                className="flex-1 min-w-0 h-8 px-3 border-2 border-primary/50 rounded-lg text-sm bg-white dark:bg-gray-800 focus:ring-2 focus:ring-primary/20 outline-none"
-                            />
-                            <button onClick={() => handleSaveLabel(node.id)} className="p-1.5 hover:bg-emerald-100 dark:hover:bg-emerald-800/30 rounded-lg text-emerald-600">
-                                <Check className="w-4 h-4" />
-                            </button>
-                            <button onClick={() => setEditingNodeId(null)} className="p-1.5 hover:bg-red-100 dark:hover:bg-red-800/30 rounded-lg text-red-500">
-                                <X className="w-4 h-4" />
-                            </button>
-                        </div>
-                    ) : (
-                        <>
-                            <div className="flex-1 min-w-0">
-                                <span className="block text-right text-sm font-medium truncate">{node.title}</span>
-
-                                {/* ✅ نمایش اطلاعات واحدها زیر عنوان */}
-                                {node.isLeaf && !isEditing && (
-                                    <div className="flex items-center gap-1.5 flex-wrap mt-1">
-                                        {/* ✅ واحد اصلی */}
-                                        {baseUnitTitle && node.baseUnitTitle && (
-                                            <span className="inline-flex items-center gap-0.5 text-[9px] font-medium px-1.5 py-0.5 rounded-full bg-blue-50 dark:bg-blue-900/30 text-blue-600 dark:text-blue-400">
-                                            <Ruler className="w-2.5 h-2.5" />
-                                                {node.baseUnitTitle}
-                                        </span>
-                                        )}
-
-                                        {/* ✅ واحد پیش‌فرض با ستاره */}
-                                        {node.overrideUnitTitle && (
-                                            <span className="inline-flex items-center gap-0.5 text-[9px] font-bold px-1.5 py-0.5 rounded-full bg-violet-50 dark:bg-violet-900/30 text-violet-600 dark:text-violet-400">
-                                            <Star className="w-2.5 h-2.5 fill-violet-500" />
-                                                {node.overrideUnitTitle}
-                                                {node.overrideUnitQty != null && (
-                                                    <span className="font-normal text-violet-400">
-                                                    = {node.overrideUnitQty} {node.baseUnitTitle || 'واحد'}
-                                                </span>
-                                                )}
-                                        </span>
-                                        )}
-
-                                        {/* ✅ واحدهای فرعی */}
-                                        {alternativeUnits.map((au: any, idx: number) => (
-                                            <span
-                                                key={idx}
-                                                className="inline-flex items-center gap-0.5 text-[9px] font-medium px-1.5 py-0.5 rounded-full bg-gray-50 dark:bg-gray-700/40 text-gray-500 dark:text-gray-400"
-                                            >
-                                            <Package className="w-2.5 h-2.5" />
-                                                {au.unitTitle}
-                                                {au.qty != null && (
-                                                    <span className="text-gray-400">
-                                                    = {au.qty} {node.baseUnitTitle || 'واحد'}
-                                                </span>
-                                                )}
-                                                {au.isVariableQty && (
-                                                    <span className="text-[8px] text-amber-500" title="قابل تغییر توسط کاربر">🔧</span>
-                                                )}
-                                        </span>
-                                        ))}
-                                    </div>
-                                )}
-                            </div>
-                        </>
-                    )}
-
-                    {/* ✅ بج واحد پیش‌فرض در سمت راست (وقتی ویرایش نیست) */}
-                    {node.isLeaf && node.overrideUnitTitle && !isEditing && (
-                        <span className="hidden sm:inline-flex text-[10px] font-medium px-2 py-0.5 rounded-full bg-violet-50 dark:bg-violet-900/30 text-violet-600 dark:text-violet-400 flex-shrink-0">
-                        {node.overrideUnitTitle}
-                    </span>
-                    )}
-
-                    {/* ✅ بج تعداد واحدهای فرعی */}
-                    {node.isLeaf && alternativeUnits.length > 0 && !isEditing && (
-                        <span className="hidden sm:inline-flex text-[9px] font-medium px-2 py-0.5 rounded-full bg-amber-50 dark:bg-amber-900/30 text-amber-600 dark:text-amber-400 flex-shrink-0">
-                        +{alternativeUnits.length}
-                    </span>
-                    )}
-
-                    <div className="flex items-center gap-0.5 flex-shrink-0" onClick={(e) => e.stopPropagation()}>
-                        <button
-                            type="button"
-                            onClick={() => { setEditingNodeId(node.id); setEditingLabel(node.title); setEditingTree('final'); }}
-                            className="p-1.5 hover:bg-blue-100 dark:hover:bg-blue-800/30 rounded-lg text-gray-400 hover:text-blue-600 transition-colors"
-                            title="ویرایش عنوان"
-                        >
-                            <Edit3 className="w-3.5 h-3.5" />
-                        </button>
-
-                        {node.isLeaf && (
-                            <button
-                                type="button"
-                                onClick={() => { setUnitSettingsNodeId(node.id); setShowUnitSettings(true); }}
-                                className="p-1.5 hover:bg-violet-100 dark:hover:bg-violet-800/30 rounded-lg text-gray-400 hover:text-violet-600 transition-colors"
-                                title="تنظیمات واحد"
-                            >
-                                <Settings className="w-3.5 h-3.5" />
-                            </button>
-                        )}
-
-                        {!node.isLeaf && (
-                            <>
-                                <button
-                                    type="button"
-                                    onClick={() => handleAddGroup(node.id)}
-                                    className="p-1.5 hover:bg-blue-100 dark:hover:bg-blue-800/30 rounded-lg text-gray-400 hover:text-blue-600 transition-colors"
-                                    title="افزودن زیرگروه"
-                                >
-                                    <FolderPlus className="w-3.5 h-3.5" />
-                                </button>
-                                <button
-                                    type="button"
-                                    onClick={() => { setPickerParentId(node.id); setShowCategoryPicker(true); }}
-                                    className="p-1.5 hover:bg-emerald-100 dark:hover:bg-emerald-800/30 rounded-lg text-gray-400 hover:text-emerald-600 transition-colors"
-                                    title="افزودن دسته‌بندی"
-                                >
-                                    <Plus className="w-3.5 h-3.5" />
-                                </button>
-                            </>
-                        )}
-
-                        <button
-                            type="button"
-                            onClick={() => setDeleteConfirm({ nodeId: node.id, title: node.title, tree: 'final' })}
-                            className="p-1.5 hover:bg-red-50 dark:hover:bg-red-900/20 rounded-lg text-gray-400 hover:text-red-500 transition-colors"
-                            title="حذف"
-                        >
-                            <Trash2 className="w-3.5 h-3.5" />
-                        </button>
-                    </div>
-                </div>
-
-                {hasChildren && isExpanded && (
-                    <div className="mr-3 sm:mr-6 border-r-2 border-blue-100 dark:border-blue-800/30 rounded-r-lg overflow-hidden">
-                        {node.children!.map(child => renderFinalNode(child, depth + 1))}
-                    </div>
-                )}
-            </div>
-        );
-    };
-
-    // ============================================================
-    // Loading State
-    // ============================================================
-    if (isCategoriesLoading) {
-        return (
-            <div className="flex items-center justify-center py-20">
-                <div className="flex flex-col items-center gap-4">
-                    <div className="relative">
-                        <div className="w-12 h-12 border-4 border-primary/20 rounded-full" />
-                        <div className="absolute top-0 left-0 w-12 h-12 border-4 border-primary border-t-transparent rounded-full animate-spin" />
-                    </div>
-                    <span className="text-sm text-gray-500 dark:text-gray-400">در حال بارگذاری...</span>
-                </div>
-            </div>
-        );
-    }
-
-    // ============================================================
-    // Main Render
-    // ============================================================
-    return (
-        <div className="space-y-4 sm:space-y-6">
-            {/* Stats Bar */}
-            <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
-                <StatCard icon={<TreePine className="w-5 h-5" />} label="دسته‌بندی مرجع" value={toFa(allCategories.length)} color="amber" />
-                <StatCard icon={<Layers className="w-5 h-5" />} label="مجاز بازار" value={toFa(scopeTreeIds.size)} color="orange" />
-                <StatCard icon={<ShoppingCart className="w-5 h-5" />} label="برگ نهایی" value={toFa(finalLeafCount)} color="emerald" />
-                <StatCard
-                    icon={<Sparkles className="w-5 h-5" />}
-                    label="پوشش دهی"
-                    value={`${scopeLeafCount > 0 ? Math.round((finalLeafCount / scopeLeafCount) * 100) : 0}%`}
-                    color="blue"
-                />
-            </div>
-
-            {/* ✅ Search Bar (دیبانس + حداقل ۲ حرف + دکمه پاک کردن) */}
-            <div>
-                <div className="relative">
-                    <Search className="absolute right-3 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-400" />
-                    <input
-                        type="text"
-                        value={searchTerm}
-                        onChange={(e) => setSearchTerm(e.target.value)}
-                        placeholder="جستجو در دسته‌بندی‌ها..."
-                        className="w-full h-12 pr-11 pl-11 bg-white dark:bg-gray-800 border-2 border-gray-200 dark:border-gray-700 rounded-2xl text-sm focus:border-primary/50 focus:ring-4 focus:ring-primary/10 outline-none transition-all"
-                    />
-                    {searchTerm && (
-                        <button
-                            type="button"
-                            onClick={() => setSearchTerm('')}
-                            className="absolute left-3 top-1/2 -translate-y-1/2 p-1.5 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-lg text-gray-400 hover:text-gray-600 dark:hover:text-gray-200 transition-colors"
-                            title="پاک کردن جستجو"
-                        >
-                            <X className="w-4 h-4" />
-                        </button>
-                    )}
-                </div>
-                {mainSearchRawLen > 0 && mainSearchRawLen < MIN_SEARCH_CHARS && (
-                    <p className="text-[11px] text-gray-400 mt-1.5 text-right">
-                        برای فعال شدن جستجو حداقل {toFa(MIN_SEARCH_CHARS)} حرف وارد کنید...
-                    </p>
-                )}
-            </div>
-
-            {/* Mobile Tabs */}
-            <div className="sm:hidden flex bg-gray-100 dark:bg-gray-800 rounded-2xl p-1">
-                <button
-                    onClick={() => setMobileTab('scope')}
-                    className={cn(
-                        'flex-1 flex items-center justify-center gap-2 py-3 rounded-xl text-sm font-medium transition-all duration-300',
-                        mobileTab === 'scope' ? 'bg-white dark:bg-gray-700 text-amber-600 dark:text-amber-400 shadow-sm' : 'text-gray-500',
-                    )}
-                >
-                    <Layers className="w-4 h-4" />
-                    مجاز بازار
-                    <span className="text-xs px-1.5 py-0.5 rounded-full bg-amber-100 dark:bg-amber-900/30">{toFa(scopeTreeIds.size)}</span>
-                </button>
-                <button
-                    onClick={() => setMobileTab('final')}
-                    className={cn(
-                        'flex-1 flex items-center justify-center gap-2 py-3 rounded-xl text-sm font-medium transition-all duration-300',
-                        mobileTab === 'final' ? 'bg-white dark:bg-gray-700 text-blue-600 dark:text-blue-400 shadow-sm' : 'text-gray-500',
-                    )}
-                >
-                    <ShoppingCart className="w-4 h-4" />
-                    درخت نهایی
-                    <span className="text-xs px-1.5 py-0.5 rounded-full bg-blue-100 dark:bg-blue-900/30">{toFa(finalLeafCount)}</span>
-                </button>
-            </div>
-
-            {/* Desktop: Two Panels */}
-            <div className="hidden sm:grid sm:grid-cols-2 gap-4 lg:gap-6">
-                {/* Scope Tree Panel */}
-                <div className="bg-white dark:bg-gray-800 rounded-2xl border-2 border-gray-100 dark:border-gray-700 overflow-hidden shadow-sm">
-                    <PanelHeader
-                        icon={<Layers className="w-5 h-5" />}
-                        title="گروه‌های مجاز بازار"
-                        subtitle="انتخاب از درخت مرجع"
-                        count={scopeTreeIds.size}
-                        color="amber"
-                    >
-                        {canAdd && (
-                            <button
-                                onClick={() => setShowReferencePicker(true)}
-                                className="flex items-center gap-1.5 px-3 py-2 bg-amber-50 dark:bg-amber-900/30 text-amber-600 dark:text-amber-400 rounded-xl text-xs font-medium hover:bg-amber-100 dark:hover:bg-amber-900/50 transition-colors"
-                            >
-                                <Plus className="w-4 h-4" />
-                                افزودن از مرجع
-                            </button>
-                        )}
-                    </PanelHeader>
-                    <div className="max-h-[500px] overflow-y-auto p-3">
-                        {filteredScopeTree.length === 0 ? (
-                            <EmptyState
-                                icon={<TreePine className="w-12 h-12" />}
-                                title={isMainSearchActive ? 'نتیجه‌ای یافت نشد' : 'هیچ گروهی انتخاب نشده'}
-                                description={isMainSearchActive ? 'عبارت جستجو را تغییر دهید' : 'از درخت مرجع دسته‌بندی‌های مجاز را انتخاب کنید'}
-                                action={canAdd && !isMainSearchActive ? {
-                                    label: 'انتخاب از مرجع',
-                                    onClick: () => setShowReferencePicker(true),
-                                } : undefined}
-                                color="amber"
-                            />
-                        ) : (
-                            <div className="space-y-1">
-                                {filteredScopeTree.map(node => renderScopeNode(node))}
-                            </div>
-                        )}
-                    </div>
-                </div>
-
-                {/* Final Tree Panel */}
-                <div className="bg-white dark:bg-gray-800 rounded-2xl border-2 border-gray-100 dark:border-gray-700 overflow-hidden shadow-sm">
-                    <PanelHeader
-                        icon={<ShoppingCart className="w-5 h-5" />}
-                        title="درخت دسته‌بندی نهایی"
-                        subtitle="ساختار نمایش به کاربر"
-                        count={finalLeafCount}
-                        color="blue"
-                    >
-                        <div className="flex items-center gap-2">
-                            <button
-                                onClick={() => handleAddGroup(null)}
-                                className="flex items-center gap-1.5 px-3 py-2 bg-blue-50 dark:bg-blue-900/30 text-blue-600 dark:text-blue-400 rounded-xl text-xs font-medium hover:bg-blue-100 dark:hover:bg-blue-900/50 transition-colors"
-                            >
-                                <FolderPlus className="w-4 h-4" />
-                                گروه جدید
-                            </button>
-                            <button
-                                onClick={() => { setPickerParentId(null); setShowCategoryPicker(true); }}
-                                className="flex items-center gap-1.5 px-3 py-2 bg-emerald-50 dark:bg-emerald-900/30 text-emerald-600 dark:text-emerald-400 rounded-xl text-xs font-medium hover:bg-emerald-100 dark:hover:bg-emerald-900/50 transition-colors"
-                            >
-                                <Plus className="w-4 h-4" />
-                                دسته‌بندی
-                            </button>
-                        </div>
-                    </PanelHeader>
-                    <div className="max-h-[500px] overflow-y-auto p-3">
-                        {filteredFinalTree.length === 0 ? (
-                            <EmptyState
-                                icon={<ShoppingCart className="w-12 h-12" />}
-                                title={isMainSearchActive ? 'نتیجه‌ای یافت نشد' : 'درخت نهایی خالی است'}
-                                description={isMainSearchActive ? 'عبارت جستجو را تغییر دهید' : 'گروه‌ها و دسته‌بندی‌ها را ایجاد کنید'}
-                                action={!isMainSearchActive ? {
-                                    label: 'ایجاد گروه جدید',
-                                    onClick: () => handleAddGroup(null),
-                                } : undefined}
-                                color="blue"
-                            />
-                        ) : (
-                            <div className="space-y-1">
-                                {filteredFinalTree.map(node => renderFinalNode(node))}
-                            </div>
-                        )}
-                    </div>
-                </div>
-            </div>
-
-            {/* Mobile: Single Panel */}
-            <div className="sm:hidden bg-white dark:bg-gray-800 rounded-2xl border-2 border-gray-100 dark:border-gray-700 overflow-hidden shadow-sm">
-                {mobileTab === 'scope' ? (
-                    <>
-                        <PanelHeader
-                            icon={<Layers className="w-5 h-5" />}
-                            title="گروه‌های مجاز"
-                            count={scopeTreeIds.size}
-                            color="amber"
-                        >
-                            {canAdd && (
-                                <button
-                                    onClick={() => setShowReferencePicker(true)}
-                                    className="p-2 bg-amber-50 dark:bg-amber-900/30 text-amber-600 rounded-xl"
-                                >
-                                    <Plus className="w-5 h-5" />
-                                </button>
-                            )}
-                        </PanelHeader>
-                        <div className="max-h-[60vh] overflow-y-auto p-3">
-                            {filteredScopeTree.length === 0 ? (
-                                <EmptyState
-                                    icon={<TreePine className="w-10 h-10" />}
-                                    title="خالی است"
-                                    description="از مرجع انتخاب کنید"
-                                    action={canAdd ? { label: 'انتخاب', onClick: () => setShowReferencePicker(true) } : undefined}
-                                    color="amber"
-                                    compact
-                                />
-                            ) : (
-                                <div className="space-y-1">
-                                    {filteredScopeTree.map(node => renderScopeNode(node))}
-                                </div>
-                            )}
-                        </div>
-                    </>
-                ) : (
-                    <>
-                        <PanelHeader
-                            icon={<ShoppingCart className="w-5 h-5" />}
-                            title="درخت نهایی"
-                            count={finalLeafCount}
-                            color="blue"
-                        >
-                            <div className="flex items-center gap-1.5">
-                                <button onClick={() => handleAddGroup(null)} className="p-2 bg-blue-50 dark:bg-blue-900/30 text-blue-600 rounded-xl">
-                                    <FolderPlus className="w-5 h-5" />
-                                </button>
-                                <button
-                                    onClick={() => { setPickerParentId(null); setShowCategoryPicker(true); }}
-                                    className="p-2 bg-emerald-50 dark:bg-emerald-900/30 text-emerald-600 rounded-xl"
-                                >
-                                    <Plus className="w-5 h-5" />
-                                </button>
-                            </div>
-                        </PanelHeader>
-                        <div className="max-h-[60vh] overflow-y-auto p-3">
-                            {filteredFinalTree.length === 0 ? (
-                                <EmptyState
-                                    icon={<ShoppingCart className="w-10 h-10" />}
-                                    title="خالی است"
-                                    description="گروه‌ها و دسته‌بندی‌ها را ایجاد کنید"
-                                    color="blue"
-                                    compact
-                                />
-                            ) : (
-                                <div className="space-y-1">
-                                    {filteredFinalTree.map(node => renderFinalNode(node))}
-                                </div>
-                            )}
-                        </div>
-                    </>
-                )}
-            </div>
-
-            {/* ═══════════ Modals ═══════════ */}
-            <ReferencePickerModal
-                open={showReferencePicker}
-                onClose={() => setShowReferencePicker(false)}
-                allCategories={allCategories}
-                currentScopeTree={allowedCategoryScopeTree}
-                onConfirm={handleReferencePickerConfirm}
-            />
-
-            <QuickAddChildrenModal
-                open={showQuickAdd}
-                onClose={() => { setShowQuickAdd(false); setQuickAddParentId(null); }}
-                parentNode={quickAddParentNode}
-                allCategories={allCategories}
-                currentScopeTree={allowedCategoryScopeTree}
-                onConfirm={handleQuickAddConfirm}
-            />
-
-            <CategoryPickerModal
-                open={showCategoryPicker}
-                onClose={() => { setShowCategoryPicker(false); setPickerParentId(null); }}
-                scopeTree={allowedCategoryScopeTree}
-                finalUsedIds={finalTreeIds}
-                onConfirm={handleConfirmCategoryPicker}
-            />
-
-            <UnitSettingsModal
-                open={showUnitSettings}
-                onClose={() => { setShowUnitSettings(false); setUnitSettingsNodeId(null); }}
-                node={unitSettingsNode}
-                units={allUnitsList}
-                onSave={saveUnitSettings}
-            />
-
-            <DeleteConfirmModal
-                open={!!deleteConfirm}
-                data={deleteConfirm}
-                descendantCount={deleteDescendantCount}
-                onClose={() => setDeleteConfirm(null)}
-                onConfirm={(nodeId, tree) => {
-                    if (tree === 'final') handleRemoveFromFinal(nodeId);
-                    else handleRemoveFromScope(nodeId);
-                    setDeleteConfirm(null);
-                }}
-            />
-        </div>
     );
 }

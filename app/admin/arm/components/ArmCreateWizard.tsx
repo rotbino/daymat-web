@@ -25,8 +25,6 @@ import {
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { GeneralSection } from './GeneralSection';
-import { CategoryScopeSelector } from './CategoryScopeSelector';
-import { CategorySelector } from './CategorySelector';
 import { LocationSelector } from './LocationSelector';
 import { ModuleSettingsSection } from './ModuleSettingsSection';
 import { AccessRulesSection } from './AccessRulesSection';
@@ -37,7 +35,8 @@ import { FormLabelsSection } from './FormLabelsSection';
 import { ArmPermissionSection } from './ArmPermissionSection';
 import { IntroSection } from './IntroSection';
 import { apiService } from '@/lib/api/apiService';
-import {useIndustriesTree, useCategoriesFlat, useIndustriesLeaves} from '@/lib/api/apiHooks';
+import { useIndustriesTree, useCategoriesFlat, useIndustriesLeaves } from '@/lib/api/apiHooks';
+import {ArmCategoryManager} from "@/app/admin/arm/components/ArmCategoryManage";
 
 // ─── تعریف مراحل ───
 const STEPS = [
@@ -50,7 +49,6 @@ const STEPS = [
     { id: 'access', title: 'دسترسی', icon: Settings, required: false },
     { id: 'payment', title: 'پرداخت', icon: CreditCard, required: false },
     { id: 'economy', title: 'اقتصاد', icon: Store, required: false },
-   /* { id: 'industries', title: 'صنوف', icon: Building2, required: true },*/
     { id: 'labels', title: 'برچسب‌ها', icon: Settings, required: false },
     { id: 'permissions', title: 'دسترسی مالک', icon: Settings, required: false },
     { id: 'review', title: 'بازبینی', icon: Eye, required: false },
@@ -68,7 +66,6 @@ export function ArmCreateWizard() {
     const [submitting, setSubmitting] = useState(false);
     const [armLoaded, setArmLoaded] = useState(!isEditMode);
     const [armId, setArmId] = useState<string | null>(null);
-    const [activeScopeId, setActiveScopeId] = useState<string | null>(null);
     const { data: allIndustries = [] } = useIndustriesLeaves();
 
     // پیش‌واکشی داده‌های سنگین
@@ -76,11 +73,13 @@ export function ArmCreateWizard() {
     useCategoriesFlat();
 
     const defaultValues = {
-        status: 'draft',             // همیشه draft تا تکمیل نهایی
+        status: 'draft',
         visibility: 'public',
         geoScopeType: 'multi_city',
         featuresEnabled: [],
         rankingAlgorithm: 'simple',
+        categoryTree: [],
+        allowedCategoryScopeTree: [],
         config: {
             general: {},
             payment: {
@@ -118,14 +117,12 @@ export function ArmCreateWizard() {
                 requireBusinessVerification: false,
                 restrictMembershipByLocation: false,
             },
-            categorySelections: [],
             locationSelections: [],
             supplierIndustryIds: [],
             buyerIndustryIds: [],
             localization: { timezone: 'Asia/Tehran', locale: 'fa' },
             integrations: {},
             custom: {},
-            allowedCategoryScope: [],
             formLabels: {},
         },
     };
@@ -158,6 +155,8 @@ export function ArmCreateWizard() {
                     visibility: arm.visibility,
                     geoScopeType: arm.geoScopeType,
                     config: arm.config,
+                    categoryTree: arm.categoryTree || [],
+                    allowedCategoryScopeTree: arm.allowedCategoryScopeTree || [],
                 });
                 setArmId(arm.id);
                 setArmLoaded(true);
@@ -170,7 +169,6 @@ export function ArmCreateWizard() {
 
     const currentStepIndex = STEPS.findIndex((s) => s.id === currentStepId);
 
-    // تغییر مرحله در URL
     const goToStep = useCallback(
         (stepId: string) => {
             const params = new URLSearchParams(searchParams.toString());
@@ -200,8 +198,8 @@ export function ArmCreateWizard() {
                 return true;
             }
             case 'categories': {
-                const selections = data.config?.categorySelections || [];
-                if (selections.length === 0) {
+                const tree = data.categoryTree || [];
+                if (tree.length === 0) {
                     toast.error('حداقل یک گروه کالا انتخاب کنید');
                     return false;
                 }
@@ -245,6 +243,8 @@ export function ArmCreateWizard() {
                 status: 'draft',
                 visibility: data.visibility,
                 config: { ...data.config, wizardStep: 'categories' },
+                categoryTree: data.categoryTree || [],
+                allowedCategoryScopeTree: data.allowedCategoryScopeTree || [],
             };
             const arm = await apiService.arm.create(payload);
             setArmId(arm.id);
@@ -260,8 +260,9 @@ export function ArmCreateWizard() {
     const handleUpdateConfig = async () => {
         if (!armId) return;
         const currentConfig = watch('config');
+        const categoryTree = watch('categoryTree') || [];
+        const allowedCategoryScopeTree = watch('allowedCategoryScopeTree') || [];
 
-        // ساخت آرایه‌های عنوان‌دار بر اساس شناسه‌های انتخاب‌شده
         const supplierIndustries = (currentConfig.supplierIndustryIds || [])
             .map((id: string) => {
                 const ind = allIndustries.find((i: any) => i.id === id);
@@ -284,8 +285,11 @@ export function ArmCreateWizard() {
         };
 
         try {
-            await apiService.arm.update(armId, { config: updatedConfig });
-            // اگر بازار فعال است، Redux را هم به‌روز کن تا صفحه ثبت‌نام فوراً ببیند
+            await apiService.arm.update(armId, {
+                config: updatedConfig,
+                categoryTree,
+                allowedCategoryScopeTree,
+            });
             if (watch('status') === 'active' && slug) {
                 const freshArm = await apiService.arm.fetchArmData(slug);
                 dispatch(setArm({ arm: freshArm, slug }));
@@ -299,22 +303,18 @@ export function ArmCreateWizard() {
     const handleNext = async () => {
         const currentStep = STEPS[currentStepIndex];
 
-        // مرحله intro بدون اعتبارسنجی
         if (currentStep.id === 'intro') {
             goToStep('basics');
             return;
         }
 
-        // اعتبارسنجی مرحله فعلی
         if (currentStep.required && !validateStep(currentStep.id)) {
             return;
         }
 
-        // اگر در مرحله basics هستیم و هنوز armId نداریم، بازار را بساز
         if (currentStep.id === 'basics' && !armId) {
             const newArmId = await handleCreateArm();
             if (!newArmId) return;
-            // حالا slug را در URL قرار بده
             const params = new URLSearchParams(searchParams.toString());
             params.set('slug', watch('slug'));
             params.set('step', 'categories');
@@ -322,7 +322,6 @@ export function ArmCreateWizard() {
             return;
         }
 
-        // برای مراحل بعد از basics، تنظیمات را ذخیره کن
         if (armId && currentStep.id !== 'basics') {
             await handleUpdateConfig();
         }
@@ -343,7 +342,6 @@ export function ArmCreateWizard() {
         if (!armId) return;
         try {
             await apiService.arm.update(armId, { status: 'active' });
-            // حالا بازار فعال شده، ریداکس را به‌روز کن
             if (slug) {
                 const freshArm = await apiService.arm.fetchArmData(slug);
                 dispatch(setArm({ arm: freshArm, slug }));
@@ -372,32 +370,10 @@ export function ArmCreateWizard() {
                 );
             case 'categories':
                 return (
-                    <div className="space-y-8">
-                        <CategoryScopeSelector
-                            watch={watch}
-                            setValue={setValue}
-                            categorySelections={watch('config.categorySelections')}
-                            onSave={() => {}}
-                            activeScopeId={activeScopeId}
-                            onScopeSelect={setActiveScopeId}
-                            armSlug={slug}
-                            isAdmin={true}
-                            canAddScope={true}
-                            canRemoveScope={true}
-                        />
-                        <CategorySelector
-                            control={control}
-                            watch={watch}
-                            setValue={setValue}
-                            onSave={() => {}}
-                            activeScopeId={activeScopeId}
-                            armSlug={slug}
-                            isAdmin={true}
-                            canAddLeaf={true}
-                            canRemoveLeaf={true}
-                            canChangeUnit={true}
-                        />
-                    </div>
+                    <ArmCategoryManager
+                        onSave={() => {}}
+                        isAdmin={true}
+                    />
                 );
             case 'locations':
                 return (
@@ -509,7 +485,7 @@ export function ArmCreateWizard() {
                             <span className="text-on-surface-variant">شعار:</span>
                             <span>{watch('slogan')}</span>
                             <span className="text-on-surface-variant">دسته‌بندی‌ها:</span>
-                            <span>{watch('config.categorySelections')?.length || 0} عدد</span>
+                            <span>{watch('categoryTree')?.length || 0} گروه</span>
                             <span className="text-on-surface-variant">موقعیت‌ها:</span>
                             <span>{watch('config.locationSelections')?.length || 0} شهر</span>
                         </div>
@@ -565,7 +541,6 @@ export function ArmCreateWizard() {
 
                         return (
                             <React.Fragment key={step.id}>
-                                {/* دکمه مرحله */}
                                 <button
                                     type="button"
                                     onClick={() => {
@@ -603,11 +578,10 @@ export function ArmCreateWizard() {
                                                     : 'text-on-surface-variant/50 dark:text-gray-600',
                                         )}
                                     >
-                    {step.title}
-                  </span>
+                                        {step.title}
+                                    </span>
                                 </button>
 
-                                {/* خط اتصال (به جز آخرین آیتم) */}
                                 {idx < STEPS.length - 1 && (
                                     <div className="flex-1 mx-1">
                                         <div
@@ -655,7 +629,7 @@ export function ArmCreateWizard() {
                             <ArrowLeft className="w-4 h-4" />
                         </button>
                     ) : (
-                        <div /> // در مرحله آخر دکمه ای نیست (فعال‌سازی در خود مرحله review است)
+                        <div />
                     )}
                 </div>
             </div>

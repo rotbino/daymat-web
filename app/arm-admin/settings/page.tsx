@@ -23,10 +23,10 @@ import { AccessRulesSection } from '@/app/admin/arm/components/AccessRulesSectio
 import { EconomySection } from '@/app/admin/arm/components/EconomySection';
 import { FormLabelsSection } from '@/app/admin/arm/components/FormLabelsSection';
 import { ArmPermissionSection } from '@/app/admin/arm/components/ArmPermissionSection';
-import { CategorySelector } from '@/app/admin/arm/components/CategorySelector';
 import { CategoryScopeSelector } from '@/app/admin/arm/components/CategoryScopeSelector';
 import { IndustrySelector } from '@/app/admin/arm/components/IndustrySelector';
 import { LocationSelector } from '@/app/admin/arm/components/LocationSelector';
+import {ArmCategoryManager} from "@/app/admin/arm/components/ArmCategoryManage";
 
 type SettingsTab = 'general' | 'modules' | 'access' | 'payment' | 'labels' | 'economy' | 'permissions' | 'categories' | 'industries' | 'locations';
 
@@ -37,10 +37,8 @@ const TABS: { id: SettingsTab; label: string; icon: string }[] = [
     { id: 'modules', label: 'ماژول‌ها', icon: '🧩' },
     { id: 'access', label: 'دسترسی', icon: '🔐' },
     { id: 'categories', label: 'گروهها', icon: '📂' },
-   /* { id: 'industries', label: 'صنوف', icon: '🏭' },*/
     { id: 'locations', label: 'موقعیت‌ها', icon: '📍' },
     { id: 'labels', label: 'برچسب‌ها', icon: '🏷️' },
-   /* { id: 'permissions', label: 'دسترسی های من', icon: '🛡️' },*/
 ];
 
 export default function ArmAdminSettings() {
@@ -57,14 +55,12 @@ export default function ArmAdminSettings() {
     const [saving, setSaving] = useState(false);
     const [settings, setSettings] = useState<any>(null);
     const [hasChanges, setHasChanges] = useState(false);
-    const [activeScopeId, setActiveScopeId] = useState<string | null>(null);
 
     // ✅ useForm
     const { register, watch, setValue, control, formState: { errors }, reset } = useForm({
         defaultValues: settings || {},
     });
 
-    // ✅ تغییر تب با آپدیت URL
     const handleTabChange = (tab: SettingsTab) => {
         setActiveTab(tab);
         const params = new URLSearchParams(searchParams.toString());
@@ -79,7 +75,6 @@ export default function ArmAdminSettings() {
         }
     }, [searchParams]);
 
-    // ✅ مانیتور تغییرات فرم
     useEffect(() => {
         const subscription = watch((value, { name, type }) => {
             if (name && type === 'change') {
@@ -107,6 +102,9 @@ export default function ArmAdminSettings() {
                 logoFileId: cfg.general?.logoFileId || arm.logoUrl || undefined,
                 mission: arm.mission || '',
                 config: cfg,
+                // ✅ درخت‌ها
+                categoryTree: arm.categoryTree || [],
+                allowedCategoryScopeTree: arm.allowedCategoryScopeTree || [],
             };
             setSettings(formData);
             reset(formData);
@@ -135,6 +133,8 @@ export default function ArmAdminSettings() {
                 colorPrimary: formData.colorPrimary || settings.colorPrimary,
                 colorSecondary: formData.colorSecondary || settings.colorSecondary,
                 config: formData.config || settings.config,
+                categoryTree: formData.categoryTree || settings.categoryTree || [],
+                allowedCategoryScopeTree: formData.allowedCategoryScopeTree || settings.allowedCategoryScopeTree || [],
             };
             await apiService.armAdmin.updateSettings(currentSlug, updateData);
             toast.success('تنظیمات ذخیره شد');
@@ -172,7 +172,6 @@ export default function ArmAdminSettings() {
         );
     }
 
-    // ✅ اضافه کردن 'modules' به لیست تب‌های دارای دکمه ذخیره
     const showSaveButton = ['general', 'modules', 'economy', 'payment', 'labels'].includes(activeTab);
 
     return (
@@ -276,23 +275,9 @@ export default function ArmAdminSettings() {
 
                 {activeTab === 'categories' && (
                     <div className="space-y-6">
-                        <CategoryScopeSelector
-                            watch={watch}
-                            setValue={setValue}
-                            disabled={true}
-                            categorySelections={watch('config.categorySelections')}
-                            onSave={() => {}}
-                            activeScopeId={activeScopeId}
-                            onScopeSelect={setActiveScopeId}
-                            isAdmin={isSystemAdmin}
-                        />
-                        <CategorySelector
-                            control={control}
-                            watch={watch}
-                            setValue={setValue}
-                            disabled={true}
-                            onSave={() => {}}
-                            activeScopeId={activeScopeId}
+                        {/* ✅ استفاده از ArmCategoryManager به جای CategorySelector */}
+                        <ArmCategoryManager
+                            onSave={handleSave}
                             isAdmin={isSystemAdmin}
                         />
                     </div>
@@ -346,26 +331,9 @@ export default function ArmAdminSettings() {
                 )}
             </div>
 
-            {/* دکمه ذخیره */}
-           {/* {showSaveButton && (
-                <button
-                    onClick={handleSave}
-                    disabled={!hasChanges || saving}
-                    className={cn(
-                        "fixed top-4 left-4 z-50 flex items-center gap-1 px-4 py-3 rounded text-[10px] transition-all shadow-lg",
-                        hasChanges
-                            ? "bg-primary text-on-primary hover:bg-primary/90 shadow-primary/30"
-                            : "bg-surface-container-high dark:bg-gray-800 text-on-surface-variant dark:text-gray-400 cursor-not-allowed shadow-none",
-                    )}
-                >
-                    {saving ? <Loader2 className="w-4 h-4 animate-spin" /> : <Save className="w-4 h-4" />}
-                    {saving ? 'در حال ذخیره...' : 'ذخیره تغییرات'}
-                </button>
-            )}*/}
-
             {/* دکمه ذخیره موبایل */}
             {showSaveButton && (
-                <div className="fixed bottom-0  left-5 w-[200px] bg-white dark:bg-gray-900 border-t border-outline-variant/20 dark:border-gray-800 p-4 z-40 ">
+                <div className="fixed bottom-0 left-5 w-[200px] bg-white dark:bg-gray-900 border-t border-outline-variant/20 dark:border-gray-800 p-4 z-40">
                     <button
                         onClick={handleSave}
                         disabled={!hasChanges || saving}
