@@ -1,14 +1,16 @@
 // app/ad/[id]/AdDetailClient.tsx
 'use client';
 
-import React, { Suspense, useMemo } from 'react';
+import React, { Suspense, useMemo, useState, useCallback } from 'react';
 import { useSelector } from 'react-redux';
 import { RootState } from '@/lib/store/store';
-import { useAdDetail } from '@/lib/api/apiHooks';
+import { useAdDetail, useAdSaved } from '@/lib/api/apiHooks';
+import { apiService } from '@/lib/api/apiService';
 import { Loader2 } from 'lucide-react';
+import { toast } from 'sonner';
 import dynamic from 'next/dynamic';
 
-// ✅ Lazy Loading کامپوننتها
+// ✅ Lazy Loading کامپوننت‌ها
 const AdHeader = dynamic(() => import('./components/AdHeader'), {
     loading: () => <div className="h-14 bg-white/85 backdrop-blur-xl border-b animate-pulse" />,
 });
@@ -41,7 +43,26 @@ export default function AdDetailClient({ adId, initialData }: AdDetailClientProp
     // ✅ استفاده از initialData برای جلوگیری از loading
     const { data: ad, isLoading } = useAdDetail(adId, initialData);
 
-    // اگه initialData داریم و data هنوز نیومده، از initialData استفاده کن
+    // ✅ هوک بررسی وضعیت ذخیره
+    const { data: savedData, refetch: refetchSaved } = useAdSaved(adId);
+
+    // ✅ state محلی برای ذخیره
+    const [localSaved, setLocalSaved] = useState<boolean | null>(null);
+
+    // ✅ وضعیت ذخیره نهایی: اول state محلی، بعد هوک، بعد false
+    const isSaved = localSaved !== null ? localSaved : (savedData?.isSaved || false);
+
+    // ✅ هندلر تغییر وضعیت ذخیره
+    const handleSaveToggle = useCallback(() => {
+        // بعد از save/unsave موفق، هوک را refetch کن
+        refetchSaved().then((result) => {
+            if (result?.data?.isSaved !== undefined) {
+                setLocalSaved(result.data.isSaved);
+            }
+        });
+    }, [refetchSaved]);
+
+    // ✅ اگه initialData داریم و data هنوز نیومده، از initialData استفاده کن
     const displayAd = ad || initialData;
 
     // ✅ محاسبه مالکیت
@@ -66,13 +87,6 @@ export default function AdDetailClient({ adId, initialData }: AdDetailClientProp
             {/* محتوای اصلی */}
             <main className="max-w-5xl mx-auto px-4 sm:px-6 py-5 pb-28 md:pb-10">
                 <div className="grid grid-cols-1 lg:grid-cols-5 gap-5">
-                    {/* گالری */}
-                    <div className="lg:col-span-3">
-                        <Suspense fallback={<div className="h-48 bg-gray-100 rounded-2xl animate-pulse" />}>
-                            <AdGallery images={displayAd.files} title={displayAd.productType || displayAd.title} />
-                        </Suspense>
-                    </div>
-
                     {/* سایدبار */}
                     <div className="lg:col-span-2">
                         <Suspense fallback={
@@ -84,13 +98,20 @@ export default function AdDetailClient({ adId, initialData }: AdDetailClientProp
                             <AdSidebar
                                 ad={displayAd}
                                 isOwner={isOwner}
-                                onSaveToggle={() => {}}
+                                isSaved={isSaved}
+                                onSaveToggle={handleSaveToggle}
                             />
+                        </Suspense>
+                    </div>
+                    {/* گالری */}
+                    <div className="lg:col-span-3">
+                        <Suspense fallback={<div className="h-48 bg-gray-100 rounded-2xl animate-pulse" />}>
+                            <AdGallery images={displayAd.files} title={displayAd.productType || displayAd.title} />
                         </Suspense>
                     </div>
                 </div>
 
-                {/* تبها */}
+                {/* تب‌ها */}
                 <Suspense fallback={<div className="h-64 bg-gray-100 rounded-2xl animate-pulse mt-8" />}>
                     <AdTabs ad={displayAd} isOwner={isOwner} />
                 </Suspense>

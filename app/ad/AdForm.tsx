@@ -1,7 +1,7 @@
 // app/ad/AdForm.tsx
 'use client';
 
-import React, { useState, useEffect, useMemo } from 'react';
+import React, { useState, useEffect, useMemo, useCallback } from 'react';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
 import { useSelector } from 'react-redux';
@@ -13,10 +13,10 @@ import {
 import { toast } from 'sonner';
 import {
     Package, Send, Edit2, MapPin, Clock,
-    ArrowDown, ArrowLeft, ArrowRight, TrendingUp, Plus, Check,
+    ArrowLeft, ArrowRight, TrendingUp, Plus, Check,
     Settings, Layers, ClipboardCheck, CreditCard, AlertTriangle, FileText, Pencil,
+    Info, Wallet, Lock, Star, X,
 } from 'lucide-react';
-import Image from 'next/image';
 import { ArmLocationSelector } from '@/app/components/ArmLocationSelector';
 import { NumberInput } from "@/components/common";
 import { FileUploader } from '@/components/common/FileUploader';
@@ -122,6 +122,23 @@ function getAvailableUnits(categoryId: string, categoryTree: any[]): UnitOption[
     return [];
 }
 
+function findCategoryPathInTree(tree: any[], categoryId: string): string[] {
+    function search(nodes: any[], path: string[]): string[] | null {
+        for (const node of nodes) {
+            const currentPath = [...path, node.id || node.categoryId];
+            if (node.id === categoryId || node.categoryId === categoryId) {
+                return currentPath;
+            }
+            if (node.children && node.children.length > 0) {
+                const found = search(node.children, currentPath);
+                if (found) return found;
+            }
+        }
+        return null;
+    }
+    return search(tree, []) || [];
+}
+
 export function AdForm({ adId, onSuccess }: AdFormProps) {
     const router = useRouter();
     const { currentSlug, currentArm } = useSelector((state: RootState) => state.arm);
@@ -135,6 +152,7 @@ export function AdForm({ adId, onSuccess }: AdFormProps) {
 
     const [isSubmitting, setIsSubmitting] = useState(false);
     const [currentStep, setCurrentStep] = useState(1);
+    const [showCategorySelector, setShowCategorySelector] = useState(false);
 
     const createAdMutation = useCreateAd();
     const updateAdMutation = useUpdateAd();
@@ -155,23 +173,23 @@ export function AdForm({ adId, onSuccess }: AdFormProps) {
         [currentArm?.categoryTree]
     );
 
-
-
     const maxActiveAdsPerUser = useMemo(() => priceTable.maxActiveAdsPerUser ?? 5, [priceTable.maxActiveAdsPerUser]);
-    const maxTotalFreeAdPerUser = useMemo(() => priceTable.maxTotalFreeAdPerUser ?? 50, [priceTable.maxTotalFreeAdPerUser]);
+    const maxTotalFreeAdPerUser = useMemo(() => priceTable.maxTotalFreeAdPerUser ?? 20, [priceTable.maxTotalFreeAdPerUser]);
     const bumpCost = useMemo(() => priceTable.bumpCost ?? 10, [priceTable.bumpCost]);
+    const adCreationCost = useMemo(() => priceTable.adCreationCost ?? 10, [priceTable.adCreationCost]);
+    const extraActiveAdCostPerDay = useMemo(() => priceTable.extraActiveAdCost ?? 2, [priceTable.extraActiveAdCost]);
     const allowAnonymousPublishing = useMemo(() => priceTable.allowAnonymousPublishing ?? true, [priceTable.allowAnonymousPublishing]);
     const adValidityDefaultHours = useMemo(() => priceTable.adValidityDefaultHours ?? 24, [priceTable.adValidityDefaultHours]);
     const maxImagesPerAd = useMemo(() => priceTable.maxImagesPerAd ?? 1, [priceTable.maxImagesPerAd]);
+
     const validityOptions = useMemo(() => {
         const configValidity = adValidityDefaultHours;
-        // اگر مقدار تنظیمات در لیست نیست، اضافه کن
         const defaultOptions = [
-            { value: '24', label: '1 روز' },
-            { value: '48', label: '2 روز' },
-            { value: '72', label: '3 روز' },
-            { value: '168', label: '5 روز' },
-            { value: '240', label: '10 روز' },
+            { value: '24', label: '۱ روز' },
+            { value: '48', label: '۲ روز' },
+            { value: '72', label: '۳ روز' },
+            { value: '168', label: '۵ روز' },
+            { value: '240', label: '۱۰ روز' },
         ];
         if (configValidity && !defaultOptions.some(opt => opt.value === String(configValidity))) {
             defaultOptions.unshift({
@@ -179,17 +197,14 @@ export function AdForm({ adId, onSuccess }: AdFormProps) {
                 label: `${configValidity} ساعت`,
             });
         }
-
         return defaultOptions;
     }, [adValidityDefaultHours]);
+
     const [formData, setFormData] = useState({
         categoryId: '',
         productType: '',
-        // ✅ قیمت تکی (قیمت هر واحد مصرف‌کننده — مثلاً قیمت یک عدد پفک)
         singleUnitPrice: 0,
-        // ✅ قیمت واحد فروش (محاسبه شده — مثلاً قیمت کارتن)
         unitPrice: 0,
-        // ✅ قیمت مصرف‌کننده نهایی (اختیاری — برای محاسبه سود خرده‌فروش)
         consumerPrice: 0,
         minQuantity: 0,
         availableQuantity: 0,
@@ -205,6 +220,7 @@ export function AdForm({ adId, onSuccess }: AdFormProps) {
         unitTitle: '',
         unitQty: null as number | null,
         unitIsVariableQty: false,
+        isEditingQty: false,
     });
 
     const [bumpDurationHours, setBumpDurationHours] = useState<number>(24);
@@ -219,46 +235,34 @@ export function AdForm({ adId, onSuccess }: AdFormProps) {
     const [adImageFiles, setAdImageFiles] = useState<{ id?: string; file?: File; previewUrl?: string }[]>([]);
     const [availableUnits, setAvailableUnits] = useState<UnitOption[]>([]);
     const [activeAdsCount, setActiveAdsCount] = useState(0);
-    const [loadingActiveAds, setLoadingActiveAds] = useState(true);
-// ═══════════════════════════════════════
-// محاسبات نردبان (Bump)
-// ═══════════════════════════════════════
+    const [totalAdsCount, setTotalAdsCount] = useState(0);
+    const [loadingAdsCounts, setLoadingAdsCounts] = useState(true);
 
-// گزینه‌های مدت نردبان بر اساس مدت اعتبار
+    // ═══════════════════════════════════════
+    // محاسبات نردبان (Bump)
+    // ═══════════════════════════════════════
     const bumpOptions = useMemo(() => {
         const maxHours = parseInt(formData.validityHours) || 24;
         const options = [24, 48, 72];
-
-        // فقط گزینه‌هایی که کمتر یا مساوی مدت اعتبار هستند
         const validOptions = options.filter(h => h <= maxHours);
-
-        // اگر هیچ گزینه‌ای نبود، خود مدت اعتبار را اضافه کن
         if (validOptions.length === 0) {
             validOptions.push(maxHours);
         }
-
-        // اگر مدت اعتبار بیشتر از ۷۲ است، گزینه‌های بیشتری اضافه کن
         if (maxHours > 72) {
             for (let h = 96; h <= maxHours; h += 24) {
                 validOptions.push(h);
             }
         }
-
         return validOptions;
     }, [formData.validityHours]);
 
-// محاسبه هزینه کل نردبان
     const totalBumpCost = useMemo(() => {
         if (!formData.isBumped) return 0;
-
-        // محاسبه هزینه بر اساس مدت
         const costPer24Hours = bumpCost || 10;
         const hours = bumpDurationHours || 24;
-
         return Math.round((hours / 24) * costPer24Hours);
     }, [formData.isBumped, bumpDurationHours, bumpCost]);
 
-// ✅ وقتی نردبان فعال می‌شود، مدت پیش‌فرض را تنظیم کن
     useEffect(() => {
         if (formData.isBumped) {
             const maxAllowed = parseInt(formData.validityHours);
@@ -267,6 +271,7 @@ export function AdForm({ adId, onSuccess }: AdFormProps) {
             }
         }
     }, [formData.isBumped, formData.validityHours]);
+
     const findNodeById = (nodes: any[], id: string): any => {
         for (const node of nodes) {
             if (node.id === id || node.categoryId === id) return node;
@@ -285,9 +290,7 @@ export function AdForm({ adId, onSuccess }: AdFormProps) {
         return null;
     }, [formData.categoryId, categoryTree]);
 
-    // ✅ واحد فروش (مثلاً کارتن)
     const unitName = formData.unitTitle || selectedCategoryData?.overrideUnitTitle || 'تن';
-    // ✅ واحد مصرف‌کننده (مثلاً عدد)
     const baseUnitTitle = selectedCategoryData?.baseUnitTitle || 'واحد';
 
     const locationTree = currentArm?.locationTree || [];
@@ -310,34 +313,68 @@ export function AdForm({ adId, onSuccess }: AdFormProps) {
         return null;
     }, [locationTree, hasSingleCity]);
 
+    // ═══════════════════════════════════════
+    // شمارش آگهی‌های کسب‌وکار
+    // ═══════════════════════════════════════
     useEffect(() => {
-        const fetchActiveAdsCount = async () => {
+        const fetchCounts = async () => {
             if (!business || !currentSlug) {
-                setLoadingActiveAds(false);
+                setLoadingAdsCounts(false);
                 return;
             }
             try {
                 const now = new Date();
-                const activeAds = business.ads?.filter(
-                    (ad: any) => ad.status === 'active' && ad.armId === currentArm?.id && new Date(ad.expiresAt) > now
-                ) || [];
+                const allBusinessAds = business.ads || [];
+                const armAds = allBusinessAds.filter((ad: any) => ad.armId === currentArm?.id);
+
+                const activeAds = armAds.filter(
+                    (ad: any) => ad.status === 'active' && new Date(ad.expiresAt) > now
+                );
+                const totalAds = armAds.filter(
+                    (ad: any) => ad.status !== 'deleted'
+                );
+
                 setActiveAdsCount(activeAds.length);
+                setTotalAdsCount(totalAds.length);
             } catch {
                 setActiveAdsCount(0);
+                setTotalAdsCount(0);
             } finally {
-                setLoadingActiveAds(false);
+                setLoadingAdsCounts(false);
             }
         };
-        fetchActiveAdsCount();
+        fetchCounts();
     }, [business, currentSlug, currentArm]);
 
-    const isLoading = businessLoading || creditLoading || (isEditMode && adLoading) || loadingActiveAds;
+    const isLoading = businessLoading || creditLoading || (isEditMode && adLoading) || loadingAdsCounts;
 
+    // ═══════════════════════════════════════
+    // محاسبه سهمیه‌ها و هزینه‌ها
+    // ═══════════════════════════════════════
     const remainingActiveSlots = Math.max(0, maxActiveAdsPerUser - activeAdsCount);
-    const remainingTotalSlots = Math.max(0, maxTotalFreeAdPerUser - activeAdsCount);
-    const hasReachedMaxAds = activeAdsCount >= maxActiveAdsPerUser;
-    const hasReachedTotalLimit = activeAdsCount >= maxTotalFreeAdPerUser;
+    const remainingTotalSlots = Math.max(0, maxTotalFreeAdPerUser - totalAdsCount);
+
+    const hasReachedActiveLimit = !isEditMode && activeAdsCount >= maxActiveAdsPerUser;
+    const hasReachedTotalLimit = !isEditMode && totalAdsCount >= maxTotalFreeAdPerUser;
+
     const isAdFree = remainingActiveSlots > 0 && remainingTotalSlots > 0;
+
+    // هزینه ثبت آگهی اضافه
+    const totalCreationCost = useMemo(() => {
+        if (isEditMode) return 0;
+        let cost = 0;
+        if (hasReachedActiveLimit) {
+            const days = Math.max(1, Math.ceil(parseInt(formData.validityHours) / 24));
+            cost += extraActiveAdCostPerDay * days;
+        }
+        if (hasReachedTotalLimit) cost += adCreationCost;
+        return cost;
+    }, [isEditMode, hasReachedActiveLimit, hasReachedTotalLimit, extraActiveAdCostPerDay, adCreationCost, formData.validityHours]);
+
+    const totalCostWithBump = totalCreationCost + (formData.isBumped ? totalBumpCost : 0);
+
+    const needsCredit = totalCreationCost > 0;
+    const insufficientCredit = needsCredit && (creditBalance?.balance ?? 0) < totalCostWithBump;
 
     const isBumpActive = isEditMode && existingAd?.isBumped && existingAd?.bumpExpiresAt && new Date(existingAd.bumpExpiresAt) > new Date();
     const bumpExpiresAtLabel = existingAd?.bumpExpiresAt ? new Date(existingAd.bumpExpiresAt).toLocaleDateString('fa-IR') : '';
@@ -345,9 +382,12 @@ export function AdForm({ adId, onSuccess }: AdFormProps) {
     const stepMeta = useMemo(() => {
         if (isEditMode) {
             return [
-                ...BASE_STEPS.slice(0, 4),
+                { title: 'گروه', icon: Layers },
+                { title: 'قیمت', icon: Package },
+                { title: 'موقعیت', icon: MapPin },
+                { title: 'انتشار', icon: Settings },
                 { title: 'جزئیات', icon: CreditCard },
-                ...BASE_STEPS.slice(4),
+                { title: 'بررسی', icon: ClipboardCheck },
             ];
         }
         return BASE_STEPS;
@@ -385,7 +425,6 @@ export function AdForm({ adId, onSuccess }: AdFormProps) {
         }
     }, [formData.categoryId, categoryTree]);
 
-    // ✅ وقتی قیمت تکی یا تعداد تغییر کرد، قیمت واحد فروش رو محاسبه کن
     const recalculateUnitPrice = (singlePrice: number, qty: number | null) => {
         if (singlePrice > 0 && qty) {
             return Math.round(singlePrice * qty);
@@ -421,8 +460,8 @@ export function AdForm({ adId, onSuccess }: AdFormProps) {
         }));
     };
 
+    // ✅ اگر validityHours خالی است یا در لیست نیست
     useEffect(() => {
-        // اگر validityHours خالی است یا در لیست نیست، مقدار پیش‌فرض را تنظیم کن
         if (!formData.validityHours || !validityOptions.some(opt => opt.value === formData.validityHours)) {
             const defaultValidity = validityOptions[0]?.value || '24';
             setFormData(prev => ({
@@ -432,14 +471,15 @@ export function AdForm({ adId, onSuccess }: AdFormProps) {
         }
     }, [validityOptions]);
 
+    // ✅ لود داده‌های آگهی در حالت ویرایش
     useEffect(() => {
         if (isEditMode && existingAd) {
             setFormData({
                 categoryId: existingAd.categoryId || '',
                 productType: existingAd.productType || '',
-                singleUnitPrice: 0,
+                singleUnitPrice: existingAd.singleUnitPrice || 0,
                 unitPrice: existingAd.unitPrice || 0,
-                consumerPrice: 0,
+                consumerPrice: existingAd.consumerPrice || 0,
                 minQuantity: existingAd.minQuantity || 0,
                 availableQuantity: existingAd.availableQuantity || 0,
                 cityCode: existingAd.cityCode || '',
@@ -454,36 +494,67 @@ export function AdForm({ adId, onSuccess }: AdFormProps) {
                 unitTitle: existingAd.unit?.title || '',
                 unitQty: existingAd.unitQty ?? null,
                 unitIsVariableQty: existingAd.unitIsVariableQty ?? false,
+                isEditingQty: false,
             });
 
-            if (existingAd.isBumped) {
-                setBumpDurationHours(existingAd.bumpDurationHours || 24);
+            if (existingAd.paymentMethods) {
+                const hasCheque = Array.isArray(existingAd.paymentMethods.cheque) && existingAd.paymentMethods.cheque.length > 0;
+                const hasInstallment = Array.isArray(existingAd.paymentMethods.installment) && existingAd.paymentMethods.installment.length > 0;
+                const hasDescription = existingAd.paymentMethods.description && existingAd.paymentMethods.description.trim().length > 0;
+
+                setPaymentMethods({
+                    enabled: hasCheque || hasInstallment || hasDescription,
+                    description: existingAd.paymentMethods.description || '',
+                    cheque: {
+                        enabled: hasCheque,
+                        description: existingAd.paymentMethods.chequeDescription || '',
+                        options: hasCheque ? existingAd.paymentMethods.cheque : [],
+                    },
+                    installment: {
+                        enabled: hasInstallment,
+                        description: existingAd.paymentMethods.installmentDescription || '',
+                        options: hasInstallment ? existingAd.paymentMethods.installment : [],
+                    },
+                });
+            }
+
+            if (existingAd.specs && Object.keys(existingAd.specs).length > 0) {
+                setSpecs(existingAd.specs);
+                setSpecsEnabled(true);
             }
 
             const images = (existingAd.files || [])
                 .filter((f: any) => f.fieldKey?.startsWith('ad-image'))
                 .sort((a: any, b: any) => parseInt(a.fieldKey.split('-')[2] || '0') - parseInt(b.fieldKey.split('-')[2] || '0'));
             setAdImageFiles(images.map((img: any) => ({ id: img.id })));
+
+            if (existingAd.isBumped) {
+                setBumpDurationHours(existingAd.bumpDurationHours || 24);
+            }
+
+            setShowCategorySelector(false);
         }
     }, [isEditMode, existingAd]);
 
+    // ✅ ست کردن شهر از بیزینس در حالت ایجاد
     useEffect(() => {
         if (isEditMode) return;
-        if (business?.cityCode && !hasSingleCity) {
+
+        if (hasSingleCity && singleCityData) {
+            setFormData(prev => ({
+                ...prev,
+                cityCode: singleCityData.city.cityCode || singleCityData.city.id || singleCityData.city.code,
+                cityLabel: singleCityData.city.title,
+                provinceCode: singleCityData.province.provinceCode || singleCityData.province.id || singleCityData.province.code,
+                provinceLabel: singleCityData.province.title,
+            }));
+        } else if (business?.cityCode && !hasSingleCity) {
             setFormData(prev => ({
                 ...prev,
                 cityCode: business.cityCode || '',
                 cityLabel: business.city || '',
                 provinceCode: business.provinceCode || '',
                 provinceLabel: business.province || '',
-            }));
-        } else if (hasSingleCity && singleCityData) {
-            setFormData(prev => ({
-                ...prev,
-                cityCode: singleCityData.city.cityCode || singleCityData.city.id,
-                cityLabel: singleCityData.city.title,
-                provinceCode: singleCityData.province.provinceCode || singleCityData.province.id,
-                provinceLabel: singleCityData.province.title,
             }));
         }
     }, [business, hasSingleCity, singleCityData, isEditMode]);
@@ -502,7 +573,6 @@ export function AdForm({ adId, onSuccess }: AdFormProps) {
             if (uploadedCount === 0) errors.push('تصویر آگهی را آپلود نکردی.');
             if (!formData.categoryId) errors.push('دسته‌بندی کالا را انتخاب کنید.');
             if (selectedCategoryData && !formData.productType.trim()) errors.push('عنوان کالا را وارد کنید.');
-
         } else if (step === 2) {
             if (formData.minQuantity <= 0) errors.push('حداقل حجم فروش را وارد کنید.');
             if (formData.unitPrice <= 0) errors.push('قیمت واحد را وارد کنید.');
@@ -516,7 +586,6 @@ export function AdForm({ adId, onSuccess }: AdFormProps) {
             if (categoryConstraints.max !== null && formData.minQuantity > categoryConstraints.max) {
                 errors.push(`حداقل حجم فروش نمی‌تواند بیشتر از ${categoryConstraints.max.toLocaleString()} ${unitName} باشد.`);
             }
-            // ✅ اعتبارسنجی قیمت مصرف‌کننده
             if (formData.consumerPrice > 0 && formData.singleUnitPrice > 0 &&
                 formData.consumerPrice < formData.singleUnitPrice) {
                 errors.push('قیمت مصرف‌کننده نمی‌تواند از قیمت عمده کمتر باشد.');
@@ -525,7 +594,6 @@ export function AdForm({ adId, onSuccess }: AdFormProps) {
             if (!formData.cityCode && !hasSingleCity) {
                 errors.push('محل کالا را انتخاب کنید.');
             }
-            // ✅ اعتبارسنجی مدت اعتبار قیمت
             if (!formData.validityHours) {
                 errors.push('مدت اعتبار قیمت را انتخاب کنید.');
             }
@@ -571,7 +639,7 @@ export function AdForm({ adId, onSuccess }: AdFormProps) {
         setAdImageFiles(prev => {
             const updated = [...prev];
             updated.splice(index, 1);
-            return updated.length === 0 ? [{}] : updated;
+            return isEditMode ? updated : (updated.length === 0 ? [{}] : updated);
         });
     };
 
@@ -596,6 +664,22 @@ export function AdForm({ adId, onSuccess }: AdFormProps) {
             }
         }
 
+        // بررسی اعتبار کافی برای هزینه‌ها (فقط در حالت ایجاد)
+        // بررسی اعتبار کافی برای هزینه‌ها (فقط در حالت ایجاد)
+        if (!isEditMode) {
+            const balance = creditBalance?.balance ?? 0;
+            const needed = totalCostWithBump;
+
+            if (needed > balance && formData.isBumped) {
+                // ✅ کاربر اعتبار کافی برای نردبان ندارد
+                toast.warning('اعتبار شما برای نردبان کافی نیست. آگهی به‌صورت عادی ثبت می‌شود.');
+                setFormData(prev => ({ ...prev, isBumped: false }));
+            } else if (needed > balance) {
+                toast.error(`اعتبار کافی نیست. نیاز به ${needed} اعتبار دارید.`);
+                return;
+            }
+        }
+
         setIsSubmitting(true);
         try {
             let uploadedIds: string[] = [];
@@ -616,6 +700,16 @@ export function AdForm({ adId, onSuccess }: AdFormProps) {
                 ? `${selectedCategoryData?.title || ''} ${formData.productType}`
                 : selectedCategoryData?.title || '';
 
+            const paymentData = paymentMethods.enabled ? {
+                description: paymentMethods.description || '',
+                cheque: paymentMethods.cheque.enabled ? paymentMethods.cheque.options : [],
+                chequeDescription: paymentMethods.cheque.description || '',
+                installment: paymentMethods.installment.enabled ? paymentMethods.installment.options : [],
+                installmentDescription: paymentMethods.installment.description || '',
+            } : null;
+
+            const specsData = Object.keys(specs).length > 0 ? specs : null;
+
             let ad;
             if (isEditMode) {
                 ad = await updateAdMutation.mutateAsync({
@@ -626,6 +720,8 @@ export function AdForm({ adId, onSuccess }: AdFormProps) {
                         title,
                         productType: formData.productType,
                         unitPrice: formData.unitPrice,
+                        singleUnitPrice: formData.singleUnitPrice || null,
+                        consumerPrice: formData.consumerPrice || null,
                         minQuantity: formData.minQuantity,
                         availableQuantity: formData.availableQuantity,
                         city: formData.cityLabel,
@@ -636,6 +732,8 @@ export function AdForm({ adId, onSuccess }: AdFormProps) {
                         description: formData.description,
                         unitQty: formData.unitQty,
                         unitIsVariableQty: formData.unitIsVariableQty,
+                        paymentMethods: paymentData,
+                        specs: specsData,
                     },
                 });
                 toast.success('آگهی ویرایش شد');
@@ -647,6 +745,8 @@ export function AdForm({ adId, onSuccess }: AdFormProps) {
                     title,
                     productType: formData.productType,
                     unitPrice: formData.unitPrice,
+                    singleUnitPrice: formData.singleUnitPrice || null,
+                    consumerPrice: formData.consumerPrice || null,
                     minQuantity: formData.minQuantity,
                     availableQuantity: formData.availableQuantity,
                     city: formData.cityLabel,
@@ -659,6 +759,7 @@ export function AdForm({ adId, onSuccess }: AdFormProps) {
                     description: formData.description,
                     unitQty: formData.unitQty,
                     unitIsVariableQty: formData.unitIsVariableQty,
+
                 });
                 toast.success('آگهی ثبت شد');
             }
@@ -677,6 +778,8 @@ export function AdForm({ adId, onSuccess }: AdFormProps) {
         }
     };
 
+
+
     if (isLoading || !business) {
         return (
             <div className="min-h-screen flex items-center justify-center">
@@ -684,28 +787,6 @@ export function AdForm({ adId, onSuccess }: AdFormProps) {
             </div>
         );
     }
-
-    const needsCreditPurchase = !isEditMode && !isAdFree && (creditBalance?.balance ?? 0) < bumpCost;
-    if (needsCreditPurchase) {
-        return (
-            <div className="min-h-screen flex items-center justify-center px-4">
-                <div className="text-center space-y-6 max-w-sm w-full">
-                    <div className="w-20 h-20 mx-auto rounded-full bg-amber-50 border-2 border-amber-200 flex items-center justify-center">
-                        <CreditCard className="w-10 h-10 text-amber-500" />
-                    </div>
-                    <h2 className="text-lg font-extrabold">اعتبار کافی نیست</h2>
-                    <p className="text-sm text-on-surface-variant">
-                        موجودی: {creditBalance?.balance ?? 0} | نیاز: {bumpCost}
-                    </p>
-                    <Link href="/credit/purchase" className="block">
-                        <button className="w-full h-14 bg-primary text-white font-bold rounded-2xl">خرید اعتبار</button>
-                    </Link>
-                </div>
-            </div>
-        );
-    }
-
-
 
     return (
         <div className="min-h-screen flex flex-col bg-surface pb-28">
@@ -763,23 +844,67 @@ export function AdForm({ adId, onSuccess }: AdFormProps) {
                     {/* ═══════════════ مرحله ۱: گروه ═══════════════ */}
                     {currentStep === 1 && (
                         <div className="space-y-5 animate-in fade-in duration-200">
-                            <CategoryGridSelector
-                                categoryTree={categoryTree || []}
-                                selectedCategoryId={formData.categoryId}
-                                onSelect={(categoryId) => {
-                                    setFormData(prev => ({
-                                        ...prev,
-                                        categoryId,
-                                        minQuantity: 0,
-                                        unitPrice: 0,
-                                        singleUnitPrice: 0,
-                                        consumerPrice: 0,
-                                        unitId: '',
-                                        unitTitle: '',
-                                        unitQty: null,
-                                    }));
-                                }}
-                            />
+                            {isEditMode && !showCategorySelector && selectedCategoryData ? (
+                                <div className="bg-white p-4 rounded-2xl border border-outline-variant/40 shadow-sm space-y-3">
+                                    <label className="text-sm font-bold text-on-surface flex items-center gap-2">
+                                        <span className="w-7 h-7 rounded-lg bg-primary/10 flex items-center justify-center">
+                                            <Layers className="w-3.5 h-3.5 text-primary" />
+                                        </span>
+                                        دسته‌بندی
+                                    </label>
+                                    <div className="flex items-center justify-between p-3.5 bg-surface-container-low border border-outline-variant/40 rounded-xl">
+                                        <div className="flex items-center gap-2">
+                                            <Package className="w-4 h-4 text-primary" />
+                                            <span className="text-sm font-medium">{selectedCategoryData.title}</span>
+                                            {selectedCategoryData.customCode && (
+                                                <span className="text-[10px] font-mono px-1.5 py-0.5 rounded bg-gray-100 text-gray-500">
+                                                    {selectedCategoryData.customCode}
+                                                </span>
+                                            )}
+                                        </div>
+                                        <button
+                                            type="button"
+                                            onClick={() => setShowCategorySelector(true)}
+                                            className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-primary bg-primary/10 hover:bg-primary/20 transition-colors text-xs font-medium"
+                                        >
+                                            <Edit2 className="w-3.5 h-3.5" />
+                                            تغییر دسته‌بندی
+                                        </button>
+                                    </div>
+                                </div>
+                            ) : (
+                                <>
+                                    <CategoryGridSelector
+                                        categoryTree={categoryTree || []}
+                                        selectedCategoryId={formData.categoryId}
+                                        onSelect={(categoryId) => {
+                                            setFormData(prev => ({
+                                                ...prev,
+                                                categoryId,
+                                                minQuantity: 0,
+                                                unitPrice: 0,
+                                                singleUnitPrice: 0,
+                                                consumerPrice: 0,
+                                                unitId: '',
+                                                unitTitle: '',
+                                                unitQty: null,
+                                            }));
+                                            if (isEditMode) {
+                                                setShowCategorySelector(false);
+                                            }
+                                        }}
+                                    />
+                                    {isEditMode && showCategorySelector && (
+                                        <button
+                                            type="button"
+                                            onClick={() => setShowCategorySelector(false)}
+                                            className="w-full h-11 rounded-xl border-2 border-outline-variant/40 text-sm text-on-surface-variant hover:bg-surface-container-lowest"
+                                        >
+                                            انصراف
+                                        </button>
+                                    )}
+                                </>
+                            )}
 
                             {selectedCategoryData && (
                                 <div className="bg-white p-4 rounded-2xl border border-outline-variant/40 shadow-sm space-y-2.5">
@@ -804,9 +929,9 @@ export function AdForm({ adId, onSuccess }: AdFormProps) {
                             {availableUnits.length > 0 && (
                                 <div className="bg-white p-4 rounded-2xl border border-outline-variant/40 shadow-sm space-y-3">
                                     <label className="text-sm font-bold text-on-surface flex items-center gap-2">
-            <span className="w-7 h-7 rounded-lg bg-amber-100 flex items-center justify-center">
-                <Package className="w-3.5 h-3.5 text-amber-600" />
-            </span>
+                                        <span className="w-7 h-7 rounded-lg bg-amber-100 flex items-center justify-center">
+                                            <Package className="w-3.5 h-3.5 text-amber-600" />
+                                        </span>
                                         واحد فروش
                                     </label>
                                     <div className="space-y-2">
@@ -818,7 +943,6 @@ export function AdForm({ adId, onSuccess }: AdFormProps) {
                                                     "rounded-xl border transition-all overflow-hidden",
                                                     isSelected ? "border-primary bg-primary/5" : "border-outline-variant/20 hover:border-primary/30"
                                                 )}>
-                                                    {/* ✅ تغییر از button به div با onClick */}
                                                     <div
                                                         role="button"
                                                         tabIndex={0}
@@ -861,8 +985,8 @@ export function AdForm({ adId, onSuccess }: AdFormProps) {
                                                         <div className="flex items-center gap-1.5 flex-shrink-0">
                                                             {formData.unitQty != null && isSelected && (
                                                                 <span className="text-[11px] text-on-surface-variant bg-surface-container-high/80 px-2 py-1 rounded-lg">
-                                        {formData.unitQty.toLocaleString()} {baseUnitTitle}
-                                    </span>
+                                                                    {formData.unitQty.toLocaleString()} {baseUnitTitle}
+                                                                </span>
                                                             )}
                                                             {isSelected && unit.isVariableQty && (
                                                                 <button
@@ -901,7 +1025,6 @@ export function AdForm({ adId, onSuccess }: AdFormProps) {
                                 </div>
                             )}
 
-                            {/* ✅ تصویر آگهی — اجباری */}
                             {(selectedCategoryData && maxImagesPerAd > 0) && (
                                 <div className="bg-white p-4 rounded-2xl border border-outline-variant/40 shadow-sm space-y-3">
                                     <label className="text-sm font-bold text-on-surface flex items-center gap-2">
@@ -961,7 +1084,6 @@ export function AdForm({ adId, onSuccess }: AdFormProps) {
                                 </div>
                             </div>
 
-                            {/* حداقل حجم فروش */}
                             <div className="bg-white rounded-2xl p-4 border border-outline-variant/40 shadow-sm space-y-2.5">
                                 <label className="text-xs font-bold text-on-surface flex items-center gap-1.5">
                                     <span className="w-5 h-5 rounded-md bg-amber-100 text-amber-700 flex items-center justify-center text-[10px] font-black">۱</span>
@@ -983,7 +1105,6 @@ export function AdForm({ adId, onSuccess }: AdFormProps) {
                                 />
                             </div>
 
-                            {/* ═══════════════ قیمت تکی ═══════════════ */}
                             <div className="bg-white rounded-2xl p-4 border border-outline-variant/40 shadow-sm space-y-2.5">
                                 <label className="text-xs font-bold text-on-surface flex items-center gap-1.5">
                                     <span className="w-5 h-5 rounded-md bg-blue-100 text-blue-700 flex items-center justify-center text-[10px] font-black">۲</span>
@@ -999,12 +1120,11 @@ export function AdForm({ adId, onSuccess }: AdFormProps) {
                                     value={formData.singleUnitPrice || undefined}
                                     onChange={handleSingleUnitPriceChange}
                                     unit={`${currencyUnit}/${baseUnitTitle}`}
-                                    placeholder={`قیمت عمده هر ${baseUnitTitle}`}
+                                    //placeholder={`قیمت عمده هر ${baseUnitTitle}`}
                                     className="w-full h-12"
                                 />
                             </div>
 
-                            {/* ═══════════════ قیمت واحد فروش (محاسبه شده) ═══════════════ */}
                             <div className="bg-white rounded-2xl p-4 border border-primary/30 ring-1 ring-primary/10 shadow-sm space-y-2.5">
                                 <label className="text-xs font-bold text-on-surface flex items-center gap-1.5">
                                     <span className="w-5 h-5 rounded-md bg-primary text-white flex items-center justify-center text-[10px] font-black">۳</span>
@@ -1029,7 +1149,6 @@ export function AdForm({ adId, onSuccess }: AdFormProps) {
                                 )}
                             </div>
 
-                            {/* ═══════════════ موجودی ═══════════════ */}
                             <div className="bg-white rounded-2xl p-4 border border-outline-variant/40 shadow-sm space-y-2.5">
                                 <label className="text-xs font-bold text-on-surface flex items-center gap-1.5">
                                     <span className="w-5 h-5 rounded-md bg-emerald-100 text-emerald-700 flex items-center justify-center text-[10px] font-black">۴</span>
@@ -1041,11 +1160,10 @@ export function AdForm({ adId, onSuccess }: AdFormProps) {
                                     onChange={(val) => setFormData(prev => ({ ...prev, availableQuantity: val || 0 }))}
                                     unit={unitName}
                                     className="w-full h-12"
-                                    placeholder="موجودی تضمینی را وارد کنید"
+                                    //placeholder="موجودی تضمینی را وارد کنید"
                                 />
                             </div>
 
-                            {/* ═══════════════ قیمت مصرف‌کننده (اختیاری) ═══════════════ */}
                             <div className="bg-white rounded-2xl p-4 border border-outline-variant/40 shadow-sm space-y-2.5">
                                 <label className="text-xs font-bold text-on-surface flex items-center gap-1.5">
                                     <span className="w-5 h-5 rounded-md bg-gray-100 text-gray-600 flex items-center justify-center text-[10px] font-black">۵</span>
@@ -1058,7 +1176,7 @@ export function AdForm({ adId, onSuccess }: AdFormProps) {
                                     value={formData.consumerPrice || undefined}
                                     onChange={(val) => setFormData(prev => ({ ...prev, consumerPrice: val || 0 }))}
                                     unit={`${currencyUnit}/${baseUnitTitle}`}
-                                    placeholder={`مثلاً قیمت هر ${baseUnitTitle} برای مصرف‌کننده`}
+                                    //placeholder={`مثلاً قیمت هر ${baseUnitTitle} برای مصرف‌کننده`}
                                     className="w-full h-12"
                                 />
                                 {formData.consumerPrice > 0 && formData.singleUnitPrice > 0 && (
@@ -1101,7 +1219,7 @@ export function AdForm({ adId, onSuccess }: AdFormProps) {
                                         provinceCode={formData.provinceCode}
                                         cityCode={formData.cityCode}
                                         onProvinceChange={(code, label) =>
-                                            setFormData(prev => ({ ...prev, provinceCode: code, provinceLabel: label }))
+                                            setFormData(prev => ({ ...prev, provinceCode: code, provinceLabel: label, cityCode: '', cityLabel: '' }))
                                         }
                                         onCityChange={(code, label) =>
                                             setFormData(prev => ({ ...prev, cityCode: code, cityLabel: label }))
@@ -1161,6 +1279,50 @@ export function AdForm({ adId, onSuccess }: AdFormProps) {
                     {/* ═══════════════ مرحله ۴: انتشار ═══════════════ */}
                     {currentStep === 4 && (
                         <div className="space-y-4 animate-in fade-in duration-200">
+                            {/* ✅ نمایش هزینه‌ها اگر وجود داشته باشد */}
+                            {!isEditMode && needsCredit && (
+                                <div className="bg-amber-50 border border-amber-200 rounded-2xl p-4 space-y-3">
+                                    <div className="flex items-center gap-2 text-amber-800">
+                                        <Info className="w-4 h-4" />
+                                        <span className="text-xs font-bold">هزینه‌های این آگهی</span>
+                                    </div>
+                                    <div className="space-y-2 text-xs">
+                                        {hasReachedActiveLimit && (
+                                            <div className="flex items-center justify-between">
+                                                <span className="text-amber-700">آگهی اضافه روی تابلو (روز):</span>
+                                                <span className="font-bold">{extraActiveAdCostPerDay.toLocaleString('fa-IR')} اعتبار</span>
+                                            </div>
+                                        )}
+                                        {hasReachedTotalLimit && (
+                                            <div className="flex items-center justify-between">
+                                                <span className="text-amber-700">آگهی اضافه (بیش از سهمیه کل، ماهیانه):</span>
+                                                <span className="font-bold">{adCreationCost.toLocaleString('fa-IR')} اعتبار</span>
+                                            </div>
+                                        )}
+                                        {formData.isBumped && (
+                                            <div className="flex items-center justify-between">
+                                                <span className="text-amber-700">نردبان:</span>
+                                                <span className="font-bold">{totalBumpCost.toLocaleString('fa-IR')} اعتبار</span>
+                                            </div>
+                                        )}
+                                        <div className="border-t border-amber-200 pt-2 flex items-center justify-between">
+                                            <span className="text-amber-800 font-bold">مجموع:</span>
+                                            <span className="font-extrabold text-amber-900">{totalCostWithBump.toLocaleString('fa-IR')} اعتبار</span>
+                                        </div>
+                                        <div className="flex items-center justify-between text-[10px]">
+                                            <span className="text-amber-600">موجودی فعلی:</span>
+                                            <span className={cn(
+                                                "font-bold",
+                                                (creditBalance?.balance ?? 0) >= totalCostWithBump ? 'text-emerald-600' : 'text-red-600'
+                                            )}>
+                                                {creditBalance?.balance ?? 0} اعتبار
+                                            </span>
+                                        </div>
+                                    </div>
+                                </div>
+                            )}
+
+                            {/* نردبان */}
                             <div className="bg-white rounded-2xl border border-outline-variant/40 shadow-sm overflow-hidden">
                                 {isBumpActive ? (
                                     <div className="p-4 bg-blue-50/50 border-blue-200/60 text-blue-700">
@@ -1169,9 +1331,8 @@ export function AdForm({ adId, onSuccess }: AdFormProps) {
                                             <div>
                                                 <span className="text-sm font-bold block">نردبان فعال است</span>
                                                 <span className="text-xs text-blue-600/70">
-                          این آگهی تا تاریخ <span className="font-medium">{bumpExpiresAtLabel}</span> در حال نردبان است.
-                          برای خرید نردبان جدید یا تغییر مدت، صبر کنید تا این دوره پایان یابد.
-                        </span>
+                                                    این آگهی تا تاریخ <span className="font-medium">{bumpExpiresAtLabel}</span> در حال نردبان است.
+                                                </span>
                                             </div>
                                         </div>
                                     </div>
@@ -1179,38 +1340,53 @@ export function AdForm({ adId, onSuccess }: AdFormProps) {
                                     <>
                                         <div className="flex items-center justify-between p-4 border-b border-outline-variant/10">
                                             <div className="flex items-center gap-3">
-                        <span className="w-10 h-10 rounded-xl bg-gradient-to-br from-amber-400 to-orange-500 flex items-center justify-center shadow-sm shadow-amber-500/20">
-                          <TrendingUp className="w-5 h-5 text-white" />
-                        </span>
+                                                <span className="w-10 h-10 rounded-xl bg-gradient-to-br from-amber-400 to-orange-500 flex items-center justify-center shadow-sm shadow-amber-500/20">
+                                                    <TrendingUp className="w-5 h-5 text-white" />
+                                                </span>
                                                 <div>
                                                     <span className="text-sm font-bold text-on-surface block">نردبان (بالاترین نمایش)</span>
                                                     <span className="text-[11px] text-on-surface-variant/70">
-                            هر ۲۴ ساعت {bumpCost} اعتبار
+                                                        هر ۲۴ ساعت {bumpCost} اعتبار
                                                         {formData.isBumped && bumpOptions.length > 0 && ` • ${totalBumpCost} اعتبار`}
-                          </span>
+                                                    </span>
                                                 </div>
                                             </div>
                                             <label className="relative inline-flex items-center cursor-pointer flex-shrink-0">
                                                 <input type="checkbox" checked={formData.isBumped}
                                                        onChange={(e) => {
-                                                           setFormData(prev => ({ ...prev, isBumped: e.target.checked }));
-                                                           if (e.target.checked) {
+                                                           const willEnable = e.target.checked;
+                                                           setFormData(prev => ({ ...prev, isBumped: willEnable }));
+                                                           if (willEnable) {
                                                                const maxAllowed = parseInt(formData.validityHours);
                                                                setBumpDurationHours(maxAllowed);
-                                                               toast.info(`نردبان فعال شد. مدت: ${maxAllowed} ساعت، هزینه: ${totalBumpCost} اعتبار`, { duration: 4000 });
+
+                                                               // ✅ بررسی اعتبار کافی
+                                                               const totalCost = totalCreationCost + (bumpCost * (maxAllowed / 24));
+                                                               const currentBalance = creditBalance?.balance ?? 0;
+
+                                                               if (currentBalance < totalCost) {
+                                                                   toast.warning(
+                                                                       'اعتبار شما برای نردبان کردن کافی نیست. فعلاً می‌توانید آگهی را به‌صورت عادی ثبت کنید، سپس با خرید اعتبار از قسمت ویرایش آن را نردبان کنید.',
+                                                                       { duration: 6000 }
+                                                                   );
+                                                                   // ✅ تیک نردبان را بردار
+                                                                   setFormData(prev => ({ ...prev, isBumped: false }));
+                                                               } else {
+                                                                   toast.info(`نردبان فعال شد. مدت: ${maxAllowed} ساعت، هزینه: ${totalBumpCost} اعتبار`, { duration: 4000 });
+                                                               }
                                                            }
-                                                       }} className="sr-only peer" />
+                                                       }}
+
+                                                       className="sr-only peer" />
                                                 <div className="w-12 h-7 bg-gray-200 peer-focus:outline-none peer-focus:ring-2 peer-focus:ring-primary/20 rounded-full peer
-                          after:content-[''] after:absolute after:top-[3px] after:right-[3px]
-                          after:bg-white after:rounded-full after:h-[22px] after:w-[22px] after:transition-all after:shadow-sm
-                          peer-checked:bg-primary peer-checked:after:-translate-x-full" />
+                                                    after:content-[''] after:absolute after:top-[3px] after:right-[3px]
+                                                    after:bg-white after:rounded-full after:h-[22px] after:w-[22px] after:transition-all after:shadow-sm
+                                                    peer-checked:bg-primary peer-checked:after:-translate-x-full" />
                                             </label>
                                         </div>
                                         {formData.isBumped && bumpOptions.length > 1 && (
                                             <div className="p-4 bg-amber-50/20 border-t border-amber-200/10">
-                                                <label className="text-xs font-medium text-on-surface-variant mb-2 block">
-                                                    مدت زمان نردبان:
-                                                </label>
+                                                <label className="text-xs font-medium text-on-surface-variant mb-2 block">مدت زمان نردبان:</label>
                                                 <div className="flex gap-2">
                                                     {bumpOptions.map(hours => (
                                                         <button
@@ -1228,9 +1404,6 @@ export function AdForm({ adId, onSuccess }: AdFormProps) {
                                                         </button>
                                                     ))}
                                                 </div>
-                                                <p className="text-[10px] text-amber-700/60 mt-2">
-                                                    هزینه‌ی نردبان بر اساس مدت انتخاب‌شده محاسبه می‌شود.
-                                                </p>
                                             </div>
                                         )}
                                         {formData.isBumped && (
@@ -1238,10 +1411,9 @@ export function AdForm({ adId, onSuccess }: AdFormProps) {
                                                 <TrendingUp className="w-4 h-4 text-amber-600 mt-0.5 flex-shrink-0" />
                                                 <div className="text-xs text-amber-800/80 space-y-1">
                                                     <p><span className="font-bold">{totalBumpCost}</span> اعتبار از حساب شما کسر خواهد شد.</p>
-                                                    {creditBalance && creditBalance.balance < totalBumpCost && (
-                                                        <p className="text-red-600 font-bold flex items-center gap-1">
-                                                            <span className="inline-block w-1.5 h-1.5 rounded-full bg-red-500 animate-pulse" />
-                                                            اعتبار ناکافی! موجودی: {creditBalance.balance}
+                                                    {creditBalance && (creditBalance.balance < totalBumpCost) && (
+                                                        <p className="text-red-600 font-bold">
+                                                            ⚠️ اعتبار شما برای نردبان کافی نیست. می‌توانید آگهی را عادی ثبت کنید و بعداً از بخش ویرایش نردبان کنید.
                                                         </p>
                                                     )}
                                                 </div>
@@ -1255,9 +1427,9 @@ export function AdForm({ adId, onSuccess }: AdFormProps) {
                                 <div className="bg-white rounded-2xl border border-outline-variant/40 shadow-sm overflow-hidden">
                                     <div className="flex items-center justify-between p-4">
                                         <div className="flex items-center gap-3">
-                      <span className="w-10 h-10 rounded-xl bg-gradient-to-br from-slate-400 to-slate-600 flex items-center justify-center shadow-sm shadow-slate-500/20">
-                        <svg className="w-5 h-5 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>
-                      </span>
+                                            <span className="w-10 h-10 rounded-xl bg-gradient-to-br from-slate-400 to-slate-600 flex items-center justify-center shadow-sm shadow-slate-500/20">
+                                                <svg className="w-5 h-5 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>
+                                            </span>
                                             <div>
                                                 <span className="text-sm font-bold text-on-surface block">انتشار ناشناس</span>
                                             </div>
@@ -1270,9 +1442,9 @@ export function AdForm({ adId, onSuccess }: AdFormProps) {
                                                 className="sr-only peer"
                                             />
                                             <div className="w-12 h-7 bg-gray-200 peer-focus:outline-none peer-focus:ring-2 peer-focus:ring-primary/20 rounded-full peer
-                        after:content-[''] after:absolute after:top-[3px] after:right-[3px]
-                        after:bg-white after:rounded-full after:h-[22px] after:w-[22px] after:transition-all after:shadow-sm
-                        peer-checked:bg-primary peer-checked:after:-translate-x-full" />
+                                                after:content-[''] after:absolute after:top-[3px] after:right-[3px]
+                                                after:bg-white after:rounded-full after:h-[22px] after:w-[22px] after:transition-all after:shadow-sm
+                                                peer-checked:bg-primary peer-checked:after:-translate-x-full" />
                                         </label>
                                     </div>
                                     {formData.isAnonymous && (
@@ -1287,34 +1459,38 @@ export function AdForm({ adId, onSuccess }: AdFormProps) {
 
                             <div className="bg-surface-container-low rounded-2xl p-4 flex flex-col gap-1.5">
                                 <div className="flex items-center gap-3">
-                  <span className="w-9 h-9 rounded-xl bg-primary/10 flex items-center justify-center">
-                    <svg className="w-4 h-4 text-primary" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}><rect x="1" y="4" width="22" height="16" rx="2"/><line x1="1" y1="10" x2="23" y2="10"/></svg>
-                  </span>
+                                    <span className="w-9 h-9 rounded-xl bg-primary/10 flex items-center justify-center">
+                                        <svg className="w-4 h-4 text-primary" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}><rect x="1" y="4" width="22" height="16" rx="2"/><line x1="1" y1="10" x2="23" y2="10"/></svg>
+                                    </span>
                                     <div className="text-sm">
                                         <span className="text-on-surface-variant">اعتبار فعلی:</span>{' '}
                                         <span className="font-bold text-on-surface">{creditBalance?.balance ?? '—'}</span>
                                     </div>
                                 </div>
-                                {remainingActiveSlots > 0 && remainingTotalSlots > 0 && (
+                                {remainingActiveSlots > 0 && remainingTotalSlots > 0 && !isEditMode && (
                                     <div className="flex items-center gap-3 text-emerald-600 bg-emerald-50/50 px-3 py-1.5 rounded-lg border border-emerald-200/50">
                                         <span className="text-[10px] font-medium">🎁 {Math.min(remainingActiveSlots, remainingTotalSlots)} آگهی رایگان باقیمانده</span>
                                     </div>
                                 )}
-                                {hasReachedMaxAds && (
+                                {hasReachedActiveLimit && (
                                     <div className="flex items-center gap-3 text-amber-600 bg-amber-50/50 px-3 py-1.5 rounded-lg border border-amber-200/50">
-                                        <span className="text-[10px] font-medium">⚠️ سهمیه آگهی فعال پر است. هر آگهی جدید {bumpCost} اعتبار مصرف می‌کند.</span>
+                                        <span className="text-[10px] font-medium">
+                                            ⚠️ سهمیه آگهی فعال پر است. هر آگهی جدید {extraActiveAdCostPerDay.toLocaleString('fa-IR')} اعتبار در ماه مصرف می‌کند.
+                                        </span>
                                     </div>
                                 )}
-                                {hasReachedTotalLimit && !hasReachedMaxAds && (
+                                {hasReachedTotalLimit && !hasReachedActiveLimit && (
                                     <div className="flex items-center gap-3 text-amber-600 bg-amber-50/50 px-3 py-1.5 rounded-lg border border-amber-200/50">
-                                        <span className="text-[10px] font-medium">⚠️ سهمیه کل آگهی‌های شما پر شده است. هر آگهی جدید {bumpCost} اعتبار مصرف می‌کند.</span>
+                                        <span className="text-[10px] font-medium">
+                                            ⚠️ سهمیه کل آگهی‌های شما پر شده است. هر آگهی جدید {adCreationCost.toLocaleString('fa-IR')} اعتبار در ماه مصرف می‌کند.
+                                        </span>
                                     </div>
                                 )}
                             </div>
                         </div>
                     )}
 
-                    {/* مرحله ۵: جزئیات تکمیلی (فقط ویرایش) */}
+                    {/* ═══════════════ مرحله ۵: جزئیات تکمیلی (فقط ویرایش) ═══════════════ */}
                     {isEditMode && currentStep === 5 && (
                         <div className="space-y-4 animate-in fade-in duration-200">
                             <SpecsSection
@@ -1330,31 +1506,48 @@ export function AdForm({ adId, onSuccess }: AdFormProps) {
                         </div>
                     )}
 
-                    {/* مرحله آخر: بررسی نهایی */}
+                    {/* ═══════════════ مرحله آخر: بررسی نهایی ═══════════════ */}
                     {currentStep === TOTAL_STEPS && (
                         <div className="space-y-4 animate-in fade-in duration-200">
                             <div className="bg-gradient-to-l from-emerald-500/10 to-emerald-500/5 border border-emerald-500/20 rounded-2xl p-4 flex items-center gap-3">
-                <span className="w-10 h-10 rounded-xl bg-emerald-500 flex items-center justify-center shadow-sm shadow-emerald-500/30">
-                  <ClipboardCheck className="w-5 h-5 text-white" />
-                </span>
+                                <span className="w-10 h-10 rounded-xl bg-emerald-500 flex items-center justify-center shadow-sm shadow-emerald-500/30">
+                                    <ClipboardCheck className="w-5 h-5 text-white" />
+                                </span>
                                 <div>
                                     <h3 className="font-bold text-sm text-emerald-800">اطلاعات را بررسی کنید</h3>
                                     <p className="text-[11px] text-emerald-700/70">پس از تأیید، آگهی منتشر خواهد شد.</p>
                                 </div>
                             </div>
 
+                            {/* خلاصه هزینه‌ها */}
+                            {!isEditMode && needsCredit && (
+                                <div className="bg-amber-50 border border-amber-200 rounded-2xl p-4 space-y-2">
+                                    <div className="flex items-center gap-2 text-amber-800">
+                                        <Info className="w-4 h-4" />
+                                        <span className="text-xs font-bold">هزینه‌های این آگهی</span>
+                                    </div>
+                                    <div className="space-y-1 text-xs text-amber-700">
+                                        {hasReachedActiveLimit && <p>• آگهی اضافه روی تابلو: {extraActiveAdCostPerDay.toLocaleString('fa-IR')} اعتبار/ماه</p>}
+                                        {hasReachedTotalLimit && <p>• آگهی اضافه (بیش از سهمیه کل): {adCreationCost.toLocaleString('fa-IR')} اعتبار/ماه</p>}
+                                        {formData.isBumped && <p>• نردبان: {totalBumpCost.toLocaleString('fa-IR')} اعتبار</p>}
+                                        <p className="font-bold text-amber-900 border-t border-amber-200 pt-2">مجموع: {totalCostWithBump.toLocaleString('fa-IR')} اعتبار</p>
+                                    </div>
+                                </div>
+                            )}
+
+                            {/* سایر بخش‌های بررسی */}
                             <div className="bg-white rounded-2xl border border-outline-variant/40 shadow-sm overflow-hidden">
                                 <button type="button" onClick={() => goToStep(1)}
                                         className="w-full flex items-center justify-between p-4 hover:bg-surface-container-lowest/50 transition-colors">
-                  <span className="text-sm font-bold text-on-surface flex items-center gap-2">
-                    <Layers className="w-4 h-4 text-primary" /> دسته‌بندی و کالا
-                  </span>
+                                    <span className="text-sm font-bold text-on-surface flex items-center gap-2">
+                                        <Layers className="w-4 h-4 text-primary" /> دسته‌بندی و کالا
+                                    </span>
                                     <Edit2 className="w-3.5 h-3.5 text-primary/50" />
                                 </button>
                                 <div className="px-4 pb-4 space-y-1.5 border-t border-outline-variant/20 pt-3">
                                     <div className="flex justify-between text-xs">
                                         <span className="text-on-surface-variant">دسته‌بندی</span>
-                                        <span className="font-medium text-on-surface">{selectedCategoryData?.name || '---'}</span>
+                                        <span className="font-medium text-on-surface">{selectedCategoryData?.title || '---'}</span>
                                     </div>
                                     <div className="flex justify-between text-xs">
                                         <span className="text-on-surface-variant">عنوان کالا</span>
@@ -1370,9 +1563,9 @@ export function AdForm({ adId, onSuccess }: AdFormProps) {
                             <div className="bg-white rounded-2xl border border-outline-variant/40 shadow-sm overflow-hidden">
                                 <button type="button" onClick={() => goToStep(2)}
                                         className="w-full flex items-center justify-between p-4 hover:bg-surface-container-lowest/50 transition-colors">
-                  <span className="text-sm font-bold text-on-surface flex items-center gap-2">
-                    <Package className="w-4 h-4 text-primary" /> قیمت و حجم
-                  </span>
+                                    <span className="text-sm font-bold text-on-surface flex items-center gap-2">
+                                        <Package className="w-4 h-4 text-primary" /> قیمت و حجم
+                                    </span>
                                     <Edit2 className="w-3.5 h-3.5 text-primary/50" />
                                 </button>
                                 <div className="px-4 pb-4 space-y-1.5 border-t border-outline-variant/20 pt-3">
@@ -1388,15 +1581,21 @@ export function AdForm({ adId, onSuccess }: AdFormProps) {
                                         <span className="text-on-surface-variant">موجودی</span>
                                         <span className="font-medium text-on-surface">{formData.availableQuantity.toLocaleString()} {unitName}</span>
                                     </div>
+                                    {formData.consumerPrice > 0 && (
+                                        <div className="flex justify-between text-xs">
+                                            <span className="text-on-surface-variant">قیمت مصرف‌کننده</span>
+                                            <span className="font-medium text-on-surface">{formData.consumerPrice.toLocaleString()} {currencyUnit}</span>
+                                        </div>
+                                    )}
                                 </div>
                             </div>
 
                             <div className="bg-white rounded-2xl border border-outline-variant/40 shadow-sm overflow-hidden">
                                 <button type="button" onClick={() => goToStep(3)}
                                         className="w-full flex items-center justify-between p-4 hover:bg-surface-container-lowest/50 transition-colors">
-                  <span className="text-sm font-bold text-on-surface flex items-center gap-2">
-                    <MapPin className="w-4 h-4 text-primary" /> موقعیت و زمان
-                  </span>
+                                    <span className="text-sm font-bold text-on-surface flex items-center gap-2">
+                                        <MapPin className="w-4 h-4 text-primary" /> موقعیت و زمان
+                                    </span>
                                     <Edit2 className="w-3.5 h-3.5 text-primary/50" />
                                 </button>
                                 <div className="px-4 pb-4 space-y-1.5 border-t border-outline-variant/20 pt-3">
@@ -1414,9 +1613,9 @@ export function AdForm({ adId, onSuccess }: AdFormProps) {
                             <div className="bg-white rounded-2xl border border-outline-variant/40 shadow-sm overflow-hidden">
                                 <button type="button" onClick={() => goToStep(4)}
                                         className="w-full flex items-center justify-between p-4 hover:bg-surface-container-lowest/50 transition-colors">
-                  <span className="text-sm font-bold text-on-surface flex items-center gap-2">
-                    <Settings className="w-4 h-4 text-primary" /> تنظیمات انتشار
-                  </span>
+                                    <span className="text-sm font-bold text-on-surface flex items-center gap-2">
+                                        <Settings className="w-4 h-4 text-primary" /> تنظیمات انتشار
+                                    </span>
                                     <Edit2 className="w-3.5 h-3.5 text-primary/50" />
                                 </button>
                                 <div className="px-4 pb-4 space-y-1.5 border-t border-outline-variant/20 pt-3">
@@ -1424,8 +1623,8 @@ export function AdForm({ adId, onSuccess }: AdFormProps) {
                                         <span className="text-on-surface-variant">نردبان</span>
                                         {formData.isBumped ? (
                                             <span className="font-bold text-amber-600 bg-amber-50 px-2.5 py-0.5 rounded-full text-[10px]">
-                        فعال ({bumpDurationHours} ساعت − {totalBumpCost} اعتبار)
-                      </span>
+                                                فعال ({bumpDurationHours} ساعت − {totalBumpCost} اعتبار)
+                                            </span>
                                         ) : (
                                             <span className="text-on-surface-variant/50">غیرفعال</span>
                                         )}
@@ -1445,9 +1644,9 @@ export function AdForm({ adId, onSuccess }: AdFormProps) {
                                 <div className="bg-white rounded-2xl border border-outline-variant/40 shadow-sm overflow-hidden">
                                     <button type="button" onClick={() => goToStep(5)}
                                             className="w-full flex items-center justify-between p-4 hover:bg-surface-container-lowest/50 transition-colors">
-                    <span className="text-sm font-bold text-on-surface flex items-center gap-2">
-                      <CreditCard className="w-4 h-4 text-primary" /> جزئیات تکمیلی
-                    </span>
+                                        <span className="text-sm font-bold text-on-surface flex items-center gap-2">
+                                            <CreditCard className="w-4 h-4 text-primary" /> جزئیات تکمیلی
+                                        </span>
                                         <Edit2 className="w-3.5 h-3.5 text-primary/50" />
                                     </button>
                                     <div className="px-4 pb-4 space-y-1.5 border-t border-outline-variant/20 pt-3">
@@ -1455,8 +1654,8 @@ export function AdForm({ adId, onSuccess }: AdFormProps) {
                                             <span className="text-on-surface-variant">مشخصات فنی</span>
                                             {Object.keys(specs).length > 0 ? (
                                                 <span className="font-medium text-on-surface">
-                          {Object.keys(specs).length} ویژگی
-                        </span>
+                                                    {Object.keys(specs).length} ویژگی
+                                                </span>
                                             ) : (
                                                 <span className="text-on-surface-variant/50">ثبت نشده</span>
                                             )}
@@ -1465,9 +1664,9 @@ export function AdForm({ adId, onSuccess }: AdFormProps) {
                                             <span className="text-on-surface-variant">روش‌های پرداخت</span>
                                             {paymentMethods.enabled ? (
                                                 <span className="font-medium text-on-surface">
-                          {paymentMethods.cheque.enabled && 'چکی '}
+                                                    {paymentMethods.cheque.enabled && 'چکی '}
                                                     {paymentMethods.installment.enabled && 'اقساطی'}
-                        </span>
+                                                </span>
                                             ) : (
                                                 <span className="text-on-surface-variant/50">ثبت نشده</span>
                                             )}
@@ -1505,8 +1704,6 @@ export function AdForm({ adId, onSuccess }: AdFormProps) {
                     )}
                 </div>
             </main>
-
-
         </div>
     );
 }

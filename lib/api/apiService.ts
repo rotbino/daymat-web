@@ -200,6 +200,9 @@ export const apiService = {
         getSavedAds: (): Promise<any[]> =>
             apiRequest('/ad/saved'), // مسیر فرضی - در صورت وجود در بک‌اند
 
+        isSaved: (adId: string) =>
+            apiRequest(`/ad/${adId}/saved-status`),
+
         // lib/api/apiService.ts – بخش ad
 
         getStats: (id: string): Promise<{

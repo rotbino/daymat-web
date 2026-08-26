@@ -1,17 +1,16 @@
 // app/ad/[id]/components/AdSidebar.tsx
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import { useSelector } from 'react-redux';
 import { RootState } from '@/lib/store/store';
-import { useAdSaved } from '@/lib/api/apiHooks';
 import { apiService } from '@/lib/api/apiService';
 import { toast } from 'sonner';
 import Image from 'next/image';
 import {
     Clock, MapPin, Phone, Bookmark, Share2, ShoppingCart, Layers, Tag, User,
-    ArrowUpCircle, Banknote, Eye, Timer, Loader2
+    ArrowUpCircle, Banknote, Eye, Timer, Loader2, X, Maximize2,
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { formatNum, timeLeft, timeAgo, Pill } from './shared';
@@ -26,20 +25,22 @@ interface AdSidebarProps {
 export default function AdSidebar({ ad, isOwner, isSaved, onSaveToggle }: AdSidebarProps) {
     const router = useRouter();
     const { isAuthenticated } = useSelector((state: RootState) => state.auth);
-    const { currentArm } = useSelector((state: RootState) => state.arm);
     const [isCalling, setIsCalling] = useState(false);
+    const [isSaving, setIsSaving] = useState(false);
+    const [showFullImage, setShowFullImage] = useState(false);
 
-    const unit = ad.unit?.shortCode || 'تن';
-    const expiry = timeLeft(ad.expiresAt);
+    // ✅ عکس‌ها
+    const ownerAvatarThumb = ad?.business?.owner?.avatarFile?.thumbnailPath || ad?.business?.owner?.avatarUrl;
+    const ownerAvatarFull = ad?.business?.owner?.avatarFile?.path || ownerAvatarThumb; // ✅ عکس اصلی
 
-    // پرداخت‌ها
-    const hasCheque = ad.paymentMethods?.cheque?.length > 0;
-    const hasInstallment = ad.paymentMethods?.installment?.length > 0;
+    const unit = ad?.unit?.shortCode || 'تن';
+    const expiry = timeLeft(ad?.expiresAt);
 
-    // اطلاعات فروشنده
-    const seller = ad.business;
+    const hasCheque = ad?.paymentMethods?.cheque?.length > 0;
+    const hasInstallment = ad?.paymentMethods?.installment?.length > 0;
+
+    const seller = ad?.business;
     const owner = seller?.owner;
-    const ownerAvatar = owner?.avatarFile?.thumbnailPath || owner?.avatarUrl;
 
     const handleContact = async () => {
         if (!isAuthenticated) {
@@ -51,11 +52,16 @@ export default function AdSidebar({ ad, isOwner, isSaved, onSaveToggle }: AdSide
 
         try {
             const info = await apiService.ad.getContact(ad.id);
+            const phoneToUse = info.ownerPhone || info.phone;
+            if (!phoneToUse) {
+                toast.error('شماره تماس برای این آگهی ثبت نشده است.');
+                return;
+            }
             if (window.innerWidth < 768) {
-                window.location.href = `tel:${info.phone}`;
+                window.location.href = `tel:${phoneToUse}`;
             } else {
-                toast.info(`${info.businessName}\n${info.phone}`, { duration: 8000 });
-                navigator.clipboard.writeText(info.phone).catch(() => {});
+                toast.info(`${info.businessName}\n${phoneToUse}`, { duration: 8000 });
+                navigator.clipboard.writeText(phoneToUse).catch(() => {});
             }
         } catch (e: any) {
             toast.error(e?.message || 'خطا');
@@ -83,7 +89,15 @@ export default function AdSidebar({ ad, isOwner, isSaved, onSaveToggle }: AdSide
             router.push(`/login?redirect=/ad/${ad.id}`);
             return;
         }
+        if (isSaving) return;
+        setIsSaving(true);
+
         try {
+            if (!ad?.id) {
+                toast.error('شناسه آگهی نامعتبر است');
+                return;
+            }
+
             if (isSaved) {
                 await apiService.ad.unsave(ad.id);
                 toast.success('حذف از ذخیره‌ها');
@@ -93,9 +107,16 @@ export default function AdSidebar({ ad, isOwner, isSaved, onSaveToggle }: AdSide
             }
             onSaveToggle();
         } catch (e: any) {
-            toast.error(e?.message || 'خطا');
+            const errorMessage = e?.data?.message || e?.message || 'خطا در ذخیره آگهی';
+            toast.error(errorMessage);
+        } finally {
+            setIsSaving(false);
         }
     };
+
+    if (!ad) {
+        return null;
+    }
 
     return (
         <div className="space-y-3.5">
@@ -119,9 +140,32 @@ export default function AdSidebar({ ad, isOwner, isSaved, onSaveToggle }: AdSide
                     </span>
                     <span className="text-sm text-gray-400 dark:text-gray-500 font-medium">تومان</span>
                 </div>
+                {(ad.singleUnitPrice > 0 || ad.consumerPrice > 0) && (
+                    <div className="mt-3 pt-3 border-t border-gray-100 dark:border-gray-800 space-y-1.5">
+                        {ad.singleUnitPrice > 0 && (
+                            <div className="flex items-center justify-between text-xs">
+                                <span className="text-gray-400 dark:text-gray-500 flex items-center gap-1">
+                                    <ShoppingCart className="w-3 h-3 text-primary/60" />
+                                    قیمت تکی عمده:
+                                </span>
+                                <span className="font-bold text-gray-700 dark:text-gray-300">
+                                    {formatNum(ad.singleUnitPrice)}/{ad.unitBaseTitle || 'واحد'}
+                                </span>
+                            </div>
+                        )}
+                        {ad.consumerPrice > 0 && (
+                            <div className="flex items-center justify-between text-xs">
+                                <span className="text-gray-400 dark:text-gray-500">🛒 مصرف‌کننده:</span>
+                                <span className="font-bold text-gray-700 dark:text-gray-300">
+                                    {formatNum(ad.consumerPrice)}/{ad.unitBaseTitle || 'واحد'}
+                                </span>
+                            </div>
+                        )}
+                    </div>
+                )}
             </div>
 
-            {/* اطلاعات سریع ۲×۲ */}
+            {/* اطلاعات سریع */}
             <div className="grid grid-cols-2 gap-2">
                 {[
                     { icon: <ShoppingCart className="w-4 h-4 text-primary/60" />, label: 'حداقل سفارش', value: `${formatNum(ad.minQuantity)} ${unit}` },
@@ -141,39 +185,41 @@ export default function AdSidebar({ ad, isOwner, isSaved, onSaveToggle }: AdSide
 
             {/* برچسب‌ها */}
             <div className="flex flex-wrap gap-2 px-0.5">
-                {ad.isBumped && (
-                    <Pill variant="amber">
-                        <ArrowUpCircle className="w-3 h-3" />نردبان
-                    </Pill>
-                )}
-                {hasCheque && (
-                    <Pill variant="amber">
-                        <Banknote className="w-3 h-3" />چکی
-                    </Pill>
-                )}
-                {hasInstallment && (
-                    <Pill variant="indigo">
-                        <Layers className="w-3 h-3" />اقساطی
-                    </Pill>
-                )}
-                <Pill variant="default">
-                    <Timer className="w-3 h-3" />{timeAgo(ad.updatedAt)}
-                </Pill>
-                <Pill variant="default">
-                    <Eye className="w-3 h-3" />{formatNum(ad.viewCount)} بازدید
-                </Pill>
+                {ad.isBumped && <Pill variant="amber"><ArrowUpCircle className="w-3 h-3" />نردبان</Pill>}
+                {hasCheque && <Pill variant="amber"><Banknote className="w-3 h-3" />چکی</Pill>}
+                {hasInstallment && <Pill variant="indigo"><Layers className="w-3 h-3" />اقساطی</Pill>}
+                <Pill variant="default"><Timer className="w-3 h-3" />{timeAgo(ad.updatedAt)}</Pill>
+                <Pill variant="default"><Eye className="w-3 h-3" />{formatNum(ad.viewCount)} بازدید</Pill>
             </div>
 
-            {/* مینی‌کارت فروشنده */}
+            {/* فروشنده */}
             {owner && (
                 <div className="flex items-center gap-3 bg-white dark:bg-gray-900 rounded-xl border border-gray-200/60 dark:border-gray-800/60 px-4 py-3">
-                    <div className="w-10 h-10 rounded-full bg-gray-100 dark:bg-gray-800 border border-gray-200 dark:border-gray-700 overflow-hidden flex-shrink-0">
-                        {ownerAvatar ? (
-                            <Image src={ownerAvatar} alt={owner.fullName || ''} width={40} height={40} className="object-cover w-full h-full" unoptimized />
+                    <button
+                        onClick={() => setShowFullImage(true)}
+                        className="relative w-16 h-16 rounded-full bg-gray-100 dark:bg-gray-800 border border-gray-200 dark:border-gray-700 overflow-hidden flex-shrink-0 group"
+                        title="مشاهده عکس در اندازه بزرگ"
+                    >
+                        {ownerAvatarThumb ? (
+                            <>
+                                <Image
+                                    src={ownerAvatarThumb}
+                                    alt={owner.fullName || ''}
+                                    width={64}
+                                    height={64}
+                                    className="object-cover w-full h-full group-hover:opacity-80 transition-opacity"
+                                    unoptimized
+                                />
+                                <div className="absolute inset-0 bg-black/0 group-hover:bg-black/20 transition-colors flex items-center justify-center">
+                                    <Maximize2 className="w-4 h-4 text-white opacity-0 group-hover:opacity-100 transition-opacity" />
+                                </div>
+                            </>
                         ) : (
-                            <div className="w-full h-full flex items-center justify-center"><User className="w-5 h-5 text-gray-400" /></div>
+                            <div className="w-full h-full flex items-center justify-center">
+                                <User className="w-6 h-6 text-gray-400" />
+                            </div>
                         )}
-                    </div>
+                    </button>
                     <div className="min-w-0 flex-1">
                         <p className="text-sm font-semibold text-gray-800 dark:text-white truncate">{owner.fullName}</p>
                         <p className="text-[11px] text-gray-400 dark:text-gray-500 truncate">{seller?.name}</p>
@@ -188,9 +234,14 @@ export default function AdSidebar({ ad, isOwner, isSaved, onSaveToggle }: AdSide
             <div className="flex gap-2">
                 <button
                     onClick={handleSave}
-                    className="w-12 h-12 rounded-xl border border-gray-200 dark:border-gray-700 flex items-center justify-center transition-colors hover:bg-gray-50 dark:hover:bg-gray-800 flex-shrink-0"
+                    disabled={isSaving}
+                    className="w-12 h-12 rounded-xl border border-gray-200 dark:border-gray-700 flex items-center justify-center transition-colors hover:bg-gray-50 dark:hover:bg-gray-800 flex-shrink-0 disabled:opacity-50"
                 >
-                    <Bookmark className={cn('w-5 h-5', isSaved ? 'fill-primary text-primary' : 'text-gray-500')} />
+                    {isSaving ? (
+                        <Loader2 className="w-5 h-5 animate-spin text-primary" />
+                    ) : (
+                        <Bookmark className={cn('w-5 h-5', isSaved ? 'fill-primary text-primary' : 'text-gray-500')} />
+                    )}
                 </button>
                 <button
                     onClick={handleShare}
@@ -210,11 +261,44 @@ export default function AdSidebar({ ad, isOwner, isSaved, onSaveToggle }: AdSide
                     )}
                 </button>
             </div>
+
+            {/* ✅ مودال عکس بزرگ - استفاده از عکس اصلی */}
+            {showFullImage && (
+                <div
+                    className="fixed inset-0 z-[100] flex items-center justify-center bg-black/90 p-4 cursor-zoom-out"
+                    onClick={() => setShowFullImage(false)}
+                >
+                    <div className="relative max-w-3xl w-full max-h-[90vh] flex items-center justify-center">
+                        {ownerAvatarFull ? (
+                            <Image
+                                src={ownerAvatarFull}
+                                alt={owner.fullName || ''}
+                                width={800}
+                                height={800}
+                                className="object-contain max-h-[85vh] w-auto rounded-xl shadow-2xl"
+                                unoptimized
+                            />
+                        ) : (
+                            <div className="w-64 h-64 bg-gray-800 rounded-xl flex items-center justify-center">
+                                <User className="w-24 h-24 text-gray-600" />
+                            </div>
+                        )}
+                        <button
+                            onClick={(e) => {
+                                e.stopPropagation();
+                                setShowFullImage(false);
+                            }}
+                            className="absolute -top-12 left-0 p-2 bg-white/10 hover:bg-white/20 rounded-full text-white transition-colors"
+                        >
+                            <X className="w-6 h-6" />
+                        </button>
+                    </div>
+                </div>
+            )}
         </div>
     );
 }
 
-// Helper functions
 function getTierLabel(tier: string | undefined) {
     return { gold: 'طلایی', silver: 'نقره‌ای', blue: 'برنزی' }[tier || ''] || null;
 }

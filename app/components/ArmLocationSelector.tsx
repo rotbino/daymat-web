@@ -90,13 +90,15 @@ export function ArmLocationSelector({
     // ✅ همگام‌سازی با props
     // ============================================================
     useEffect(() => {
-        if (provinceCode) {
+        console.log('📍 Sync province:', provinceCode);
+        if (provinceCode && provinceCode !== selectedProvince) {
             setSelectedProvince(provinceCode);
         }
     }, [provinceCode]);
 
     useEffect(() => {
-        if (cityCode) {
+        console.log('📍 Sync city:', cityCode);
+        if (cityCode && cityCode !== selectedCity) {
             setSelectedCity(cityCode);
         }
     }, [cityCode]);

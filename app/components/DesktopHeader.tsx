@@ -15,7 +15,7 @@ import {
     FileText,
     Lightbulb, X,
     UserPlus,
-    Loader2,
+    Loader2, Bookmark,
 } from 'lucide-react';
 
 import { RootState } from '@/lib/store/store';
@@ -741,7 +741,37 @@ export default function DesktopHeader({
                                             my-1
                                         "
                                     />
-
+                                    {/* آگهی‌های ذخیره‌شده */}
+                                    <button
+                                        onClick={() => {
+                                            setMenuOpen(false);
+                                            router.push('/saved-ads');
+                                        }}
+                                        className="
+                                            w-full
+                                            flex
+                                            items-center
+                                            gap-2
+                                            px-4
+                                            py-2.5
+                                            text-sm
+                                            text-gray-700
+                                            dark:text-gray-200
+                                            hover:bg-gray-100
+                                            dark:hover:bg-gray-700
+                                            transition-colors
+                                            text-right
+                                        ">
+                                        <Bookmark
+                                            className="
+                                                w-4
+                                                h-4
+                                                text-gray-500
+                                                dark:text-gray-400
+                                            "
+                                        />
+                                        آگهی‌های ذخیره‌شده
+                                    </button>
                                     {/* درباره ما */}
                                     <button
                                         onClick={() => {

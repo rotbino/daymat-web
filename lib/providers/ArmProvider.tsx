@@ -32,6 +32,7 @@ const PUBLIC_PATHS = [
     '/credit/payments',
     '/credit/report',
     '/docs/about',
+    '/saved-ads',
 ];
 
 interface ArmProviderProps {

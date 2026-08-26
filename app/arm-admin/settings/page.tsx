@@ -4,7 +4,7 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import { useSelector } from 'react-redux';
 import { RootState } from '@/lib/store/store';
-import { useForm } from 'react-hook-form';
+import { useForm, FormProvider } from 'react-hook-form'; // ✅ اضافه کردن FormProvider
 import { useRouter, useSearchParams } from 'next/navigation';
 import {
     Save,
@@ -26,7 +26,7 @@ import { ArmPermissionSection } from '@/app/admin/arm/components/ArmPermissionSe
 import { CategoryScopeSelector } from '@/app/admin/arm/components/CategoryScopeSelector';
 import { IndustrySelector } from '@/app/admin/arm/components/IndustrySelector';
 import { LocationSelector } from '@/app/admin/arm/components/LocationSelector';
-import {ArmCategoryManager} from "@/app/admin/arm/components/ArmCategoryManager";
+import { ArmCategoryManager } from "@/app/admin/arm/components/ArmCategoryManager";
 
 
 type SettingsTab = 'general' | 'modules' | 'access' | 'payment' | 'labels' | 'economy' | 'permissions' | 'categories' | 'industries' | 'locations';
@@ -37,7 +37,7 @@ const TABS: { id: SettingsTab; label: string; icon: string }[] = [
     { id: 'economy', label: 'اقتصاد', icon: '💰' },
     { id: 'modules', label: 'ماژول‌ها', icon: '🧩' },
     { id: 'access', label: 'دسترسی', icon: '🔐' },
-    { id: 'categories', label: 'گروهها', icon: '📂' },
+    { id: 'categories', label: 'گروه‌ها', icon: '📂' },
     { id: 'locations', label: 'موقعیت‌ها', icon: '📍' },
     { id: 'labels', label: 'برچسب‌ها', icon: '🏷️' },
 ];
@@ -57,10 +57,16 @@ export default function ArmAdminSettings() {
     const [settings, setSettings] = useState<any>(null);
     const [hasChanges, setHasChanges] = useState(false);
 
-    // ✅ useForm
-    const { register, watch, setValue, control, formState: { errors }, reset } = useForm({
-        defaultValues: settings || {},
+    // ✅ useForm با methods
+    const methods = useForm({
+        defaultValues: {
+            categoryTree: [],
+            allowedCategoryScopeTree: [],
+            config: {},
+        },
     });
+
+    const { register, watch, setValue, control, getValues, formState: { errors }, reset } = methods;
 
     const handleTabChange = (tab: SettingsTab) => {
         setActiveTab(tab);
@@ -119,11 +125,11 @@ export default function ArmAdminSettings() {
 
     useEffect(() => { fetchSettings(); }, [fetchSettings]);
 
-    const handleSave = async () => {
+    const handleSave = useCallback(async () => {
         if (!currentSlug || !settings) return;
         setSaving(true);
         try {
-            const formData = watch();
+            const formData = getValues(); // ✅ استفاده از getValues به جای watch
             const updateData: any = {
                 name: formData.name || settings.name,
                 shortName: formData.shortName || settings.shortName,
@@ -146,7 +152,14 @@ export default function ArmAdminSettings() {
         } finally {
             setSaving(false);
         }
-    };
+    }, [currentSlug, settings, getValues, fetchSettings]);
+
+    // ✅ handleAutoSave برای ArmCategoryManager
+    const handleAutoSave = useCallback(() => {
+        if (!saving) {
+            handleSave();
+        }
+    }, [saving, handleSave]);
 
     const handleSetValue = useCallback((name: any, value: any) => {
         setValue(name, value, { shouldDirty: true });
@@ -176,175 +189,177 @@ export default function ArmAdminSettings() {
     const showSaveButton = ['general', 'modules', 'economy', 'payment', 'labels'].includes(activeTab);
 
     return (
-        <div className="space-y-6 pb-20">
-            {/* تب‌ها */}
-            <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
-                <div className="relative w-full">
-                    <div
-                        className="no-scrollbar"
-                        style={{
-                            position: 'absolute',
-                            top: 0,
-                            left: 0,
-                            right: 0,
-                            bottom: 0,
-                            overflowX: 'auto',
-                            WebkitOverflowScrolling: 'touch',
-                        }}
-                    >
-                        <div className="flex items-center gap-1 bg-surface-container-low dark:bg-gray-800 rounded-xl p-1 w-max h-full">
-                            {TABS.map(tab => {
-                                const isActive = activeTab === tab.id;
-                                return (
-                                    <button
-                                        key={tab.id}
-                                        onClick={() => handleTabChange(tab.id)}
-                                        className={cn(
-                                            "flex flex-col items-center justify-center gap-2 px-4 py-2.5 text-sm font-medium rounded-lg transition-all whitespace-nowrap flex-shrink-0",
-                                            isActive
-                                                ? 'bg-white dark:bg-gray-700 text-primary dark:text-primary-400 shadow-sm'
-                                                : 'text-on-surface-variant dark:text-gray-400 hover:text-on-surface dark:hover:text-gray-200',
-                                        )}
-                                    >
-                                        <span>{tab.icon}</span>
-                                        <span className="text-[10px]">{tab.label}</span>
-                                    </button>
-                                );
-                            })}
+        <FormProvider {...methods}>
+            <div className="space-y-6 pb-20">
+                {/* تب‌ها */}
+                <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
+                    <div className="relative w-full">
+                        <div
+                            className="no-scrollbar"
+                            style={{
+                                position: 'absolute',
+                                top: 0,
+                                left: 0,
+                                right: 0,
+                                bottom: 0,
+                                overflowX: 'auto',
+                                WebkitOverflowScrolling: 'touch',
+                            }}
+                        >
+                            <div className="flex items-center gap-1 bg-surface-container-low dark:bg-gray-800 rounded-xl p-1 w-max h-full">
+                                {TABS.map(tab => {
+                                    const isActive = activeTab === tab.id;
+                                    return (
+                                        <button
+                                            key={tab.id}
+                                            onClick={() => handleTabChange(tab.id)}
+                                            className={cn(
+                                                "flex flex-col items-center justify-center gap-2 px-4 py-2.5 text-sm font-medium rounded-lg transition-all whitespace-nowrap flex-shrink-0",
+                                                isActive
+                                                    ? 'bg-white dark:bg-gray-700 text-primary dark:text-primary-400 shadow-sm'
+                                                    : 'text-on-surface-variant dark:text-gray-400 hover:text-on-surface dark:hover:text-gray-200',
+                                            )}
+                                        >
+                                            <span>{tab.icon}</span>
+                                            <span className="text-[10px]">{tab.label}</span>
+                                        </button>
+                                    );
+                                })}
+                            </div>
                         </div>
+                        <div style={{ height: '52px' }}></div>
                     </div>
-                    <div style={{ height: '52px' }}></div>
                 </div>
-            </div>
 
-            {/* محتوای تب‌ها */}
-            <div className="bg-white dark:bg-gray-900 rounded-xl border border-outline-variant/20 dark:border-gray-800 p-4 sm:p-6">
-                {activeTab === 'general' && (
-                    <GeneralSection
-                        register={register}
-                        errors={errors}
-                        watch={watch}
-                        setValue={handleSetValue}
-                        armId={settings.id}
-                        isSystemAdmin={isSystemAdmin}
-                    />
-                )}
+                {/* محتوای تب‌ها */}
+                <div className="bg-white dark:bg-gray-900 rounded-xl border border-outline-variant/20 dark:border-gray-800 p-4 sm:p-6">
+                    {activeTab === 'general' && (
+                        <GeneralSection
+                            register={register}
+                            errors={errors}
+                            watch={watch}
+                            setValue={handleSetValue}
+                            armId={settings.id}
+                            isSystemAdmin={isSystemAdmin}
+                        />
+                    )}
 
-                {activeTab === 'modules' && (
-                    <div className="space-y-6">
-                        <ModuleSettingsSection
+                    {activeTab === 'modules' && (
+                        <div className="space-y-6">
+                            <ModuleSettingsSection
+                                watch={watch}
+                                setValue={handleSetValue}
+                                onSave={() => {}}
+                                isSaving={saving}
+                                moduleKey="priceTable"
+                                moduleName="تابلوی قیمت"
+                                isAdmin={isSystemAdmin}
+                            />
+                            <ModuleSettingsSection
+                                watch={watch}
+                                setValue={handleSetValue}
+                                onSave={() => {}}
+                                isSaving={saving}
+                                moduleKey="buyLead"
+                                moduleName="تابلوی درخواست خرید"
+                                isAdmin={isSystemAdmin}
+                            />
+                        </div>
+                    )}
+
+                    {activeTab === 'access' && (
+                        <AccessRulesSection
                             watch={watch}
                             setValue={handleSetValue}
                             onSave={() => {}}
                             isSaving={saving}
-                            moduleKey="priceTable"
-                            moduleName="تابلوی قیمت"
                             isAdmin={isSystemAdmin}
                         />
-                        <ModuleSettingsSection
+                    )}
+
+                    {activeTab === 'payment' && (
+                        <PaymentSection
+                            register={register}
+                            errors={errors}
+                            watch={watch}
+                            setValue={handleSetValue}
+                            control={control}
+                            isAdmin={isSystemAdmin}
+                        />
+                    )}
+
+                    {activeTab === 'categories' && (
+                        <div className="space-y-6">
+                            <ArmCategoryManager
+                                onSave={handleAutoSave}
+                                isAdmin={isSystemAdmin}
+                            />
+                        </div>
+                    )}
+
+                    {activeTab === 'industries' && (
+                        <IndustrySelector
+                            register={register}
+                            watch={watch}
+                            setValue={setValue}
+                            isAdmin={isSystemAdmin}
+                        />
+                    )}
+
+                    {activeTab === 'locations' && (
+                        <LocationSelector
+                            control={control}
+                            watch={watch}
+                            setValue={setValue}
+                            onSave={() => {}}
+                        />
+                    )}
+
+                    {activeTab === 'labels' && (
+                        <FormLabelsSection
                             watch={watch}
                             setValue={handleSetValue}
                             onSave={() => {}}
                             isSaving={saving}
-                            moduleKey="buyLead"
-                            moduleName="تابلوی درخواست خرید"
                             isAdmin={isSystemAdmin}
                         />
-                    </div>
-                )}
+                    )}
 
-                {activeTab === 'access' && (
-                    <AccessRulesSection
-                        watch={watch}
-                        setValue={handleSetValue}
-                        onSave={() => {}}
-                        isSaving={saving}
-                        isAdmin={isSystemAdmin}
-                    />
-                )}
-
-                {activeTab === 'payment' && (
-                    <PaymentSection
-                        register={register}
-                        errors={errors}
-                        watch={watch}
-                        setValue={handleSetValue}
-                        control={control}
-                        isAdmin={isSystemAdmin}
-                    />
-                )}
-
-                {activeTab === 'categories' && (
-                    <div className="space-y-6">
-                        {/* ✅ استفاده از ArmCategoryManager به جای CategorySelector */}
-                        <ArmCategoryManager
-                            onSave={handleSave}
+                    {activeTab === 'economy' && (
+                        <EconomySection
+                            watch={watch}
+                            setValue={handleSetValue}
+                            onSave={() => {}}
+                            isSaving={saving}
                             isAdmin={isSystemAdmin}
                         />
+                    )}
+
+                    {activeTab === 'permissions' && (
+                        <ArmPermissionSection
+                            watch={watch}
+                            setValue={handleSetValue}
+                            isAdmin={isSystemAdmin}
+                            isSaving={saving}
+                            onSave={handleAutoSave}
+                        />
+                    )}
+                </div>
+
+                {/* دکمه ذخیره موبایل */}
+                {showSaveButton && (
+                    <div className="fixed bottom-0 left-5 w-[200px] bg-white dark:bg-gray-900 border-t border-outline-variant/20 dark:border-gray-800 p-4 z-40">
+                        <button
+                            onClick={handleSave}
+                            disabled={!hasChanges || saving}
+                            className="w-full bg-primary text-on-primary py-3 rounded font-medium flex items-center justify-center gap-2 disabled:opacity-50"
+                        >
+                            {saving ? <Loader2 className="w-5 h-5 animate-spin" /> : <Save className="w-5 h-5" />}
+                            ذخیره تغییرات
+                        </button>
                     </div>
-                )}
-
-                {activeTab === 'industries' && (
-                    <IndustrySelector
-                        register={register}
-                        watch={watch}
-                        setValue={setValue}
-                        isAdmin={isSystemAdmin}
-                    />
-                )}
-
-                {activeTab === 'locations' && (
-                    <LocationSelector
-                        control={control}
-                        watch={watch}
-                        setValue={setValue}
-                        onSave={() => {}}
-                    />
-                )}
-
-                {activeTab === 'labels' && (
-                    <FormLabelsSection
-                        watch={watch}
-                        setValue={handleSetValue}
-                        onSave={() => {}}
-                        isSaving={saving}
-                        isAdmin={isSystemAdmin}
-                    />
-                )}
-
-                {activeTab === 'economy' && (
-                    <EconomySection
-                        watch={watch}
-                        setValue={handleSetValue}
-                        onSave={() => {}}
-                        isSaving={saving}
-                        isAdmin={isSystemAdmin}
-                    />
-                )}
-
-                {activeTab === 'permissions' && (
-                    <ArmPermissionSection
-                        watch={watch}
-                        setValue={handleSetValue}
-                        isAdmin={isSystemAdmin}
-                        isSaving={saving}
-                    />
                 )}
             </div>
-
-            {/* دکمه ذخیره موبایل */}
-            {showSaveButton && (
-                <div className="fixed bottom-0 left-5 w-[200px] bg-white dark:bg-gray-900 border-t border-outline-variant/20 dark:border-gray-800 p-4 z-40">
-                    <button
-                        onClick={handleSave}
-                        disabled={!hasChanges || saving}
-                        className="w-full bg-primary text-on-primary py-3 rounded font-medium flex items-center justify-center gap-2 disabled:opacity-50"
-                    >
-                        {saving ? <Loader2 className="w-5 h-5 animate-spin" /> : <Save className="w-5 h-5" />}
-                        ذخیره تغییرات
-                    </button>
-                </div>
-            )}
-        </div>
+        </FormProvider>
     );
 }

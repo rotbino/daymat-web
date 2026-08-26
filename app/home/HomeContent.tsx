@@ -113,7 +113,7 @@ export default function HomeContent() {
             // ✅ استفاده از arms از کش به جای درخواست مستقیم
             let isMemberOfArm = false;
             if (arms) {
-                isMemberOfArm = arms.some((a: any) => a.slug === currentSlug);
+                isMemberOfArm = arms.some((a: any) => a.slug === currentSlug && a.status === 'active');
             }
 
             if (!isMemberOfArm) {
@@ -131,17 +131,26 @@ export default function HomeContent() {
             }
 
             const contactInfo = await apiService.ad.getContact(adId);
+
+            // ✅ اولویت با شماره موبایل مالک کسب‌وکار
+            const phoneToUse = contactInfo.ownerPhone || contactInfo.phone;
+
+            if (!phoneToUse) {
+                toast.error('شماره تماس برای این آگهی ثبت نشده است.');
+                return;
+            }
+
             if (window.innerWidth < 768) {
-                window.location.href = `tel:${contactInfo.phone}`;
+                window.location.href = `tel:${phoneToUse}`;
             } else {
-                toast.info(`${contactInfo.businessName}\nشماره: ${contactInfo.phone}`, { duration: 8000 });
-                navigator.clipboard.writeText(contactInfo.phone).catch(()=>{});
+                toast.info(`${contactInfo.businessName}\nشماره: ${phoneToUse}`, { duration: 8000 });
+                navigator.clipboard.writeText(phoneToUse).catch(() => {});
             }
         } catch (error: any) {
             if (error?.data?.errorCode === 'DAILY_CALL_LIMIT_EXCEEDED') {
                 toast.error(error?.data?.message || 'محدودیت تماس روزانه');
             } else if (error?.data?.errorCode === 'NOT_MEMBER') {
-                toast.error('برای مشاهده شماره تماس، ابتدا به بازار بپوندید');
+                toast.error('برای مشاهده شماره تماس، ابتدا به بازار بپیوندید');
             } else {
                 toast.error(error?.message || 'خطا');
             }

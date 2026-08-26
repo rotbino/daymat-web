@@ -698,12 +698,18 @@ export const useAdDetail = (id: string, initialData?: any) => {
     });
 };
 
-export const useAdSaved = (id: string) => {
+export const useSavedAds = () => {
     return useQuery({
-        queryKey: ['ad', id, 'saved'],
-        queryFn: () => apiService.ad.getSavedAds().then(s => s.some((a: any) => a.id === id)),
-        enabled: false, // ✅ فقط دستی fetch شود
-        staleTime: 60 * 1000,
+        queryKey: ['saved-ads'],
+        queryFn: () => apiService.ad.getSavedAds(),
+    });
+};
+
+export const useAdSaved = (adId: string) => {
+    return useQuery({
+        queryKey: ['ad-saved', adId],
+        queryFn: () => apiService.ad.isSaved(adId),
+        enabled: !!adId,
     });
 };
 
