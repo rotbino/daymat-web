@@ -26,7 +26,8 @@ import { ArmPermissionSection } from '@/app/admin/arm/components/ArmPermissionSe
 import { CategoryScopeSelector } from '@/app/admin/arm/components/CategoryScopeSelector';
 import { IndustrySelector } from '@/app/admin/arm/components/IndustrySelector';
 import { LocationSelector } from '@/app/admin/arm/components/LocationSelector';
-import {ArmCategoryManager} from "@/app/admin/arm/components/ArmCategoryManage";
+import {ArmCategoryManager} from "@/app/admin/arm/components/ArmCategoryManager";
+
 
 type SettingsTab = 'general' | 'modules' | 'access' | 'payment' | 'labels' | 'economy' | 'permissions' | 'categories' | 'industries' | 'locations';
 

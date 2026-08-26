@@ -39,10 +39,13 @@ export function RefreshModal({ isOpen, onClose, ad, onSuccess }: RefreshModalPro
     if (!isOpen) return null;
 
     const validityOptions = [
-        { value: '1', label: '۱ روز' },
-        { value: '2', label: '۲ روز' },
-        { value: '3', label: '۳ روز' },
+        { value: '24', label: '1 روز' },
+        { value: '48', label: '2 روز' },
+        { value: '72', label: '3 روز' },
+        { value: '168', label: '5 روز' },
+        { value: '240', label: '10 روز' },
     ];
+
 
     // بررسی اینکه آیا آگهی از قبل نردبان دارد
     const alreadyBumped = ad.isBumped === true;

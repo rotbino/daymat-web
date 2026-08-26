@@ -36,7 +36,8 @@ import { ArmPermissionSection } from './ArmPermissionSection';
 import { IntroSection } from './IntroSection';
 import { apiService } from '@/lib/api/apiService';
 import { useIndustriesTree, useCategoriesFlat, useIndustriesLeaves } from '@/lib/api/apiHooks';
-import {ArmCategoryManager} from "@/app/admin/arm/components/ArmCategoryManage";
+import {ArmCategoryManager} from "@/app/admin/arm/components/ArmCategoryManager";
+
 
 // ─── تعریف مراحل ───
 const STEPS = [

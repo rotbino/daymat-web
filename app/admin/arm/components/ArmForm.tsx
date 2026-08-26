@@ -19,8 +19,8 @@ import { FormLabelsSection } from './FormLabelsSection';
 import { EconomySection } from './EconomySection';
 import { ArmPermissionSection } from './ArmPermissionSection';
 import { useIndustriesLeaves } from '@/lib/api/apiHooks';
-import {ArmSubtreeViewer} from "@/app/admin/arm/components/CategorySection/ArmSubtreeViewer";
-import {ArmCategoryManager} from "@/app/admin/arm/components/ArmCategoryManage";
+import {ArmCategoryManager} from "@/app/admin/arm/components/ArmCategoryManager";
+
 
 interface ArmFormProps {
     initialData?: any;

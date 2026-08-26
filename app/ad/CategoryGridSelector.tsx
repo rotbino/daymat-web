@@ -159,7 +159,7 @@ export function CategoryGridSelector({
                     type="text"
                     value={searchQuery}
                     onChange={(e) => setSearchQuery(e.target.value)}
-                    placeholder="جستجوی دسته‌بندی..."
+                    placeholder="جستجوی و انتخاب دسته‌بندی..."
                     className="w-full h-11 bg-white border border-gray-300 dark:border-gray-600 px-4 pr-10 text-sm rounded-xl focus:ring-2 focus:ring-primary/20 focus:border-primary outline-none"
                 />
                 <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400 pointer-events-none" />

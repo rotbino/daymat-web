@@ -18,11 +18,7 @@ import Image from 'next/image';
 import { SpecsSection } from '../components/SpecsSection';
 import { PaymentSection } from '../components/PaymentSection';
 
-const validityOptions = [
-    { value: '1', label: '۱ روز' },
-    { value: '2', label: '۲ روز' },
-    { value: '3', label: '۳ روز' },
-];
+
 
 export default function EditAdPage() {
     const router = useRouter();

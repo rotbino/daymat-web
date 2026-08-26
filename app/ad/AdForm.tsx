@@ -7,7 +7,7 @@ import Link from 'next/link';
 import { useSelector } from 'react-redux';
 import { RootState } from '@/lib/store/store';
 import {
-    useCreateAd, useActiveBusiness, useCreditBalance, useArmCategoryTree,
+    useCreateAd, useActiveBusiness, useCreditBalance,
     useUploadFile, useAd, useUpdateAd
 } from '@/lib/api/apiHooks';
 import { toast } from 'sonner';
@@ -55,12 +55,7 @@ interface UnitOption {
     isDefault: boolean;
 }
 
-function getCategoryConstraintsFromTree(
-    categoryId: string,
-    armConfig: any,
-    categoryTree: any[]
-): QuantityConstraints {
-    // ✅ جستجو در categoryTree
+function getCategoryConstraintsFromTree(categoryId: string, categoryTree: any[]): QuantityConstraints {
     const findNodeInTree = (nodes: any[], id: string): any => {
         for (const node of nodes) {
             if (node.id === id || node.categoryId === id) return node;
@@ -73,38 +68,16 @@ function getCategoryConstraintsFromTree(
     };
 
     const node = findNodeInTree(categoryTree, categoryId);
-
     if (node) {
-        const min = node.minQuantityOverride ?? null;
-        const max = node.maxQuantityOverride ?? null;
-        if (min !== null || max !== null) {
-            return { min, max };
-        }
+        return {
+            min: node.minQuantityOverride ?? null,
+            max: node.maxQuantityOverride ?? null,
+        };
     }
-
-    // Fallback به categorySelections
-    const selection = armConfig?.categorySelections?.find(
-        (s: any) => s.categoryId === categoryId
-    );
-    if (selection) {
-        const min = selection.minQuantityOverride ?? null;
-        const max = selection.maxQuantityOverride ?? null;
-        if (min !== null || max !== null) {
-            return { min, max };
-        }
-    }
-
     return { min: null, max: null };
 }
 
-
-// ✅ دریافت واحدهای قابل انتخاب برای کتگوری — از categoryTree + fallback
-function getAvailableUnits(
-    categoryId: string,
-    armConfig: any,
-    categoryTree: any[]
-): UnitOption[] {
-    // ✅ جستجو در categoryTree
+function getAvailableUnits(categoryId: string, categoryTree: any[]): UnitOption[] {
     const findNodeInTree = (nodes: any[], id: string): any => {
         for (const node of nodes) {
             if (node.id === id || node.categoryId === id) return node;
@@ -117,7 +90,6 @@ function getAvailableUnits(
     };
 
     const node = findNodeInTree(categoryTree, categoryId);
-
     if (node && (node.overrideUnitId || node.alternativeUnits?.length > 0)) {
         const units: UnitOption[] = [];
 
@@ -147,49 +119,13 @@ function getAvailableUnits(
 
         return units;
     }
-
-    // ✅ Fallback: categorySelections
-    const selection = armConfig?.categorySelections?.find(
-        (s: any) => s.categoryId === categoryId
-    );
-
-    if (!selection) return [];
-
-    const units: UnitOption[] = [];
-
-    if (selection.overrideUnitId) {
-        units.push({
-            unitId: selection.overrideUnitId,
-            unitTitle: selection.overrideUnitTitle || '',
-            unitShortCode: selection.overrideUnitShortCode || '',
-            isVariableQty: selection.overrideUnitIsVariableQty === true,
-            qty: selection.overrideUnitQty ?? null,
-            isDefault: true,
-        });
-    }
-
-    (selection.alternativeUnits || []).forEach((au: any) => {
-        if (au.unitId && au.isActive !== false) {
-            units.push({
-                unitId: au.unitId,
-                unitTitle: au.unitTitle || '',
-                unitShortCode: au.unitShortCode || '',
-                isVariableQty: au.isVariableQty === true,
-                qty: au.qty ?? null,
-                isDefault: false,
-            });
-        }
-    });
-
-    return units;
+    return [];
 }
 
 export function AdForm({ adId, onSuccess }: AdFormProps) {
     const router = useRouter();
-    const { user, isAuthenticated } = useSelector((state: RootState) => state.auth);
     const { currentSlug, currentArm } = useSelector((state: RootState) => state.arm);
     const { data: business, isLoading: businessLoading } = useActiveBusiness();
-
     const { data: creditBalance, refetch: refetchBalance, isLoading: creditLoading } = useCreditBalance();
     const { data: existingAd, isLoading: adLoading } = useAd(adId || '');
     const uploadMutation = useUploadFile();
@@ -197,9 +133,6 @@ export function AdForm({ adId, onSuccess }: AdFormProps) {
 
     const isEditMode = !!adId;
 
-    const [redirecting, setRedirecting] = useState(false);
-    const [activeAdsCount, setActiveAdsCount] = useState(0);
-    const [loadingActiveAds, setLoadingActiveAds] = useState(true);
     const [isSubmitting, setIsSubmitting] = useState(false);
     const [currentStep, setCurrentStep] = useState(1);
 
@@ -216,32 +149,58 @@ export function AdForm({ adId, onSuccess }: AdFormProps) {
         };
         return currencyMap[code] || code || 'تومان';
     }, [armConfig.economy?.currency]);
+
     const categoryTree = useMemo(
         () => (Array.isArray(currentArm?.categoryTree) ? currentArm.categoryTree : []),
         [currentArm?.categoryTree]
     );
+
+
+
     const maxActiveAdsPerUser = useMemo(() => priceTable.maxActiveAdsPerUser ?? 5, [priceTable.maxActiveAdsPerUser]);
     const maxTotalFreeAdPerUser = useMemo(() => priceTable.maxTotalFreeAdPerUser ?? 50, [priceTable.maxTotalFreeAdPerUser]);
     const bumpCost = useMemo(() => priceTable.bumpCost ?? 10, [priceTable.bumpCost]);
     const allowAnonymousPublishing = useMemo(() => priceTable.allowAnonymousPublishing ?? true, [priceTable.allowAnonymousPublishing]);
     const adValidityDefaultHours = useMemo(() => priceTable.adValidityDefaultHours ?? 24, [priceTable.adValidityDefaultHours]);
     const maxImagesPerAd = useMemo(() => priceTable.maxImagesPerAd ?? 1, [priceTable.maxImagesPerAd]);
+    const validityOptions = useMemo(() => {
+        const configValidity = adValidityDefaultHours;
+        // اگر مقدار تنظیمات در لیست نیست، اضافه کن
+        const defaultOptions = [
+            { value: '24', label: '1 روز' },
+            { value: '48', label: '2 روز' },
+            { value: '72', label: '3 روز' },
+            { value: '168', label: '5 روز' },
+            { value: '240', label: '10 روز' },
+        ];
+        if (configValidity && !defaultOptions.some(opt => opt.value === String(configValidity))) {
+            defaultOptions.unshift({
+                value: String(configValidity),
+                label: `${configValidity} ساعت`,
+            });
+        }
 
+        return defaultOptions;
+    }, [adValidityDefaultHours]);
     const [formData, setFormData] = useState({
         categoryId: '',
         productType: '',
+        // ✅ قیمت تکی (قیمت هر واحد مصرف‌کننده — مثلاً قیمت یک عدد پفک)
+        singleUnitPrice: 0,
+        // ✅ قیمت واحد فروش (محاسبه شده — مثلاً قیمت کارتن)
         unitPrice: 0,
+        // ✅ قیمت مصرف‌کننده نهایی (اختیاری — برای محاسبه سود خرده‌فروش)
+        consumerPrice: 0,
         minQuantity: 0,
         availableQuantity: 0,
         cityCode: '',
         cityLabel: '',
         provinceCode: '',
         provinceLabel: '',
-        validityHours: String(adValidityDefaultHours || 24),
+        validityHours: String(adValidityDefaultHours || validityOptions[0]?.value || '24'),
         isAnonymous: false,
         isBumped: false,
         description: '',
-        // ✅ جدید
         unitId: '',
         unitTitle: '',
         unitQty: null as number | null,
@@ -249,7 +208,6 @@ export function AdForm({ adId, onSuccess }: AdFormProps) {
     });
 
     const [bumpDurationHours, setBumpDurationHours] = useState<number>(24);
-
     const [specsEnabled, setSpecsEnabled] = useState(false);
     const [specs, setSpecs] = useState<Record<string, string>>({});
     const [paymentMethods, setPaymentMethods] = useState({
@@ -258,15 +216,60 @@ export function AdForm({ adId, onSuccess }: AdFormProps) {
         cheque: { enabled: false, description: '', options: [] as { price: number; days: number }[] },
         installment: { enabled: false, description: '', options: [] as { price: number; months: number; prepaymentPercent: number }[] },
     });
-
     const [adImageFiles, setAdImageFiles] = useState<{ id?: string; file?: File; previewUrl?: string }[]>([]);
-
-    // ✅ واحدهای قابل انتخاب
     const [availableUnits, setAvailableUnits] = useState<UnitOption[]>([]);
+    const [activeAdsCount, setActiveAdsCount] = useState(0);
+    const [loadingActiveAds, setLoadingActiveAds] = useState(true);
+// ═══════════════════════════════════════
+// محاسبات نردبان (Bump)
+// ═══════════════════════════════════════
 
+// گزینه‌های مدت نردبان بر اساس مدت اعتبار
+    const bumpOptions = useMemo(() => {
+        const maxHours = parseInt(formData.validityHours) || 24;
+        const options = [24, 48, 72];
+
+        // فقط گزینه‌هایی که کمتر یا مساوی مدت اعتبار هستند
+        const validOptions = options.filter(h => h <= maxHours);
+
+        // اگر هیچ گزینه‌ای نبود، خود مدت اعتبار را اضافه کن
+        if (validOptions.length === 0) {
+            validOptions.push(maxHours);
+        }
+
+        // اگر مدت اعتبار بیشتر از ۷۲ است، گزینه‌های بیشتری اضافه کن
+        if (maxHours > 72) {
+            for (let h = 96; h <= maxHours; h += 24) {
+                validOptions.push(h);
+            }
+        }
+
+        return validOptions;
+    }, [formData.validityHours]);
+
+// محاسبه هزینه کل نردبان
+    const totalBumpCost = useMemo(() => {
+        if (!formData.isBumped) return 0;
+
+        // محاسبه هزینه بر اساس مدت
+        const costPer24Hours = bumpCost || 10;
+        const hours = bumpDurationHours || 24;
+
+        return Math.round((hours / 24) * costPer24Hours);
+    }, [formData.isBumped, bumpDurationHours, bumpCost]);
+
+// ✅ وقتی نردبان فعال می‌شود، مدت پیش‌فرض را تنظیم کن
+    useEffect(() => {
+        if (formData.isBumped) {
+            const maxAllowed = parseInt(formData.validityHours);
+            if (maxAllowed && (!bumpDurationHours || bumpDurationHours > maxAllowed)) {
+                setBumpDurationHours(maxAllowed);
+            }
+        }
+    }, [formData.isBumped, formData.validityHours]);
     const findNodeById = (nodes: any[], id: string): any => {
         for (const node of nodes) {
-            if (node.id === id) return node;
+            if (node.id === id || node.categoryId === id) return node;
             if (node.children) {
                 const found = findNodeById(node.children, id);
                 if (found) return found;
@@ -282,8 +285,10 @@ export function AdForm({ adId, onSuccess }: AdFormProps) {
         return null;
     }, [formData.categoryId, categoryTree]);
 
-    const unitName = formData.unitTitle || selectedCategoryData?.unitTitle || 'تن';
-    const categoryExample = selectedCategoryData?.example || '';
+    // ✅ واحد فروش (مثلاً کارتن)
+    const unitName = formData.unitTitle || selectedCategoryData?.overrideUnitTitle || 'تن';
+    // ✅ واحد مصرف‌کننده (مثلاً عدد)
+    const baseUnitTitle = selectedCategoryData?.baseUnitTitle || 'واحد';
 
     const locationTree = currentArm?.locationTree || [];
     const totalCities = useMemo(() => {
@@ -317,8 +322,7 @@ export function AdForm({ adId, onSuccess }: AdFormProps) {
                     (ad: any) => ad.status === 'active' && ad.armId === currentArm?.id && new Date(ad.expiresAt) > now
                 ) || [];
                 setActiveAdsCount(activeAds.length);
-            } catch (error) {
-                console.error(error);
+            } catch {
                 setActiveAdsCount(0);
             } finally {
                 setLoadingActiveAds(false);
@@ -327,7 +331,7 @@ export function AdForm({ adId, onSuccess }: AdFormProps) {
         fetchActiveAdsCount();
     }, [business, currentSlug, currentArm]);
 
-    const isLoading = businessLoading  || creditLoading || (isEditMode && adLoading) || loadingActiveAds;
+    const isLoading = businessLoading || creditLoading || (isEditMode && adLoading) || loadingActiveAds;
 
     const remainingActiveSlots = Math.max(0, maxActiveAdsPerUser - activeAdsCount);
     const remainingTotalSlots = Math.max(0, maxTotalFreeAdPerUser - activeAdsCount);
@@ -353,20 +357,15 @@ export function AdForm({ adId, onSuccess }: AdFormProps) {
 
     const [categoryConstraints, setCategoryConstraints] = useState<QuantityConstraints>({ min: null, max: null });
 
-    // ✅ وقتی کتگوری تغییر میکنه، واحدها رو آپدیت کن
+    // ✅ وقتی کتگوری تغییر میکنه
     useEffect(() => {
-        if (formData.categoryId && armConfig && categoryTree) {
-            const constraints = getCategoryConstraintsFromTree(
-                formData.categoryId,
-                armConfig,
-                categoryTree
-            );
+        if (formData.categoryId && categoryTree) {
+            const constraints = getCategoryConstraintsFromTree(formData.categoryId, categoryTree);
             setCategoryConstraints(constraints);
 
-            const units = getAvailableUnits(formData.categoryId, armConfig, categoryTree);
+            const units = getAvailableUnits(formData.categoryId, categoryTree);
             setAvailableUnits(units);
 
-            // ✅ اگه واحد فعلی در لیست نیست، اولین واحد رو انتخاب کن
             if (units.length > 0) {
                 const currentUnitExists = units.some(u => u.unitId === formData.unitId);
                 if (!currentUnitExists) {
@@ -379,28 +378,68 @@ export function AdForm({ adId, onSuccess }: AdFormProps) {
                         unitIsVariableQty: defaultUnit.isVariableQty,
                     }));
                 }
-            } else {
-                // ✅ هیچ واحد خاصی تعریف نشده - رفتار مثل قبل
-                setFormData(prev => ({
-                    ...prev,
-                    unitId: selectedCategoryData?.defaultUnitId || '',
-                    unitTitle: selectedCategoryData?.unitTitle || 'تن',
-                    unitQty: null,
-                    unitIsVariableQty: false,
-                }));
             }
         } else {
             setCategoryConstraints({ min: null, max: null });
             setAvailableUnits([]);
         }
-    }, [formData.categoryId, armConfig, categoryTree]);
+    }, [formData.categoryId, categoryTree]);
+
+    // ✅ وقتی قیمت تکی یا تعداد تغییر کرد، قیمت واحد فروش رو محاسبه کن
+    const recalculateUnitPrice = (singlePrice: number, qty: number | null) => {
+        if (singlePrice > 0 && qty) {
+            return Math.round(singlePrice * qty);
+        }
+        return 0;
+    };
+
+    const handleSingleUnitPriceChange = (value: number) => {
+        const calculated = recalculateUnitPrice(value, formData.unitQty);
+        setFormData(prev => ({
+            ...prev,
+            singleUnitPrice: value,
+            unitPrice: calculated,
+        }));
+    };
+
+    const handleUnitPriceChange = (value: number) => {
+        const qty = formData.unitQty || 1;
+        const calculatedSingle = qty > 0 ? Math.round(value / qty) : 0;
+        setFormData(prev => ({
+            ...prev,
+            unitPrice: value,
+            singleUnitPrice: calculatedSingle,
+        }));
+    };
+
+    const handleUnitQtyChange = (value: number | null) => {
+        const calculated = recalculateUnitPrice(formData.singleUnitPrice, value);
+        setFormData(prev => ({
+            ...prev,
+            unitQty: value,
+            unitPrice: calculated,
+        }));
+    };
+
+    useEffect(() => {
+        // اگر validityHours خالی است یا در لیست نیست، مقدار پیش‌فرض را تنظیم کن
+        if (!formData.validityHours || !validityOptions.some(opt => opt.value === formData.validityHours)) {
+            const defaultValidity = validityOptions[0]?.value || '24';
+            setFormData(prev => ({
+                ...prev,
+                validityHours: defaultValidity,
+            }));
+        }
+    }, [validityOptions]);
 
     useEffect(() => {
         if (isEditMode && existingAd) {
             setFormData({
                 categoryId: existingAd.categoryId || '',
                 productType: existingAd.productType || '',
+                singleUnitPrice: 0,
                 unitPrice: existingAd.unitPrice || 0,
+                consumerPrice: 0,
                 minQuantity: existingAd.minQuantity || 0,
                 availableQuantity: existingAd.availableQuantity || 0,
                 cityCode: existingAd.cityCode || '',
@@ -418,52 +457,15 @@ export function AdForm({ adId, onSuccess }: AdFormProps) {
             });
 
             if (existingAd.isBumped) {
-                const storedDuration = existingAd.bumpDurationHours || parseInt(formData.validityHours) || 24;
-                setBumpDurationHours(storedDuration);
-            } else {
-                setBumpDurationHours(parseInt(formData.validityHours) || 24);
+                setBumpDurationHours(existingAd.bumpDurationHours || 24);
             }
 
             const images = (existingAd.files || [])
                 .filter((f: any) => f.fieldKey?.startsWith('ad-image'))
-                .sort((a: any, b: any) => {
-                    const idxA = parseInt(a.fieldKey.split('-')[2] || '0');
-                    const idxB = parseInt(b.fieldKey.split('-')[2] || '0');
-                    return idxA - idxB;
-                });
+                .sort((a: any, b: any) => parseInt(a.fieldKey.split('-')[2] || '0') - parseInt(b.fieldKey.split('-')[2] || '0'));
             setAdImageFiles(images.map((img: any) => ({ id: img.id })));
-
-            if (existingAd.specs && Object.keys(existingAd.specs).length > 0) {
-                setSpecs(existingAd.specs);
-                setSpecsEnabled(true);
-            }
-
-            if (existingAd.paymentMethods) {
-                const pm = existingAd.paymentMethods;
-                const hasCheque = Array.isArray(pm.cheque) && pm.cheque.length > 0;
-                const hasInstallment = Array.isArray(pm.installment) && pm.installment.length > 0;
-                const hasDescription = pm.description && pm.description.trim().length > 0;
-                setPaymentMethods({
-                    enabled: hasCheque || hasInstallment || hasDescription,
-                    description: pm.description || '',
-                    cheque: {
-                        enabled: hasCheque,
-                        description: pm.chequeDescription || '',
-                        options: hasCheque ? pm.cheque : [],
-                    },
-                    installment: {
-                        enabled: hasInstallment,
-                        description: pm.installmentDescription || '',
-                        options: hasInstallment ? pm.installment : [],
-                    },
-                });
-            }
-
-            if (existingAd.status === 'rejected') {
-                setCurrentStep(1);
-            }
         }
-    }, [isEditMode, existingAd, adValidityDefaultHours]);
+    }, [isEditMode, existingAd]);
 
     useEffect(() => {
         if (isEditMode) return;
@@ -487,52 +489,46 @@ export function AdForm({ adId, onSuccess }: AdFormProps) {
     }, [business, hasSingleCity, singleCityData, isEditMode]);
 
     useEffect(() => {
-        const maxAllowed = parseInt(formData.validityHours, 10) || 24;
-        let newDuration = bumpDurationHours;
-        if (newDuration > maxAllowed) newDuration = maxAllowed;
-        if (newDuration < 24) newDuration = 24;
-        if (newDuration !== bumpDurationHours) setBumpDurationHours(newDuration);
-    }, [formData.validityHours, bumpDurationHours]);
-
-    const bumpOptions = useMemo(() => {
-        const max = parseInt(formData.validityHours);
-        const options = [];
-        for (let h = 24; h <= max; h += 24) options.push(h);
-        return options;
-    }, [formData.validityHours]);
-
-    const totalBumpCost = useMemo(() => {
-        if (!formData.isBumped) return 0;
-        return (bumpDurationHours / 24) * bumpCost;
-    }, [formData.isBumped, bumpDurationHours, bumpCost]);
-
-    useEffect(() => {
         if (!isEditMode && adImageFiles.length === 0) {
             setAdImageFiles([{}]);
         }
     }, [isEditMode]);
 
+    const uploadedCount = useMemo(() => adImageFiles.filter(s => s.id || s.file).length, [adImageFiles]);
+
     const validateStep = (step: number): boolean => {
         const errors: string[] = [];
         if (step === 1) {
+            if (uploadedCount === 0) errors.push('تصویر آگهی را آپلود نکردی.');
             if (!formData.categoryId) errors.push('دسته‌بندی کالا را انتخاب کنید.');
             if (selectedCategoryData && !formData.productType.trim()) errors.push('عنوان کالا را وارد کنید.');
+
         } else if (step === 2) {
             if (formData.minQuantity <= 0) errors.push('حداقل حجم فروش را وارد کنید.');
             if (formData.unitPrice <= 0) errors.push('قیمت واحد را وارد کنید.');
-            if (formData.availableQuantity <= 0) errors.push('موجودی انبار را وارد کنید.');
+            if (formData.availableQuantity <= 0) errors.push('موجودی تضمینی انبار را وارد کنید.');
             if (formData.minQuantity > formData.availableQuantity) {
                 errors.push('حداقل حجم فروش نمی‌تواند از موجودی بیشتر باشد.');
             }
-
             if (categoryConstraints.min !== null && formData.minQuantity < categoryConstraints.min) {
-                errors.push(`حداقل حجم فروش در این بازار نمی‌تواند کمتر از ${categoryConstraints.min.toLocaleString()} ${unitName} باشد.`);
+                errors.push(`حداقل حجم فروش نمی‌تواند کمتر از ${categoryConstraints.min.toLocaleString()} ${unitName} باشد.`);
             }
             if (categoryConstraints.max !== null && formData.minQuantity > categoryConstraints.max) {
-                errors.push(`حداقل حجم فروش در این بازار نمی‌تواند بیشتر از ${categoryConstraints.max.toLocaleString()} ${unitName} باشد.`);
+                errors.push(`حداقل حجم فروش نمی‌تواند بیشتر از ${categoryConstraints.max.toLocaleString()} ${unitName} باشد.`);
+            }
+            // ✅ اعتبارسنجی قیمت مصرف‌کننده
+            if (formData.consumerPrice > 0 && formData.singleUnitPrice > 0 &&
+                formData.consumerPrice < formData.singleUnitPrice) {
+                errors.push('قیمت مصرف‌کننده نمی‌تواند از قیمت عمده کمتر باشد.');
             }
         } else if (step === 3) {
-            if (!formData.cityCode && !hasSingleCity) errors.push('محل کالا را انتخاب کنید.');
+            if (!formData.cityCode && !hasSingleCity) {
+                errors.push('محل کالا را انتخاب کنید.');
+            }
+            // ✅ اعتبارسنجی مدت اعتبار قیمت
+            if (!formData.validityHours) {
+                errors.push('مدت اعتبار قیمت را انتخاب کنید.');
+            }
         }
         if (errors.length > 0) {
             errors.forEach(msg => toast.error(msg));
@@ -589,43 +585,13 @@ export function AdForm({ adId, onSuccess }: AdFormProps) {
         });
     };
 
-    const uploadedCount = useMemo(() => adImageFiles.filter(s => s.id || s.file).length, [adImageFiles]);
-
-    useEffect(() => {
-        return () => {
-            adImageFiles.forEach(slot => {
-                if (slot.previewUrl) URL.revokeObjectURL(slot.previewUrl);
-            });
-        };
-    }, []);
-
     const handleSubmit = async () => {
         if (currentStep !== TOTAL_STEPS) return;
         if (isSubmitting) return;
 
-        if (formData.isBumped && creditBalance && creditBalance.balance < totalBumpCost) {
-            toast.error(`اعتبار کافی نیست. برای نردبان به ${totalBumpCost} اعتبار نیاز دارید.`);
-            setCurrentStep(4);
-            return;
-        }
-
         for (let s = 1; s <= 3; s++) {
             if (!validateStep(s)) {
                 setCurrentStep(s);
-                return;
-            }
-        }
-
-        if (!isEditMode) {
-            if (hasReachedMaxAds) {
-                if (creditBalance && creditBalance.balance >= bumpCost) {
-                    toast.info(`سهمیه آگهی فعال شما پر است. ${bumpCost} اعتبار از حساب شما کسر خواهد شد.`, { duration: 3000 });
-                } else {
-                    toast.error(`سهمیه آگهی فعال شما پر است. برای ثبت آگهی جدید، ${bumpCost} اعتبار نیاز دارید.`);
-                    return;
-                }
-            } else if (hasReachedTotalLimit) {
-                toast.error(`سهمیه کل آگهی‌های شما پر شده است. برای ثبت آگهی جدید، ${bumpCost} اعتبار نیاز دارید.`);
                 return;
             }
         }
@@ -635,21 +601,15 @@ export function AdForm({ adId, onSuccess }: AdFormProps) {
             let uploadedIds: string[] = [];
             const filesToUpload = adImageFiles.filter(slot => slot.file).map(slot => slot.file!);
             if (filesToUpload.length > 0) {
-                try {
-                    const uploadPromises = filesToUpload.map((file, index) =>
-                        uploadMutation.mutateAsync({
-                            file,
-                            model: 'Ad',
-                            modelId: 'temp',
-                            fieldKey: `ad-image-${index}`,
-                        }).then(res => res.id)
-                    );
-                    uploadedIds = await Promise.all(uploadPromises);
-                } catch (error: any) {
-                    toast.error('خطا در آپلود تصاویر');
-                    setIsSubmitting(false);
-                    return;
-                }
+                const uploadPromises = filesToUpload.map((file, index) =>
+                    uploadMutation.mutateAsync({
+                        file,
+                        model: 'Ad',
+                        modelId: 'temp',
+                        fieldKey: `ad-image-${index}`,
+                    }).then(res => res.id)
+                );
+                uploadedIds = await Promise.all(uploadPromises);
             }
 
             const title = formData.productType
@@ -658,51 +618,32 @@ export function AdForm({ adId, onSuccess }: AdFormProps) {
 
             let ad;
             if (isEditMode) {
-                const updateData: any = {
-                    categoryId: formData.categoryId,
-                    unitId: formData.unitId || selectedCategoryData?.defaultUnitId || '',
-                    title,
-                    productType: formData.productType,
-                    unitPrice: formData.unitPrice,
-                    minQuantity: formData.minQuantity,
-                    availableQuantity: formData.availableQuantity,
-                    city: formData.cityLabel,
-                    cityCode: formData.cityCode,
-                    provinceCode: formData.provinceCode,
-                    validityHours: parseInt(formData.validityHours),
-                    isAnonymous: formData.isAnonymous,
-                    description: formData.description,
-                    // ✅ جدید
-                    unitQty: formData.unitQty,
-                    unitIsVariableQty: formData.unitIsVariableQty,
-                };
-                if (!isBumpActive) {
-                    updateData.isBumped = formData.isBumped;
-                    if (formData.isBumped) updateData.bumpDurationHours = bumpDurationHours;
-                }
-                if (specsEnabled && Object.keys(specs).length > 0) {
-                    updateData.specs = specs;
-                } else {
-                    updateData.specs = null;
-                }
-                if (paymentMethods.enabled) {
-                    updateData.paymentMethods = {
-                        description: paymentMethods.description,
-                        cheque: paymentMethods.cheque.enabled ? paymentMethods.cheque.options : [],
-                        chequeDescription: paymentMethods.cheque.description || '',
-                        installment: paymentMethods.installment.enabled ? paymentMethods.installment.options : [],
-                        installmentDescription: paymentMethods.installment.description || '',
-                    };
-                } else {
-                    updateData.paymentMethods = null;
-                }
-                ad = await updateAdMutation.mutateAsync({ id: adId, data: updateData });
-                toast.success('آگهی با موفقیت ویرایش شد');
+                ad = await updateAdMutation.mutateAsync({
+                    id: adId,
+                    data: {
+                        categoryId: formData.categoryId,
+                        unitId: formData.unitId,
+                        title,
+                        productType: formData.productType,
+                        unitPrice: formData.unitPrice,
+                        minQuantity: formData.minQuantity,
+                        availableQuantity: formData.availableQuantity,
+                        city: formData.cityLabel,
+                        cityCode: formData.cityCode,
+                        provinceCode: formData.provinceCode,
+                        validityHours: parseInt(formData.validityHours),
+                        isAnonymous: formData.isAnonymous,
+                        description: formData.description,
+                        unitQty: formData.unitQty,
+                        unitIsVariableQty: formData.unitIsVariableQty,
+                    },
+                });
+                toast.success('آگهی ویرایش شد');
             } else {
                 ad = await createAdMutation.mutateAsync({
                     armSlug: currentSlug || 'barton',
                     categoryId: formData.categoryId,
-                    unitId: formData.unitId || selectedCategoryData?.defaultUnitId || '',
+                    unitId: formData.unitId,
                     title,
                     productType: formData.productType,
                     unitPrice: formData.unitPrice,
@@ -715,12 +656,11 @@ export function AdForm({ adId, onSuccess }: AdFormProps) {
                     validityHours: parseInt(formData.validityHours),
                     isAnonymous: formData.isAnonymous,
                     isBumped: formData.isBumped,
-                    bumpDurationHours: formData.isBumped ? bumpDurationHours : undefined,
                     description: formData.description,
                     unitQty: formData.unitQty,
                     unitIsVariableQty: formData.unitIsVariableQty,
                 });
-                toast.success('آگهی با موفقیت ثبت شد');
+                toast.success('آگهی ثبت شد');
             }
 
             if (uploadedIds.length > 0 && ad?.id) {
@@ -731,97 +671,44 @@ export function AdForm({ adId, onSuccess }: AdFormProps) {
             onSuccess?.();
             router.push('/profile');
         } catch (error: any) {
-            if (error?.data?.errorCode === 'INSUFFICIENT_CREDIT') {
-                toast.error(error?.data?.message || 'اعتبار کافی نیست');
-                setTimeout(() => router.push('/credit/purchase'), 1500);
-            } else if (error?.data?.errorCode === 'MIN_QUANTITY_EXCEEDS_STOCK') {
-                toast.error(error?.data?.message || 'حداقل حجم فروش نمی‌تواند از موجودی بیشتر باشد');
-            } else {
-                toast.error(error?.message || (isEditMode ? 'خطا در ویرایش آگهی' : 'خطا در ثبت آگهی'));
-            }
+            toast.error(error?.message || 'خطا');
         } finally {
             setIsSubmitting(false);
         }
     };
 
-    const handleKeyDown = (e: React.KeyboardEvent) => {
-        if (e.key === 'Enter') {
-            e.preventDefault();
-            e.stopPropagation();
-            if (currentStep < TOTAL_STEPS) nextStep();
-        }
-    };
-
-    if (isLoading || redirecting || !business) {
+    if (isLoading || !business) {
         return (
-            <div className="min-h-screen flex flex-col bg-background">
-                <FormHeader title={isEditMode ? "ویرایش آگهی" : "ثبت قیمت"} backUrl="/profile" />
-                <main className="flex-1 flex items-center justify-center">
-                    <div className="text-center">
-                        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary mx-auto" />
-                        <p className="mt-4 text-on-surface-variant">{redirecting ? 'در حال انتقال...' : 'در حال بارگذاری...'}</p>
-                    </div>
-                </main>
+            <div className="min-h-screen flex items-center justify-center">
+                <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary" />
             </div>
         );
     }
 
     const needsCreditPurchase = !isEditMode && !isAdFree && (creditBalance?.balance ?? 0) < bumpCost;
-
     if (needsCreditPurchase) {
-        let title = '';
-        let message = '';
-        if (hasReachedMaxAds && hasReachedTotalLimit) {
-            title = 'سقف آگهی‌ها پر شده است';
-            message = `شما به هر دو سقف آگهی‌های فعال (${maxActiveAdsPerUser}) و کل آگهی‌های ثبت‌شده (${maxTotalFreeAdPerUser}) رسیده‌اید. برای ثبت آگهی جدید نیاز به خرید اعتبار دارید.`;
-        } else if (hasReachedMaxAds) {
-            title = 'سقف آگهی‌های فعال پر شده';
-            message = `شما به سقف ${maxActiveAdsPerUser} آگهی فعال همزمان رسیده‌اید. برای ثبت آگهی جدید، باید اعتبار خریداری کنید یا یکی از آگهی‌های فعال را حذف کنید.`;
-        } else if (hasReachedTotalLimit) {
-            title = 'سقف کل آگهی‌های ثبت‌شده پر شده';
-            message = `شما به سقف ${maxTotalFreeAdPerUser} آگهی ثبت‌شده رسیده‌اید. برای ثبت آگهی جدید، باید اعتبار خریداری کنید.`;
-        } else {
-            title = 'اعتبار کافی نیست';
-            message = `موجودی اعتبار شما (${creditBalance?.balance ?? 0}) کمتر از هزینه ثبت آگهی (${bumpCost}) است. برای ثبت آگهی، اعتبار خریداری کنید.`;
-        }
-
         return (
-            <div className="min-h-screen flex flex-col bg-surface">
-                <FormHeader title="ثبت قیمت" backUrl="/profile" />
-                <main className="flex-1 flex items-center justify-center px-4">
-                    <div className="text-center space-y-6 max-w-sm w-full">
-                        <div className="w-20 h-20 mx-auto rounded-full bg-amber-50 border-2 border-amber-200 flex items-center justify-center">
-                            <CreditCard className="w-10 h-10 text-amber-500" />
-                        </div>
-                        <div className="space-y-2">
-                            <h2 className="text-lg font-extrabold text-on-surface">{title}</h2>
-                            <p className="text-sm text-on-surface-variant leading-relaxed">
-                                {message}<br />
-                                موجودی فعلی: <span className="font-bold">{creditBalance?.balance ?? 0}</span> اعتبار.
-                            </p>
-                        </div>
-                        <Link href="/credit/purchase" className="block">
-                            <button className="w-full h-14 bg-primary hover:bg-primary/90 active:scale-[0.98] text-white font-bold text-base rounded-2xl shadow-lg shadow-primary/25 transition-all flex items-center justify-center gap-2.5">
-                                <CreditCard className="w-5 h-5" /> خرید اعتبار
-                            </button>
-                        </Link>
-                        <button onClick={() => router.push('/')} className="text-sm text-on-surface-variant hover:text-on-surface transition-colors">
-                            بازگشت به صفحه اصلی
-                        </button>
+            <div className="min-h-screen flex items-center justify-center px-4">
+                <div className="text-center space-y-6 max-w-sm w-full">
+                    <div className="w-20 h-20 mx-auto rounded-full bg-amber-50 border-2 border-amber-200 flex items-center justify-center">
+                        <CreditCard className="w-10 h-10 text-amber-500" />
                     </div>
-                </main>
+                    <h2 className="text-lg font-extrabold">اعتبار کافی نیست</h2>
+                    <p className="text-sm text-on-surface-variant">
+                        موجودی: {creditBalance?.balance ?? 0} | نیاز: {bumpCost}
+                    </p>
+                    <Link href="/credit/purchase" className="block">
+                        <button className="w-full h-14 bg-primary text-white font-bold rounded-2xl">خرید اعتبار</button>
+                    </Link>
+                </div>
             </div>
         );
     }
 
-    const validityOptions = [
-        { value: '24', label: '۲۴ ساعت' },
-        { value: '48', label: '۴۸ ساعت' },
-        { value: '72', label: '۷۲ ساعت' },
-    ];
+
 
     return (
-        <div className="min-h-screen flex flex-col bg-surface pb-28" onKeyDown={handleKeyDown}>
+        <div className="min-h-screen flex flex-col bg-surface pb-28">
             <FormHeader title={isEditMode ? "ویرایش کامل آگهی" : "ثبت قیمت جدید"} backUrl="/profile" />
 
             <main className="flex-1 w-full max-w-2xl mx-auto px-4 pt-20">
@@ -843,26 +730,26 @@ export function AdForm({ adId, onSuccess }: AdFormProps) {
                                 >
                                     <div className={cn(
                                         "w-10 h-10 rounded-full flex items-center justify-center text-sm font-bold transition-all duration-300 border-2",
-                                        isActive && "bg-primary text-white border-primary ring-4 ring-primary/20 scale-110 shadow-lg shadow-primary/20",
-                                        isDone && "bg-emerald-500 text-white border-emerald-500 shadow-sm shadow-emerald-500/20",
+                                        isActive && "bg-primary text-white border-primary ring-4 ring-primary/20 scale-110 shadow-lg",
+                                        isDone && "bg-emerald-500 text-white border-emerald-500",
                                         !isActive && !isDone && "bg-surface-container-high text-on-surface-variant border-outline-variant/50",
                                         stepNum > currentStep && "opacity-40"
                                     )}>
                                         {isDone ? <Check className="w-4 h-4" /> : <Icon className="w-4 h-4" />}
                                     </div>
                                     <span className={cn(
-                                        "text-[10px] sm:text-[11px] mt-2.5 text-center leading-tight font-medium",
+                                        "text-[10px] sm:text-[11px] mt-2.5",
                                         isActive && "text-primary",
                                         isDone && "text-emerald-600",
                                         !isActive && !isDone && "text-on-surface-variant/70"
                                     )}>
-                    {meta.title}
-                  </span>
+                                        {meta.title}
+                                    </span>
                                 </button>
                                 {!isLast && (
                                     <div className="flex-1 flex items-center pt-[18px] px-1 min-w-[12px]">
                                         <div className={cn(
-                                            "w-full h-[3px] rounded-full transition-all duration-500",
+                                            "w-full h-[3px] rounded-full",
                                             isDone ? "bg-emerald-500" : "bg-outline-variant/20"
                                         )} />
                                     </div>
@@ -873,7 +760,7 @@ export function AdForm({ adId, onSuccess }: AdFormProps) {
                 </div>
 
                 <div className="space-y-5">
-                    {/* مرحله ۱ */}
+                    {/* ═══════════════ مرحله ۱: گروه ═══════════════ */}
                     {currentStep === 1 && (
                         <div className="space-y-5 animate-in fade-in duration-200">
                             <CategoryGridSelector
@@ -885,18 +772,21 @@ export function AdForm({ adId, onSuccess }: AdFormProps) {
                                         categoryId,
                                         minQuantity: 0,
                                         unitPrice: 0,
+                                        singleUnitPrice: 0,
+                                        consumerPrice: 0,
                                         unitId: '',
                                         unitTitle: '',
                                         unitQty: null,
                                     }));
                                 }}
                             />
+
                             {selectedCategoryData && (
                                 <div className="bg-white p-4 rounded-2xl border border-outline-variant/40 shadow-sm space-y-2.5">
                                     <label className="text-sm font-bold text-on-surface flex items-center gap-2">
-                    <span className="w-7 h-7 rounded-lg bg-primary/10 flex items-center justify-center">
-                      <Package className="w-3.5 h-3.5 text-primary" />
-                    </span>
+                                        <span className="w-7 h-7 rounded-lg bg-primary/10 flex items-center justify-center">
+                                            <Package className="w-3.5 h-3.5 text-primary" />
+                                        </span>
                                         عنوان کالا
                                         <span className="text-error text-xs">*</span>
                                     </label>
@@ -905,15 +795,12 @@ export function AdForm({ adId, onSuccess }: AdFormProps) {
                                         maxLength={30}
                                         value={formData.productType}
                                         onChange={(e) => setFormData(prev => ({ ...prev, productType: e.target.value }))}
-                                        placeholder={"عنوان کوتاه کالا را وارد کنید."}
-                                        className="w-full h-12 bg-surface-container-lowest border border-outline/60 px-4 text-sm text-right placeholder:text-on-surface-variant/40 focus:ring-2 focus:ring-primary/20 focus:border-primary outline-none rounded-xl transition-all"
+                                        placeholder="عنوان کوتاه کالا را وارد کنید."
+                                        className="w-full h-12 bg-surface-container-lowest border border-outline/60 px-4 text-sm text-right rounded-xl outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary"
                                     />
                                 </div>
                             )}
 
-
-                            {/* ✅ انتخاب واحد - فقط اگر واحدهای خاص تعریف شده باشه */}
-                            {/* ✅ انتخاب واحد */}
                             {availableUnits.length > 0 && (
                                 <div className="bg-white p-4 rounded-2xl border border-outline-variant/40 shadow-sm space-y-3">
                                     <label className="text-sm font-bold text-on-surface flex items-center gap-2">
@@ -922,26 +809,19 @@ export function AdForm({ adId, onSuccess }: AdFormProps) {
             </span>
                                         واحد فروش
                                     </label>
-
                                     <div className="space-y-2">
                                         {availableUnits.map((unit, idx) => {
                                             const isSelected = formData.unitId === unit.unitId;
-                                            const baseUnitTitle = selectedCategoryData?.baseUnitTitle || 'واحد';
                                             const isEditingQty = isSelected && unit.isVariableQty && formData.isEditingQty;
-
                                             return (
-                                                <div
-                                                    key={idx}
-                                                    className={cn(
-                                                        "rounded-xl border transition-all overflow-hidden",
-                                                        isSelected
-                                                            ? "border-primary bg-primary/5 shadow-sm shadow-primary/5"
-                                                            : "border-outline-variant/20 hover:border-primary/30"
-                                                    )}
-                                                >
-                                                    {/* سربرگ واحد - همیشه نمایش */}
-                                                    <button
-                                                        type="button"
+                                                <div key={idx} className={cn(
+                                                    "rounded-xl border transition-all overflow-hidden",
+                                                    isSelected ? "border-primary bg-primary/5" : "border-outline-variant/20 hover:border-primary/30"
+                                                )}>
+                                                    {/* ✅ تغییر از button به div با onClick */}
+                                                    <div
+                                                        role="button"
+                                                        tabIndex={0}
                                                         onClick={() => {
                                                             setFormData(prev => ({
                                                                 ...prev,
@@ -949,80 +829,68 @@ export function AdForm({ adId, onSuccess }: AdFormProps) {
                                                                 unitTitle: unit.unitTitle,
                                                                 unitQty: unit.qty,
                                                                 unitIsVariableQty: unit.isVariableQty,
-                                                                isEditingQty: false, // ✅ بستن حالت ویرایش
+                                                                isEditingQty: false,
                                                             }));
+                                                            if (formData.singleUnitPrice > 0 && unit.qty) {
+                                                                setFormData(prev => ({
+                                                                    ...prev,
+                                                                    unitPrice: Math.round(formData.singleUnitPrice * unit.qty),
+                                                                }));
+                                                            }
                                                         }}
-                                                        className="w-full text-right px-4 py-3 flex items-center justify-between gap-2"
+                                                        onKeyDown={(e) => {
+                                                            if (e.key === 'Enter' || e.key === ' ') {
+                                                                e.preventDefault();
+                                                                e.currentTarget.click();
+                                                            }
+                                                        }}
+                                                        className="w-full text-right px-4 py-3 flex items-center justify-between gap-2 cursor-pointer"
                                                     >
                                                         <div className="flex items-center gap-2 flex-1 min-w-0">
                                                             <div className={cn(
-                                                                "w-5 h-5 rounded-full border-2 flex items-center justify-center flex-shrink-0 transition-all",
+                                                                "w-5 h-5 rounded-full border-2 flex items-center justify-center flex-shrink-0",
                                                                 isSelected ? "border-primary bg-primary" : "border-outline-variant/40"
                                                             )}>
                                                                 {isSelected && <Check className="w-3 h-3 text-white" />}
                                                             </div>
-
-                                                            <span className="font-medium text-sm truncate">
-                                    {unit.unitTitle}
-                                </span>
-
+                                                            <span className="font-medium text-sm truncate">{unit.unitTitle}</span>
                                                             {unit.isDefault && (
-                                                                <span className="text-[9px] bg-primary/10 text-primary px-1.5 py-0.5 rounded-full font-medium flex-shrink-0">
-                                        پیش‌فرض
-                                    </span>
+                                                                <span className="text-[9px] bg-primary/10 text-primary px-1.5 py-0.5 rounded-full">پیش‌فرض</span>
                                                             )}
                                                         </div>
-
-                                                        {/* تعداد + آیکون ویرایش */}
                                                         <div className="flex items-center gap-1.5 flex-shrink-0">
                                                             {formData.unitQty != null && isSelected && (
                                                                 <span className="text-[11px] text-on-surface-variant bg-surface-container-high/80 px-2 py-1 rounded-lg">
                                         {formData.unitQty.toLocaleString()} {baseUnitTitle}
                                     </span>
                                                             )}
-
-                                                            {/* ✅ آیکون ویرایش - فقط برای واحد انتخاب‌شده و متغیر */}
                                                             {isSelected && unit.isVariableQty && (
                                                                 <button
                                                                     type="button"
                                                                     onClick={(e) => {
                                                                         e.stopPropagation();
-                                                                        setFormData(prev => ({
-                                                                            ...prev,
-                                                                            isEditingQty: !prev.isEditingQty, // ✅ toggle حالت ویرایش
-                                                                        }));
+                                                                        setFormData(prev => ({ ...prev, isEditingQty: !prev.isEditingQty }));
                                                                     }}
-                                                                    className={cn(
-                                                                        "p-1.5 rounded-lg transition-colors",
-                                                                        isEditingQty
-                                                                            ? "bg-primary/10 text-primary"
-                                                                            : "hover:bg-primary/10 hover:text-primary"
-                                                                    )}
+                                                                    className="p-1.5 hover:bg-primary/10 rounded-lg"
                                                                     title={`ویرایش تعداد ${baseUnitTitle} در هر ${unit.unitTitle}`}
                                                                 >
                                                                     <Pencil className="w-3.5 h-3.5" />
                                                                 </button>
                                                             )}
                                                         </div>
-                                                    </button>
+                                                    </div>
 
-                                                    {/* ✅ ویرایش تعداد - فقط وقتی مداد زده شده */}
                                                     {isEditingQty && (
                                                         <div className="px-4 pb-3 pt-1 border-t border-primary/10 bg-primary/5">
-                                                            <div className="flex items-center gap-2">
-                                                                <label className="text-[11px] font-medium text-on-surface-variant whitespace-nowrap">
-                                                                    تعداد {baseUnitTitle} در هر {unit.unitTitle}:
-                                                                </label>
-                                                                <NumberInput
-                                                                    value={formData.unitQty || undefined}
-                                                                    onChange={(val) => setFormData(prev => ({ ...prev, unitQty: val || null }))}
-                                                                    placeholder={`مثلاً ${unit.qty || 24}`}
-                                                                    className="flex-1 h-10 bg-white border border-outline/60 px-3 text-sm font-medium text-right rounded-lg"
-                                                                    autoFocus
-                                                                />
-                                                            </div>
+                                                            <NumberInput
+                                                                value={formData.unitQty || undefined}
+                                                                onChange={(val) => handleUnitQtyChange(val || null)}
+                                                                placeholder={`مثلاً ${unit.qty || 24}`}
+                                                                className="h-10"
+                                                                autoFocus
+                                                            />
                                                             <p className="text-[10px] text-on-surface-variant/50 mt-1.5">
-                                                                💡 می‌توانید تعداد {baseUnitTitle} در هر {unit.unitTitle} را تغییر دهید
+                                                                💡 تعداد {baseUnitTitle} در هر {unit.unitTitle}
                                                             </p>
                                                         </div>
                                                     )}
@@ -1033,16 +901,20 @@ export function AdForm({ adId, onSuccess }: AdFormProps) {
                                 </div>
                             )}
 
-                            {maxImagesPerAd > 0 && (
+                            {/* ✅ تصویر آگهی — اجباری */}
+                            {(selectedCategoryData && maxImagesPerAd > 0) && (
                                 <div className="bg-white p-4 rounded-2xl border border-outline-variant/40 shadow-sm space-y-3">
                                     <label className="text-sm font-bold text-on-surface flex items-center gap-2">
-                    <span className="w-7 h-7 rounded-lg bg-primary/10 flex items-center justify-center">
-                      <svg className="w-3.5 h-3.5 text-primary" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}><rect x="3" y="3" width="18" height="18" rx="2"/><circle cx="8.5" cy="8.5" r="1.5"/><path d="m21 15-5-5L5 21"/></svg>
-                    </span>
+                                        <span className="w-7 h-7 rounded-lg bg-primary/10 flex items-center justify-center">
+                                            <svg className="w-3.5 h-3.5 text-primary" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                                                <rect x="3" y="3" width="18" height="18" rx="2"/><circle cx="8.5" cy="8.5" r="1.5"/><path d="m21 15-5-5L5 21"/>
+                                            </svg>
+                                        </span>
                                         تصویر محصول
+                                        <span className="text-error text-xs">*</span>
                                         <span className="text-[10px] font-normal text-on-surface-variant/60 mr-auto">
-                      {uploadedCount}/{maxImagesPerAd}
-                    </span>
+                                            {uploadedCount}/{maxImagesPerAd}
+                                        </span>
                                     </label>
                                     <div className="flex flex-wrap gap-3 items-start">
                                         {adImageFiles.map((slot, idx) => (
@@ -1067,8 +939,7 @@ export function AdForm({ adId, onSuccess }: AdFormProps) {
                                             <button
                                                 type="button"
                                                 onClick={handleAddImageSlot}
-                                                className="w-20 h-20 border-2 border-dashed border-outline-variant/40 rounded-xl flex flex-col items-center justify-center text-on-surface-variant/40 hover:border-primary/50 hover:text-primary/60 hover:bg-primary/5 transition-all gap-1"
-                                                disabled={isSubmitting}
+                                                className="w-20 h-20 border-2 border-dashed border-outline-variant/40 rounded-xl flex flex-col items-center justify-center text-on-surface-variant/40 hover:border-primary/50 hover:text-primary/60"
                                             >
                                                 <Plus className="w-5 h-5" />
                                                 <span className="text-[9px]">افزودن</span>
@@ -1080,26 +951,27 @@ export function AdForm({ adId, onSuccess }: AdFormProps) {
                         </div>
                     )}
 
-                    {/* مرحله ۲ */}
+                    {/* ═══════════════ مرحله ۲: قیمت ═══════════════ */}
                     {currentStep === 2 && selectedCategoryData && (
                         <div className="space-y-4 animate-in fade-in duration-200">
-                            <div className="bg-gradient-to-l from-primary/10 to-primary/5 border border-primary/20 rounded-2xl p-4 space-y-1">
+                            <div className="bg-gradient-to-l from-primary/10 to-primary/5 border border-primary/20 rounded-2xl p-4">
                                 <div className="flex items-center gap-2 text-primary">
                                     <Package className="w-5 h-5" />
-                                    <h3 className="font-bold text-sm">تعیین قیمت بر اساس حجم خرید</h3>
+                                    <h3 className="font-bold text-sm">تعیین قیمت عمده</h3>
                                 </div>
                             </div>
 
+                            {/* حداقل حجم فروش */}
                             <div className="bg-white rounded-2xl p-4 border border-outline-variant/40 shadow-sm space-y-2.5">
                                 <label className="text-xs font-bold text-on-surface flex items-center gap-1.5">
                                     <span className="w-5 h-5 rounded-md bg-amber-100 text-amber-700 flex items-center justify-center text-[10px] font-black">۱</span>
                                     حداقل حجم فروش ({unitName})
                                     {categoryConstraints.min && categoryConstraints.max
-                                        ? `بین ${categoryConstraints.min.toLocaleString()} تا ${categoryConstraints.max.toLocaleString()}`
+                                        ? ` بین ${categoryConstraints.min.toLocaleString()} تا ${categoryConstraints.max.toLocaleString()}`
                                         : categoryConstraints.min
-                                            ? `حداقل ${categoryConstraints.min.toLocaleString()}`
+                                            ? ` حداقل ${categoryConstraints.min.toLocaleString()}`
                                             : categoryConstraints.max
-                                                ? `حداکثر ${categoryConstraints.max.toLocaleString()}`
+                                                ? ` حداکثر ${categoryConstraints.max.toLocaleString()}`
                                                 : ``}
                                     <span className="text-error text-xs">*</span>
                                 </label>
@@ -1107,70 +979,120 @@ export function AdForm({ adId, onSuccess }: AdFormProps) {
                                     value={formData.minQuantity || undefined}
                                     onChange={(val) => setFormData(prev => ({ ...prev, minQuantity: val || 0 }))}
                                     unit={unitName}
-                                    className="w-full h-14 bg-surface-container-lowest border border-outline/60 px-4 font-extrabold text-right focus:ring-2 focus:ring-primary/20 focus:border-primary outline-none rounded-xl transition-all"
+                                    className="w-full h-14 font-extrabold"
                                 />
-                                {(categoryConstraints.min || categoryConstraints.max) && (
-                                    <p className="text-[10px] text-primary/70 mt-1">
-                                        {categoryConstraints.min && categoryConstraints.max
-                                            ? `محدوده مجاز: ${categoryConstraints.min.toLocaleString()} - ${categoryConstraints.max.toLocaleString()} ${unitName}`
-                                            : categoryConstraints.min
-                                                ? `حداقل مجاز: ${categoryConstraints.min.toLocaleString()} ${unitName}`
-                                                : `حداکثر مجاز: ${categoryConstraints.max.toLocaleString()} ${unitName}`}
-                                    </p>
-                                )}
                             </div>
 
-                            <div className="flex justify-center">
-                                <div className="w-8 h-8 rounded-full bg-primary/10 flex items-center justify-center">
-                                    <ArrowDown className="w-4 h-4 text-primary" />
-                                </div>
-                            </div>
-
-                            <div className="bg-white rounded-2xl p-4 border border-primary/30 shadow-sm shadow-primary/5 space-y-2.5 ring-1 ring-primary/10">
+                            {/* ═══════════════ قیمت تکی ═══════════════ */}
+                            <div className="bg-white rounded-2xl p-4 border border-outline-variant/40 shadow-sm space-y-2.5">
                                 <label className="text-xs font-bold text-on-surface flex items-center gap-1.5">
-                                    <span className="w-5 h-5 rounded-md bg-primary text-white flex items-center justify-center text-[10px] font-black">۲</span>
-                                    قیمت هر {unitName} برای خرید حداقل {formData.minQuantity || '...'} {unitName}
+                                    <span className="w-5 h-5 rounded-md bg-blue-100 text-blue-700 flex items-center justify-center text-[10px] font-black">۲</span>
+                                    قیمت تکی (هر {baseUnitTitle})
+                                    <span className="text-error text-xs">*</span>
+                                </label>
+                                <p className="text-[10px] text-gray-400">
+                                    {formData.minQuantity > 0
+                                        ? `قیمت عمده هر ${baseUnitTitle} برای خرید ${formData.minQuantity.toLocaleString('fa-IR')} ${unitName}`
+                                        : `قیمت عمده هر ${baseUnitTitle} را وارد کنید`}
+                                </p>
+                                <NumberInput
+                                    value={formData.singleUnitPrice || undefined}
+                                    onChange={handleSingleUnitPriceChange}
+                                    unit={`${currencyUnit}/${baseUnitTitle}`}
+                                    placeholder={`قیمت عمده هر ${baseUnitTitle}`}
+                                    className="w-full h-12"
+                                />
+                            </div>
+
+                            {/* ═══════════════ قیمت واحد فروش (محاسبه شده) ═══════════════ */}
+                            <div className="bg-white rounded-2xl p-4 border border-primary/30 ring-1 ring-primary/10 shadow-sm space-y-2.5">
+                                <label className="text-xs font-bold text-on-surface flex items-center gap-1.5">
+                                    <span className="w-5 h-5 rounded-md bg-primary text-white flex items-center justify-center text-[10px] font-black">۳</span>
+                                    قیمت هر {unitName} (واحد فروش عمده)
                                     <span className="text-error text-xs">*</span>
                                 </label>
                                 <NumberInput
                                     value={formData.unitPrice || undefined}
-                                    onChange={(val) => setFormData(prev => ({ ...prev, unitPrice: val || 0 }))}
+                                    onChange={handleUnitPriceChange}
                                     unit={currencyUnit}
-                                    className="w-full h-14 bg-surface-container-lowest border border-primary/40 px-4 text-xl font-extrabold text-right placeholder:text-on-surface-variant/30 focus:ring-2 focus:ring-primary/20 focus:border-primary outline-none rounded-xl transition-all"
+                                    className="w-full h-14 text-xl font-extrabold"
                                 />
+                                {formData.singleUnitPrice > 0 && formData.unitQty && (
+                                    <p className="text-[11px] text-primary/80 bg-primary/5 rounded-lg px-3 py-2">
+                                        💡 {formData.singleUnitPrice.toLocaleString('fa-IR')} × {formData.unitQty.toLocaleString('fa-IR')} {baseUnitTitle} = {formData.unitPrice.toLocaleString('fa-IR')} {currencyUnit}
+                                    </p>
+                                )}
+                                {formData.unitQty && !formData.singleUnitPrice && (
+                                    <p className="text-[10px] text-gray-400">
+                                        {formData.unitQty.toLocaleString('fa-IR')} {baseUnitTitle} در هر {unitName}
+                                    </p>
+                                )}
                             </div>
 
-                            <div className="bg-white rounded-2xl p-4 border border-outline-variant/40 shadow-sm space-y-2.5 mt-4">
+                            {/* ═══════════════ موجودی ═══════════════ */}
+                            <div className="bg-white rounded-2xl p-4 border border-outline-variant/40 shadow-sm space-y-2.5">
                                 <label className="text-xs font-bold text-on-surface flex items-center gap-1.5">
-                                    <span className="w-5 h-5 rounded-md bg-emerald-100 text-emerald-700 flex items-center justify-center text-[10px] font-black">۳</span>
-                                    موجودی فعلی انبار ({unitName})
+                                    <span className="w-5 h-5 rounded-md bg-emerald-100 text-emerald-700 flex items-center justify-center text-[10px] font-black">۴</span>
+                                    موجودی تضمینی انبار ({unitName})
                                     <span className="text-error text-xs">*</span>
                                 </label>
                                 <NumberInput
                                     value={formData.availableQuantity || undefined}
                                     onChange={(val) => setFormData(prev => ({ ...prev, availableQuantity: val || 0 }))}
                                     unit={unitName}
-                                    className="w-full h-12 bg-surface-container-lowest border border-outline/60 px-4 text-right placeholder:text-on-surface-variant/30 focus:ring-2 focus:ring-primary/20 focus:border-primary outline-none rounded-xl transition-all"
+                                    className="w-full h-12"
                                     placeholder="موجودی تضمینی را وارد کنید"
                                 />
+                            </div>
+
+                            {/* ═══════════════ قیمت مصرف‌کننده (اختیاری) ═══════════════ */}
+                            <div className="bg-white rounded-2xl p-4 border border-outline-variant/40 shadow-sm space-y-2.5">
+                                <label className="text-xs font-bold text-on-surface flex items-center gap-1.5">
+                                    <span className="w-5 h-5 rounded-md bg-gray-100 text-gray-600 flex items-center justify-center text-[10px] font-black">۵</span>
+                                    قیمت تکی برای مصرف‌کننده (اختیاری)
+                                </label>
+                                <p className="text-[10px] text-gray-400">
+                                    قیمتی که مصرف‌کننده نهایی در خرده‌فروشی پرداخت می‌کند — برای محاسبه سود خریدار عمده
+                                </p>
+                                <NumberInput
+                                    value={formData.consumerPrice || undefined}
+                                    onChange={(val) => setFormData(prev => ({ ...prev, consumerPrice: val || 0 }))}
+                                    unit={`${currencyUnit}/${baseUnitTitle}`}
+                                    placeholder={`مثلاً قیمت هر ${baseUnitTitle} برای مصرف‌کننده`}
+                                    className="w-full h-12"
+                                />
+                                {formData.consumerPrice > 0 && formData.singleUnitPrice > 0 && (
+                                    <>
+                                        {formData.consumerPrice < formData.singleUnitPrice ? (
+                                            <p className="text-[11px] text-red-600 bg-red-50 rounded-lg px-3 py-2">
+                                                ⚠️ قیمت مصرف‌کننده از قیمت عمده کمتر است!
+                                                ({formData.consumerPrice.toLocaleString('fa-IR')} {'<'} {formData.singleUnitPrice.toLocaleString('fa-IR')})
+                                            </p>
+                                        ) : (
+                                            <p className="text-[11px] text-emerald-600 bg-emerald-50 rounded-lg px-3 py-2">
+                                                💰 سود خرده فروش یا خریدار عمده از هر {baseUnitTitle}: {(formData.consumerPrice - formData.singleUnitPrice).toLocaleString('fa-IR')} {currencyUnit}
+                                            </p>
+                                        )}
+                                    </>
+                                )}
                             </div>
                         </div>
                     )}
 
-                    {/* مرحله ۳ */}
+                    {/* ═══════════════ مرحله ۳: موقعیت ═══════════════ */}
                     {currentStep === 3 && (
                         <div className="space-y-4 animate-in fade-in duration-200">
                             <div className="bg-white p-4 rounded-2xl border border-outline-variant/40 shadow-sm space-y-2.5">
                                 <label className="text-sm font-bold text-on-surface flex items-center gap-2">
-        <span className="w-7 h-7 rounded-lg bg-rose-100 flex items-center justify-center">
-          <MapPin className="w-3.5 h-3.5 text-rose-600" />
-        </span>
+                                    <span className="w-7 h-7 rounded-lg bg-rose-100 flex items-center justify-center">
+                                        <MapPin className="w-3.5 h-3.5 text-rose-600" />
+                                    </span>
                                     محل کالا
                                     <span className="text-error text-xs">*</span>
                                 </label>
 
                                 {hasSingleCity ? (
-                                    <div className="flex items-center gap-2.5 p-3.5 bg-surface-container-low border border-outline-variant/40 rounded-xl text-sm text-on-surface">
+                                    <div className="flex items-center gap-2.5 p-3.5 bg-surface-container-low border border-outline-variant/40 rounded-xl text-sm">
                                         <MapPin className="w-4 h-4 text-primary flex-shrink-0" />
                                         <span>{singleCityData?.city.title}</span>
                                     </div>
@@ -1188,33 +1110,28 @@ export function AdForm({ adId, onSuccess }: AdFormProps) {
                                 )}
                             </div>
 
-                            {/* بخش توضیحات */}
                             <div className="bg-white p-4 rounded-2xl border border-outline-variant/40 shadow-sm space-y-2.5">
                                 <label className="text-sm font-bold text-on-surface flex items-center gap-2">
-        <span className="w-7 h-7 rounded-lg bg-purple-100 flex items-center justify-center">
-          <FileText className="w-3.5 h-3.5 text-purple-600" />
-        </span>
+                                    <span className="w-7 h-7 rounded-lg bg-purple-100 flex items-center justify-center">
+                                        <FileText className="w-3.5 h-3.5 text-purple-600" />
+                                    </span>
                                     توضیحات
-                                    <span className="text-xs text-on-surface-variant/60 font-normal">(اختیاری)</span>
+                                    <span className="text-xs text-on-surface-variant/60">(اختیاری)</span>
                                 </label>
                                 <textarea
                                     value={formData.description}
                                     onChange={(e) => setFormData(prev => ({ ...prev, description: e.target.value }))}
                                     rows={3}
-                                    placeholder="توضیحات تکمیلی درباره کالا، شرایط فروش، کیفیت، برند و ..."
-                                    className="w-full bg-surface-container-lowest border border-outline/60 px-4 py-3 text-sm text-right placeholder:text-on-surface-variant/40 focus:ring-2 focus:ring-primary/20 focus:border-primary outline-none rounded-xl transition-all resize-none"
+                                    placeholder="توضیحات تکمیلی"
+                                    className="w-full border border-outline/60 px-4 py-3 rounded-xl resize-none outline-none focus:ring-2 focus:ring-primary/20"
                                 />
-                                <p className="text-[10px] text-on-surface-variant/40 text-right">
-                                    {formData.description.length > 0 ? `${formData.description.length} کاراکتر` : 'می‌توانید توضیحات بیشتری اضافه کنید'}
-                                </p>
                             </div>
 
-                            {/* بخش مدت اعتبار */}
                             <div className="bg-white p-4 rounded-2xl border border-outline-variant/40 shadow-sm space-y-2.5">
                                 <label className="text-sm font-bold text-on-surface flex items-center gap-2">
-        <span className="w-7 h-7 rounded-lg bg-blue-100 flex items-center justify-center">
-          <Clock className="w-3.5 h-3.5 text-blue-600" />
-        </span>
+                                    <span className="w-7 h-7 rounded-lg bg-blue-100 flex items-center justify-center">
+                                        <Clock className="w-3.5 h-3.5 text-blue-600" />
+                                    </span>
                                     مدت اعتبار قیمت
                                 </label>
                                 <div className="grid grid-cols-3 gap-2">
@@ -1227,22 +1144,21 @@ export function AdForm({ adId, onSuccess }: AdFormProps) {
                                                 "h-12 rounded-xl text-sm font-medium border-2 transition-all",
                                                 formData.validityHours === opt.value
                                                     ? "border-primary bg-primary/10 text-primary font-bold"
-                                                    : "border-outline-variant/40 bg-surface-container-lowest text-on-surface-variant hover:border-primary/30"
+                                                    : "border-outline-variant/40 hover:border-primary/30"
                                             )}
                                         >
                                             {opt.label}
                                         </button>
                                     ))}
                                 </div>
-                                <div className="mt-3 p-3 bg-surface-container-low/60 rounded-xl border border-outline-variant/20 text-xs text-on-surface-variant leading-relaxed">
-                                    آگهی شما تا <span className="font-medium text-primary">{formData.validityHours}</span> ساعت روی تابلو می‌ماند.
-                                    و اگر آنرا به موقع آپدیت قیمت نکنید به آرشیو منتقل می شود،آما می توانید دوباره آنرا از آرشیو آپدیت و فعال کنید.
-                                </div>
+                                <p className="text-xs text-on-surface-variant">
+                                    آگهی شما تا {formData.validityHours} ساعت روی تابلو می‌ماند.
+                                </p>
                             </div>
                         </div>
                     )}
 
-                    {/* مرحله ۴ */}
+                    {/* ═══════════════ مرحله ۴: انتشار ═══════════════ */}
                     {currentStep === 4 && (
                         <div className="space-y-4 animate-in fade-in duration-200">
                             <div className="bg-white rounded-2xl border border-outline-variant/40 shadow-sm overflow-hidden">
