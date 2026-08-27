@@ -2,19 +2,19 @@
 'use client';
 import React, { useEffect, useMemo, useState, useCallback, useRef } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
+import Link from 'next/link';
 import { useSelector } from 'react-redux';
 import { RootState } from '@/lib/store/store';
 import { AppHeader, AppFooter } from '@/app/components';
-import {useArms, useVitrine} from '@/lib/api/apiHooks';
+import { useArms, useVitrine } from '@/lib/api/apiHooks';
 import { apiService } from '@/lib/api/apiService';
 import { toast } from 'sonner';
-import {Package, RefreshCw, Headphones, CheckCircle2, Archive, Clock, Wrench} from 'lucide-react';
+import { Package, RefreshCw, Archive, Clock, Wrench, Loader2 } from 'lucide-react';
 import { useFilters } from '@/lib/hooks/useFilters';
 import { cn } from '@/lib/utils';
 import FilterBar from './FilterBar';
 import AdCard from './AdCard';
 import AdModal from './AdModal';
-import { LocationFilter } from "@/app/components/LocationFilter";
 
 export default function HomeContent() {
     const router = useRouter();
@@ -28,18 +28,25 @@ export default function HomeContent() {
     const [isCalling, setIsCalling] = useState(false);
     const [sortByPrice, setSortByPrice] = useState(false);
 
-    // ─── فیلترهای جدید ───
+    // ─── فیلترها ───
     const [minQuantity, setMinQuantity] = useState(0);
     const [minAvailableQuantity, setMinAvailableQuantity] = useState(0);
 
+    // ─── Infinite Scroll State ───
+    const [page, setPage] = useState(1);
+    const [allAds, setAllAds] = useState<any[]>([]);
+    const [hasMore, setHasMore] = useState(false);
+    const [isLoadingMore, setIsLoadingMore] = useState(false);
+    const loadMoreRef = useRef<HTMLDivElement>(null);
+
     const vitrineSlug = currentSlug || 'barton';
     const baseFilterParams = useMemo(() => getFilterParams(), [getFilterParams]);
-
     const categoryTree = useMemo(() => currentArm?.categoryTree || [], [currentArm]);
 
     const selectedCategory = otherFilters.find(f => f.type === 'category');
     const selectedCategoryId = selectedCategory?.value || null;
     const { data: arms, refetch: refetchArms } = useArms();
+
     const findNodeById = useCallback((nodes: any[], id: string): any => {
         for (const node of nodes) {
             if (node.id === id) return node;
@@ -55,13 +62,61 @@ export default function HomeContent() {
     const selectedUnit = useMemo(() => selectedNode?.unitShortCode || 'تن', [selectedNode]);
     const isLeaf = selectedNode ? (!selectedNode.children || selectedNode.children.length === 0) : false;
 
-    // ─── ساخت فیلترهای نهایی ───
+    // ─── فیلترهای نهایی با صفحه‌بندی ───
     const filterParams = useMemo(() => ({
         ...baseFilterParams,
         sort: sortByPrice ? 'unitPrice:asc' : undefined,
         minQuantity: minQuantity || undefined,
         minAvailableQuantity: minAvailableQuantity || undefined,
-    }), [baseFilterParams, sortByPrice, minQuantity, minAvailableQuantity]);
+        page,
+        limit: 20,
+    }), [baseFilterParams, sortByPrice, minQuantity, minAvailableQuantity, page]);
+
+    // ─── واکشی داده ───
+    const { data: vitrineData, isLoading: vitrineLoading, isFetching } = useVitrine(vitrineSlug, filterParams);
+
+    // ✅ جمع‌آوری آگهی‌ها هنگام لود صفحات جدید
+    useEffect(() => {
+        if (vitrineData?.ads) {
+            setAllAds(prev => {
+                if (page === 1) {
+                    return vitrineData.ads;
+                }
+                // جلوگیری از تکراری
+                const existingIds = new Set(prev.map(ad => ad.id));
+                const newAds = vitrineData.ads.filter(ad => !existingIds.has(ad.id));
+                return [...prev, ...newAds];
+            });
+
+            const totalPages = vitrineData.pagination?.totalPages || 1;
+            setHasMore(page < totalPages);
+        }
+    }, [vitrineData, page]);
+
+    // ✅ ریست کردن وقتی فیلترها عوض می‌شوند
+    useEffect(() => {
+        setPage(1);
+        setAllAds([]);
+    }, [baseFilterParams, sortByPrice, minQuantity, minAvailableQuantity, currentSlug]);
+
+    // ✅ Intersection Observer برای Infinite Scroll
+    useEffect(() => {
+        if (!loadMoreRef.current || !hasMore || isLoadingMore || vitrineLoading || isFetching) return;
+
+        const observer = new IntersectionObserver(
+            (entries) => {
+                if (entries[0].isIntersecting && hasMore && !isLoadingMore) {
+                    setIsLoadingMore(true);
+                    setPage(prev => prev + 1);
+                    setTimeout(() => setIsLoadingMore(false), 500);
+                }
+            },
+            { rootMargin: '200px' }
+        );
+
+        observer.observe(loadMoreRef.current);
+        return () => observer.disconnect();
+    }, [hasMore, isLoadingMore, vitrineLoading, isFetching]);
 
     // ─── هندلرها ───
     const handleCategorySelect = useCallback((categoryId: string) => {
@@ -97,9 +152,9 @@ export default function HomeContent() {
         setSortByPrice(false);
         setMinQuantity(0);
         setMinAvailableQuantity(0);
+        setPage(1);
+        setAllAds([]);
     }, [clearFilters]);
-
-
 
     const handleContactClick = useCallback(async (adId: string) => {
         if (!isAuthenticated) {
@@ -110,7 +165,6 @@ export default function HomeContent() {
         setIsCalling(true);
 
         try {
-            // ✅ استفاده از arms از کش به جای درخواست مستقیم
             let isMemberOfArm = false;
             if (arms) {
                 isMemberOfArm = arms.some((a: any) => a.slug === currentSlug && a.status === 'active');
@@ -119,7 +173,6 @@ export default function HomeContent() {
             if (!isMemberOfArm) {
                 try {
                     await apiService.arm.join(currentSlug || 'barton');
-                    // ✅ بعد از پیوستن، کش رو رفرش کن
                     await refetchArms();
                 } catch (joinError: any) {
                     if (joinError?.data?.errorCode !== 'ALREADY_MEMBER') {
@@ -131,8 +184,6 @@ export default function HomeContent() {
             }
 
             const contactInfo = await apiService.ad.getContact(adId);
-
-            // ✅ اولویت با شماره موبایل مالک کسب‌وکار
             const phoneToUse = contactInfo.ownerPhone || contactInfo.phone;
 
             if (!phoneToUse) {
@@ -159,15 +210,17 @@ export default function HomeContent() {
         }
     }, [isAuthenticated, isCalling, currentSlug, router, arms, refetchArms]);
 
-    const { data: vitrineData, isLoading: vitrineLoading } = useVitrine(vitrineSlug, filterParams);
-
     useEffect(() => {
         if (armLoading) return;
-        if (!currentSlug || !currentArm) { const lastSlug = localStorage.getItem('lastArmSlug'); if (lastSlug) router.replace(`/${lastSlug}`); else router.replace('/no-arm'); return; }
+        if (!currentSlug || !currentArm) {
+            const lastSlug = localStorage.getItem('lastArmSlug');
+            if (lastSlug) router.replace(`/${lastSlug}`);
+            else router.replace('/no-arm');
+            return;
+        }
         setIsCheckingArm(false);
     }, [currentSlug, currentArm, armLoading, router]);
 
-    // ─── همگام‌سازی اولیه ───
     const initialSyncDone = useRef(false);
     useEffect(() => {
         if (initialSyncDone.current || categoryTree.length === 0) return;
@@ -181,8 +234,13 @@ export default function HomeContent() {
         }
     }, [categoryTree, searchParams, findNodeById, addFilter]);
 
-    if (armLoading || isCheckingArm) return <div className="min-h-screen flex items-center justify-center"><div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary mx-auto" /></div>;
-
+    if (armLoading || isCheckingArm) {
+        return (
+            <div className="min-h-screen flex items-center justify-center">
+                <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary mx-auto" />
+            </div>
+        );
+    }
 
     if (currentArm) {
         switch (currentArm.status) {
@@ -194,10 +252,10 @@ export default function HomeContent() {
                                 <Clock className="w-12 h-12 text-amber-500" />
                             </div>
                             <h2 className="text-2xl font-bold text-on-surface dark:text-gray-100 mb-3">
-                                {' بازار '+ currentArm.name+ ' هنوز تأیید نشده است '}
+                                {' بازار ' + currentArm.name + ' هنوز تأیید نشده است '}
                             </h2>
-                            <p className="text-sm text-on-surface-variant dark:text-gray-400  mx-auto leading-relaxed">
-                                بازار در حال راه‌اندازی و تکمیل تنظیمات است اگر صاحب این بازار هستید تنظیمات بازار را تکمیل کنید. .
+                            <p className="text-sm text-on-surface-variant dark:text-gray-400 mx-auto leading-relaxed">
+                                بازار در حال راه‌اندازی و تکمیل تنظیمات است اگر صاحب این بازار هستید تنظیمات بازار را تکمیل کنید.
                             </p>
                         </div>
                     </div>
@@ -235,22 +293,18 @@ export default function HomeContent() {
                     </div>
                 );
             default:
-                break
+                break;
         }
     }
 
-
-    const hasAds = vitrineData?.ads && vitrineData.ads.length > 0;
-
-    const toolbarDescriptionText = isLeaf && minQuantity > 0
-        ? `بهترین پیشنهادها برای خرید ${minQuantity.toLocaleString()} ${selectedUnit} ${selectedNode?.title || ''}`
-        : null;
+    const hasAds = allAds.length > 0;
+    const totalPages = vitrineData?.pagination?.totalPages || 1;
 
     return (
         <div className="h-screen flex flex-col bg-surface dark:bg-gray-950">
             <AppHeader showLocation showBack={false} />
 
-            {/* فیلتر بار جدید */}
+            {/* فیلتر بار */}
             <div className="sticky top-0 z-30 bg-white dark:bg-gray-900 border-b border-outline-variant/20 dark:border-gray-800 shadow-sm flex-shrink-0">
                 <FilterBar
                     categoryTree={categoryTree}
@@ -263,47 +317,44 @@ export default function HomeContent() {
                     minAvailableQuantity={minAvailableQuantity}
                     onMinAvailableChange={handleMinAvailableChange}
                 />
-
-                {/* تولبار یکپارچه */}
-               {/* {toolbarDescriptionText && (
-                    <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2 sm:gap-4 px-3 lg:px-6 py-2.5 bg-surface-container-lowest dark:bg-gray-900 border-t border-outline-variant/10 dark:border-gray-800">
-                        <p className="text-[11px] sm:text-xs text-on-surface-variant/60 dark:text-gray-400 leading-relaxed truncate">
-                            {toolbarDescriptionText}
-                        </p>
-                        <div className="flex items-center gap-3 flex-shrink-0">
-                            <label className="flex items-center gap-1.5 text-[11px] sm:text-xs text-on-surface-variant dark:text-gray-400 cursor-pointer select-none group">
-                                <div className="relative flex items-center">
-                                    <input type="checkbox" checked={sortByPrice} onChange={(e) => setSortByPrice(e.target.checked)} className="peer sr-only" />
-                                    <div className="w-4 h-4 rounded border-2 border-outline-variant dark:border-gray-600 bg-surface-container-lowest dark:bg-gray-800 peer-checked:bg-primary peer-checked:border-primary transition-colors flex items-center justify-center">
-                                        {sortByPrice && <svg className="w-2.5 h-2.5 text-white" viewBox="0 0 12 12" fill="none"><path d="M2 6l2.5 2.5L10 3" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"/></svg>}
-                                    </div>
-                                </div>
-                                <span className="group-hover:text-on-surface dark:group-hover:text-gray-200 transition-colors">بهترین قیمت</span>
-                            </label>
-
-                            <div className="items-center gap-3 pr-2 border-r border-outline-variant/20 dark:border-gray-700">
-                                <LocationFilter />
-                            </div>
-                        </div>
-                    </div>
-                )}*/}
             </div>
 
             {/* محتوای اصلی */}
-            <div className="flex-1 pb-16 lg:pb-0">
+            <div className="flex-1 pb-16 lg:pb-0 overflow-y-auto">
                 <div className="px-3 lg:px-6 py-6 max-w-7xl mx-auto">
-                    {vitrineLoading ? (
+                    {vitrineLoading && page === 1 ? (
                         <div className="text-center py-20">
                             <div className="animate-spin rounded-full h-10 w-10 border-2 border-primary border-t-transparent mx-auto mb-4" />
                             <p className="text-sm text-on-surface-variant dark:text-gray-400">در حال بارگذاری قیمت‌ها...</p>
                         </div>
                     ) : hasAds ? (
-                        // ✅ حد وسط — فقط 2xl:grid-cols-6 حذف شده
-                        <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-3 md:gap-4">
-                            {vitrineData.ads.map((ad: any) => (
-                                <AdCard key={ad.id} ad={ad} onContact={handleContactClick} onDetail={setSelectedAd} />
-                            ))}
-                        </div>
+                        <>
+                            <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-3 md:gap-4">
+                                {allAds.map((ad: any) => (
+                                    <AdCard key={ad.id} ad={ad} onContact={handleContactClick} onDetail={setSelectedAd} />
+                                ))}
+                            </div>
+
+                            {/* Infinite Scroll Sentinel - فقط برای کاربران */}
+                            {hasMore && (
+                                <div ref={loadMoreRef} className="flex items-center justify-center py-8">
+                                    {isLoadingMore || isFetching ? (
+                                        <Loader2 className="w-6 h-6 animate-spin text-primary" />
+                                    ) : (
+                                        <div className="h-1" />
+                                    )}
+                                </div>
+                            )}
+
+                            {/* ✅ لینک‌های صفحه‌بندی برای گوگل - مخفی از دید کاربر */}
+                            <nav className="hidden" aria-hidden="true">
+                                {Array.from({ length: totalPages }, (_, i) => i + 1).map(pageNum => (
+                                    <Link key={pageNum} href={`?page=${pageNum}`}>
+                                        صفحه {pageNum}
+                                    </Link>
+                                ))}
+                            </nav>
+                        </>
                     ) : (
                         <div className="text-center py-24 px-4">
                             <div className="w-20 h-20 bg-surface-container-high dark:bg-gray-800 rounded-2xl flex items-center justify-center mx-auto mb-6">
