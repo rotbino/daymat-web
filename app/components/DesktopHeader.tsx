@@ -246,15 +246,15 @@ export default function DesktopHeader({
                         {/* لوگوی بازار */}
                         <div
                             className="
-        cursor-pointer
-        relative
-        rounded-lg
-        overflow-hidden
-        hover:opacity-80
-        transition-opacity
-        p-0.5
-        flex-shrink-0
-    "
+                                cursor-pointer
+                                relative
+                                rounded-lg
+                                overflow-hidden
+                                hover:opacity-80
+                                transition-opacity
+                                p-0.5
+                                flex-shrink-0
+                            "
                             style={{ width: 'auto', height: '60px' }}
                             onClick={() => router.push('/')}
                         >
@@ -488,7 +488,7 @@ export default function DesktopHeader({
                         "
                     >
                         <Plus className="w-4 h-4" />
-                        ثبت قیمت
+                        ثبت قیمت عمده
                     </button>
 
                     {/* ==================================================

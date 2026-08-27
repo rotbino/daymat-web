@@ -1,24 +1,41 @@
 // app/public/AppFooter.tsx
 'use client';
 
-import React from 'react';
+import React, { useMemo } from 'react';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
+import { useSelector } from 'react-redux';
+import { RootState } from '@/lib/store/store';
+import { useArms } from '@/lib/api/apiHooks';
 
 interface AppFooterProps {
-    activeTab?: 'dashboard' | 'add' | 'profile';
+    activeTab?: 'dashboard' | 'add' | 'profile' | 'admin';
 }
 
 export function AppFooter({ activeTab = 'dashboard' }: AppFooterProps) {
     const pathname = usePathname();
     const isAuthPage = pathname === '/login' || pathname === '/register';
+    const { currentSlug } = useSelector((state: RootState) => state.arm);
+    const { user } = useSelector((state: RootState) => state.auth);
+    const { data: arms } = useArms();
+
+    // ✅ بررسی مالک بودن کاربر در بازار فعلی
+    const isArmOwner = useMemo(() => {
+        if (!user || !currentSlug || !arms) return false;
+        return arms.some(
+            (a: any) => a.slug === currentSlug && a.role === 'arm_owner'
+        );
+    }, [arms, currentSlug, user]);
 
     if (isAuthPage) return null;
 
     const tabs = [
         { id: 'dashboard' as const, icon: 'dashboard', label: 'تابلو قیمت', href: '/' },
-        { id: 'add' as const, icon: 'add_box', label: 'ثبت قیمت', href: '/ad/create' },
+        { id: 'add' as const, icon: 'add_box', label: 'ثبت قیمت عمده', href: '/ad/create' },
         { id: 'profile' as const, icon: 'person', label: 'پروفایل', href: '/profile' },
+        ...(isArmOwner
+            ? [{ id: 'admin' as const, icon: 'storefront', label: 'پنل مالک', href: '/arm-admin' }]
+            : []),
     ];
 
     return (
@@ -29,7 +46,7 @@ export function AppFooter({ activeTab = 'dashboard' }: AppFooterProps) {
                     <Link
                         key={tab.id}
                         href={tab.href}
-                        className={`flex flex-col items-center justify-center w-1/3 h-full active:scale-95 transition-transform ${
+                        className={`flex flex-col items-center justify-center flex-1 h-full active:scale-95 transition-transform ${
                             isActive ? 'text-primary font-bold' : 'text-on-surface-variant'
                         }`}
                     >

@@ -80,7 +80,16 @@ export default function AdCard({ ad, onContact, onDetail }: AdCardProps) {
     const bizInfo = BIZ_TYPE[ad.business?.type || ''] || BIZ_TYPE.other;
 
     const handleClick = () => {
-        ad.isAnonymous ? onContact(ad.id) : router.push(`/ad/${ad.id}`);
+        if (ad.isAnonymous) {
+            onContact(ad.id);
+            return;
+        }
+        const title = ad.productType || ad.title || 'ad';
+        const persianSlug = title
+            .replace(/\s+/g, '-')
+            .replace(/[^\u0600-\u06FF\u0750-\u077F\w\-]/g, '')
+            .substring(0, 60);
+        router.push(`/ad/${ad.id}/${persianSlug}`);
     };
 
     const PaymentTags = ({ className }: { className?: string }) => (

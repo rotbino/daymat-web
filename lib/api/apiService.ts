@@ -70,6 +70,8 @@ export const apiService = {
 
         requestVerification: (businessId: string, data: any): Promise<Business> =>
             apiRequest(`/business/${businessId}/verify`, { method: 'POST', data }),
+
+        getBySlug: (slug: string) => apiRequest(`/business/slug/${slug}`),
     },
 
     // ============================================================

@@ -242,8 +242,10 @@ export default function ProfilePage() {
     const canUpgrade = hasApprovedTier && !isGold && !isPendingVerify;
 
     // ✅ totalAds از _count
-    const totalAds = selectedBusiness?._count?.ads || 0;
-    const activeAdsCount = selectedBusiness?._count?.ads || 0;
+    // ✅ استفاده از شمارنده‌های جدید
+    const totalAds = selectedBusiness?.totalAdsCount || 0;
+    const activeAdsCount = selectedBusiness?.activeAdsCount || 0;
+    const expiredAdsCount = selectedBusiness?.expiredAdsCount || 0;
 
     const armConfig = currentArm?.config as any || {};
     const bumpCost = armConfig?.modules?.priceTable?.bumpCost || 10;
@@ -361,6 +363,11 @@ export default function ProfilePage() {
                     onRepublishClick={(ad) => { setSelectedAd(ad); setIsRefreshModalOpen(true); }}
                     onToggleActive={handleToggleActive}
                     onDeleteClick={handleDeleteAd}
+                    totalAds={totalAds}
+                    activeAds={activeAdsCount}
+                    expiredAds={expiredAdsCount}
+                    businessSlug={selectedBusiness?.slug}
+                    businessName={selectedBusiness?.name}
                 />
             ) : isSelectedBusinessPending ? (
                 <PendingMembershipCard />
@@ -438,7 +445,13 @@ export default function ProfilePage() {
                             </div>
                         ) : (
                             <>
-                                <BusinessList selectedId={selectedBusinessId} onSelect={(id) => setSelectedBusinessId(id)} />
+                                <BusinessList
+                                    selectedId={selectedBusinessId}
+                                    onSelect={(id) => setSelectedBusinessId(id)}
+                                    totalAds={totalAds}
+                                    activeAds={activeAdsCount}
+                                    expiredAds={expiredAdsCount}
+                                />
                                 {selectedBusiness && (
                                     <BusinessCard
                                         business={selectedBusiness}
@@ -453,7 +466,7 @@ export default function ProfilePage() {
                                         isGold={isGold}
                                         totalAds={totalAds}
                                         activeAds={activeAdsCount}
-                                        expiredAds={0}
+                                        expiredAds={expiredAdsCount}
                                         onVerificationClick={() => setIsVerificationModalOpen(true)}
                                     />
                                 )}
@@ -497,7 +510,7 @@ export default function ProfilePage() {
                                     isGold={isGold}
                                     totalAds={totalAds}
                                     activeAds={activeAdsCount}
-                                    expiredAds={0}
+                                    expiredAds={expiredAdsCount}
                                     onVerificationClick={() => setIsVerificationModalOpen(true)}
                                 />
                             )}

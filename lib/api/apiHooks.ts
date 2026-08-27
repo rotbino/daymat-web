@@ -725,5 +725,16 @@ export const useAdSaved = (adId: string) => {
     });
 };
 
+// برای کاتالوگ محصولات
+export const useBusinessBySlug = (slug: string) => {
+    return useQuery({
+        queryKey: ['business', 'by-slug', slug],
+        queryFn: () => apiService.business.getBySlug(slug),
+        enabled: !!slug,
+        staleTime: 5 * 60 * 1000,
+        refetchOnMount: false,
+        refetchOnWindowFocus: false,
+    });
+};
 
 

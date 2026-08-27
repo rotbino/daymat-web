@@ -7,7 +7,7 @@ import { useSelector } from 'react-redux';
 import { RootState } from '@/lib/store/store';
 import {
     PlusCircle, Package, ClipboardList, AlertCircle, X, Archive, Trash2,
-    ChevronRight, ChevronLeft, Loader2,
+    ChevronRight, ChevronLeft, Loader2, BookOpen,
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { useBulkUpdateAd, useBusinessAds } from '@/lib/api/apiHooks';
@@ -15,9 +15,13 @@ import { useQueryClient } from '@tanstack/react-query';
 import { NumberInput } from "@/components/common";
 import { toast } from 'sonner';
 import { AdListItem } from './AdListItem';
+import {apiService} from "@/lib/api/apiService";
 
 interface BusinessAdsListProps {
     businessId: string;
+    totalAds: number;
+    activeAds: number;
+    expiredAds: number;
     maxActiveAds?: number;
     creditBalance?: number;
     bumpCost?: number;
@@ -26,6 +30,8 @@ interface BusinessAdsListProps {
     onRepublishClick: (ad: any) => void;
     onToggleActive?: (ad: any) => void;
     onDeleteClick?: (ad: any) => void;
+    businessSlug?: string;
+    businessName?: string;
 }
 
 const CURRENCY_MAP: Record<string, string> = {
@@ -37,6 +43,9 @@ const PAGE_SIZE = 10;
 
 export default function BusinessAdsList({
                                             businessId,
+                                            totalAds,
+                                            activeAds,
+                                            expiredAds,
                                             maxActiveAds = 5,
                                             creditBalance = 0,
                                             bumpCost = 10,
@@ -45,6 +54,8 @@ export default function BusinessAdsList({
                                             onRepublishClick,
                                             onToggleActive,
                                             onDeleteClick,
+                                            businessSlug,
+                                            businessName,
                                         }: BusinessAdsListProps) {
     const router = useRouter();
     const queryClient = useQueryClient();
@@ -56,7 +67,9 @@ export default function BusinessAdsList({
 
     const [activeTab, setActiveTab] = useState<TabType>('active');
     const [currentPage, setCurrentPage] = useState(1);
-
+    const [showSlugModal, setShowSlugModal] = useState(false);
+    const [slugInput, setSlugInput] = useState('');
+    const [isCreatingSlug, setIsCreatingSlug] = useState(false);
     // ✅ map تب به status فیلتر
     const statusFilter = activeTab === 'active' ? 'active' :
         activeTab === 'pending' ? 'pending' :
@@ -73,6 +86,9 @@ export default function BusinessAdsList({
     const ads = adsData?.ads || [];
     const pagination = adsData?.pagination || { page: 1, limit: PAGE_SIZE, total: 0, totalPages: 1 };
 
+    // ✅ تعداد pending = کل - فعال - آرشیو
+    const pendingAds = Math.max(0, totalAds - activeAds - expiredAds);
+
     const refreshAds = () => {
         refetchAds();
         queryClient.invalidateQueries({ queryKey: ['business', businessId] });
@@ -83,7 +99,6 @@ export default function BusinessAdsList({
         setCurrentPage(1);
     };
 
-    const totalAds = pagination.total || 0;
     const totalPages = pagination.totalPages || 1;
 
     const [groupEditOpen, setGroupEditOpen] = useState(false);
@@ -102,7 +117,49 @@ export default function BusinessAdsList({
         setPriceChanges(initial);
         setGroupEditOpen(true);
     };
+    const handleCreateCatalog = async () => {
 
+        // اگر اسلاگ وجود دارد، مستقیم برو به کاتالوگ
+        if (businessSlug) {
+            router.push(`/c/${businessSlug}`);
+            return;
+        }
+
+        // اگر اسلاگ نیست، مودال را باز کن
+        setShowSlugModal(true);
+    };
+
+    // ✅ ذخیره اسلاگ جدید
+    const handleSaveSlug = async () => {
+        debugger
+        if (!slugInput.trim()) {
+            toast.error('لطفاً اسلاگ را وارد کنید');
+            return;
+        }
+
+        // اعتبارسنجی اسلاگ
+        const slugPattern = /^[a-zA-Z0-9\u0600-\u06FF_-]+$/;
+        if (!slugPattern.test(slugInput.trim())) {
+            toast.error('اسلاگ فقط می‌تواند شامل حروف، اعداد، خط تیره و زیرخط باشد');
+            return;
+        }
+
+        setIsCreatingSlug(true);
+        try {
+            await apiService.business.update(businessId, { slug: slugInput.trim() });
+            //toast.success('اسلاگ کاتالوگ ساخته شد');
+            setShowSlugModal(false);
+            router.push(`/catalog/${slugInput.trim()}`);
+        } catch (error: any) {
+            if (error?.data?.errorCode === 'DUPLICATE_SLUG') {
+                toast.error('این اسلاگ قبلاً استفاده شده است. لطفاً یکی دیگر انتخاب کنید.');
+            } else {
+                toast.error(error?.message || 'خطا در ساخت اسلاگ');
+            }
+        } finally {
+            setIsCreatingSlug(false);
+        }
+    };
     const handleGroupSave = async () => {
         setSaving(true);
         try {
@@ -173,6 +230,7 @@ export default function BusinessAdsList({
                     </div>
 
                     <div className="flex items-center gap-1.5 flex-wrap sm:flex-nowrap">
+
                         {activeTab === 'active' && ads.length > 0 && (
                             <button onClick={openGroupEdit} className="h-7 sm:h-8 px-2 sm:px-3 bg-primary text-on-primary text-[10px] sm:text-xs rounded-md hover:bg-primary/90 transition-colors flex items-center gap-1 font-medium shadow-sm whitespace-nowrap">
                                 <ClipboardList className="w-3.5 h-3.5" />
@@ -183,27 +241,62 @@ export default function BusinessAdsList({
                             <PlusCircle className="w-3.5 h-3.5" />
                             <span>آگهی جدید</span>
                         </button>
+                        <button
+                            onClick={handleCreateCatalog}
+                            className="h-7 sm:h-8 px-2 sm:px-3 bg-blue-800  text-white text-[10px] sm:text-xs rounded-md hover:from-purple-600 hover:to-indigo-600 transition-colors flex items-center gap-1 font-medium shadow-sm whitespace-nowrap"
+                        >
+                            <BookOpen className="w-3.5 h-3.5" />
+                            <span>کاتالوگ محصولات</span>
+                        </button>
                     </div>
                 </div>
 
-                {/* تب‌ها - همیشه نمایش داده می‌شوند */}
+                {/* تب‌ها با تعداد */}
                 <div className="flex border-b border-outline-variant/30 dark:border-gray-700 overflow-x-auto px-4">
                     <button
                         onClick={() => handleTabChange('active')}
                         className={cn(
-                            "px-4 py-2.5 text-sm font-medium transition-colors border-b-2 whitespace-nowrap",
+                            "px-4 py-2.5 text-sm font-medium transition-colors border-b-2 whitespace-nowrap flex items-center gap-1.5",
                             activeTab === 'active'
                                 ? "border-primary text-primary"
                                 : "border-transparent text-on-surface-variant hover:text-on-surface dark:hover:text-gray-300"
                         )}
                     >
                         فعال
+                        <span className={cn(
+                            "px-2 py-0.5 rounded-full text-[10px] font-bold",
+                            activeTab === 'active'
+                                ? "bg-primary/10 text-primary"
+                                : "bg-gray-100 dark:bg-gray-800 text-gray-500"
+                        )}>
+                            {activeAds.toLocaleString('fa-IR')}
+                        </span>
+                    </button>
+
+                    <button
+                        onClick={() => handleTabChange('pending')}
+                        className={cn(
+                            "px-4 py-2.5 text-sm font-medium transition-colors border-b-2 whitespace-nowrap flex items-center gap-1.5",
+                            activeTab === 'pending'
+                                ? "border-blue-500 text-blue-600"
+                                : "border-transparent text-on-surface-variant hover:text-on-surface dark:hover:text-gray-300"
+                        )}
+                    >
+                        در انتظار
+                        <span className={cn(
+                            "px-2 py-0.5 rounded-full text-[10px] font-bold",
+                            activeTab === 'pending'
+                                ? "bg-blue-500/10 text-blue-600"
+                                : "bg-gray-100 dark:bg-gray-800 text-gray-500"
+                        )}>
+                            {pendingAds.toLocaleString('fa-IR')}
+                        </span>
                     </button>
 
                     <button
                         onClick={() => handleTabChange('archived')}
                         className={cn(
-                            "px-4 py-2.5 text-sm font-medium transition-colors border-b-2 whitespace-nowrap",
+                            "px-4 py-2.5 text-sm font-medium transition-colors border-b-2 whitespace-nowrap flex items-center gap-1.5",
                             activeTab === 'archived'
                                 ? "border-red-500 text-red-600 dark:text-red-400"
                                 : "border-transparent text-red-500/80 dark:text-red-400/70 hover:text-red-600 dark:hover:text-red-300"
@@ -211,18 +304,14 @@ export default function BusinessAdsList({
                     >
                         <Archive className="w-3.5 h-3.5 inline-block ml-1" />
                         آرشیو
-                    </button>
-
-                    <button
-                        onClick={() => handleTabChange('pending')}
-                        className={cn(
-                            "px-4 py-2.5 text-sm font-medium transition-colors border-b-2 whitespace-nowrap",
-                            activeTab === 'pending'
-                                ? "border-blue-500 text-blue-600"
-                                : "border-transparent text-on-surface-variant hover:text-on-surface dark:hover:text-gray-300"
-                        )}
-                    >
-                        در انتظار
+                        <span className={cn(
+                            "px-2 py-0.5 rounded-full text-[10px] font-bold",
+                            activeTab === 'archived'
+                                ? "bg-red-100 dark:bg-red-900/30 text-red-600 dark:text-red-300"
+                                : "bg-gray-100 dark:bg-gray-800 text-gray-500"
+                        )}>
+                            {expiredAds.toLocaleString('fa-IR')}
+                        </span>
                     </button>
                 </div>
 
@@ -233,7 +322,6 @@ export default function BusinessAdsList({
                             <Loader2 className="w-6 h-6 animate-spin text-primary" />
                         </div>
                     ) : ads.length === 0 ? (
-                        /* ✅ پیام خالی داخل تب */
                         <div className="text-center py-8 text-on-surface-variant/60 dark:text-gray-500 text-sm">
                             {activeTab === 'active' && (
                                 <div>
@@ -265,7 +353,7 @@ export default function BusinessAdsList({
                                 maxActiveAds={maxActiveAds}
                                 creditBalance={creditBalance}
                                 bumpCost={bumpCost}
-                                reallyActiveCount={totalAds}
+                                reallyActiveCount={activeAds}
                                 onRefresh={refreshAds}
                                 onDeleteRequest={handleDeleteConfirm}
                             />
@@ -273,7 +361,7 @@ export default function BusinessAdsList({
                     )}
                 </div>
 
-                {/* ✅ صفحه‌بندی قبلی/بعدی */}
+                {/* صفحه‌بندی */}
                 {totalPages > 1 && ads.length > 0 && (
                     <div className="flex items-center justify-center gap-3 px-4 py-3 border-t border-outline-variant/20 dark:border-gray-700 bg-surface-container-lowest/30 dark:bg-gray-800/30">
                         <button
@@ -300,7 +388,6 @@ export default function BusinessAdsList({
                     </div>
                 )}
             </div>
-
             {/* مودال حذف */}
             {deleteConfirm.open && (
                 <div className="fixed inset-0 z-[80] flex items-center justify-center bg-black/50 p-4">
@@ -394,6 +481,80 @@ export default function BusinessAdsList({
                             <button onClick={() => setGroupEditOpen(false)} className="flex-1 h-10 border border-outline-variant dark:border-gray-700 rounded-md text-sm">انصراف</button>
                             <button onClick={handleGroupSave} disabled={saving} className="flex-1 h-10 bg-primary text-on-primary rounded-md text-sm font-medium disabled:opacity-50">
                                 {saving ? 'در حال ذخیره...' : 'اعمال تغییرات'}
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            )}
+
+            {/* ═══ مودال ساخت اسلاگ ═══ */}
+            {showSlugModal && (
+                <div className="fixed inset-0 z-[80] flex items-center justify-center bg-black/50 p-4">
+                    <div className="bg-white dark:bg-gray-900 w-full max-w-md rounded-2xl border border-outline-variant/20 dark:border-gray-800 shadow-xl p-6">
+                        <div className="flex items-center gap-3 mb-4">
+                            <div className="w-10 h-10 rounded-xl bg-purple-50 dark:bg-purple-900/30 flex items-center justify-center">
+                                <BookOpen className="w-5 h-5 text-purple-500" />
+                            </div>
+                            <div>
+                                <h3 className="text-base font-bold text-on-surface dark:text-gray-100">
+                                    ساخت کاتالوگ محصولات
+                                </h3>
+                                <p className="text-xs text-gray-500 dark:text-gray-500 mt-1">
+                                    از کاتالوگ آنلاین می توانید برای ارائه به مشتریان خود استفاده کنید.
+                                </p>
+                                <p className="text-xs text-gray-400 dark:text-gray-500 mt-2">
+                                    یک آدرس اختصاصی برای کاتالوگ خود بسازید
+                                </p>
+
+                            </div>
+                        </div>
+
+                        <div className="mb-4">
+                            <label className="text-xs font-medium text-gray-600 dark:text-gray-400 block mb-2">
+                                آدرس صفحه کاتالوگ
+                            </label>
+                            <div dir={"ltr"} className="flex items-center gap-1">
+                                <span className="text-xs text-gray-400 dark:text-gray-500 whitespace-nowrap">
+                                    daymat.ir/c/
+                                </span>
+                                <input
+                                    type="text"
+                                    value={slugInput}
+                                    onChange={(e) => setSlugInput(e.target.value)}
+                                    placeholder={'مثلا، amin-pakhsh'}
+                                    dir="ltr"
+                                    className="flex-1 h-8  px-1 bg-surface-container-lowest dark:bg-gray-800 border border-outline-variant dark:border-gray-700  text-sm text-left outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary"
+                                />
+
+                            </div>
+                            <p className="text-[10px] text-gray-400 dark:text-gray-500 mt-2">
+                                فقط حروف انگلیسی، اعداد، خط تیره (-) و زیرخط (_) مجاز است
+                            </p>
+                        </div>
+
+                        <div className="flex gap-3">
+                            <button
+                                onClick={() => {
+                                    setShowSlugModal(false);
+                                    setSlugInput('');
+                                }}
+                                className="flex-1 h-10 border border-outline-variant dark:border-gray-700 rounded-lg text-sm text-gray-600 dark:text-gray-300"
+                            >
+                                انصراف
+                            </button>
+                            <button
+                                onClick={handleSaveSlug}
+                                disabled={isCreatingSlug || !slugInput.trim()}
+                                className="flex-1 h-10 bg-purple-500 hover:bg-purple-600 text-white rounded-lg text-sm font-medium disabled:opacity-50 flex items-center justify-center gap-2"
+                            >
+                                {isCreatingSlug ? (
+                                    <Loader2 className="w-4 h-4 animate-spin" />
+                                ) : (
+                                    <>
+                                        <BookOpen className="w-4 h-4" />
+                                        ساخت کاتالوگ
+                                    </>
+                                )}
                             </button>
                         </div>
                     </div>

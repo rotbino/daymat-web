@@ -33,6 +33,7 @@ const PUBLIC_PATHS = [
     '/credit/report',
     '/docs/about',
     '/saved-ads',
+    '/c',
 ];
 
 interface ArmProviderProps {
@@ -64,14 +65,13 @@ export function ArmProvider({ children }: ArmProviderProps) {
     // ✅ فقط invalidate کش‌ها هنگام تغییر بازار
     useEffect(() => {
         if (!currentSlug) return;
-
         queryClient.invalidateQueries({ queryKey: ['arms'] });
         queryClient.invalidateQueries({ queryKey: ['business', 'active'] });
         queryClient.invalidateQueries({ queryKey: ['ads'] });
         setAutoJoinAttempted(false);
     }, [currentSlug, queryClient]);
 
-    // ⭐ پیوستن خودکار با رعایت تنظیمات
+    // ⭐ پیوستن خودکار
     useEffect(() => {
         if (!armData || !isAuthenticated || autoJoinAttempted) return;
 
@@ -88,15 +88,11 @@ export function ArmProvider({ children }: ArmProviderProps) {
                 if (userArms) {
                     hasAnyMembership = userArms.some((a: any) => a.slug === currentSlug);
                 }
-
                 if (hasAnyMembership) return;
 
                 await apiService.arm.join(currentSlug!);
-                //toast.success('به‌طور خودکار به بازار پیوستید');
-
                 await refetchArms();
                 await refetchArm();
-
             } catch (error: any) {
                 if (error?.data?.errorCode === 'ALREADY_MEMBER') {
                     // هیچی
@@ -111,22 +107,28 @@ export function ArmProvider({ children }: ArmProviderProps) {
         checkAndJoin();
     }, [armData, isAuthenticated, currentSlug, autoJoinAttempted, userArms, refetchArms, refetchArm]);
 
-    // ⭐ ریست autoJoinAttempted وقتی مسیر عوض میشه
+    // ⭐ ریست autoJoinAttempted
     useEffect(() => {
         setAutoJoinAttempted(false);
     }, [currentSlug]);
 
-    // ⭐ لود اولیه بازار (بدون تغییر)
+    // ⭐ لود اولیه بازار
     useEffect(() => {
         const initArm = async () => {
-            if (PUBLIC_PATHS.some(path => pathname === path || pathname?.startsWith(`${path}/`))) {
+            // ✅ بررسی مسیرهای عمومی
+            const isPublicPath = PUBLIC_PATHS.some(path =>
+                pathname === path ||
+                pathname?.startsWith(`${path}/`)
+            ) || pathname?.startsWith('/ad/');
+
+            if (isPublicPath) {
                 setIsInitialized(true);
                 return;
             }
 
             const firstSegment = pathname?.split('/').filter(Boolean)[0];
 
-            if (pathname?.startsWith('/') && pathname !== '/' && !PUBLIC_PATHS.some(p => pathname?.startsWith(p))) {
+            if (pathname?.startsWith('/') && pathname !== '/' && !isPublicPath) {
                 const slug = firstSegment;
 
                 if (slug && slug !== currentSlug) {
@@ -186,11 +188,10 @@ export function ArmProvider({ children }: ArmProviderProps) {
         initArm();
     }, [pathname, currentSlug, currentArm, router, dispatch]);
 
-    // ✅ 🚀 Prefetch ویترین به محض mount شدن (ساده‌ترین و سریع‌ترین راه)
+    // ✅ Prefetch ویترین
     useEffect(() => {
         if (typeof window === 'undefined') return;
 
-        // slug رو از هر جایی که هست پیدا کن
         let slug = currentSlug;
         if (!slug) {
             slug = localStorage.getItem('lastArmSlug') || undefined;
@@ -203,7 +204,6 @@ export function ArmProvider({ children }: ArmProviderProps) {
         }
         if (!slug) return;
 
-        // ویترین را با پارامترهای پیش‌فرض Prefetch کن
         const defaultParams = { page: 1, limit: 20, bumpFilter: 'all' };
         const queryKey = ['vitrine', slug, JSON.stringify(defaultParams)];
 
