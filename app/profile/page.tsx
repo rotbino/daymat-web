@@ -60,7 +60,7 @@ function BusinessNotMemberCard({ armName, businessName, onJoin }: {
                 <Store className="w-7 h-7 text-orange-600 dark:text-orange-400" />
             </div>
             <h3 className="text-base font-semibold text-orange-800 dark:text-orange-300">
-                 «{businessName}» عضو {armName} نیست
+                «{businessName}» عضو {armName} نیست
             </h3>
             <p className="text-sm text-orange-700/80 dark:text-orange-400/80">
                 برای ثبت آگهی، کسب و کار شما باید عضو بازار {armName} باشد.
@@ -161,7 +161,6 @@ export default function ProfilePage() {
         );
     }, [userArms, currentSlug, user]);
 
-    // ✅ عضویت کاربر (هر کسب‌وکاری) در بازو
     const isUserMemberOfArm = useMemo(() => {
         if (!userArms || !currentSlug) return false;
         return userArms.some(
@@ -169,7 +168,6 @@ export default function ProfilePage() {
         );
     }, [userArms, currentSlug]);
 
-    // ✅ عضویت کسب‌وکار انتخاب شده در بازو
     const isSelectedBusinessMember = useMemo(() => {
         if (!userArms || !currentSlug || !selectedBusinessId) return false;
         return userArms.some(
@@ -180,7 +178,6 @@ export default function ProfilePage() {
         );
     }, [userArms, currentSlug, selectedBusinessId]);
 
-    // ✅ pending برای کسب‌وکار انتخاب شده
     const isSelectedBusinessPending = useMemo(() => {
         if (!userArms || !currentSlug || !selectedBusinessId) return false;
         return userArms.some(
@@ -191,7 +188,6 @@ export default function ProfilePage() {
         );
     }, [userArms, currentSlug, selectedBusinessId]);
 
-    // ✅ rejected برای کسب‌وکار انتخاب شده
     const isSelectedBusinessRejected = useMemo(() => {
         if (!userArms || !currentSlug || !selectedBusinessId) return false;
         return userArms.some(
@@ -202,7 +198,6 @@ export default function ProfilePage() {
         );
     }, [userArms, currentSlug, selectedBusinessId]);
 
-    // ✅ دلیل رد
     const rejectionReasonForSelectedBusiness = useMemo(() => {
         if (!userArms || !currentSlug || !selectedBusinessId) return null;
         const rejected = userArms.find(
@@ -214,7 +209,6 @@ export default function ProfilePage() {
         return rejected?.rejectionReason || null;
     }, [userArms, currentSlug, selectedBusinessId]);
 
-    // ✅ کیف پول فقط وقتی نمایش داده میشه که کسب‌وکار عضو باشه
     const shouldShowWallet = isSelectedBusinessMember;
 
     useEffect(() => {
@@ -247,12 +241,12 @@ export default function ProfilePage() {
     const canRequestInitial = isComplete && !isPendingVerify && !hasApprovedTier && !isRejectedVerify;
     const canUpgrade = hasApprovedTier && !isGold && !isPendingVerify;
 
-    const totalAds = selectedBusiness?.ads?.length || 0;
-    const activeAds = selectedBusiness?.ads?.filter((ad: any) => ad.status === 'active').length || 0;
-    const expiredAds = selectedBusiness?.ads?.filter((ad: any) => ad.status === 'expired' || new Date(ad.expiresAt) < new Date()).length || 0;
+    // ✅ totalAds از _count
+    const totalAds = selectedBusiness?._count?.ads || 0;
+    const activeAdsCount = selectedBusiness?._count?.ads || 0;
 
     const armConfig = currentArm?.config as any || {};
-    const bumpCost = armConfig?.economy?.bumpCost || 10;
+    const bumpCost = armConfig?.modules?.priceTable?.bumpCost || 10;
     const maxActiveAds = armConfig?.modules?.priceTable?.maxActiveAdsPerUser || 5;
 
     const handleReapply = async () => {
@@ -354,24 +348,19 @@ export default function ProfilePage() {
         );
     }
 
-    // ✅ گیت عضویت مشترک
     const membershipGate = (
         <>
             {isSelectedBusinessMember ? (
                 <BusinessAdsList
-                    ads={selectedBusiness?.ads || []}
                     businessId={selectedBusinessId || ''}
-                    totalAds={totalAds}
-                    activeAds={activeAds}
-                    expiredAds={expiredAds}
+                    maxActiveAds={maxActiveAds}
+                    creditBalance={creditBalance?.balance || 0}
+                    bumpCost={bumpCost}
                     onRefreshClick={(ad) => { setSelectedAd(ad); setIsRefreshModalOpen(true); }}
                     onEditClick={(ad) => { router.push(`/ad/edit/${ad.id}`); }}
                     onRepublishClick={(ad) => { setSelectedAd(ad); setIsRefreshModalOpen(true); }}
                     onToggleActive={handleToggleActive}
                     onDeleteClick={handleDeleteAd}
-                    maxActiveAds={maxActiveAds}
-                    creditBalance={creditBalance?.balance || 0}
-                    bumpCost={bumpCost}
                 />
             ) : isSelectedBusinessPending ? (
                 <PendingMembershipCard />
@@ -463,8 +452,8 @@ export default function ProfilePage() {
                                         canUpgrade={canUpgrade}
                                         isGold={isGold}
                                         totalAds={totalAds}
-                                        activeAds={activeAds}
-                                        expiredAds={expiredAds}
+                                        activeAds={activeAdsCount}
+                                        expiredAds={0}
                                         onVerificationClick={() => setIsVerificationModalOpen(true)}
                                     />
                                 )}
@@ -507,8 +496,8 @@ export default function ProfilePage() {
                                     canUpgrade={canUpgrade}
                                     isGold={isGold}
                                     totalAds={totalAds}
-                                    activeAds={activeAds}
-                                    expiredAds={expiredAds}
+                                    activeAds={activeAdsCount}
+                                    expiredAds={0}
                                     onVerificationClick={() => setIsVerificationModalOpen(true)}
                                 />
                             )}

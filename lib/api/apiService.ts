@@ -143,8 +143,8 @@ export const apiService = {
         getVitrine: (slug: string, query: AdListQuery): Promise<{ arm: any; ads: Ad[]; pagination: any }> =>
             apiRequest(`/ad/arm/${slug}`, { method: 'GET', params: query }),
 
-        getBusinessAds: (businessId: string): Promise<any[]> =>
-            apiRequest(`/ad/business/${businessId}`),
+        getBusinessAds: (businessId: string, page: number = 1, limit: number = 10, status?: string) =>
+            apiRequest(`/ad/business/${businessId}?page=${page}&limit=${limit}${status ? `&status=${status}` : ''}`),
 
         getOne: (id: string): Promise<Ad> =>
             apiRequest(`/ad/${id}`),

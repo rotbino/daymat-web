@@ -69,7 +69,7 @@ export default function HomeContent() {
         minQuantity: minQuantity || undefined,
         minAvailableQuantity: minAvailableQuantity || undefined,
         page,
-        limit: 20,
+        limit: 15,
     }), [baseFilterParams, sortByPrice, minQuantity, minAvailableQuantity, page]);
 
     // ─── واکشی داده ───

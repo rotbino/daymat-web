@@ -57,15 +57,33 @@ export const useActiveBusiness = () => {
 };
 
 
+// app/lib/api/apiHooks.ts
+
 export const useBusiness = (id: string) => {
     return useQuery({
         queryKey: ['business', id],
         queryFn: () => apiService.business.getOne(id),
         enabled: !!id,
-        // ✅ تنظیمات جدید برای رفرش خودکار در هر بار ورود به صفحه
-        staleTime: 0,              // داده‌ها را فوراً "کهنه" فرض کن
-        refetchOnMount: true,     // با هر بار مونت شدن کامپوننت، درخواست جدید بفرست
-        refetchOnWindowFocus: true, // حتی اگر کاربر از تب دیگر برگردد، رفرش شود
+        staleTime: 5 * 60 * 1000,
+        refetchOnMount: false,
+        refetchOnWindowFocus: false,
+    });
+};
+
+// ✅ هوک جدید برای آگهی‌های کسب‌وکار
+export const useBusinessAds = (
+    businessId: string,
+    page: number = 1,
+    limit: number = 10,
+    status?: string, // ✅ جدید
+) => {
+    return useQuery({
+        queryKey: ['business-ads', businessId, page, limit, status],
+        queryFn: () => apiService.ad.getBusinessAds(businessId, page, limit, status),
+        enabled: !!businessId,
+        staleTime: 5 * 60 * 1000,
+        refetchOnMount: false,
+        refetchOnWindowFocus: false,
     });
 };
 
@@ -247,13 +265,7 @@ export const useVitrine = (slug: string, query: AdListQuery) => {
     });
 };
 
-export const useBusinessAds = (businessId: string) => {
-    return useQuery({
-        queryKey: ['ads', 'business', businessId],
-        queryFn: () => apiService.ad.getBusinessAds(businessId),
-        enabled: !!businessId,
-    });
-};
+
 
 export const useAd = (id: string) => {
     return useQuery({

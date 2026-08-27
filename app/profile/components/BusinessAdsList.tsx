@@ -1,41 +1,31 @@
 // app/profile/components/BusinessAdsList.tsx
 'use client';
 
-import React, { useState, useMemo } from 'react';
+import React, { useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { useSelector } from 'react-redux';
 import { RootState } from '@/lib/store/store';
 import {
-    PlusCircle, Package, ClipboardList, AlertCircle, X, Archive, Trash2, ArrowRightLeft
+    PlusCircle, Package, ClipboardList, AlertCircle, X, Archive, Trash2,
+    ChevronRight, ChevronLeft, Loader2,
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
-import { useBulkUpdateAd } from '@/lib/api/apiHooks';
+import { useBulkUpdateAd, useBusinessAds } from '@/lib/api/apiHooks';
 import { useQueryClient } from '@tanstack/react-query';
 import { NumberInput } from "@/components/common";
 import { toast } from 'sonner';
 import { AdListItem } from './AdListItem';
 
 interface BusinessAdsListProps {
-    ads: any[];
-    totalAds: number;
-    activeAds: number;
-    expiredAds: number;
-    pendingAds?: number;
-    rejectedAds?: number;
-    businessId?: string;
+    businessId: string;
+    maxActiveAds?: number;
+    creditBalance?: number;
+    bumpCost?: number;
     onRefreshClick: (ad: any) => void;
     onEditClick: (ad: any) => void;
     onRepublishClick: (ad: any) => void;
     onToggleActive?: (ad: any) => void;
     onDeleteClick?: (ad: any) => void;
-    maxActiveAds?: number;
-    creditBalance?: number;
-    bumpCost?: number;
-}
-
-function isAdExpired(ad: any): boolean {
-    if (ad.status === 'expired') return true;
-    return new Date(ad.expiresAt).getTime() < Date.now();
 }
 
 const CURRENCY_MAP: Record<string, string> = {
@@ -43,23 +33,18 @@ const CURRENCY_MAP: Record<string, string> = {
 };
 
 type TabType = 'active' | 'pending' | 'archived';
+const PAGE_SIZE = 10;
 
 export default function BusinessAdsList({
-                                            ads,
-                                            totalAds,
-                                            activeAds,
-                                            expiredAds,
-                                            pendingAds = 0,
-                                            rejectedAds = 0,
                                             businessId,
+                                            maxActiveAds = 5,
+                                            creditBalance = 0,
+                                            bumpCost = 10,
                                             onRefreshClick,
                                             onEditClick,
                                             onRepublishClick,
                                             onToggleActive,
                                             onDeleteClick,
-                                            maxActiveAds = 5,
-                                            creditBalance = 0,
-                                            bumpCost = 10,
                                         }: BusinessAdsListProps) {
     const router = useRouter();
     const queryClient = useQueryClient();
@@ -70,18 +55,36 @@ export default function BusinessAdsList({
     const currencyUnit = CURRENCY_MAP[currency] || currency || 'تومان';
 
     const [activeTab, setActiveTab] = useState<TabType>('active');
+    const [currentPage, setCurrentPage] = useState(1);
 
-    // ✅ فیلتر آگهی‌های فقط همین کسب‌وکار
-    const businessAds = useMemo(() => {
-        if (!businessId) return ads;
-        return ads.filter((ad: any) => ad.businessId === businessId);
-    }, [ads, businessId]);
+    // ✅ map تب به status فیلتر
+    const statusFilter = activeTab === 'active' ? 'active' :
+        activeTab === 'pending' ? 'pending' :
+            'archived';
+
+    // ✅ هوک با status فیلتر
+    const { data: adsData, isLoading: adsLoading, refetch: refetchAds } = useBusinessAds(
+        businessId,
+        currentPage,
+        PAGE_SIZE,
+        statusFilter,
+    );
+
+    const ads = adsData?.ads || [];
+    const pagination = adsData?.pagination || { page: 1, limit: PAGE_SIZE, total: 0, totalPages: 1 };
 
     const refreshAds = () => {
-        if (businessId) {
-            queryClient.invalidateQueries({ queryKey: ['business', businessId] });
-        }
+        refetchAds();
+        queryClient.invalidateQueries({ queryKey: ['business', businessId] });
     };
+
+    const handleTabChange = (tab: TabType) => {
+        setActiveTab(tab);
+        setCurrentPage(1);
+    };
+
+    const totalAds = pagination.total || 0;
+    const totalPages = pagination.totalPages || 1;
 
     const [groupEditOpen, setGroupEditOpen] = useState(false);
     const [priceChanges, setPriceChanges] = useState<Record<string, string>>({});
@@ -89,34 +92,13 @@ export default function BusinessAdsList({
     const [deleteConfirm, setDeleteConfirm] = useState<{ ad: any; open: boolean }>({ ad: null, open: false });
     const [deactivateConfirm, setDeactivateConfirm] = useState<{ ad: any; open: boolean }>({ ad: null, open: false });
 
-    const activeAdsList = useMemo(() =>
-            businessAds.filter(ad => !isAdExpired(ad) && ad.status === 'active'),
-        [businessAds]);
-
-    const pendingAdsList = useMemo(() =>
-            businessAds.filter(ad => ad.status === 'pending' || ad.status === 'rejected'),
-        [businessAds]);
-
-    const archivedAdsList = useMemo(() =>
-            businessAds.filter(ad =>
-                ad.status !== 'pending' &&
-                ad.status !== 'rejected' &&
-                (ad.status === 'inactive' || isAdExpired(ad) || ad.status === 'expired')
-            ),
-        [businessAds]);
-
-    const reallyActiveCount = activeAdsList.length;
-    const currentList = activeTab === 'active' ? activeAdsList :
-        activeTab === 'pending' ? pendingAdsList :
-            archivedAdsList;
-
     const openGroupEdit = () => {
         if (activeTab !== 'active') {
             toast.info('ویرایش گروهی فقط برای آگهی‌های فعال امکان‌پذیر است.');
             return;
         }
         const initial: Record<string, string> = {};
-        activeAdsList.forEach(ad => { initial[ad.id] = ad.unitPrice?.toString() || ''; });
+        ads.forEach(ad => { initial[ad.id] = ad.unitPrice?.toString() || ''; });
         setPriceChanges(initial);
         setGroupEditOpen(true);
     };
@@ -124,7 +106,7 @@ export default function BusinessAdsList({
     const handleGroupSave = async () => {
         setSaving(true);
         try {
-            const updates = currentList
+            const updates = ads
                 .filter(ad => {
                     const newPrice = priceChanges[ad.id]?.trim();
                     return newPrice && parseFloat(newPrice) !== ad.unitPrice;
@@ -176,16 +158,6 @@ export default function BusinessAdsList({
         setDeactivateConfirm({ ad: null, open: false });
     };
 
-    if (totalAds === 0) {
-        return (
-            <div className="bg-white dark:bg-gray-900 rounded-2xl border border-outline-variant/50 dark:border-gray-700 p-8 text-center">
-                <Package className="w-12 h-12 text-on-surface-variant/30 dark:text-gray-600 mx-auto mb-3" />
-                <p className="text-sm text-on-surface-variant dark:text-gray-400">هنوز آگهی ثبت نکرده‌اید</p>
-                <button onClick={() => router.push('/ad/create')} className="mt-4 px-6 py-2 bg-primary text-on-primary rounded-lg text-sm">ثبت اولین آگهی</button>
-            </div>
-        );
-    }
-
     return (
         <>
             <div className="bg-white dark:bg-gray-900 rounded-2xl border border-outline-variant/30 dark:border-gray-800 shadow-sm overflow-hidden">
@@ -195,13 +167,13 @@ export default function BusinessAdsList({
                         <h3 className="text-[12px] font-semibold text-on-surface dark:text-gray-200 flex items-center gap-1.5">
                             آگهی‌های این کسب‌وکار
                             <span className="text-[10px] font-normal text-on-surface-variant/60">
-                                ({reallyActiveCount}/{maxActiveAds} فعال)
+                                ({totalAds.toLocaleString('fa-IR')} آگهی)
                             </span>
                         </h3>
                     </div>
 
                     <div className="flex items-center gap-1.5 flex-wrap sm:flex-nowrap">
-                        {activeTab === 'active' && activeAdsList.length > 0 && (
+                        {activeTab === 'active' && ads.length > 0 && (
                             <button onClick={openGroupEdit} className="h-7 sm:h-8 px-2 sm:px-3 bg-primary text-on-primary text-[10px] sm:text-xs rounded-md hover:bg-primary/90 transition-colors flex items-center gap-1 font-medium shadow-sm whitespace-nowrap">
                                 <ClipboardList className="w-3.5 h-3.5" />
                                 <span>آپدیت گروهی</span>
@@ -214,10 +186,10 @@ export default function BusinessAdsList({
                     </div>
                 </div>
 
-                {/* تب‌ها */}
+                {/* تب‌ها - همیشه نمایش داده می‌شوند */}
                 <div className="flex border-b border-outline-variant/30 dark:border-gray-700 overflow-x-auto px-4">
                     <button
-                        onClick={() => setActiveTab('active')}
+                        onClick={() => handleTabChange('active')}
                         className={cn(
                             "px-4 py-2.5 text-sm font-medium transition-colors border-b-2 whitespace-nowrap",
                             activeTab === 'active'
@@ -226,26 +198,10 @@ export default function BusinessAdsList({
                         )}
                     >
                         فعال
-                        <span className="mr-1.5 px-2 py-0.5 bg-primary/10 text-primary rounded-full text-[10px]">{activeAdsList.length}</span>
                     </button>
 
-                    {pendingAdsList.length > 0 && (
-                        <button
-                            onClick={() => setActiveTab('pending')}
-                            className={cn(
-                                "px-4 py-2.5 text-sm font-medium transition-colors border-b-2 whitespace-nowrap",
-                                activeTab === 'pending'
-                                    ? "border-blue-500 text-blue-600"
-                                    : "border-transparent text-on-surface-variant hover:text-on-surface dark:hover:text-gray-300"
-                            )}
-                        >
-                            در انتظار
-                            <span className="mr-1.5 px-2 py-0.5 bg-blue-500/10 text-blue-600 rounded-full text-[10px]">{pendingAdsList.length}</span>
-                        </button>
-                    )}
-
                     <button
-                        onClick={() => setActiveTab('archived')}
+                        onClick={() => handleTabChange('archived')}
                         className={cn(
                             "px-4 py-2.5 text-sm font-medium transition-colors border-b-2 whitespace-nowrap",
                             activeTab === 'archived'
@@ -255,60 +211,94 @@ export default function BusinessAdsList({
                     >
                         <Archive className="w-3.5 h-3.5 inline-block ml-1" />
                         آرشیو
-                        <span className={cn(
-                            "mr-1.5 px-2 py-0.5 rounded-full text-[10px]",
-                            activeTab === 'archived'
-                                ? "bg-red-100 dark:bg-red-900/30 text-red-600 dark:text-red-300"
-                                : "bg-red-50 dark:bg-red-900/20 text-red-500 dark:text-red-400"
-                        )}>
-                            {archivedAdsList.length}
-                        </span>
+                    </button>
+
+                    <button
+                        onClick={() => handleTabChange('pending')}
+                        className={cn(
+                            "px-4 py-2.5 text-sm font-medium transition-colors border-b-2 whitespace-nowrap",
+                            activeTab === 'pending'
+                                ? "border-blue-500 text-blue-600"
+                                : "border-transparent text-on-surface-variant hover:text-on-surface dark:hover:text-gray-300"
+                        )}
+                    >
+                        در انتظار
                     </button>
                 </div>
 
-                {/* لیست آگهی‌ها */}
+                {/* محتوای تب */}
                 <div className="p-4 space-y-2">
-                    {currentList.length === 0 && (
+                    {adsLoading && currentPage === 1 ? (
+                        <div className="flex items-center justify-center py-8">
+                            <Loader2 className="w-6 h-6 animate-spin text-primary" />
+                        </div>
+                    ) : ads.length === 0 ? (
+                        /* ✅ پیام خالی داخل تب */
                         <div className="text-center py-8 text-on-surface-variant/60 dark:text-gray-500 text-sm">
                             {activeTab === 'active' && (
                                 <div>
                                     <p>هیچ آگهی فعالی وجود ندارد.</p>
-                                    {archivedAdsList.length > 0 && (
-                                        <button
-                                            onClick={() => setActiveTab('archived')}
-                                            className="mt-3 inline-flex items-center gap-2 px-4 py-2 bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800/40 text-red-600 dark:text-red-400 rounded-lg text-sm hover:bg-red-100 dark:hover:bg-red-900/30 transition-colors"
-                                        >
-                                            <Archive className="w-4 h-4" />
-                                            فعال‌سازی آگهی‌های آرشیو
-                                            <ArrowRightLeft className="w-4 h-4" />
-                                        </button>
-                                    )}
+                                    <button
+                                        onClick={() => router.push('/ad/create')}
+                                        className="mt-3 inline-flex items-center gap-2 px-4 py-2 bg-primary text-on-primary rounded-lg text-sm font-medium hover:bg-primary/90 transition-colors"
+                                    >
+                                        <PlusCircle className="w-4 h-4" />
+                                        ثبت آگهی جدید
+                                    </button>
                                 </div>
                             )}
-                            {activeTab === 'pending' && 'هیچ آگهی در انتظار وجود ندارد.'}
+                            {activeTab === 'pending' && 'هیچ آگهی در انتظاری وجود ندارد.'}
                             {activeTab === 'archived' && 'هیچ آگهی در آرشیو وجود ندارد.'}
                         </div>
+                    ) : (
+                        ads.map((ad: any) => (
+                            <AdListItem
+                                key={ad.id}
+                                ad={ad}
+                                armConfig={armConfig}
+                                currentTab={activeTab}
+                                onRefreshClick={onRefreshClick}
+                                onEditClick={onEditClick}
+                                onRepublishClick={onRepublishClick}
+                                onToggleActive={onToggleActive}
+                                onDeleteClick={onDeleteClick}
+                                maxActiveAds={maxActiveAds}
+                                creditBalance={creditBalance}
+                                bumpCost={bumpCost}
+                                reallyActiveCount={totalAds}
+                                onRefresh={refreshAds}
+                                onDeleteRequest={handleDeleteConfirm}
+                            />
+                        ))
                     )}
-                    {currentList.map((ad: any) => (
-                        <AdListItem
-                            key={ad.id}
-                            ad={ad}
-                            armConfig={armConfig}
-                            currentTab={activeTab}
-                            onRefreshClick={onRefreshClick}
-                            onEditClick={onEditClick}
-                            onRepublishClick={onRepublishClick}
-                            onToggleActive={onToggleActive}
-                            onDeleteClick={onDeleteClick}
-                            maxActiveAds={maxActiveAds}
-                            creditBalance={creditBalance}
-                            bumpCost={bumpCost}
-                            reallyActiveCount={reallyActiveCount}
-                            onRefresh={refreshAds}
-                            onDeleteRequest={handleDeleteConfirm}
-                        />
-                    ))}
                 </div>
+
+                {/* ✅ صفحه‌بندی قبلی/بعدی */}
+                {totalPages > 1 && ads.length > 0 && (
+                    <div className="flex items-center justify-center gap-3 px-4 py-3 border-t border-outline-variant/20 dark:border-gray-700 bg-surface-container-lowest/30 dark:bg-gray-800/30">
+                        <button
+                            onClick={() => setCurrentPage(prev => Math.max(1, prev - 1))}
+                            disabled={currentPage === 1}
+                            className="flex items-center gap-1 h-9 px-4 rounded-lg border border-outline-variant dark:border-gray-600 text-on-surface-variant dark:text-gray-400 hover:bg-surface-container-high dark:hover:bg-gray-700 transition-colors disabled:opacity-30 disabled:cursor-not-allowed text-sm"
+                        >
+                            <ChevronRight className="w-4 h-4" />
+                            قبلی
+                        </button>
+
+                        <span className="text-xs text-on-surface-variant dark:text-gray-400">
+                            {currentPage.toLocaleString('fa-IR')} از {totalPages.toLocaleString('fa-IR')}
+                        </span>
+
+                        <button
+                            onClick={() => setCurrentPage(prev => Math.min(totalPages, prev + 1))}
+                            disabled={currentPage === totalPages}
+                            className="flex items-center gap-1 h-9 px-4 rounded-lg border border-outline-variant dark:border-gray-600 text-on-surface-variant dark:text-gray-400 hover:bg-surface-container-high dark:hover:bg-gray-700 transition-colors disabled:opacity-30 disabled:cursor-not-allowed text-sm"
+                        >
+                            بعدی
+                            <ChevronLeft className="w-4 h-4" />
+                        </button>
+                    </div>
+                )}
             </div>
 
             {/* مودال حذف */}
@@ -379,7 +369,7 @@ export default function BusinessAdsList({
                             </button>
                         </div>
                         <div className="overflow-y-auto p-4 space-y-3">
-                            {activeAdsList.map(ad => {
+                            {ads.map(ad => {
                                 const unit = ad.unit?.shortCode || 'تن';
                                 return (
                                     <div key={ad.id} className="flex flex-wrap items-center gap-x-2 gap-y-1 text-sm">
