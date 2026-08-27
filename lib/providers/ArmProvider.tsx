@@ -50,11 +50,9 @@ export function ArmProvider({ children }: ArmProviderProps) {
     const [isInitialized, setIsInitialized] = useState(false);
     const [autoJoinAttempted, setAutoJoinAttempted] = useState(false);
 
-    // ✅ استفاده از هوک‌ها
     const { data: armData, isLoading: armLoading, refetch: refetchArm } = useArm(currentSlug || '');
     const { data: userArms, refetch: refetchArms } = useArms();
 
-    // ⭐ ست کردن بازار توی Redux
     useEffect(() => {
         if (armData && currentSlug && armData.slug === currentSlug) {
             dispatch(setArm({ arm: armData, slug: currentSlug }));
@@ -62,7 +60,6 @@ export function ArmProvider({ children }: ArmProviderProps) {
         }
     }, [armData, currentSlug, dispatch]);
 
-    // ✅ فقط invalidate کش‌ها هنگام تغییر بازار
     useEffect(() => {
         if (!currentSlug) return;
         queryClient.invalidateQueries({ queryKey: ['arms'] });
@@ -71,7 +68,6 @@ export function ArmProvider({ children }: ArmProviderProps) {
         setAutoJoinAttempted(false);
     }, [currentSlug, queryClient]);
 
-    // ⭐ پیوستن خودکار
     useEffect(() => {
         if (!armData || !isAuthenticated || autoJoinAttempted) return;
 
@@ -107,19 +103,18 @@ export function ArmProvider({ children }: ArmProviderProps) {
         checkAndJoin();
     }, [armData, isAuthenticated, currentSlug, autoJoinAttempted, userArms, refetchArms, refetchArm]);
 
-    // ⭐ ریست autoJoinAttempted
     useEffect(() => {
         setAutoJoinAttempted(false);
     }, [currentSlug]);
 
-    // ⭐ لود اولیه بازار
     useEffect(() => {
         const initArm = async () => {
-            // ✅ بررسی مسیرهای عمومی
+            // ✅ صریح برای /c
+            const isCatalogPath = pathname?.startsWith('/c/');
             const isPublicPath = PUBLIC_PATHS.some(path =>
                 pathname === path ||
                 pathname?.startsWith(`${path}/`)
-            ) || pathname?.startsWith('/ad/');
+            ) || pathname?.startsWith('/ad/') || isCatalogPath;
 
             if (isPublicPath) {
                 setIsInitialized(true);
@@ -188,9 +183,14 @@ export function ArmProvider({ children }: ArmProviderProps) {
         initArm();
     }, [pathname, currentSlug, currentArm, router, dispatch]);
 
-    // ✅ Prefetch ویترین
+    // ✅ Prefetch ویترین - فقط برای مسیرهای بازار
     useEffect(() => {
         if (typeof window === 'undefined') return;
+
+        // ✅ اگر مسیر /c است، prefetch نکن
+        if (pathname?.startsWith('/c/')) {
+            return;
+        }
 
         let slug = currentSlug;
         if (!slug) {

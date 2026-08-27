@@ -144,8 +144,14 @@ export const apiService = {
 
         getVitrine: (slug: string, query: AdListQuery): Promise<{ arm: any; ads: Ad[]; pagination: any }> =>
             apiRequest(`/ad/arm/${slug}`, { method: 'GET', params: query }),
-        getBusinessAds: (businessId: string, page: number = 1, limit: number = 10, search?: string) =>
-            apiRequest(`/ad/business/${businessId}?page=${page}&limit=${limit}${search ? `&search=${encodeURIComponent(search)}` : ''}`),
+
+        getBusinessAds: (businessId: string, page: number = 1, limit: number = 10, status?: string) =>
+            apiRequest(`/ad/business/${businessId}?page=${page}&limit=${limit}${status ? `&status=${status}` : ''}`),
+
+        // app/lib/api/apiService.ts
+
+        getCatalogAds: (businessId: string, page: number = 1, limit: number = 100, search?: string) =>
+            apiRequest(`/ad/catalog/${businessId}?page=${page}&limit=${limit}${search ? `&search=${encodeURIComponent(search)}` : ''}`),
 
         getOne: (id: string): Promise<Ad> =>
             apiRequest(`/ad/${id}`),

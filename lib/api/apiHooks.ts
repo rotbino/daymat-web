@@ -75,11 +75,30 @@ export const useBusinessAds = (
     businessId: string,
     page: number = 1,
     limit: number = 10,
-    search?: string,        // ✅ پارامتر ۴ = search
+    status?: string, // ✅ جدید
 ) => {
     return useQuery({
-        queryKey: ['business-ads', businessId, page, limit, search],
-        queryFn: () => apiService.ad.getBusinessAds(businessId, page, limit, search),
+        queryKey: ['business-ads', businessId, page, limit, status],
+        queryFn: () => apiService.ad.getBusinessAds(businessId, page, limit, status),
+        enabled: !!businessId,
+        staleTime: 5 * 60 * 1000,
+        refetchOnMount: false,
+        refetchOnWindowFocus: false,
+    });
+};
+
+
+// app/lib/api/apiHooks.ts
+
+export const useCatalogAds = (
+    businessId: string,
+    page: number = 1,
+    limit: number = 100,
+    search?: string,
+) => {
+    return useQuery({
+        queryKey: ['catalog-ads', businessId, page, limit, search],
+        queryFn: () => apiService.ad.getCatalogAds(businessId, page, limit, search),
         enabled: !!businessId,
         staleTime: 5 * 60 * 1000,
         refetchOnMount: false,
