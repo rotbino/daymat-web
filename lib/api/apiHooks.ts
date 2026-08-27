@@ -75,15 +75,14 @@ export const useBusinessAds = (
     businessId: string,
     page: number = 1,
     limit: number = 10,
-    status?: string,
+    search?: string,        // ✅ پارامتر ۴ = search
 ) => {
     return useQuery({
-        // ✅ queryKey شامل businessId، page، limit و status
-        queryKey: ['business-ads', businessId, page, limit, status],
-        queryFn: () => apiService.ad.getBusinessAds(businessId, page, limit, status),
+        queryKey: ['business-ads', businessId, page, limit, search],
+        queryFn: () => apiService.ad.getBusinessAds(businessId, page, limit, search),
         enabled: !!businessId,
-        staleTime: 0, // ✅ همیشه تازه
-        refetchOnMount: true, // ✅ همیشه refetch
+        staleTime: 5 * 60 * 1000,
+        refetchOnMount: false,
         refetchOnWindowFocus: false,
     });
 };
