@@ -10,7 +10,7 @@ import { toast } from 'sonner';
 import Image from 'next/image';
 import {
     Clock, MapPin, Phone, Bookmark, Share2, ShoppingCart, Layers, Tag, User,
-    ArrowUpCircle, Banknote, Eye, Timer, Loader2, X, Maximize2,
+    ArrowUpCircle, Banknote, Eye, Timer, Loader2, X, Maximize2, Store,
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { formatNum, timeLeft, timeAgo, Pill } from './shared';
@@ -231,6 +231,10 @@ export default function AdSidebar({ ad, isOwner, isSaved, onSaveToggle }: AdSide
             )}
 
             {/* دکمه‌ها */}
+            // app/ad/[id]/components/AdSidebar.tsx
+            // بخش دکمه‌ها را اصلاح کن:
+
+            {/* دکمه‌ها */}
             <div className="flex gap-2">
                 <button
                     onClick={handleSave}
@@ -249,6 +253,10 @@ export default function AdSidebar({ ad, isOwner, isSaved, onSaveToggle }: AdSide
                 >
                     <Share2 className="w-5 h-5 text-gray-500" />
                 </button>
+
+                {/* ✅ دکمه کاتالوگ - اگر اسلاگ وجود دارد */}
+
+
                 <button
                     onClick={handleContact}
                     disabled={isCalling}

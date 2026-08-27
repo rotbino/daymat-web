@@ -5,11 +5,12 @@ import React from 'react';
 import Image from 'next/image';
 import {
     Phone, Bookmark, Share2, ShoppingCart, MapPin, Timer, Eye,
-    ArrowUpCircle, Layers, Package, Lock, Store, Banknote,
+    ArrowUpCircle, Layers, Package, Lock, Store, Banknote, Loader2,
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { useSelector } from 'react-redux';
 import { RootState } from '@/lib/store/store';
+import {useRouter} from "next/navigation";
 
 interface Props {
     ad: any;
@@ -50,7 +51,7 @@ export default function AdPriceCard({ ad, isOwner, isSaved, onSaveToggle, onCont
     const unit = ad.unit?.shortCode || '';
     const unitBase = ad.unitBaseTitle || 'واحد';
     const unitQty = ad.unitQty;
-
+    const router = useRouter();
     // ═══ محاسبه سود ═══
     const singleP = ad.singleUnitPrice;
     const consumerP = ad.consumerPrice;
@@ -138,13 +139,27 @@ export default function AdPriceCard({ ad, isOwner, isSaved, onSaveToggle, onCont
                         )}
                     </div>
 
-                    <button
-                        onClick={onContact}
-                        className="w-full h-12 bg-primary hover:bg-primary/90 active:scale-[0.98] text-white rounded-xl font-bold text-sm flex items-center justify-center gap-2 shadow-lg shadow-primary/20 transition-all duration-200"
-                    >
-                        <Phone className="w-5 h-5" />
-                        تماس با فروشنده
-                    </button>
+                    <div className="flex gap-2">
+                        <button
+                            onClick={onContact}
+                            className="flex-1 h-12 bg-primary hover:bg-primary/90 active:scale-[0.98] text-white rounded font-bold text-sm flex items-center justify-center gap-2 shadow-lg shadow-primary/20 transition-all duration-200"
+                        >
+                            <Phone className="w-5 h-5" />
+                            تماس با فروشنده
+                        </button>
+
+                        {ad.business?.slug && (
+                            <button
+                                onClick={() => router.push(`/c/${ad.business.slug}`)}
+                                className="h-12 px-4 rounded border border-primary/30 dark:border-primary/40 text-primary hover:bg-primary/10 active:scale-[0.98] font-bold text-sm flex items-center justify-center gap-1.5 transition-all duration-200 shrink-0"
+                            >
+                                <Store className="w-5 h-5" />
+                                کاتالوگ محصولات
+                            </button>
+                        )}
+                    </div>
+
+
                 </div>
             )}
             {/* ═══ کارت قیمت اصلی (بدون عنوان) ═══ */}
