@@ -1,7 +1,7 @@
 // lib/providers/ArmProvider.tsx
 'use client';
 
-import React, { useEffect, useState, useMemo } from 'react';
+import React, { useEffect, useState, useMemo, useCallback } from 'react';
 import { usePathname, useRouter } from 'next/navigation';
 import { useDispatch, useSelector } from 'react-redux';
 import { useQueryClient } from '@tanstack/react-query';
@@ -40,14 +40,16 @@ export function ArmProvider({ children }: ArmProviderProps) {
     const router = useRouter();
     const dispatch = useDispatch();
     const queryClient = useQueryClient();
+
     const { currentSlug, currentArm } = useSelector((state: RootState) => state.arm);
     const { isAuthenticated } = useSelector((state: RootState) => state.auth);
+
     const [isInitialized, setIsInitialized] = useState(false);
     const [autoJoinAttempted, setAutoJoinAttempted] = useState(false);
 
-    // ═══════════════════════════════════════════
-    // 🧠 تشخیص مسیر - فقط یک بار
-    // ═══════════════════════════════════════════
+    // ═══════════════════════════════════════
+    // 🧠 تشخیص مسیر - useMemo
+    // ═══════════════════════════════════════
     const pathInfo = useMemo(() => {
         const isCatalogPath = pathname?.startsWith('/c/');
         const isAdDetailPath = pathname?.startsWith('/ad/') &&
@@ -61,57 +63,47 @@ export function ArmProvider({ children }: ArmProviderProps) {
             isCatalogPath,
             isAdDetailPath,
             isPublicPath,
-            // ✅ فقط برای مسیرهای بازار نیاز به arm داریم
             needsArm: !isCatalogPath && !isAdDetailPath && !isPublicPath,
         };
     }, [pathname]);
 
-    // ═══════════════════════════════════════════
-    // ✅ هوک‌ها با شرط‌های دقیق
-    // ═══════════════════════════════════════════
-
-    // useArm فقط وقتی:
-    // ۱. نیاز به بازار داریم
-    // ۲. currentSlug وجود دارد
+    // ═══════════════════════════════════════
+    // ✅ هوک‌ها - همیشه صدا زده می‌شوند ولی با enabled شرطی
+    // ═══════════════════════════════════════
     const shouldFetchArm = pathInfo.needsArm && !!currentSlug;
+    const shouldFetchArms = pathInfo.needsArm && !!isAuthenticated;
+
     const { data: armData, isLoading: armLoading } = useArm(
         shouldFetchArm ? currentSlug! : ''
     );
-
-    // useArms فقط وقتی:
-    // ۱. نیاز به بازار داریم
-    // ۲. کاربر لاگین است
-    const shouldFetchArms = pathInfo.needsArm && isAuthenticated;
     const { data: userArms, refetch: refetchArms } = useArms(shouldFetchArms);
 
-    // ═══════════════════════════════════════════
-    // ✅ اگر نیاز به بازار نیست - زود برگرد
-    // ═══════════════════════════════════════════
-    if (!pathInfo.needsArm) {
-        return <>{children}</>;
-    }
+    // ═══════════════════════════════════════
+    // ✅ همه useEffect ها - بدون return زودرس
+    // ═══════════════════════════════════════
 
-    // ═══════════════════════════════════════════
-    // از اینجا به بعد فقط برای مسیرهای بازار
-    // ═══════════════════════════════════════════
-
+    // ست کردن بازار در Redux
     useEffect(() => {
+        if (!pathInfo.needsArm) return;
         if (armData && currentSlug && armData.slug === currentSlug) {
             dispatch(setArm({ arm: armData, slug: currentSlug }));
             localStorage.setItem('lastArmSlug', currentSlug);
         }
-    }, [armData, currentSlug, dispatch]);
+    }, [pathInfo.needsArm, armData, currentSlug, dispatch]);
 
+    // Invalidate کش‌ها
     useEffect(() => {
-        if (!currentSlug) return;
+        if (!pathInfo.needsArm || !currentSlug) return;
         queryClient.invalidateQueries({ queryKey: ['arms'] });
         queryClient.invalidateQueries({ queryKey: ['business', 'active'] });
         setAutoJoinAttempted(false);
-    }, [currentSlug, queryClient]);
+    }, [pathInfo.needsArm, currentSlug, queryClient]);
 
-    // Auto-join فقط برای کاربر لاگین
+    // Auto-join - فقط کاربر لاگین
     useEffect(() => {
-        if (!isAuthenticated || !armData || autoJoinAttempted) return;
+        if (!pathInfo.needsArm) return;
+        if (!isAuthenticated) return;
+        if (!armData || autoJoinAttempted) return;
 
         const config = armData.config || {};
         const accessRules = config.accessRules || {};
@@ -137,14 +129,21 @@ export function ArmProvider({ children }: ArmProviderProps) {
         };
 
         checkAndJoin();
-    }, [isAuthenticated, armData, currentSlug, autoJoinAttempted, userArms, refetchArms]);
+    }, [pathInfo.needsArm, isAuthenticated, armData, currentSlug, autoJoinAttempted, userArms, refetchArms]);
 
+    // ریست autoJoinAttempted
     useEffect(() => {
+        if (!pathInfo.needsArm) return;
         setAutoJoinAttempted(false);
-    }, [currentSlug]);
+    }, [pathInfo.needsArm, currentSlug]);
 
     // لود اولیه بازار
     useEffect(() => {
+        if (!pathInfo.needsArm) {
+            setIsInitialized(true);
+            return;
+        }
+
         const initArm = async () => {
             const firstSegment = pathname?.split('/').filter(Boolean)[0];
 
@@ -177,14 +176,32 @@ export function ArmProvider({ children }: ArmProviderProps) {
                 return;
             }
 
+            if (currentSlug && !currentArm && !armData) {
+                dispatch(setArmLoading(true));
+                try {
+                    const arm = await apiService.arm.fetchArmData(currentSlug);
+                    if (arm) {
+                        dispatch(setArm({ arm, slug: currentSlug }));
+                        localStorage.setItem('lastArmSlug', currentSlug);
+                    } else {
+                        router.replace('/no-arm');
+                    }
+                } catch (error) {
+                    console.error('Error fetching arm:', error);
+                    dispatch(setArmError('خطا در دریافت اطلاعات بازار'));
+                }
+            }
+
             setIsInitialized(true);
         };
 
         initArm();
-    }, [pathname, currentSlug, router, dispatch]);
+    }, [pathInfo.needsArm, pathname, currentSlug, currentArm, armData, router, dispatch]);
 
     // Prefetch ویترین
     useEffect(() => {
+        if (typeof window === 'undefined') return;
+        if (!pathInfo.needsArm) return;
         if (!currentSlug) return;
         if (!pathname?.startsWith(`/${currentSlug}`)) return;
 
@@ -198,12 +215,18 @@ export function ArmProvider({ children }: ArmProviderProps) {
                 staleTime: 1000 * 30,
             });
         }
-    }, [currentSlug, pathname, queryClient]);
+    }, [pathInfo.needsArm, currentSlug, pathname, queryClient]);
 
-    if (!isInitialized && !currentArm) {
+    // ═══════════════════════════════════════
+    // ✅ حالا return - همه هوک‌ها صدا زده شده‌اند
+    // ═══════════════════════════════════════
+    if (pathInfo.needsArm && !isInitialized && !currentArm) {
         return (
             <div className="min-h-screen flex items-center justify-center">
-                <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary mx-auto" />
+                <div className="text-center">
+                    <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary mx-auto" />
+                    <p className="mt-4 text-on-surface-variant">در حال بارگذاری...</p>
+                </div>
             </div>
         );
     }

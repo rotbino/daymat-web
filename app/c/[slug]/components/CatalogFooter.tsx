@@ -54,7 +54,7 @@ export default function CatalogFooter({ business, onGoHome }: CatalogFooterProps
                     <div className="relative h-16 w-64 sm:h-20 sm:w-80">
                         <Image src="/images/logo2.png" alt="دیمت" fill className="object-contain" unoptimized />
                     </div>
-                    <p className="text-[20px] font-bold text-gray-500 dark:text-gray-400">دیمت نمایشگر قیمت عمده روزانه</p>
+                    <p className="text-[20px] font-bold text-gray-500 dark:text-gray-400">دیمت، نمایش روزانه قیمت</p>
                     <p className="text-[10px] text-gray-400">© {new Date().toLocaleDateString('fa-IR', { year: 'numeric' })}</p>
                 </div>
             </div>

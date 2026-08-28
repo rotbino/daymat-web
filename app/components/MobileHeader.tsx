@@ -679,16 +679,19 @@ export default function MobileHeader({
                                             mt-1
                                         "
                                     >
-                                        <div className="flex items-center justify-center gap-2">
-                                            <div className="w-40 h-15 relative">
-                                                <Image
-                                                    src="/images/logo2.png"
-                                                    alt="دیمت"
-                                                    width={40}
-                                                    height={10}
-                                                    className="w-full h-full object-contain"
-                                                />
+                                        <div className="flex flex-col  items-center justify-center ">
+                                            <div className="flex  items-center justify-center gap-2">
+                                                <div className="h-14 relative">
+                                                    <Image
+                                                        src="/images/logo2.png"
+                                                        alt="دیمت"
+                                                        width={30}
+                                                        height={12}
+                                                        className="w-full h-full object-contain"
+                                                    />
+                                                </div>
                                             </div>
+                                            <span className={"text-[14px]"}>دیمت، نمایش روزانه قیمت</span>
                                         </div>
                                     </div>
                                 </div>

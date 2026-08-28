@@ -15,8 +15,25 @@ import {
     DeleteFileResponse
 } from './apiTypes';
 import { toast } from 'sonner';
-import {useSelector} from "react-redux";
-import {RootState} from "@/lib/store/store";
+import { useSelector } from "react-redux";
+import { RootState } from "@/lib/store/store";
+
+// ═══════════════════════════════════════════════════════════
+// ✅ تابع کمکی برای تشخیص کاربر لاگین و توکن
+// ═══════════════════════════════════════════════════════════
+function useAuthState() {
+    const user = useSelector((state: RootState) => state.auth.user);
+    const isAuthenticated = useSelector((state: RootState) => state.auth.isAuthenticated);
+    const token = typeof window !== 'undefined' ? localStorage.getItem('accessToken') : null;
+
+    return {
+        user,
+        isAuthenticated,
+        userId: user?.id,
+        token,
+        hasAccess: isAuthenticated && !!user?.id && !!token,
+    };
+}
 
 // ============================================================
 // AUTH HOOKS
@@ -41,55 +58,62 @@ export const useRegister = () => {
 // BUSINESS HOOKS
 // ============================================================
 export const useBusinesses = () => {
+    const { hasAccess } = useAuthState();
+
     return useQuery({
         queryKey: ['businesses'],
         queryFn: () => apiService.business.getAll(),
+        enabled: hasAccess, // ✅ فقط کاربر لاگین
+        staleTime: 5 * 60 * 1000,
     });
 };
 
 export const useActiveBusiness = () => {
+    const { hasAccess } = useAuthState();
+
     return useQuery({
         queryKey: ['business', 'active'],
         queryFn: () => apiService.business.getActive(),
+        enabled: hasAccess, // ✅ فقط کاربر لاگین
         retry: false,
         staleTime: 1000 * 60 * 5,
     });
 };
 
-
-// app/lib/api/apiHooks.ts
-
 export const useBusiness = (id: string) => {
+    const { hasAccess } = useAuthState();
+
     return useQuery({
         queryKey: ['business', id],
         queryFn: () => apiService.business.getOne(id),
-        enabled: !!id,
+        enabled: !!id && hasAccess, // ✅ فقط کاربر لاگین
         staleTime: 5 * 60 * 1000,
         refetchOnMount: false,
         refetchOnWindowFocus: false,
     });
 };
 
-// ✅ هوک جدید برای آگهی‌های کسب‌وکار
 export const useBusinessAds = (
     businessId: string,
     page: number = 1,
     limit: number = 10,
-    status?: string, // ✅ جدید
+    status?: string,
 ) => {
+    const { hasAccess } = useAuthState();
+
     return useQuery({
         queryKey: ['business-ads', businessId, page, limit, status],
         queryFn: () => apiService.ad.getBusinessAds(businessId, page, limit, status),
-        enabled: !!businessId,
+        enabled: !!businessId && hasAccess, // ✅ فقط کاربر لاگین
         staleTime: 5 * 60 * 1000,
         refetchOnMount: false,
         refetchOnWindowFocus: false,
     });
 };
 
-
-// app/lib/api/apiHooks.ts
-
+// ============================================================
+// CATALOG HOOKS - عمومی
+// ============================================================
 export const useCatalogAds = (
     businessId: string,
     page: number = 1,
@@ -99,22 +123,76 @@ export const useCatalogAds = (
     return useQuery({
         queryKey: ['catalog-ads', businessId, page, limit, search],
         queryFn: () => apiService.catalog.getCatalogAds(businessId, page, limit, search),
-        enabled: !!businessId,
+        enabled: !!businessId, // ✅ عمومی
         staleTime: 5 * 60 * 1000,
         refetchOnMount: false,
         refetchOnWindowFocus: false,
     });
 };
 
+export const useBusinessBySlug = (slug: string) => {
+    return useQuery({
+        queryKey: ['business', 'by-slug', slug],
+        queryFn: () => apiService.business.getBySlug(slug),
+        enabled: !!slug, // ✅ عمومی
+        staleTime: 5 * 60 * 1000,
+        refetchOnMount: false,
+        refetchOnWindowFocus: false,
+    });
+};
+
+export const useCatalogSaved = (businessId: string) => {
+    const { hasAccess } = useAuthState();
+
+    return useQuery({
+        queryKey: ['catalog-saved', businessId],
+        queryFn: () => apiService.catalog.isSaved(businessId),
+        enabled: !!businessId && hasAccess, // ✅ فقط کاربر لاگین
+        staleTime: 5 * 60 * 1000,
+        refetchOnMount: true,
+        refetchOnWindowFocus: false,
+    });
+};
+
+export const useCatalogStats = (businessId: string) => {
+    return useQuery({
+        queryKey: ['catalog-stats', businessId],
+        queryFn: () => apiService.catalog.getStats(businessId),
+        enabled: !!businessId, // ✅ عمومی
+        staleTime: 2 * 60 * 1000,
+        refetchOnMount: true,
+        refetchOnWindowFocus: false,
+    });
+};
+
+export const useSavedCatalogs = () => {
+    const { hasAccess } = useAuthState();
+
+    return useQuery({
+        queryKey: ['saved-catalogs'],
+        queryFn: () => apiService.catalog.getSavedList(),
+        enabled: hasAccess, // ✅ فقط کاربر لاگین
+        staleTime: 5 * 60 * 1000,
+        refetchOnMount: true,
+        refetchOnWindowFocus: false,
+    });
+};
+
+// ============================================================
+// LOCATION HOOKS
+// ============================================================
 export const useLocationsTree = () => {
     return useQuery({
         queryKey: ['locations', 'tree'],
         queryFn: () => apiService.location.getFullTree(),
-        staleTime: 1000 * 60 * 60 * 24, // ۲۴ ساعت کش
+        staleTime: 1000 * 60 * 60 * 24,
         gcTime: 1000 * 60 * 60 * 24,
     });
 };
 
+// ============================================================
+// BUSINESS MUTATIONS
+// ============================================================
 export const useCreateBusiness = () => {
     const queryClient = useQueryClient();
     return useMutation({
@@ -122,7 +200,6 @@ export const useCreateBusiness = () => {
         onSuccess: () => {
             queryClient.invalidateQueries({ queryKey: ['businesses'] });
             queryClient.invalidateQueries({ queryKey: ['business', 'active'] });
-           // toast.success('کسب‌وکار با موفقیت ثبت شد');
         },
         onError: (error: ApiError) => {
             if (error.data?.errorCode === 'DUPLICATE_BUSINESS_NAME') {
@@ -169,23 +246,20 @@ export const useDeleteBusiness = () => {
 };
 
 // ============================================================
-// ARM HOOKS بازارهای که کاربر در آنها عضو است
+// ARM HOOKS
 // ============================================================
-
-export const useArms = () => {
-    const user = useSelector((state: RootState) => state.auth.user);
-    const isAuthenticated = useSelector((state: RootState) => state.auth.isAuthenticated);
-    const userId = user?.id;
+export const useArms = (enabled: boolean = true) => {
+    const { hasAccess, userId } = useAuthState();
 
     return useQuery({
         queryKey: ['arms', userId],
         queryFn: () => apiService.arm.getUserArms(),
-        staleTime: 5 * 60 * 1000, // ✅ ۵ دقیقه کش
+        staleTime: 5 * 60 * 1000,
         gcTime: 10 * 60 * 1000,
         retry: 1,
         refetchOnWindowFocus: false,
-        refetchOnMount: false,      // ✅ با mount رفرش نشود
-        enabled: isAuthenticated && !!userId,
+        refetchOnMount: false,
+        enabled: enabled && hasAccess, // ✅
     });
 };
 
@@ -194,6 +268,9 @@ export const useArm = (slug: string) => {
         queryKey: ['arm', slug],
         queryFn: () => apiService.arm.findBySlug(slug),
         enabled: !!slug,
+        staleTime: 10 * 60 * 1000,
+        refetchOnMount: false,
+        refetchOnWindowFocus: false,
     });
 };
 
@@ -272,7 +349,6 @@ export const useCreateAd = () => {
     });
 };
 
-
 export const useVitrine = (slug: string, query: AdListQuery) => {
     const queryKey = ['vitrine', slug, JSON.stringify(query)];
 
@@ -284,13 +360,48 @@ export const useVitrine = (slug: string, query: AdListQuery) => {
     });
 };
 
-
-
 export const useAd = (id: string) => {
     return useQuery({
         queryKey: ['ad', id],
         queryFn: () => apiService.ad.getOne(id),
         enabled: !!id,
+        staleTime: 5 * 60 * 1000,
+        refetchOnMount: false,
+        refetchOnWindowFocus: false,
+    });
+};
+
+export const useAdDetail = (id: string, initialData?: any) => {
+    return useQuery({
+        queryKey: ['ad', id, 'detail'],
+        queryFn: () => apiService.ad.getDetail(id),
+        enabled: !!id,
+        initialData,
+        staleTime: 5 * 60 * 1000,
+        gcTime: 10 * 60 * 1000,
+        retry: 1,
+        refetchOnMount: false,
+        refetchOnWindowFocus: false,
+    });
+};
+
+export const useSavedAds = () => {
+    const { hasAccess } = useAuthState();
+
+    return useQuery({
+        queryKey: ['saved-ads'],
+        queryFn: () => apiService.ad.getSavedAds(),
+        enabled: hasAccess, // ✅ فقط کاربر لاگین
+    });
+};
+
+export const useAdSaved = (adId: string) => {
+    const { hasAccess } = useAuthState();
+
+    return useQuery({
+        queryKey: ['ad-saved', adId],
+        queryFn: () => apiService.ad.isSaved(adId),
+        enabled: !!adId && hasAccess, // ✅ فقط کاربر لاگین
     });
 };
 
@@ -355,35 +466,43 @@ export const useBumpAd = () => {
     });
 };
 
-// lib/api/apiHooks.ts
 export const useBulkUpdateAd = () => {
     const queryClient = useQueryClient();
     return useMutation({
         mutationFn: (data: { updates: { id: string; unitPrice: number }[] }) =>
             apiService.ad.bulkUpdate(data),
         onSuccess: (_, variables) => {
-            // حذف کش آگهی‌های تغییر کرده
             variables.updates.forEach(u => {
                 queryClient.invalidateQueries({ queryKey: ['ad', u.id] });
             });
-            // حذف کش کسب‌وکار فعال (که شامل لیست آگهی‌هاست)
             queryClient.invalidateQueries({ queryKey: ['business', 'active'] });
-            // حذف کش هر کسب‌وکاری که ممکن است این آگهی‌ها را داشته باشد
             queryClient.invalidateQueries({ queryKey: ['businesses'] });
-            // اگر businessId خاصی مشخص باشد، می‌توانیم آن را هم invalidate کنیم
             toast.success('قیمت‌ها با موفقیت به‌روز شدند');
         },
         onError: (error: ApiError) => toast.error(error.message || 'خطا در به‌روزرسانی'),
     });
 };
+
+export const useAdStats = (id: string) => {
+    return useQuery({
+        queryKey: ['ad', id, 'stats'],
+        queryFn: () => apiService.ad.getStats(id),
+        enabled: !!id,
+        staleTime: 1000 * 60 * 5,
+    });
+};
+
 // ============================================================
 // CREDIT HOOKS
 // ============================================================
 export const useCreditBalance = () => {
+    const { hasAccess } = useAuthState();
+
     return useQuery({
         queryKey: ['credit', 'balance'],
         queryFn: () => apiService.credit.getBalance(),
-        staleTime: 1000 * 30, // 30 ثانیه کش
+        enabled: hasAccess, // ✅ فقط کاربر لاگین
+        staleTime: 1000 * 30,
     });
 };
 
@@ -467,7 +586,6 @@ export const useUnits = () => {
     });
 };
 
-
 // ============================================================
 // ACTIVITY HOOKS
 // ============================================================
@@ -494,20 +612,15 @@ export const useActivityTree = () => {
         staleTime: 1000 * 60 * 5,
     });
 };
-// lib/api/apiHooks.ts - اضافه کردن بخش settings
 
 // ============================================================
-// SETTINGS HOOKS (ادمین)
-// ============================================================
-
-// ============================================================
-// تنظیمات اعتبار
+// SETTINGS HOOKS
 // ============================================================
 export const useCreditSettings = () => {
     return useQuery({
         queryKey: ['admin', 'settings', 'credit'],
         queryFn: () => apiService.settings.getCredit(),
-        staleTime: 1000 * 60 * 5, // 5 دقیقه
+        staleTime: 1000 * 60 * 5,
     });
 };
 
@@ -519,15 +632,10 @@ export const useUpdateCreditSettings = () => {
             queryClient.invalidateQueries({ queryKey: ['admin', 'settings', 'credit'] });
             toast.success('تنظیمات اعتبار با موفقیت ذخیره شد');
         },
-        onError: (error: ApiError) => {
-            toast.error(error.message || 'خطا در ذخیره تنظیمات اعتبار');
-        },
+        onError: (error: ApiError) => toast.error(error.message || 'خطا در ذخیره تنظیمات اعتبار'),
     });
 };
 
-// ============================================================
-// تنظیمات عمومی
-// ============================================================
 export const useGeneralSettings = () => {
     return useQuery({
         queryKey: ['admin', 'settings', 'general'],
@@ -544,15 +652,10 @@ export const useUpdateGeneralSettings = () => {
             queryClient.invalidateQueries({ queryKey: ['admin', 'settings', 'general'] });
             toast.success('تنظیمات عمومی با موفقیت ذخیره شد');
         },
-        onError: (error: ApiError) => {
-            toast.error(error.message || 'خطا در ذخیره تنظیمات عمومی');
-        },
+        onError: (error: ApiError) => toast.error(error.message || 'خطا در ذخیره تنظیمات عمومی'),
     });
 };
 
-// ============================================================
-// تنظیمات امنیتی
-// ============================================================
 export const useSecuritySettings = () => {
     return useQuery({
         queryKey: ['admin', 'settings', 'security'],
@@ -569,15 +672,10 @@ export const useUpdateSecuritySettings = () => {
             queryClient.invalidateQueries({ queryKey: ['admin', 'settings', 'security'] });
             toast.success('تنظیمات امنیتی با موفقیت ذخیره شد');
         },
-        onError: (error: ApiError) => {
-            toast.error(error.message || 'خطا در ذخیره تنظیمات امنیتی');
-        },
+        onError: (error: ApiError) => toast.error(error.message || 'خطا در ذخیره تنظیمات امنیتی'),
     });
 };
 
-// ============================================================
-// تنظیمات ظاهری
-// ============================================================
 export const useAppearanceSettings = () => {
     return useQuery({
         queryKey: ['admin', 'settings', 'appearance'],
@@ -594,15 +692,10 @@ export const useUpdateAppearanceSettings = () => {
             queryClient.invalidateQueries({ queryKey: ['admin', 'settings', 'appearance'] });
             toast.success('تنظیمات ظاهری با موفقیت ذخیره شد');
         },
-        onError: (error: ApiError) => {
-            toast.error(error.message || 'خطا در ذخیره تنظیمات ظاهری');
-        },
+        onError: (error: ApiError) => toast.error(error.message || 'خطا در ذخیره تنظیمات ظاهری'),
     });
 };
 
-// ============================================================
-// تنظیمات تکی
-// ============================================================
 export const useSetting = (key: string) => {
     return useQuery({
         queryKey: ['admin', 'settings', key],
@@ -621,27 +714,13 @@ export const useUpdateSetting = () => {
             queryClient.invalidateQueries({ queryKey: ['admin', 'settings', key] });
             toast.success('تنظیمات با موفقیت ذخیره شد');
         },
-        onError: (error: ApiError) => {
-            toast.error(error.message || 'خطا در ذخیره تنظیمات');
-        },
+        onError: (error: ApiError) => toast.error(error.message || 'خطا در ذخیره تنظیمات'),
     });
 };
 
-// ✅ هوک برای دریافت آمار کامل
-
-export const useAdStats = (id: string) => {
-    return useQuery({
-        queryKey: ['ad', id, 'stats'],
-        queryFn: () => apiService.ad.getStats(id),
-        enabled: !!id,
-        staleTime: 1000 * 60 * 5, // ۵ دقیقه
-    });
-};
-
-
-// ──────────────────────────────────────────────
-// 🔹 هوک‌های مربوط به اصناف (Industry)
-// ──────────────────────────────────────────────
+// ============================================================
+// INDUSTRY HOOKS
+// ============================================================
 export const useIndustriesTree = () => {
     return useQuery({
         queryKey: ['industries', 'tree'],
@@ -661,47 +740,34 @@ export const useIndustriesLeaves = () => {
     });
 };
 
-
-// ──────────────────────────────────────────────
-// 🔹 هوک‌های مربوط به دسته‌بندی کالا (Categories)
-// ──────────────────────────────────────────────
-
-/**
- * ✅ دریافت لیست مسطح تمام دسته‌بندی‌ها
- * برای استفاده در مودال انتخاب دسته‌بندی مرجع
- * داده‌ها کش می‌شوند چون تغییرات کم دارند
- */
+// ============================================================
+// CATEGORY HOOKS
+// ============================================================
 export const useCategoriesFlat = () => {
     return useQuery({
         queryKey: ['admin', 'categories', 'flat'],
-        queryFn: () => apiService.admin.categories.getAllFlat(),  // ✅ اصلاح شد
-        staleTime: 1000 * 60 * 30,  // 30 دقیقه کش
-        gcTime: 1000 * 60 * 60,   // 1 ساعت در حافظه
+        queryFn: () => apiService.admin.categories.getAllFlat(),
+        staleTime: 1000 * 60 * 30,
+        gcTime: 1000 * 60 * 60,
         retry: 2,
         refetchOnWindowFocus: false,
     });
 };
 
-/**
- * ✅ دریافت درخت کامل دسته‌بندی‌ها
- * برای صفحه مدیریت دسته‌بندی‌ها
- */
 export const useCategoriesTree = () => {
     return useQuery({
         queryKey: ['admin', 'categories', 'tree'],
         queryFn: () => apiService.admin.categories.getTree(),
-        staleTime: 1000 * 60 * 30,  // 30 دقیقه کش
-        gcTime: 1000 * 60 * 60,   // 1 ساعت در حافظه
+        staleTime: 1000 * 60 * 30,
+        gcTime: 1000 * 60 * 60,
         retry: 2,
         refetchOnWindowFocus: false,
     });
 };
 
-
-
-// ──────────────────────────────────────────────
-// 🔹 هوک لوکیشن
-// ──────────────────────────────────────────────
+// ============================================================
+// LOCATION TREE HOOK
+// ============================================================
 export const useLocationTree = () => {
     return useQuery({
         queryKey: ['locations', 'tree'],
@@ -710,90 +776,3 @@ export const useLocationTree = () => {
         gcTime: Infinity,
     });
 };
-
-
-
-// lib/api/apiHooks.ts
-
-export const useAdDetail = (id: string, initialData?: any) => {
-    return useQuery({
-        queryKey: ['ad', id, 'detail'],
-        queryFn: () => apiService.ad.getDetail(id),
-        enabled: !!id,
-        initialData, // ✅ استفاده از initialData
-        staleTime: 5 * 60 * 1000,
-        gcTime: 10 * 60 * 1000,
-        retry: 1,
-        refetchOnMount: false,
-        refetchOnWindowFocus: false,
-    });
-};
-
-export const useSavedAds = () => {
-    return useQuery({
-        queryKey: ['saved-ads'],
-        queryFn: () => apiService.ad.getSavedAds(),
-    });
-};
-
-export const useAdSaved = (adId: string) => {
-    return useQuery({
-        queryKey: ['ad-saved', adId],
-        queryFn: () => apiService.ad.isSaved(adId),
-        enabled: !!adId,
-    });
-};
-
-// برای کاتالوگ محصولات
-export const useBusinessBySlug = (slug: string) => {
-    return useQuery({
-        queryKey: ['business', 'by-slug', slug],
-        queryFn: () => apiService.business.getBySlug(slug),
-        enabled: !!slug,
-        staleTime: 5 * 60 * 1000,
-        refetchOnMount: false,
-        refetchOnWindowFocus: false,
-    });
-};
-
-// app/lib/api/apiHooks.ts
-
-// ✅ وضعیت ذخیره کاتالوگ
-export const useCatalogSaved = (businessId: string) => {
-    return useQuery({
-        queryKey: ['catalog-saved', businessId],
-        queryFn: () => apiService.catalog.isSaved(businessId),
-        enabled: !!businessId,
-        staleTime: 5 * 60 * 1000,
-        refetchOnMount: true,
-        refetchOnWindowFocus: false,
-    });
-};
-
-// ✅ آمار کاتالوگ
-export const useCatalogStats = (businessId: string) => {
-    return useQuery({
-        queryKey: ['catalog-stats', businessId],
-        queryFn: () => apiService.catalog.getStats(businessId),
-        enabled: !!businessId,
-        staleTime: 2 * 60 * 1000, // ۲ دقیقه
-        refetchOnMount: true,
-        refetchOnWindowFocus: false,
-    });
-};
-
-// ✅ لیست کاتالوگ‌های ذخیره شده کاربر
-export const useSavedCatalogs = () => {
-    const { isAuthenticated } = useSelector((state: RootState) => state.auth);
-
-    return useQuery({
-        queryKey: ['saved-catalogs'],
-        queryFn: () => apiService.catalog.getSavedList(),
-        enabled: !!isAuthenticated,
-        staleTime: 5 * 60 * 1000,
-        refetchOnMount: true,
-        refetchOnWindowFocus: false,
-    });
-};
-
-
