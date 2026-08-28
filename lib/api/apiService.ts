@@ -73,6 +73,35 @@ export const apiService = {
 
         getBySlug: (slug: string) => apiRequest(`/business/slug/${slug}`),
     },
+    catalog: {
+        // ثبت بازدید
+        trackView: (businessId: string) =>
+            apiRequest(`/catalog/${businessId}/view`, { method: 'POST' }),
+
+        // ذخیره کاتالوگ
+        save: (businessId: string) =>
+            apiRequest(`/catalog/${businessId}/save`, { method: 'POST' }),
+
+        // حذف از ذخیره
+        unsave: (businessId: string) =>
+            apiRequest(`/catalog/${businessId}/save`, { method: 'DELETE' }),
+
+        // بررسی وضعیت ذخیره
+        isSaved: (businessId: string) =>
+            apiRequest(`/catalog/${businessId}/saved-status`),
+
+        // آمار کاتالوگ
+        getStats: (businessId: string) =>
+            apiRequest(`/catalog/${businessId}/stats`),
+
+        // لیست کاتالوگ‌های ذخیره شده کاربر
+        getSavedList: () =>
+            apiRequest(`/catalog/saved/list`),
+
+        // آگهی‌های کاتالوگ (اگر قبلاً نداری)
+        getCatalogAds: (businessId: string, page: number = 1, limit: number = 24, search?: string) =>
+            apiRequest(`/ad/catalog/${businessId}?page=${page}&limit=${limit}${search ? `&search=${encodeURIComponent(search)}` : ''}`),
+    },
 
     // ============================================================
     // ARM
@@ -149,9 +178,6 @@ export const apiService = {
             apiRequest(`/ad/business/${businessId}?page=${page}&limit=${limit}${status ? `&status=${status}` : ''}`),
 
         // app/lib/api/apiService.ts
-
-        getCatalogAds: (businessId: string, page: number = 1, limit: number = 100, search?: string) =>
-            apiRequest(`/ad/catalog/${businessId}?page=${page}&limit=${limit}${search ? `&search=${encodeURIComponent(search)}` : ''}`),
 
         getOne: (id: string): Promise<Ad> =>
             apiRequest(`/ad/${id}`),

@@ -98,7 +98,7 @@ export const useCatalogAds = (
 ) => {
     return useQuery({
         queryKey: ['catalog-ads', businessId, page, limit, search],
-        queryFn: () => apiService.ad.getCatalogAds(businessId, page, limit, search),
+        queryFn: () => apiService.catalog.getCatalogAds(businessId, page, limit, search),
         enabled: !!businessId,
         staleTime: 5 * 60 * 1000,
         refetchOnMount: false,
@@ -752,6 +752,46 @@ export const useBusinessBySlug = (slug: string) => {
         enabled: !!slug,
         staleTime: 5 * 60 * 1000,
         refetchOnMount: false,
+        refetchOnWindowFocus: false,
+    });
+};
+
+// app/lib/api/apiHooks.ts
+
+// ✅ وضعیت ذخیره کاتالوگ
+export const useCatalogSaved = (businessId: string) => {
+    return useQuery({
+        queryKey: ['catalog-saved', businessId],
+        queryFn: () => apiService.catalog.isSaved(businessId),
+        enabled: !!businessId,
+        staleTime: 5 * 60 * 1000,
+        refetchOnMount: true,
+        refetchOnWindowFocus: false,
+    });
+};
+
+// ✅ آمار کاتالوگ
+export const useCatalogStats = (businessId: string) => {
+    return useQuery({
+        queryKey: ['catalog-stats', businessId],
+        queryFn: () => apiService.catalog.getStats(businessId),
+        enabled: !!businessId,
+        staleTime: 2 * 60 * 1000, // ۲ دقیقه
+        refetchOnMount: true,
+        refetchOnWindowFocus: false,
+    });
+};
+
+// ✅ لیست کاتالوگ‌های ذخیره شده کاربر
+export const useSavedCatalogs = () => {
+    const { isAuthenticated } = useSelector((state: RootState) => state.auth);
+
+    return useQuery({
+        queryKey: ['saved-catalogs'],
+        queryFn: () => apiService.catalog.getSavedList(),
+        enabled: !!isAuthenticated,
+        staleTime: 5 * 60 * 1000,
+        refetchOnMount: true,
         refetchOnWindowFocus: false,
     });
 };

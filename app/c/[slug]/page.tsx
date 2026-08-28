@@ -59,7 +59,7 @@ export default async function CatalogPage({ params, searchParams }: Props) {
         try {
             await queryClient.fetchQuery({
                 queryKey: ['catalog-ads', businessData.id, 1, 24, search],
-                queryFn: () => apiService.ad.getCatalogAds(businessData.id, 1, 24, search || undefined),
+                queryFn: () => apiService.catalog.getCatalogAds(businessData.id, 1, 24, search || undefined),
             });
         } catch {}
     }

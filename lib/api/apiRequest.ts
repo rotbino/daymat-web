@@ -1,11 +1,10 @@
-// lib/api/apiRequest.ts
+// lib/api/apiRequest.ts - اصلاح شده
 
 import axios, { AxiosRequestConfig, InternalAxiosRequestConfig } from 'axios';
 import { setAccessToken, setRefreshToken, setSessionExpired } from '../store/slices/authSlice';
 import { ApiError } from './apiTypes';
-import { isSystemError, getSystemErrorMessage, getFriendlyErrorMessage } from './errorHandler';
+import { getFriendlyErrorMessage } from './errorHandler';
 
-// Lazy store برای شکستن چرخه
 let _store: any = null;
 export const injectStore = (s: any) => {
     _store = s;
@@ -53,15 +52,30 @@ const processQueue = (error: any, token: string | null = null) => {
 
 const refreshAccessToken = async (): Promise<string> => {
     const currentRefreshToken = getRefreshTokenValue();
-    if (!currentRefreshToken) throw new Error('No refresh token');
+    if (!currentRefreshToken) {
+        // ✅ پیام فارسی
+        throw new ApiError(401, 'نشست شما منقضی شده است. لطفاً مجدداً وارد شوید.', { errorCode: 'SESSION_EXPIRED' });
+    }
 
-    const response = await axios.post(`${API_BASE}/auth/refresh`, {
-        refreshToken: currentRefreshToken,
-    });
-    const { accessToken, refreshToken: newRefreshToken } = response.data;
-    setAuthToken(accessToken);
-    setRefreshTokenValue(newRefreshToken);
-    return accessToken;
+    try {
+        const response = await axios.post(`${API_BASE}/auth/refresh`, {
+            refreshToken: currentRefreshToken,
+        });
+        const { accessToken, refreshToken: newRefreshToken } = response.data;
+        setAuthToken(accessToken);
+        setRefreshTokenValue(newRefreshToken);
+        return accessToken;
+    } catch (error: any) {
+        // ✅ پیام فارسی
+        if (error?.response?.status === 401 || error?.response?.status === 403) {
+            throw new ApiError(401, 'نشست شما منقضی شده است. لطفاً مجدداً وارد شوید.', { errorCode: 'SESSION_EXPIRED' });
+        }
+        throw new ApiError(
+            error?.response?.status || 500,
+            error?.response?.data?.message || 'خطا در تمدید نشست. لطفاً مجدداً تلاش کنید.',
+            error?.response?.data || {}
+        );
+    }
 };
 
 const api = axios.create({
@@ -87,14 +101,15 @@ api.interceptors.response.use(
     async (error) => {
         const originalRequest = error.config;
 
-        // اگر درخواست لاگین است یا flag _skipRefresh وجود دارد، رفرش نکن
-        if (originalRequest.url?.includes('/auth/login') ||
-            originalRequest.url?.includes('/auth/register') ||
-            originalRequest._skipRefresh) {
+        // اگر درخواست لاگین/رفرش است، رفرش نکن
+        if (originalRequest?.url?.includes('/auth/login') ||
+            originalRequest?.url?.includes('/auth/register') ||
+            originalRequest?.url?.includes('/auth/refresh') ||
+            originalRequest?._skipRefresh) {
             return Promise.reject(error);
         }
 
-        if (error.response?.status === 401 && !originalRequest._retry) {
+        if (error.response?.status === 401 && !originalRequest?._retry) {
             if (isRefreshing) {
                 return new Promise((resolve, reject) => {
                     failedQueue.push({ resolve, reject });
@@ -105,48 +120,38 @@ api.interceptors.response.use(
                     })
                     .catch((err) => Promise.reject(err));
             }
+
             originalRequest._retry = true;
             isRefreshing = true;
+
             try {
                 const newToken = await refreshAccessToken();
                 originalRequest.headers.Authorization = `Bearer ${newToken}`;
                 processQueue(null, newToken);
                 return api(originalRequest);
-            } catch (refreshError) {
+            } catch (refreshError: any) {
                 processQueue(refreshError, null);
 
-                // ✅ فقط در صورتی که خطای رفرش واقعاً به‌معنای منقضی شدن نشست باشد (401, 403) کاربر را logout کن
-                if (refreshError?.response?.status === 401 || refreshError?.response?.status === 403) {
-                    if (_store) {
-                        try {
-                            _store.dispatch({ type: 'auth/logout' });
-                        } catch (e) {
-                            console.error('Error dispatching logout:', e);
-                        }
-                    }
+                // ✅ فقط اگر SESSION_EXPIRED یا 401/403 باشد logout کن
+                const isSessionExpired =
+                    refreshError?.data?.errorCode === 'SESSION_EXPIRED' ||
+                    refreshError?.response?.status === 401 ||
+                    refreshError?.response?.status === 403;
 
-                    // پاک کردن persist از localStorage
-                    if (typeof window !== 'undefined') {
-                        try {
-                            localStorage.removeItem('persist:auth');
-                            localStorage.removeItem('persist:arm');
-                        } catch (e) {
-                            console.error('Error clearing localStorage:', e);
-                        }
-                    }
+                if (isSessionExpired && _store) {
+                    _store.dispatch(setSessionExpired());
                 }
-                // در غیر این صورت (Network error, 500, ...) هیچ کاری نمی‌کنیم و کاربر می‌تواند دوباره تلاش کند.
 
                 return Promise.reject(refreshError);
             } finally {
                 isRefreshing = false;
             }
         }
+
         return Promise.reject(error);
     }
 );
 
-// ... (apiRequest و apiFileRequest بدون تغییر) ...
 export const apiRequest = async <T = any>(
     url: string,
     options?: AxiosRequestConfig
@@ -156,10 +161,11 @@ export const apiRequest = async <T = any>(
         const response = await api({ url: fullUrl, ...options });
         return response.data;
     } catch (err: any) {
-        const data = err.response?.data;
-        const message = data?.message || getFriendlyErrorMessage(err);
-        const status = err.response?.status || 500;
-        const errorCode = data?.errorCode || 'UNKNOWN_ERROR';
+        // ✅ پیام فارسی - اولویت با message از بک‌اند
+        const data = err.response?.data || err.data || {};
+        const message = data?.message || err?.message || getFriendlyErrorMessage(err);
+        const status = err.response?.status || err.status || 500;
+        const errorCode = data?.errorCode || err?.errorCode || 'UNKNOWN_ERROR';
 
         throw new ApiError(status, message, data);
     }
@@ -187,8 +193,8 @@ export const apiFileRequest = async <T = any>(
         });
         return response.data;
     } catch (err: any) {
-        const data = err.response?.data;
-        const message = data?.message || getFriendlyErrorMessage(err);
+        const data = err.response?.data || {};
+        const message = data?.message || err?.message || getFriendlyErrorMessage(err);
         const status = err.response?.status || 500;
 
         throw new ApiError(status, message, data);
