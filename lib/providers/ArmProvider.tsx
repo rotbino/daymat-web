@@ -18,17 +18,21 @@ const PUBLIC_PATHS = [
     '/no-arm',
     '/business',
     '/profile',
+    '/ad',
+    '/ad/create',
+    '/ad/edit',
     '/dashboard',
     '/docs',
     '/docs/terms',
-    '/docs/about',
     '/purchase',
     '/credit/purchase',
     '/credit/verify',
+    '/feedback',
     '/credit/payments',
     '/credit/report',
-    '/feedback',
+    '/docs/about',
     '/saved-ads',
+    '/c',
 ];
 
 interface ArmProviderProps {
