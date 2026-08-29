@@ -1,5 +1,5 @@
 // lib/api/apiHooks.ts
-import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
+import {useQuery, useMutation, useQueryClient, useInfiniteQuery, keepPreviousData} from '@tanstack/react-query';
 import { apiService } from './apiService';
 import {
     ApiError,
@@ -17,7 +17,7 @@ import {
 import { toast } from 'sonner';
 import { useSelector } from "react-redux";
 import { RootState } from "@/lib/store/store";
-
+import { useCallback, useMemo } from 'react';
 // ═══════════════════════════════════════════════════════════
 // ✅ تابع کمکی برای تشخیص کاربر لاگین و توکن
 // ═══════════════════════════════════════════════════════════
@@ -249,7 +249,7 @@ export const useDeleteBusiness = () => {
 // ARM HOOKS
 // ============================================================
 export const useArms = (enabled: boolean = true) => {
-    const { hasAccess, userId } = useAuthState();
+    const { isAuthenticated,hasAccess, userId } = useAuthState();
 
     return useQuery({
         queryKey: ['arms', userId],
@@ -259,7 +259,7 @@ export const useArms = (enabled: boolean = true) => {
         retry: 1,
         refetchOnWindowFocus: false,
         refetchOnMount: false,
-        enabled: enabled && hasAccess, // ✅
+        enabled:isAuthenticated && enabled && hasAccess, // ✅
     });
 };
 
@@ -349,14 +349,64 @@ export const useCreateAd = () => {
     });
 };
 
-export const useVitrine = (slug: string, query: AdListQuery) => {
-    const queryKey = ['vitrine', slug, JSON.stringify(query)];
 
-    return useQuery({
-        queryKey,
-        queryFn: () => apiService.ad.getVitrine(slug, query),
+// ─── کلیدهای کش ویترین ───
+export const vitrineKeys = {
+    all: ['vitrine'] as const,
+    list: (slug: string, params: Record<string, unknown>) =>
+        ['vitrine', 'list', slug, params] as const,
+};
+
+// ─── نرمال‌سازی پارامترها: مقادیر خالی حذف می‌شوند تا کلید کش همیشه یکتا و پایدار باشد ───
+export function normalizeVitrineParams(params: Record<string, any> = {}) {
+    const clean: Record<string, any> = {};
+    Object.entries(params).forEach(([key, value]) => {
+        if (value === undefined || value === null || value === '') return;
+        if ((key === 'minQuantity' || key === 'minAvailableQuantity') && Number(value) <= 0) return;
+        if (key === 'page' && Number(value) <= 1) return; // صفحه ۱ = حالت پیش‌فرض
+        clean[key] = value;
+    });
+    return clean;
+}
+
+// ─── ابزار invalidation: بعد از ثبت/ویرایش/حذف/نردبان آگهی صدا زده شود ───
+export function useInvalidateVitrine() {
+    const queryClient = useQueryClient();
+    return useCallback(() => {
+        queryClient.invalidateQueries({ queryKey: vitrineKeys.all });
+    }, [queryClient]);
+}
+
+/**
+ * ویترین با Infinite Query:
+ * - کلید کش = کل پارامترهای فیلتر (React Query کلیدهای آبجکت را مرتب hash می‌کند)
+ *   → همان ترکیب فیلتر = همان ورودی کش = نمایش آنی
+ * - staleTime پنج دقیقه: در این بازه هیچ درخواستی زده نمی‌شود (سرعت چند برابر)
+ * - بعد از staleTime: داده کش فوراً نمایش داده می‌شود و رفرش در پس‌زمینه انجام می‌شود (الگوی SWR)
+ * - placeholderData: هنگام تغییر فیلتر، لیست قبلی محو نمی‌شود (بدون فلشِ لودینگ)
+ * - هر صفحه حداکثر ۱۰ صفحه در حافظه (maxPages) تا کش باد نکند
+ */
+export const useVitrine = (slug: string, params: Record<string, any> = {}) => {
+    const normalized = useMemo(() => normalizeVitrineParams(params), [params]);
+
+    return useInfiniteQuery({
+        queryKey: vitrineKeys.list(slug, normalized),
+        queryFn: ({ pageParam }) =>
+            apiService.ad.getVitrine(slug, { ...normalized, page: pageParam as number, limit: normalized.limit ?? 10 }),
+        initialPageParam: Number(normalized.page) || 1,
+        getNextPageParam: (lastPage, _pages, lastPageParam) => {
+            const totalPages = lastPage?.pagination?.totalPages;
+            if (!totalPages || totalPages <= 1) return undefined;
+            return (lastPageParam as number) < totalPages ? (lastPageParam as number) + 1 : undefined;
+        },
         enabled: !!slug,
-        staleTime: 1000 * 30,
+        staleTime: 1000 * 60 * 5,
+        gcTime: 1000 * 60 * 30,
+        placeholderData: keepPreviousData,
+        refetchOnWindowFocus: false,
+        refetchOnReconnect: false,
+        retry: 1,
+        maxPages: 10,
     });
 };
 

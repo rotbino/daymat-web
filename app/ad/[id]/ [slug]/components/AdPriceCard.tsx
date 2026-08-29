@@ -87,81 +87,7 @@ export default function AdPriceCard({ ad, isOwner, isSaved, onSaveToggle, onCont
 
     return (
         <div className="space-y-3.5">
-            {/* ═══ کارت فروشنده ═══ */}
-            {ad.isAnonymous ? (
-                <div className="bg-gray-50 dark:bg-gray-800/50 rounded-xl border border-gray-200/60 dark:border-gray-700/40 px-4 py-3 flex items-center gap-3">
-                    <Lock className="w-4 h-4 text-gray-400" />
-                    <span className="text-sm text-gray-500 dark:text-gray-400 font-medium">ناشناس</span>
-                </div>
-            ) : (
-                <div className="bg-white dark:bg-gray-900 rounded-2xl border border-gray-200/80 dark:border-gray-800 shadow-sm p-5 space-y-3">
-                    <div className="flex items-start gap-3">
-                        {ad.business?.owner?.avatarFile?.thumbnailPath ? (
-                            <div className="w-12 h-12 rounded-full overflow-hidden border-2 border-gray-200 dark:border-gray-700 flex-shrink-0">
-                                <Image
-                                    src={getUrl(ad.business.owner.avatarFile)}
-                                    alt={ad.business?.owner?.fullName || ''}
-                                    width={48}
-                                    height={48}
-                                    className="object-cover w-full h-full"
-                                    unoptimized
-                                />
-                            </div>
-                        ) : (
-                            <div className="w-12 h-12 rounded-full bg-gray-100 dark:bg-gray-800 flex items-center justify-center flex-shrink-0">
-                                <Store className="w-6 h-6 text-gray-400" />
-                            </div>
-                        )}
-                        <div className="flex-1 min-w-0">
-                            <div className="flex items-center gap-1.5 flex-wrap">
-                                <p className="text-sm font-bold text-gray-800 dark:text-white">
-                                    {ad.business?.name || 'فروشنده'}
-                                </p>
-                                {bizType && (
-                                    <span className="text-[9px] px-1.5 py-0.5 rounded-full bg-primary/10 text-primary">
-                                        {bizType}
-                                    </span>
-                                )}
-                            </div>
-                            <p className="text-[11px] text-gray-400 dark:text-gray-500 truncate mt-0.5">
-                                {ad.business?.owner?.fullName || ''}
-                            </p>
-                            {ad.business?.shortDescription && (
-                                <p className="text-[11px] text-gray-500 dark:text-gray-400 line-clamp-2 mt-1">
-                                    {ad.business.shortDescription}
-                                </p>
-                            )}
-                        </div>
-                        {ad.business?.verificationTier && ad.business.verificationTier !== 'none' && (
-                            <span className="text-[10px] font-semibold px-2 py-0.5 rounded-full bg-amber-50 dark:bg-amber-950/30 text-amber-700 dark:text-amber-300 border border-amber-200/60 dark:border-amber-800/40 flex-shrink-0">
-                                {ad.business.verificationTier === 'gold' ? 'طلایی' : ad.business.verificationTier === 'silver' ? 'نقره‌ای' : 'آبی'}
-                            </span>
-                        )}
-                    </div>
 
-                    <div className="flex gap-2">
-                        <button
-                            onClick={onContact}
-                            className="flex-1 h-12 bg-primary hover:bg-primary/90 active:scale-[0.98] text-white rounded font-bold text-sm flex items-center justify-center gap-2 shadow-lg shadow-primary/20 transition-all duration-200"
-                        >
-                            <Phone className="w-5 h-5" />
-                            تماس با فروشنده
-                        </button>
-
-                        {ad.business?.slug && (
-                            <button
-                                onClick={() => router.push(`/c/${ad.business.slug}`)}
-                                className="h-12 px-4 rounded border border-primary/30 dark:border-primary/40 text-primary hover:bg-primary/10 active:scale-[0.98] font-bold text-sm flex items-center justify-center gap-1.5 transition-all duration-200 shrink-0"
-                            >
-                                <Store className="w-5 h-5" />
-                                کاتالوگ محصولات
-                            </button>
-                        )}
-                    </div>
-
-
-                </div>
-            )}
             {/* ═══ کارت قیمت اصلی (بدون عنوان) ═══ */}
             <div className="bg-white dark:bg-gray-900 rounded-2xl border border-gray-200/80 dark:border-gray-800 p-5 shadow-sm">
                 {/* قیمت */}
@@ -319,6 +245,80 @@ export default function AdPriceCard({ ad, isOwner, isSaved, onSaveToggle, onCont
                     </button>
                 </div>
             </div>
+            {/* ═══ کارت فروشنده ═══ */}
+            {ad.isAnonymous ? (
+                <div className="bg-gray-50 dark:bg-gray-800/50 rounded-xl border border-gray-200/60 dark:border-gray-700/40 px-4 py-3 flex items-center gap-3">
+                    <Lock className="w-4 h-4 text-gray-400" />
+                    <span className="text-sm text-gray-500 dark:text-gray-400 font-medium">ناشناس</span>
+                </div>
+            ) : (
+                <div className="bg-white dark:bg-gray-900 rounded-2xl border border-gray-200/80 dark:border-gray-800 shadow-sm p-5 space-y-3">
+                    <div className="flex items-start gap-3">
+                        {ad.business?.owner?.avatarFile?.thumbnailPath ? (
+                            <div className="w-12 h-12 rounded-full overflow-hidden border-2 border-gray-200 dark:border-gray-700 flex-shrink-0">
+                                <Image
+                                    src={getUrl(ad.business.owner.avatarFile)}
+                                    alt={ad.business?.owner?.fullName || ''}
+                                    width={48}
+                                    height={48}
+                                    className="object-cover w-full h-full"
+                                    unoptimized
+                                />
+                            </div>
+                        ) : (
+                            <div className="w-12 h-12 rounded-full bg-gray-100 dark:bg-gray-800 flex items-center justify-center flex-shrink-0">
+                                <Store className="w-6 h-6 text-gray-400" />
+                            </div>
+                        )}
+                        <div className="flex-1 min-w-0">
+                            <div className="flex items-center gap-1.5 flex-wrap">
+                                <p className="text-sm font-bold text-gray-800 dark:text-white">
+                                    {ad.business?.name || 'فروشنده'}
+                                </p>
+                                {bizType && (
+                                    <span className="text-[9px] px-1.5 py-0.5 rounded-full bg-primary/10 text-primary">
+                                        {bizType}
+                                    </span>
+                                )}
+                            </div>
+                            <p className="text-[11px] text-gray-400 dark:text-gray-500 truncate mt-0.5">
+                                {ad.business?.owner?.fullName || ''}
+                            </p>
+                            {ad.business?.shortDescription && (
+                                <p className="text-[11px] text-gray-500 dark:text-gray-400 line-clamp-2 mt-1">
+                                    {ad.business.shortDescription}
+                                </p>
+                            )}
+                        </div>
+                        {ad.business?.verificationTier && ad.business.verificationTier !== 'none' && (
+                            <span className="text-[10px] font-semibold px-2 py-0.5 rounded-full bg-amber-50 dark:bg-amber-950/30 text-amber-700 dark:text-amber-300 border border-amber-200/60 dark:border-amber-800/40 flex-shrink-0">
+                                {ad.business.verificationTier === 'gold' ? 'طلایی' : ad.business.verificationTier === 'silver' ? 'نقره‌ای' : 'آبی'}
+                            </span>
+                        )}
+                    </div>
+
+                    <div className="flex gap-2">
+                        <button
+                            onClick={onContact}
+                            className="flex-1 h-12 bg-primary hover:bg-primary/90 active:scale-[0.98] text-white rounded font-bold text-sm flex items-center justify-center gap-2 shadow-lg shadow-primary/20 transition-all duration-200"
+                        >
+                            <Phone className="w-5 h-5" />
+                            تماس با فروشنده
+                        </button>
+
+                        {ad.business?.slug && (
+                            <button
+                                onClick={() => router.push(`/c/${ad.business.slug}`)}
+                                className="h-12 px-4 rounded border border-primary/30 dark:border-primary/40 text-primary hover:bg-primary/10 active:scale-[0.98] font-bold text-sm flex items-center justify-center gap-1.5 transition-all duration-200 shrink-0"
+                            >
+                                کاتالوگ
+                            </button>
+                        )}
+                    </div>
+
+
+                </div>
+            )}
 
             {/* ═══ مقایسه قیمت (فقط وقتی هر دو قیمت هستند) ═══ */}
             {hasComparison && (

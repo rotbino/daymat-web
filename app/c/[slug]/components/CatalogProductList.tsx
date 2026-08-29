@@ -88,7 +88,8 @@ export default function CatalogProductList({
                 ) : filteredAds.length === 0 ? (
                     <div className="text-center py-14">
                         <Package className="w-12 h-12 text-gray-200 mx-auto mb-3" />
-                        <p className="text-sm text-gray-400">{query ? 'نتیجه‌ای پیدا نشد' : 'هنوز محصولی ثبت نشده است'}</p>
+
+                        <p className="text-sm text-gray-400">{query ? 'نتیجه‌ای پیدا نشد' : 'هنوز محصولی ثبت نشده '}</p>
                     </div>
                 ) : view === 'grid' ? (
                     <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-3">

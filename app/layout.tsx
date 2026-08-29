@@ -18,7 +18,7 @@ const vazirmatn = Vazirmatn({
 });
 
 export const metadata: Metadata = {
-    title: "Daymat | زیر ساخت بازار عمده فروشی B2B",
+    title: "Daymat | نمایشگر روزانه قیمت  ",
     description: "Daymat اصناف مرتبط را به هم وصل می کند.",
 };
 

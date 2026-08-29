@@ -413,6 +413,55 @@ export type Payment = {
 //#################Setting
 
 export type PermissionLevel = 1 | 2 | 3;
+
+
+// lib/api/types/search.ts
+
+export interface SearchLogPayload {
+    /** عبارت جستجوی اجراشده (سرور خودش نرمال می‌کند) */
+    term: string;
+    /** تعداد نتایج واقعی از pagination */
+    resultCount?: number;
+    /** slug بازار */
+    armSlug?: string;
+}
+
+export interface SearchSuggestion {
+    term: string;
+    /** تعداد کل جستجوهای این ترم (۳۰ روز اخیر) */
+    searches: number;
+    /** تعداد کاربران یکتا (مهمان‌ها حساب نمی‌شوند) */
+    userCount: number;
+}
+
+export interface SearchSuggestResponse {
+    suggestions: SearchSuggestion[];
+}
+
+export interface SearchHistoryItem {
+    term: string;
+    at: string; // ISO date
+}
+
+export interface SearchHistoryResponse {
+    items: SearchHistoryItem[];
+}
+
+export interface ClearHistoryResponse {
+    success: boolean;
+    deleted: number;
+}
+
+
+
+
+
+
+
+
+
+
+
 export const PERMISSION_LEVELS = {
     1: {  // سطح پایه - مالک بازار معمولی
         label: 'پایه',

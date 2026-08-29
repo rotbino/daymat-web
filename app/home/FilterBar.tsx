@@ -1,240 +1,219 @@
 // app/home/FilterBar.tsx
 'use client';
-import React, { useState, useCallback, useEffect, useRef, cloneElement, ReactElement } from 'react';
-import { useRouter, useSearchParams } from 'next/navigation';
+import React, { useState, useEffect, useMemo, useCallback, cloneElement, ReactElement } from 'react';
+import { useRouter, useSearchParams, usePathname } from 'next/navigation';
+import Link from 'next/link';
 import { ChevronLeft, ArrowRight, X, Check } from 'lucide-react';
 import { cn } from '@/lib/utils';
-import { NumberInput } from "@/components/common";
+import { NumberInput } from '@/components/common';
 import { LocationFilter } from '@/app/components/LocationFilter';
 
-// --- Types ---
 interface CategoryNode {
     id: string;
     title: string;
-    children: CategoryNode[];
+    children?: CategoryNode[];
+    unitShortCode?: string;
+    [key: string]: any;
 }
 
-interface Props {
-    categoryTree: CategoryNode[];
-    selectedCategoryId: string | null;
-    onSelect: (categoryId: string) => void;
-    isLeaf?: boolean;
-    selectedUnit?: string;
-    minQuantity?: number;
-    onMinQuantityChange?: (value: number) => void;
-    minAvailableQuantity?: number;
-    onMinAvailableChange?: (value: number) => void;
-    moqPresets?: number[];
-    stockPresets?: number[];
-    onResetFilters?: () => void;
-    resultCount?: number;
-}
-
-// ─── فلت‌سازی درخت ───
-// اگر والد فقط یک فرزند داشته باشد، آن را حذف می‌کنیم
-function flattenSingleChildTree(tree: CategoryNode[]): CategoryNode[] {
-    if (tree.length === 1 && tree[0].children && tree[0].children.length > 0) {
-        return flattenSingleChildTree(tree[0].children);
+function findPathToNode(tree: CategoryNode[], id: string): CategoryNode[] | null {
+    for (const node of tree) {
+        if (node.id === id) return [node];
+        if (node.children) {
+            const found = findPathToNode(node.children, id);
+            if (found) return [node, ...found];
+        }
     }
-    return tree;
+    return null;
+}
+
+function findCategoryPath(tree: CategoryNode[], id: string): string[] {
+    for (const node of tree) {
+        if (node.id === id) return [node.title];
+        if (node.children) {
+            const found = findCategoryPath(node.children, id);
+            if (found) return [node.title, ...found];
+        }
+    }
+    return [];
 }
 
 // ─── Compact Floating Label ───
-interface FloatingWrapperProps {
-    label: string;
-    id: string;
-    children: ReactElement;
-    minWidth?: number;
-}
-
-const CompactFloatingLabel: React.FC<FloatingWrapperProps> = ({ label, id, children, minWidth = 70 }) => {
-    const hasValue = children.props.value !== undefined && children.props.value !== null && children.props.value !== '';
-
-    const childWithProps = cloneElement(children, {
-        id,
-        className: `flex flex-1 peer w-full text-right bg-surface-container border border-outline-variant rounded-lg h-8 px-2.5 text-[10px]
+const CompactFloatingLabel: React.FC<{ label: string; id: string; children: ReactElement; minWidth?: number }> =
+    ({ label, id, children, minWidth = 70 }) => {
+        const hasValue = children.props.value !== undefined && children.props.value !== null && children.props.value !== '';
+        const childWithProps = cloneElement(children, {
+            id,
+            className: `flex flex-1 peer w-full text-right bg-surface-container border border-outline-variant rounded-lg h-8 px-2.5 text-[10px]
             focus:border-primary focus:outline-none focus:ring-1 focus:ring-primary/30 transition-all
-            ${children.props.className ?? ""}`,
-        dir: "rtl",
-        placeholder: " ",
-    });
+            ${children.props.className ?? ''}`,
+            dir: 'rtl',
+            placeholder: ' ',
+        });
+        return (
+            <div className="relative" style={{ minWidth }}>
+                {childWithProps}
+                <label
+                    htmlFor={id}
+                    className="absolute transition-all duration-200 bg-white dark:bg-gray-900 px-1 pointer-events-none z-10 right-2.5"
+                    style={{
+                        top: hasValue ? '-8px' : '50%',
+                        transform: hasValue ? 'translateY(0)' : 'translateY(-50%)',
+                        fontSize: '10px',
+                        fontWeight: hasValue ? 500 : 400,
+                        color: hasValue ? 'var(--color-primary)' : undefined,
+                    }}
+                >
+                    {label}
+                </label>
+            </div>
+        );
+    };
 
+// ─── چک‌باکس ───
+const FilterCheckbox = ({ label, checked, onChange }: { label: string; checked: boolean; onChange: () => void }) => (
+    <label className="flex items-center gap-1.5 pl-4 cursor-pointer group select-none whitespace-nowrap">
+        <div className="relative">
+            <input type="checkbox" checked={checked} onChange={onChange} className="sr-only peer" />
+            <div className="w-4 h-4 rounded border-2 border-outline-variant bg-surface-container peer-checked:bg-primary peer-checked:border-primary transition-all flex items-center justify-center active:scale-90">
+                <Check className="w-3 h-3 text-on-primary" style={{ opacity: checked ? 1 : 0 }} />
+            </div>
+        </div>
+        <span className="text-xs text-on-surface-variant group-hover:text-on-surface transition-colors">{label}</span>
+    </label>
+);
+
+// ─── کنترل فیلتر عددی (حجم خرید / موجودی) — ماژول‌لِوِل تا با هر رندر remount نشود ───
+const QuantityControl = ({
+                             id, label, unit, paramValue, onCommit, onClearHref,
+                         }: {
+    id: string;
+    label: string;
+    unit: string;
+    paramValue: string;
+    onCommit: (v: string) => void;
+    onClearHref: string;
+}) => {
+    const active = paramValue !== '';
+    const [open, setOpen] = useState(active);
+    const [input, setInput] = useState<number | undefined>(active ? Number(paramValue) : undefined);
+
+    // همگام با back/forward مرورگر
+    useEffect(() => {
+        setOpen(active);
+        setInput(active ? Number(paramValue) : undefined);
+    }, [active, paramValue]);
+
+    // debounce: بعد از توقف تایپ، URL آپدیت می‌شود
+    useEffect(() => {
+        if (!open) return;
+        const v = input === undefined ? NaN : Number(input);
+        if (Number.isNaN(v) || v <= 0) return;
+        if (paramValue === String(v)) return; // همین مقدار از قبل در URL هست
+        const t = setTimeout(() => onCommit(String(v)), 450);
+        return () => clearTimeout(t);
+    }, [input, open, paramValue, onCommit]);
+
+    if (!open) {
+        return <FilterCheckbox label={label} checked={active} onChange={() => setOpen(true)} />;
+    }
     return (
-        <div className={`relative w-28 min-w-[${minWidth}px]`}>
-            {childWithProps}
-            <label
-                htmlFor={id}
-                className={cn(
-                    "absolute text-on-surface-variant/60 transition-all duration-200 bg-white dark:bg-gray-900 px-1 pointer-events-none z-10 right-2.5",
-                    hasValue
-                        ? "-top-2 text-[9px] font-medium text-primary"
-                        : "top-1/2 -translate-y-1/2 text-[11px]"
-                )}
-                style={{
-                    top: hasValue ? '-8px' : '50%',
-                    transform: hasValue ? 'translateY(0)' : 'translateY(-50%)',
-                    fontSize: hasValue ? '10px' : '10px',
-                    fontWeight: hasValue ? '500' : '400',
-                    color: hasValue ? 'var(--color-primary)' : ''
-                }}
-            >
-                {label}
-            </label>
+        <div className="flex items-center gap-1 animate-in fade-in slide-in-from-right-2 duration-300">
+            <CompactFloatingLabel label={`${label} (${unit})`} id={id} minWidth={120}>
+                <NumberInput className="max-h-8 text-center" value={input} onChange={(val: any) => setInput(val)} />
+            </CompactFloatingLabel>
+            {active ? (
+                <Link
+                    href={onClearHref}
+                    scroll={false}
+                    aria-label={`حذف ${label}`}
+                    className="p-1 rounded-md hover:bg-error/10 text-on-surface-variant hover:text-error transition-colors flex-shrink-0"
+                >
+                    <X className="w-3.5 h-3.5" />
+                </Link>
+            ) : (
+                <button
+                    type="button"
+                    onClick={() => setOpen(false)}
+                    aria-label="بستن"
+                    className="p-1 rounded-md hover:bg-error/10 text-on-surface-variant hover:text-error transition-colors flex-shrink-0"
+                >
+                    <X className="w-3.5 h-3.5" />
+                </button>
+            )}
         </div>
     );
 };
 
-// ─── Main Component ───
-export default function FilterBar({
-                                      categoryTree,
-                                      selectedCategoryId,
-                                      onSelect,
-                                      isLeaf,
-                                      selectedUnit = 'تن',
-                                      minQuantity = 0,
-                                      onMinQuantityChange,
-                                      minAvailableQuantity = 0,
-                                      onMinAvailableChange,
-                                      moqPresets = [],
-                                      stockPresets = [],
-                                      onResetFilters,
-                                      resultCount,
-                                  }: Props) {
+// ─── Main ───
+interface Props {
+    categoryTree: CategoryNode[];
+    resultCount?: number;
+}
+
+export default function FilterBar({ categoryTree, resultCount }: Props) {
     const router = useRouter();
+    const pathname = usePathname();
     const searchParams = useSearchParams();
 
-    // ✅ درخت فلت‌شده
-    const flatTree = flattenSingleChildTree(categoryTree);
+    const categoryFromUrl = searchParams.get('category');
+    const minqFromUrl = searchParams.get('minq') ?? '';
+    const minstockFromUrl = searchParams.get('minstock') ?? '';
 
-    const [path, setPath] = useState<CategoryNode[]>([]);
-    const [moqInput, setMoqInput] = useState<number | undefined>(undefined);
-    const [stockInput, setStockInput] = useState<number | undefined>(undefined);
-    const [showMoq, setShowMoq] = useState(false);
-    const [showStock, setShowStock] = useState(false);
-    const [openMoq, setOpenMoq] = useState(false);
-    const [openStock, setOpenStock] = useState(false);
-
-    const moqRef = useRef<HTMLDivElement>(null);
-    const stockRef = useRef<HTMLDivElement>(null);
-
-    // ✅ فقط اگر مسیر دیگر معتبر نیست، خالی کن
-    useEffect(() => {
-        if (path.length === 0) return;
-
-        const isValidPath = (): boolean => {
-            let current = flatTree;
-            for (const p of path) {
-                const found = current.find(n => n.id === p.id);
-                if (!found) return false;
-                current = found.children || [];
-            }
-            return true;
-        };
-
-        if (!isValidPath()) {
-            setPath([]);
-        }
-    }, [flatTree]);
-
-    useEffect(() => {
-        const handleClickOutside = (event: MouseEvent) => {
-            if (moqRef.current && !moqRef.current.contains(event.target as Node)) setOpenMoq(false);
-            if (stockRef.current && !stockRef.current.contains(event.target as Node)) setOpenStock(false);
-        };
-        document.addEventListener("mousedown", handleClickOutside);
-        return () => document.removeEventListener("mousedown", handleClickOutside);
-    }, []);
-
-    useEffect(() => {
-        if (!showMoq || moqInput === undefined) return;
-        const timer = setTimeout(() => onMinQuantityChange?.(moqInput || 0), 300);
-        return () => clearTimeout(timer);
-    }, [moqInput, showMoq, onMinQuantityChange]);
-
-    useEffect(() => {
-        if (!showStock || stockInput === undefined) return;
-        const timer = setTimeout(() => onMinAvailableChange?.(stockInput || 0), 300);
-        return () => clearTimeout(timer);
-    }, [stockInput, showStock, onMinAvailableChange]);
-
-    const currentLevel = path.length === 0 ? flatTree : (path[path.length - 1].children || []);
-
-    const updateUrl = useCallback((id: string | null) => {
-        const params = new URLSearchParams(searchParams.toString());
-        if (id) params.set('category', id);
-        else params.delete('category');
-        router.replace(`?${params.toString()}`, { scroll: false });
-    }, [router, searchParams]);
-
-    const drillDown = useCallback((node: CategoryNode) => {
-        onSelect(node.id);
-        updateUrl(node.id);
-        setPath(prev => [...prev, node]);
-    }, [onSelect, updateUrl]);
-
-    const goBack = useCallback(() => {
-        setPath(prev => {
-            if (prev.length === 0) return prev;
-            const newPath = prev.slice(0, -1);
-            const parentNode = newPath.length > 0 ? newPath[newPath.length - 1] : null;
-            if (parentNode) {
-                onSelect(parentNode.id);
-                updateUrl(parentNode.id);
-            } else {
-                onSelect('');
-                updateUrl(null);
-            }
-            onResetFilters?.();
-            return newPath;
-        });
-        setShowMoq(false);
-        setShowStock(false);
-        setMoqInput(undefined);
-        setStockInput(undefined);
-    }, [onSelect, updateUrl, onResetFilters]);
-
-    const handleBreadcrumbClick = useCallback((index: number) => {
-        setPath(prev => {
-            const newPath = prev.slice(0, index + 1);
-            const node = newPath[newPath.length - 1];
-            onSelect(node.id);
-            updateUrl(node.id);
-            return newPath;
-        });
-    }, [onSelect, updateUrl]);
-
-    const selectAll = useCallback(() => {
-        onSelect('');
-        updateUrl(null);
-        setPath([]);
-        setShowMoq(false);
-        setShowStock(false);
-        setMoqInput(undefined);
-        setStockInput(undefined);
-        onResetFilters?.();
-    }, [onSelect, updateUrl, onResetFilters]);
-
-    const FilterCheckbox = ({ label, checked, onChange }: { label: string; checked: boolean; onChange: () => void }) => (
-        <label className="flex items-center gap-1.5 pl-4 cursor-pointer group select-none whitespace-nowrap">
-            <div className="relative">
-                <input type="checkbox" checked={checked} onChange={onChange} className="sr-only peer" />
-                <div className="w-4 h-4 rounded border-2 border-outline-variant bg-surface-container peer-checked:bg-primary peer-checked:border-primary transition-all flex items-center justify-center active:scale-90">
-                    <Check className="w-3 h-3 text-on-primary" style={{ opacity: checked ? 1 : 0 }} />
-                </div>
-            </div>
-            <span className="text-xs text-on-surface-variant group-hover:text-on-surface transition-colors">{label}</span>
-        </label>
+    const path = useMemo(
+        () => (categoryFromUrl ? findPathToNode(categoryTree, categoryFromUrl) ?? [] : []),
+        [categoryTree, categoryFromUrl],
     );
+    const currentNode = path.length ? path[path.length - 1] : null;
+    const isLeaf = !!currentNode && (!currentNode.children || currentNode.children.length === 0);
+    const selectedUnit = currentNode?.unitShortCode || 'تن';
+    const currentLevel = path.length ? (path[path.length - 1].children ?? []) : categoryTree;
+
+    /**
+     * تنها نقطه‌ی ساخت URL فیلترها.
+     * undefined = پارامتر دست نخورد | null = حذف | string = مقداردهی
+     */
+    const buildHref = useCallback((changes: { categoryId?: string | null; minq?: string | null; minstock?: string | null }) => {
+        const params = new URLSearchParams(searchParams.toString());
+        const { categoryId, minq, minstock } = changes;
+
+        if (categoryId !== undefined) {
+            if (categoryId) {
+                params.set('category', categoryId);
+                const titles = findCategoryPath(categoryTree, categoryId);
+                if (titles.length > 0) params.set('path', titles.join('/')); // عنوان برای سئو/خوانایی
+                else params.delete('path');
+            } else {
+                params.delete('category');
+                params.delete('path');
+            }
+        }
+        if (minq !== undefined) { if (minq) params.set('minq', minq); else params.delete('minq'); }
+        if (minstock !== undefined) { if (minstock) params.set('minstock', minstock); else params.delete('minstock'); }
+        params.delete('page'); // تغییر فیلتر همیشه به صفحه اول
+
+        const qs = params.toString();
+        return qs ? `${pathname}?${qs}` : pathname;
+    }, [searchParams, pathname, categoryTree]);
+
+    const categoryHref = useCallback((id: string | null) => buildHref({ categoryId: id }), [buildHref]);
+
+    // مقصد بازگشت: دسته والد، یا «همه»
+    const backHref = path.length >= 2 ? categoryHref(path[path.length - 2].id) : categoryHref(null);
+
+    const commitNumberFilter = useCallback((param: 'minq' | 'minstock', raw: string) => {
+        router.push(buildHref(param === 'minq' ? { minq: raw } : { minstock: raw }), { scroll: false });
+    }, [buildHref, router]);
 
     return (
         <div className="w-full bg-white/80 dark:bg-gray-900/80 backdrop-blur-xl border-b border-outline-variant/10">
-            {/* Breadcrumb */}
+            {/* Breadcrumb — لینک‌محور برای سئو */}
             {path.length > 0 && (
                 <div className="flex items-center px-3 pt-1.5 pb-0.5 border-b border-outline-variant/5">
-                    <div className="flex items-center gap-1 text-[10px] md:text-[12px] overflow-x-auto scrollbar-hide py-0.5">
-                        <button onClick={selectAll} className="hover:text-primary transition-colors text-on-surface-variant/70 whitespace-nowrap">
+                    <nav aria-label="breadcrumb" className="flex items-center gap-1 text-[10px] md:text-[12px] overflow-x-auto scrollbar-hide py-0.5">
+                        <Link href={categoryHref(null)} scroll={false} className="hover:text-primary transition-colors text-on-surface-variant/70 whitespace-nowrap">
                             همه دسته‌ها
-                        </button>
+                        </Link>
                         {path.map((node, idx) => {
                             const isLast = idx === path.length - 1;
                             return (
@@ -245,60 +224,73 @@ export default function FilterBar({
                                             {node.title}
                                         </span>
                                     ) : (
-                                        <button onClick={() => handleBreadcrumbClick(idx)} className="hover:text-primary transition-colors whitespace-nowrap text-on-surface-variant/70">
+                                        <Link href={categoryHref(node.id)} scroll={false} className="hover:text-primary transition-colors whitespace-nowrap text-on-surface-variant/70">
                                             {node.title}
-                                        </button>
+                                        </Link>
                                     )}
                                 </React.Fragment>
                             );
                         })}
-                    </div>
+                    </nav>
                 </div>
             )}
 
-            {/* Main Bar */}
             <div className="px-3 py-1.5">
-                <div className="flex items-center gap-2">
+                <div className="flex items-center gap-1.5">
+                    {/* دکمه بازگشت: خارج از ناحیه اسکرول → با اسکرول افقی غیب نمی‌شود */}
+                    {path.length > 0 && (
+                        <Link
+                            href={backHref}
+                            scroll={false}
+                            aria-label="بازگشت به دسته قبلی"
+                            title="بازگشت"
+                            className="flex-shrink-0 flex items-center justify-center w-10 h-10 md:w-9 md:h-9 rounded-xl
+                                text-on-surface-variant hover:text-on-surface hover:bg-surface-container-high
+                                transition-all active:scale-95"
+                        >
+                            <ArrowRight className="w-6 h-6 md:w-5 md:h-5" />
+                        </Link>
+                    )}
+
                     <div className="flex items-center gap-1.5 overflow-x-auto scrollbar-hide flex-1 min-w-0">
-                        {path.length > 0 && (
-                            <button onClick={goBack} className="flex-shrink-0 p-1 rounded-lg hover:bg-surface-container-high text-on-surface-variant hover:text-on-surface transition-all active:scale-95" title="بازگشت">
-                                <ArrowRight className="w-4 h-4" />
-                            </button>
-                        )}
-
                         {path.length === 0 && (
-                            <button onClick={selectAll} className={cn(
-                                "whitespace-nowrap px-3 py-1 text-xs font-semibold rounded-full border transition-all flex-shrink-0 active:scale-95",
-                                !selectedCategoryId
-                                    ? "bg-primary text-on-primary border-primary shadow-md shadow-primary/20"
-                                    : "bg-surface-container-low text-on-surface-variant border-outline-variant hover:border-primary hover:text-primary"
-                            )}>
+                            <Link
+                                href={categoryHref(null)}
+                                scroll={false}
+                                className={cn(
+                                    'whitespace-nowrap px-3 py-1.5 text-xs font-semibold rounded-full border transition-all flex-shrink-0 active:scale-95',
+                                    !categoryFromUrl
+                                        ? 'bg-primary text-on-primary border-primary shadow-md shadow-primary/20'
+                                        : 'bg-surface-container-low text-on-surface-variant border-outline-variant hover:border-primary hover:text-primary',
+                                )}
+                            >
                                 همه
-                            </button>
+                            </Link>
                         )}
 
-                        {isLeaf && path.length > 0 && (
+                        {isLeaf && currentNode && (
                             <div className="flex items-center gap-1 whitespace-nowrap px-2.5 py-1 rounded-full text-xs font-semibold bg-primary/10 text-primary border border-primary/20 flex-shrink-0">
-                                {path[path.length - 1].title}
-                                <button onClick={goBack} className="hover:bg-primary/20 p-0.5 rounded-full transition-colors">
+                                {currentNode.title}
+                                <Link href={backHref} scroll={false} aria-label="حذف فیلتر دسته" className="hover:bg-primary/20 p-0.5 rounded-full transition-colors">
                                     <X className="w-3 h-3" />
-                                </button>
+                                </Link>
                             </div>
                         )}
 
                         {currentLevel.map((node) => (
-                            <button
+                            <Link
                                 key={node.id}
-                                onClick={() => drillDown(node)}
+                                href={categoryHref(node.id)}
+                                scroll={false}
                                 className={cn(
-                                    "whitespace-nowrap px-3 py-1 rounded-full text-xs font-medium border transition-all flex-shrink-0 active:scale-95",
-                                    node.id === selectedCategoryId
-                                        ? "bg-primary text-on-primary border-primary shadow-md shadow-primary/20"
-                                        : "bg-surface-container-low/50 text-on-surface-variant border-outline-variant/50 hover:border-primary/40 hover:bg-surface-container-high hover:shadow-sm"
+                                    'whitespace-nowrap px-3 py-1.5 rounded-full text-xs font-medium border transition-all flex-shrink-0 active:scale-95',
+                                    node.id === categoryFromUrl
+                                        ? 'bg-primary text-on-primary border-primary shadow-md shadow-primary/20'
+                                        : 'bg-surface-container-low/50 text-on-surface-variant border-outline-variant/50 hover:border-primary/40 hover:bg-surface-container-high hover:shadow-sm',
                                 )}
                             >
                                 {node.title}
-                            </button>
+                            </Link>
                         ))}
 
                         <div className="flex flex-1">
@@ -307,72 +299,52 @@ export default function FilterBar({
                         </div>
                     </div>
 
-                    {isLeaf && <div className="w-px h-7 bg-outline-variant/20 mx-1 hidden md:block" />}
+                    {isLeaf && <div className="w-px h-7 bg-outline-variant/20 mx-1 hidden md:block flex-shrink-0" />}
 
                     {isLeaf && (
                         <div className="hidden md:flex items-center gap-2 flex-shrink-0">
-                            {!showMoq ? (
-                                <FilterCheckbox label="امکان خرید در حجم" checked={false} onChange={() => setShowMoq(true)} />
-                            ) : (
-                                <div className="flex items-center gap-1 animate-in fade-in slide-in-from-right-2 duration-300">
-                                    <CompactFloatingLabel label={`حجم خرید (${selectedUnit})`} id="moq-input">
-                                        <NumberInput className="max-h-8 text-center" value={moqInput} onChange={(val) => setMoqInput(val)} />
-                                    </CompactFloatingLabel>
-                                    <button onClick={() => { setShowMoq(false); setMoqInput(undefined); onMinQuantityChange?.(0); }} className="p-0.5 rounded-md hover:bg-error/10 text-on-surface-variant hover:text-error transition-colors">
-                                        <X className="w-3.5 h-3.5" />
-                                    </button>
-                                </div>
-                            )}
-
+                            <QuantityControl
+                                id="moq-input"
+                                label="حجم خرید"
+                                unit={selectedUnit}
+                                paramValue={minqFromUrl}
+                                onClearHref={buildHref({ minq: null })}
+                                onCommit={(v) => commitNumberFilter('minq', v)}
+                            />
                             <div className="w-px h-5 bg-outline-variant/20" />
-
-                            {!showStock ? (
-                                <FilterCheckbox label="تضمین موجودی" checked={false} onChange={() => setShowStock(true)} />
-                            ) : (
-                                <div className="flex items-center gap-1 animate-in fade-in slide-in-from-right-2 duration-300">
-                                    <CompactFloatingLabel minWidth={130} label={`حداقل موجودی (${selectedUnit})`} id="stock-input">
-                                        <NumberInput className="max-h-8 text-center" value={stockInput} onChange={(val) => setStockInput(val)} />
-                                    </CompactFloatingLabel>
-                                    <button onClick={() => { setShowStock(false); setStockInput(undefined); onMinAvailableChange?.(0); }} className="p-0.5 rounded-md hover:bg-error/10 text-on-surface-variant hover:text-error transition-colors">
-                                        <X className="w-3.5 h-3.5" />
-                                    </button>
-                                </div>
-                            )}
+                            <QuantityControl
+                                id="stock-input"
+                                label="حداقل موجودی"
+                                unit={selectedUnit}
+                                paramValue={minstockFromUrl}
+                                onClearHref={buildHref({ minstock: null })}
+                                onCommit={(v) => commitNumberFilter('minstock', v)}
+                            />
                         </div>
                     )}
                 </div>
 
                 {/* Mobile Toolbar */}
                 {isLeaf && (
-                    <div className="flex md:hidden items-center gap-x-0.5 gap-y-2 mt-2 pt-4 pb-1 border-t border-outline-variant/10">
-                        {!showMoq ? (
-                            <FilterCheckbox label="امکان خرید در حجم" checked={false} onChange={() => setShowMoq(true)} />
-                        ) : (
-                            <div className="flex items-center gap-0 animate-in fade-in duration-200">
-                                <CompactFloatingLabel minWidth={120} label={`حجم خرید (${selectedUnit})`} id="moq-input-m">
-                                    <NumberInput className="max-h-8 text-center" value={moqInput} onChange={(val) => setMoqInput(val)} />
-                                </CompactFloatingLabel>
-                                <button className="p-0.5 text-error relative left-6" onClick={() => { setShowMoq(false); setMoqInput(undefined); onMinQuantityChange?.(0); }}>
-                                    <X className="w-3.5 h-3.5" />
-                                </button>
-                            </div>
-                        )}
-
-                        {!showStock ? (
-                            <FilterCheckbox label="تضمین موجودی" checked={false} onChange={() => setShowStock(true)} />
-                        ) : (
-                            <div className="flex items-center gap-0 animate-in fade-in duration-200">
-                                <CompactFloatingLabel minWidth={130} label={`حداقل موجودی (${selectedUnit})`} id="stock-input-m">
-                                    <NumberInput className="max-h-8 text-center" value={stockInput} onChange={(val) => setStockInput(val)} />
-                                </CompactFloatingLabel>
-                                <button className="p-0.5 text-error relative left-6" onClick={() => { setShowStock(false); setStockInput(undefined); onMinAvailableChange?.(0); }}>
-                                    <X className="w-3.5 h-3.5" />
-                                </button>
-                            </div>
-                        )}
-
+                    <div className="flex md:hidden items-center gap-x-1 gap-y-2 mt-1.5 pt-2.5 pb-1 border-t border-outline-variant/10 overflow-x-auto scrollbar-hide">
+                        <QuantityControl
+                            id="moq-input-m"
+                            label="حجم خرید"
+                            unit={selectedUnit}
+                            paramValue={minqFromUrl}
+                            onClearHref={buildHref({ minq: null })}
+                            onCommit={(v) => commitNumberFilter('minq', v)}
+                        />
+                        <QuantityControl
+                            id="stock-input-m"
+                            label="حداقل موجودی"
+                            unit={selectedUnit}
+                            paramValue={minstockFromUrl}
+                            onClearHref={buildHref({ minstock: null })}
+                            onCommit={(v) => commitNumberFilter('minstock', v)}
+                        />
                         {resultCount !== undefined && (
-                            <span className="text-[10px] font-bold text-primary bg-primary/10 px-2 py-0.5 rounded-full mr-auto">
+                            <span className="text-[10px] font-bold text-primary bg-primary/10 px-2 py-0.5 rounded-full mr-auto flex-shrink-0">
                                 {resultCount.toLocaleString('fa-IR')} نتیجه
                             </span>
                         )}

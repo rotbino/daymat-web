@@ -1,2 +1,12 @@
+import {Suspense} from "react";
 import HomeContent from "@/app/home/HomeContent";
-export default HomeContent;
+
+
+export default function HomePage() {
+    return (
+        <Suspense fallback={<div className="min-h-screen" />}>
+            <HomeContent />
+        </Suspense>
+    )
+
+}

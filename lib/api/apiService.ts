@@ -263,7 +263,25 @@ export const apiService = {
             comments: any[];
             shares: any[];
         }> => apiRequest(`/ad/${id}/interactions/details`),
+        // ────────────────────────────────────────
+        // ✅ جستجو: لاگ / پیشنهاد / تاریخچه
+        // ────────────────────────────────────────
 
+        // ✅ ثبت لاگ جستجوی اجراشده — سبک و fire-and-forget (سرور 204 برمی‌گرداند)
+        logSearch: (payload: { term: string; resultCount?: number; armSlug?: string }): Promise<void> =>
+            apiRequest('/ad/search-log', { method: 'POST', data: payload }),
+
+        // ✅ پیشنهاد جستجو: ترم‌های پرجستجو با تطابق پیشوند (تعداد جستجو + کاربران یکتا)
+        getSearchSuggestions: (armSlug: string, q: string, limit: number = 8): Promise<{ suggestions: { term: string; searches: number; userCount: number }[] }> =>
+            apiRequest('/ad/search-suggest', { method: 'GET', params: { armSlug, q, limit } }),
+
+        // ✅ جستجوهای اخیر کاربر لاگین‌شده
+        getSearchHistory: (armSlug?: string): Promise<{ items: { term: string; at: string }[] }> =>
+            apiRequest('/ad/search-history', { method: 'GET', params: armSlug ? { armSlug } : undefined }),
+
+        // ✅ پاک کردن تاریخچه جستجوی کاربر
+        clearSearchHistory: (armSlug?: string): Promise<{ success: boolean; deleted: number }> =>
+            apiRequest(`/ad/search-history${armSlug ? `?armSlug=${encodeURIComponent(armSlug)}` : ''}`, { method: 'DELETE' }),
     },
 
     // ============================================================

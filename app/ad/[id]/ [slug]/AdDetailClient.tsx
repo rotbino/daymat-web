@@ -98,6 +98,15 @@ export default function AdDetailClient({ adId, initialData }: Props) {
                 navigator.clipboard.writeText(phone).catch(() => {});
             }
         } catch (error: any) {
+            // ✅ بررسی خطای احراز هویت (توکن منقضی یا نامعتبر)
+            if (error?.status === 401 || error?.response?.status === 401 || error?.data?.errorCode === 'UNAUTHORIZED') {
+                // هدایت به صفحه لاگین با redirect به صفحه فعلی
+                router.push(`/login?redirect=/ad/${adId}`);
+                toast.error('نشست شما منقضی شده است. لطفاً مجدداً وارد شوید.');
+                return;
+            }
+
+            // سایر خطاها
             if (error?.data?.errorCode === 'DAILY_CALL_LIMIT_EXCEEDED') {
                 toast.error(error?.data?.message || 'محدودیت تماس روزانه');
             } else if (error?.data?.errorCode === 'NOT_MEMBER') {

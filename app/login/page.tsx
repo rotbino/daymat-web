@@ -1,7 +1,7 @@
 // app/login/page.tsx
 'use client';
 
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { useDispatch } from 'react-redux';
 import Link from 'next/link';
@@ -29,7 +29,31 @@ export default function LoginPage() {
     const registerMutation = useRegister();
 
     const armSlug = searchParams.get('arm') || 'barton';
-    const redirectTo = searchParams.get('redirect') || '/profile';
+    const redirectFromUrl = searchParams.get('redirect');
+
+    // ✅ تابع تعیین مسیر redirect
+    const getRedirectPath = () => {
+        // اولویت ۱: redirect از URL
+        if (redirectFromUrl) {
+            return decodeURIComponent(redirectFromUrl);
+        }
+        // اولویت ۲: redirect از localStorage (ذخیره شده توسط apiRequest)
+        const savedRedirect = localStorage.getItem('redirectAfterLogin');
+        if (savedRedirect) {
+            localStorage.removeItem('redirectAfterLogin');
+            return savedRedirect;
+        }
+        // اولویت ۳: مسیر پیش‌فرض
+        const lastArm = localStorage.getItem('lastArmSlug') || 'barton';
+        return `/${lastArm}`;
+    };
+
+    // ✅ در اولین رندر، اگر redirect در URL هست، از localStorage پاک کن
+    useEffect(() => {
+        if (redirectFromUrl) {
+            localStorage.removeItem('redirectAfterLogin');
+        }
+    }, [redirectFromUrl]);
 
     const validatePhone = () => {
         const newErrors: Record<string, string> = {};
@@ -49,7 +73,6 @@ export default function LoginPage() {
         setIsLoading(true);
 
         try {
-            // بررسی شماره موبایل
             const checkResponse = await fetch(getApiUrl('/auth/check-phone'), {
                 method: 'POST',
                 headers: {
@@ -65,15 +88,13 @@ export default function LoginPage() {
             const checkResult = await checkResponse.json();
 
             if (checkResult.exists) {
-                // شماره وجود دارد → مرحله رمز
                 setStep('password');
                 setIsLoading(false);
                 return;
             }
 
-            // شماره وجود ندارد → ثبت‌نام جدید
+            // ثبت‌نام جدید
             try {
-                // ✅ پاک‌سازی کامل داده‌های کاربر قبلی (فقط یک خط)
                 await dispatch(clearUserSession());
 
                 const registerResponse = await registerMutation.mutateAsync({
@@ -84,7 +105,6 @@ export default function LoginPage() {
                 dispatch(setUser(registerResponse.user));
                 dispatch(setAccessToken(registerResponse.access_token));
 
-                // پیوستن به بازار
                 if (armSlug) {
                     try {
                         await apiService.arm.join(armSlug);
@@ -97,7 +117,10 @@ export default function LoginPage() {
                 }
 
                 toast.success('ثبت‌نام با موفقیت انجام شد');
-                router.replace("/profile");
+
+                // ✅ هدایت به مسیر قبلی
+                const redirectPath = getRedirectPath();
+                router.replace(redirectPath);
                 return;
             } catch (registerError: any) {
                 if (registerError?.data?.errorCode === 'DUPLICATE_PHONE') {
@@ -131,7 +154,6 @@ export default function LoginPage() {
         setIsLoading(true);
 
         try {
-            // ✅ پاک‌سازی کامل داده‌های کاربر قبلی (فقط یک خط)
             await dispatch(clearUserSession());
 
             const loginResponse = await loginMutation.mutateAsync({
@@ -153,7 +175,10 @@ export default function LoginPage() {
             }
 
             toast.success('خوش آمدید');
-            router.replace("/profile");
+
+            // ✅ هدایت به مسیر قبلی
+            const redirectPath = getRedirectPath();
+            router.replace(redirectPath);
         } catch (error: any) {
             if (error?.data?.errorCode === 'WRONG_CREDENTIALS') {
                 setErrors({ password: 'رمز عبور اشتباه است' });
@@ -167,7 +192,6 @@ export default function LoginPage() {
 
     return (
         <div className="min-h-screen flex flex-col bg-background">
-            {/* هدر */}
             <header className="bg-surface w-full fixed top-0 left-0 right-0 z-50 border-b border-outline-variant flex justify-between items-center px-4 h-16">
                 <div className="flex items-center gap-3">
                     {step === 'password' && (
@@ -196,7 +220,6 @@ export default function LoginPage() {
 
             <main className="flex-1 w-full flex items-center justify-center px-4 pt-24 pb-20">
                 <div className="w-full max-w-[480px]">
-                    {/* مرحله اول: شماره موبایل */}
                     {step === 'phone' ? (
                         <form onSubmit={handlePhoneSubmit} className="space-y-6">
                             <div className="text-right mb-8">
@@ -246,9 +269,7 @@ export default function LoginPage() {
                                 {isLoading ? (
                                     'در حال بررسی...'
                                 ) : (
-                                    <>
-                                        تایید
-                                    </>
+                                    'تایید'
                                 )}
                             </button>
 
@@ -257,7 +278,6 @@ export default function LoginPage() {
                             </div>
                         </form>
                     ) : (
-                        /* مرحله دوم: پسورد */
                         <form onSubmit={handlePasswordSubmit} className="space-y-6">
                             <div className="text-right mb-8">
                                 <h2 className="font-headline-md text-headline-md text-on-surface">
