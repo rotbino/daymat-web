@@ -75,8 +75,22 @@ export default function AdDetailClient({ adId, initialData }: Props) {
             toast.error(errorMessage);
         }
     }, [user, isSaved, adId, refetchSaved, router]);
+// app/ad/[id]/[slug]/AdDetailClient.tsx
 
-    const handleContact = useCallback(async () => {
+    const handleContact = useCallback(() => {
+        const phone = displayAd?.business?.phone || displayAd?.business?.owner?.phone;
+        if (!phone) {
+            toast.error('شماره تماس ثبت نشده است');
+            return;
+        }
+        if (window.innerWidth < 768) {
+            window.location.href = `tel:${phone}`;
+        } else {
+            navigator.clipboard.writeText(phone).catch(() => {});
+            toast.success('شماره تماس کپی شد', { description: phone, duration: 6000 });
+        }
+    }, [displayAd]);
+    /*const handleContact = useCallback(async () => {
         if (!user) {
             router.push(`/login?redirect=/ad/${adId}`);
             return;
@@ -115,7 +129,7 @@ export default function AdDetailClient({ adId, initialData }: Props) {
                 toast.error(error?.message || 'خطا در دریافت شماره');
             }
         }
-    }, [user, adId, router]);
+    }, [user, adId, router]);*/
 
     const handleShare = useCallback(async () => {
         try {

@@ -1,12 +1,11 @@
 // app/c/[slug]/CatalogClient.tsx
 'use client';
 
-import React, { useCallback, useEffect, useMemo, useState } from 'react';
+import React, {useCallback, useEffect, useMemo, useState} from 'react';
 import { useRouter } from 'next/navigation';
-import { useDispatch, useSelector } from 'react-redux';
+import { useSelector } from 'react-redux';
 import { RootState } from '@/lib/store/store';
-import { setArm } from '@/lib/store/slices/armSlice';
-import { useBusinessBySlug, useCatalogAds, useCatalogSaved, useCatalogStats, useSavedCatalogs } from '@/lib/api/apiHooks';
+import {useBusinessBySlug, useCatalogAds, useCatalogSaved, useCatalogStats, useSavedCatalogs} from '@/lib/api/apiHooks';
 import { apiService } from '@/lib/api/apiService';
 import { toast } from 'sonner';
 import { Building2, Phone, Loader2 } from 'lucide-react';
@@ -23,10 +22,8 @@ interface CatalogClientProps {
 
 export default function CatalogClient({ slug, initialBusiness, initialSearch = '' }: CatalogClientProps) {
     const router = useRouter();
-    const dispatch = useDispatch();
 
     const { user, isAuthenticated } = useSelector((state: RootState) => state.auth);
-    const { currentArm } = useSelector((state: RootState) => state.arm);
     const [query, setQuery] = useState(initialSearch || '');
     const [view, setView] = useState<'grid' | 'list'>('grid');
     const [page, setPage] = useState(1);
@@ -36,52 +33,25 @@ export default function CatalogClient({ slug, initialBusiness, initialSearch = '
     const [showLogin, setShowLogin] = useState(false);
     const [pendingSave, setPendingSave] = useState(false);
     const loadMoreRef = React.useRef<HTMLDivElement>(null);
-    const [armFetched, setArmFetched] = useState(false);
 
     const { data: business } = useBusinessBySlug(slug);
     const displayBusiness = business || initialBusiness;
-    // ✅ ست کردن بازار - با استفاده از armSlug که از دیتای Business اومده
-    useEffect(() => {
-        // اگر بازار فعلی وجود داره یا قبلاً بازار رو پیدا کردیم یا business وجود نداره
-        if (currentArm || armFetched || !displayBusiness) return;
-        // ✅ از خود دیتای Business اسلاگ بازار رو می‌گیریم
-        const armSlug = displayBusiness.armSlug;
-        if (armSlug) {
-            const fetchAndSetArm = async () => {
-                try {
-                    const armData = await apiService.arm.findBySlug(armSlug);
-                    if (armData) {
-                        dispatch(setArm({ arm: armData, slug: armSlug }));
-                        localStorage.setItem('lastArmSlug', armSlug);
-                        console.log('✅ Arm set from catalog business.armSlug:', armSlug);
-                    }
-                } catch (error) {
-                    console.warn('⚠️ Could not fetch arm for catalog:', error);
-                } finally {
-                    setArmFetched(true);
-                }
-            };
-            fetchAndSetArm();
-        } else {
-            // اگر اسلاگ بازار وجود نداشت
-            setArmFetched(true);
-        }
-    }, [displayBusiness, currentArm, armFetched, dispatch]);
 
     const { data: adsData, isLoading: adsLoading, isFetching } = useCatalogAds(
         displayBusiness?.id || '', page, 10, undefined,
     );
     const { data: savedData, refetch: refetchSaved } = useCatalogSaved(displayBusiness?.id || '');
     const { data: statsData, refetch: refetchStats } = useCatalogStats(displayBusiness?.id || '');
-    const { refetch: refetchSavedList } = useSavedCatalogs();
+    const { refetch: refetchSavedList } = useSavedCatalogs(); // ✅ برای رفرش لیست
 
     const isSaved = localSaved !== null ? localSaved : (savedData?.isSaved || false);
-
+    // ✅ مالکیت
     const isOwner = useMemo(() => {
         if (!user?.id || !displayBusiness?.owner?.id) return false;
         return user.id === displayBusiness.owner.id;
     }, [user?.id, displayBusiness?.owner?.id]);
 
+    // ✅ ثبت ویو
     useEffect(() => {
         if (!displayBusiness?.id) return;
         const viewKey = `catalog-view-${displayBusiness.id}`;
@@ -93,6 +63,7 @@ export default function CatalogClient({ slug, initialBusiness, initialSearch = '
         }
     }, [displayBusiness?.id]);
 
+    // ✅ جمع‌آوری محصولات
     useEffect(() => {
         if (!adsData?.ads?.length) return;
         setAllAds(prev => {
@@ -102,6 +73,7 @@ export default function CatalogClient({ slug, initialBusiness, initialSearch = '
         });
     }, [adsData, page]);
 
+    // ✅ Infinite Scroll
     useEffect(() => {
         if (!loadMoreRef.current || isLoadingMore || adsLoading || isFetching) return;
         const totalPages = adsData?.pagination?.totalPages || 1;
@@ -118,6 +90,7 @@ export default function CatalogClient({ slug, initialBusiness, initialSearch = '
         return () => obs.disconnect();
     }, [isLoadingMore, adsLoading, isFetching, page, adsData]);
 
+    // ✅ بازیابی حالت نمایش
     useEffect(() => {
         const v = localStorage.getItem('catalog-view');
         if (v === 'grid' || v === 'list') setView(v);
@@ -126,6 +99,9 @@ export default function CatalogClient({ slug, initialBusiness, initialSearch = '
     const total = adsData?.pagination?.total || 0;
     const activeCount = allAds.filter(ad => ad.status === 'active').length;
 
+    // ═══════════════════════════════════════════
+    // ✅ ذخیره کاتالوگ
+    // ═══════════════════════════════════════════
     const handleSaveToggle = useCallback(async () => {
         if (!displayBusiness?.id) return;
 
@@ -148,12 +124,13 @@ export default function CatalogClient({ slug, initialBusiness, initialSearch = '
             }
             refetchSaved();
             refetchStats();
-            refetchSavedList();
+            refetchSavedList(); // ✅ رفرش لیست ذخیره‌ها
         } catch (error: any) {
             // ...
         }
     }, [displayBusiness?.id, isSaved, refetchSaved, refetchStats, refetchSavedList]);
 
+    // ✅ بعد از ورود موفق
     const handleLoginSuccess = useCallback(() => {
         setShowLogin(false);
 
@@ -165,6 +142,7 @@ export default function CatalogClient({ slug, initialBusiness, initialSearch = '
                 try {
                     await refetchSaved();
 
+                    // چک کن الان ذخیره است یا نه
                     const token = localStorage.getItem('accessToken');
                     if (!token) return;
 
@@ -219,6 +197,7 @@ export default function CatalogClient({ slug, initialBusiness, initialSearch = '
     return (
         <>
             <div className="min-h-screen bg-gray-50 dark:bg-gray-950 text-gray-900 dark:text-gray-100">
+                {/* هدر */}
                 <CatalogHeader
                     business={displayBusiness}
                     total={total}
@@ -231,10 +210,11 @@ export default function CatalogClient({ slug, initialBusiness, initialSearch = '
                     onBack={() => router.back()}
                     onShare={handleShare}
                     onSaveToggle={handleSaveToggle}
-                    isOwner={isOwner}
+                    isOwner={isOwner} // ✅
                     onOpenDashboard={() => router.push(`/c/${displayBusiness.slug}/dashboard`)}
                 />
 
+                {/* لیست محصولات */}
                 <CatalogProductList
                     ads={allAds}
                     total={total}
@@ -251,8 +231,10 @@ export default function CatalogClient({ slug, initialBusiness, initialSearch = '
                     isLoadingMore={isLoadingMore}
                 />
 
+                {/* فوتر */}
                 <CatalogFooter business={displayBusiness} onGoHome={() => router.push('/')} />
 
+                {/* نوار تماس موبایل */}
                 <div className="fixed bottom-0 inset-x-0 z-40 md:hidden">
                     <div className="bg-white/85 dark:bg-gray-950/85 backdrop-blur border-t px-4 pt-3 pb-[calc(0.75rem+env(safe-area-inset-bottom))]">
                         <button onClick={handleContact} className="w-full h-12 rounded-xl bg-primary text-white font-bold text-sm flex items-center justify-center gap-2">
@@ -262,6 +244,7 @@ export default function CatalogClient({ slug, initialBusiness, initialSearch = '
                 </div>
             </div>
 
+            {/* ✅ مدال لاگین */}
             <LoginModal
                 isOpen={showLogin}
                 onClose={() => {
