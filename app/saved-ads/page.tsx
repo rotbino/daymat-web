@@ -11,8 +11,9 @@ import { Bookmark, Package, Loader2, Trash2 } from 'lucide-react';
 import { apiService } from '@/lib/api/apiService';
 import { toast } from 'sonner';
 import Image from 'next/image';
-import { formatNum } from '@/app/ad/[id]/ [slug]/components/shared';
+
 import { cn } from '@/lib/utils';
+import { formatNum } from "../ad/[id]/[slug]/components/shared";
 
 export default function SavedAdsPage() {
     const router = useRouter();
