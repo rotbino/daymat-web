@@ -45,10 +45,13 @@ export default function PublishToMarketModal({ isOpen, onClose, ad, onPublished 
     });
 
     const publishedArmIds = new Set(publications.map((p: any) => p.armId));
+    // ✅ فقط بازارهایی که کاربر در اون‌ها seller فعال هست (catalogId داره و publishState=published)
+    // رو به‌عنوان «بازارهای فعلی» نشون بده
     const availableArms = userArms.filter((arm: any) =>
         arm.status === 'active' &&
-        arm.catalogId &&
-        !publishedArmIds.has(arm.id)
+        arm.catalogId &&  // ← این یعنی کاربر با این کاتالوگش در این بازار seller هست
+        arm.publishState === 'published' &&  // ← و منتشر شده
+        !publishedArmIds.has(arm.id)  // ← ولی این آگهی هنوز در این بازار منتشر نشده
     );
 
     useEffect(() => {
