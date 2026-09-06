@@ -21,7 +21,7 @@ const publicPaths = [
 const protectedPrefixes = [
     '/dashboard',
     '/profile',
-    '/business',
+    '/catalog',
     '/ad/create',
     '/ad/edit',
 ];
@@ -50,7 +50,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
             pathname?.startsWith(prefix)
         );
 
-        // ✅ اگر مسیر بازار است (مثلاً /barton) - عمومی است
+        // ✅ اگر مسیر بازار است (مثلاً /tamino) - عمومی است
         const isArmPath = pathname?.startsWith('/') &&
             !pathname?.startsWith('/_next') &&
             !pathname?.startsWith('/api') &&
@@ -60,7 +60,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
             !pathname?.startsWith('/register') &&
             !pathname?.startsWith('/no-arm') &&
             !pathname?.startsWith('/profile') &&
-            !pathname?.startsWith('/business') &&
+            !pathname?.startsWith('/catalog') &&
             !pathname?.startsWith('/dashboard') &&
             !pathname?.startsWith('/ad') &&
             pathname !== '/' &&

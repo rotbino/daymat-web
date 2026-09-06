@@ -244,8 +244,8 @@ export default function AdminPaymentsPage() {
                                 <td className="px-3 py-2.5 text-sm font-bold whitespace-nowrap">{p.amount?.toLocaleString()} ت</td>
                                 <td className="px-3 py-2.5 text-sm whitespace-nowrap">{p.creditCount?.toLocaleString()}</td>
                                 <td className="px-3 py-2.5 text-xs">
-                                    <p>{p.business?.name || '-'}</p>
-                                    <p className="text-[10px] text-on-surface-variant/50">{p.business?.city}</p>
+                                    <p>{p.catalog?.name || '-'}</p>
+                                    <p className="text-[10px] text-on-surface-variant/50">{p.catalog?.city}</p>
                                 </td>
                                 <td className="px-3 py-2.5">{getStatusBadge(p.status)}</td>
                                 <td className="px-3 py-2.5">
@@ -304,8 +304,8 @@ export default function AdminPaymentsPage() {
                                 {[
                                     ['کاربر', selectedPayment.user?.fullName],
                                     ['موبایل', selectedPayment.user?.phone],
-                                    ['کسب‌وکار', selectedPayment.business?.name],
-                                    ['شهر', selectedPayment.business?.city],
+                                    ['کسب‌وکار', selectedPayment.catalog?.name],
+                                    ['شهر', selectedPayment.catalog?.city],
                                     ['تاریخ', new Date(selectedPayment.createdAt).toLocaleDateString('fa-IR')],
                                     ['وضعیت', selectedPayment.status === 'approved' ? 'تأیید شده' : selectedPayment.status === 'rejected' ? 'رد شده' : 'در انتظار'],
                                 ].map(([l, v]) => (

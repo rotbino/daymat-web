@@ -16,7 +16,7 @@ import { apiService } from '@/lib/api/apiService';
 import { cn } from '@/lib/utils';
 import Image from 'next/image';
 import Link from 'next/link';
-import CategoryFilter from '@/app/home/CategoryFilter';
+import CategoryFilter from '@/app_/home/CategoryFilter';
 
 type AdStatus = 'pending' | 'approved' | 'rejected' | 'active' | 'inactive' | 'expired' | 'all';
 
@@ -37,7 +37,7 @@ interface AdItem {
     rejectionReason?: string;
     unit: { id: string; title: string; shortCode: string };
     category: { id: string; title: string };
-    business: { id: string; name: string; verificationTier: string };
+    catalog: { id: string; name: string; verificationTier: string };
     arm: { id: string; slug: string; name: string };
     createdBy: { id: string; fullName: string; phone: string };
 }
@@ -318,7 +318,7 @@ export default function ArmAdminAdsPage() {
                                     <div className="flex items-center justify-between">
                                         <div className="flex flex-col">
                                             <span className="text-xs text-on-surface dark:text-gray-200 font-medium">
-                                                {ad.business?.name || 'نامشخص'}
+                                                {ad.catalog?.name || 'نامشخص'}
                                             </span>
                                             <span className="text-[9px] text-on-surface-variant/60 dark:text-gray-500">
                                                 {ad.createdBy?.fullName || ad.createdBy?.phone}
@@ -434,7 +434,7 @@ export default function ArmAdminAdsPage() {
                                 </div>
                                 <div>
                                     <p className="text-[10px] text-on-surface-variant/60 dark:text-gray-500">فروشنده</p>
-                                    <p className="text-sm font-medium">{selectedAd.business?.name || 'نامشخص'}</p>
+                                    <p className="text-sm font-medium">{selectedAd.catalog?.name || 'نامشخص'}</p>
                                 </div>
                                 <div>
                                     <p className="text-[10px] text-on-surface-variant/60 dark:text-gray-500">ثبت‌کننده</p>

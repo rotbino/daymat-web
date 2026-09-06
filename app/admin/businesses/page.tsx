@@ -1,4 +1,4 @@
-// app/admin/businesses/page.tsx
+// app/admin/cataloges/page.tsx
 'use client';
 
 import React, { useEffect, useState, useCallback } from 'react';
@@ -25,9 +25,9 @@ import {
 } from 'lucide-react';
 import Link from 'next/link';
 import { cn } from '@/lib/utils';
-import { BUSINESS_TYPES } from '@/lib/api/data-types';
+import { CATALOG_TYPES } from '@/lib/api/data-types';
 
-interface BusinessItem {
+interface CatalogItem {
     id: string;
     name: string;
     shortDescription: string;
@@ -44,23 +44,23 @@ interface BusinessItem {
 }
 
 interface Stats {
-    totalBusinesses: number;
+    totalCataloges: number;
     pendingVerification: number;
-    activeBusinesses: number;
+    activeCataloges: number;
     tierStats: { blue: number; silver: number; gold: number };
 }
 
 const typeLabelMap: Record<string, string> = Object.fromEntries(
-    BUSINESS_TYPES.map(t => [t.value, t.label])
+    CATALOG_TYPES.map(t => [t.value, t.label])
 );
 
-export default function AdminBusinessesPage() {
+export default function AdminCatalogesPage() {
     const router = useRouter();
-    const [businesses, setBusinesses] = useState<BusinessItem[]>([]);
+    const [cataloges, setCataloges] = useState<CatalogItem[]>([]);
     const [stats, setStats] = useState<Stats>({
-        totalBusinesses: 0,
+        totalCataloges: 0,
         pendingVerification: 0,
-        activeBusinesses: 0,
+        activeCataloges: 0,
         tierStats: { blue: 0, silver: 0, gold: 0 },
     });
     const [loading, setLoading] = useState(true);
@@ -79,8 +79,8 @@ export default function AdminBusinessesPage() {
     const fetchData = useCallback(async () => {
         setLoading(true);
         try {
-            const data = await apiService.admin.businesses.getList(filters);
-            setBusinesses(data.items);
+            const data = await apiService.admin.cataloges.getList(filters);
+            setCataloges(data.items);
             setStats(data.stats);
             setPagination(data.pagination);
         } catch (err) {
@@ -112,7 +112,7 @@ export default function AdminBusinessesPage() {
         return null;
     };
 
-    const statusText = (biz: BusinessItem) => {
+    const statusText = (biz: CatalogItem) => {
         if (biz.verificationStatus === 'none') return 'ندارد';
         if (biz.verificationStatus === 'pending') return 'در انتظار';
         if (biz.verificationStatus === 'approved') return 'تأیید';
@@ -129,13 +129,13 @@ export default function AdminBusinessesPage() {
                         <div className="flex items-center gap-2 text-on-surface-variant text-xs mb-2">
                             <Building2 className="w-4 h-4" /> کل کسب‌وکارها
                         </div>
-                        <div className="text-2xl font-bold">{stats.totalBusinesses}</div>
+                        <div className="text-2xl font-bold">{stats.totalCataloges}</div>
                     </div>
                     <div className="bg-white dark:bg-gray-800 p-4 rounded-xl border border-outline-variant">
                         <div className="flex items-center gap-2 text-on-surface-variant text-xs mb-2">
                             <Store className="w-4 h-4" /> فعال
                         </div>
-                        <div className="text-2xl font-bold">{stats.activeBusinesses}</div>
+                        <div className="text-2xl font-bold">{stats.activeCataloges}</div>
                     </div>
                     <div className="bg-white dark:bg-gray-800 p-4 rounded-xl border border-outline-variant">
                         <div className="flex items-center gap-2 text-yellow-500 text-xs mb-2">
@@ -195,7 +195,7 @@ export default function AdminBusinessesPage() {
                                 className="w-full h-9 rounded-lg border border-outline-variant bg-surface text-sm px-2"
                             >
                                 <option value="all">همه</option>
-                                {BUSINESS_TYPES.map((type) => (
+                                {CATALOG_TYPES.map((type) => (
                                     <option key={type.value} value={type.value}>{type.label}</option>
                                 ))}
                             </select>
@@ -234,7 +234,7 @@ export default function AdminBusinessesPage() {
                 <div className="hidden md:block bg-white dark:bg-gray-800 rounded-xl border border-outline-variant overflow-hidden">
                     {loading ? (
                         <div className="flex justify-center py-10"><Loader2 className="animate-spin w-6 h-6" /></div>
-                    ) : businesses.length === 0 ? (
+                    ) : cataloges.length === 0 ? (
                         <div className="text-center py-10 text-on-surface-variant">هیچ کسب‌وکاری یافت نشد</div>
                     ) : (
                         <div className="overflow-x-auto">
@@ -251,11 +251,11 @@ export default function AdminBusinessesPage() {
                                 </tr>
                                 </thead>
                                 <tbody>
-                                {businesses.map((biz) => (
+                                {cataloges.map((biz) => (
                                     <tr
                                         key={biz.id}
                                         className="border-t border-outline-variant/50 hover:bg-surface-container-low cursor-pointer"
-                                        onClick={() => router.push(`/admin/businesses/${biz.id}`)}
+                                        onClick={() => router.push(`/admin/cataloges/${biz.id}`)}
                                     >
                                         <td className="px-4 py-3 font-medium">{biz.name}</td>
                                         <td className="px-4 py-3">{typeLabelMap[biz.type] || biz.type}</td>
@@ -290,13 +290,13 @@ export default function AdminBusinessesPage() {
                 <div className="md:hidden space-y-3">
                     {loading ? (
                         <div className="flex justify-center py-10"><Loader2 className="animate-spin w-6 h-6" /></div>
-                    ) : businesses.length === 0 ? (
+                    ) : cataloges.length === 0 ? (
                         <div className="text-center py-10 text-on-surface-variant">هیچ کسب‌وکاری یافت نشد</div>
                     ) : (
-                        businesses.map((biz) => (
+                        cataloges.map((biz) => (
                             <div
                                 key={biz.id}
-                                onClick={() => router.push(`/admin/businesses/${biz.id}`)}
+                                onClick={() => router.push(`/admin/cataloges/${biz.id}`)}
                                 className="bg-white dark:bg-gray-800 rounded-xl border border-outline-variant p-4 active:scale-[0.98] transition-transform cursor-pointer"
                             >
                                 <div className="flex items-start justify-between mb-3">

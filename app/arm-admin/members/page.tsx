@@ -1,639 +1,691 @@
 // app/arm-admin/members/page.tsx
 'use client';
 
-import React, { useState, useEffect, useMemo } from 'react';
+import React, { useEffect, useMemo, useState } from 'react';
+import { useRouter, useSearchParams } from 'next/navigation';
 import { useSelector } from 'react-redux';
 import { RootState } from '@/lib/store/store';
+import { useQueryClient } from '@tanstack/react-query';
 import {
-    Users,
-    Search,
-    Filter,
-    X,
-    User,
-    Building2,
-    Phone,
-    MapPin,
-    BadgeCheck,
-    Clock,
-    Shield,
-    ChevronDown,
-    ChevronUp,
-    Eye,
-    Calendar,
-    MoreVertical,
-    CheckCircle,
-    XCircle,
-    AlertCircle,
-    Loader2,
-    Crown,
-    Store,
-    ArrowUpDown,
+    Store, Search, X, Eye, PauseCircle, PlayCircle, Trash2, Loader2,
+    Package, Phone, MapPin, CheckCircle2, AlertTriangle, Users,
+    Sparkles, ArrowLeft, Building2, Info, UserPlus, Layers,
+    ShoppingCart, User as UserIcon, Plus, RefreshCw,
+    LibraryBig,
 } from 'lucide-react';
-import { toast } from 'sonner';
-import { apiService } from '@/lib/api/apiService';
 import { cn } from '@/lib/utils';
-import Link from "next/link";
-import { useSearchParams } from 'next/navigation';
-// ============================================================
-// تایپ‌ها
-// ============================================================
-interface Member {
-    id: string;
-    userId: string;
-    user: {
-        id: string;
-        fullName: string | null;
-        phone: string;
-        avatarUrl?: string;
-        isPhoneVerified: boolean;
-    };
-    businessId: string | null;
-    business: {
-        id: string;
-        name: string;
-        type: string;
-        verificationTier: string;
-        city: string;
-        province: string;
-        trustScore: number;
-    } | null;
-    role: 'viewer' | 'seller' | 'buyer' | 'system_admin';
-    roleType?: 'seller' | 'buyer' | null;
-    status: 'active' | 'pending' | 'paused' | 'banned';
-    joinedAt: string;
-    metadata?: any;
+import CategoryPicker from '@/app/ad/components/CategoryPicker';
+import {
+    useArmSellers, useArmSellerCandidates, useArmBuyers, useArmBuyerCandidates,
+    useAddSeller, useToggleSellerPaused, useRemoveSeller,
+    useAddBuyer, useRemoveBuyer, useSetAdMarketCategoryAdmin,
+    useArmNeedsCategory, armMemberKeys,
+} from '@/lib/api/apiHooks';
+
+// ═══ هلپرها ═══
+const fmt = (n?: number | null) => (n ?? 0).toLocaleString('fa-IR');
+const salesLabel = (s: string) =>
+    s === 'retail' ? 'فروش خرده' : s === 'service' ? 'فروش خدمات' : 'فروش عمده';
+const salesCls = (s: string) =>
+    s === 'retail'
+        ? 'bg-sky-50 text-sky-700 dark:bg-sky-900/30 dark:text-sky-300'
+        : s === 'service'
+            ? 'bg-violet-50 text-violet-700 dark:bg-violet-900/30 dark:text-violet-300'
+            : 'bg-emerald-50 text-emerald-700 dark:bg-emerald-900/30 dark:text-emerald-300';
+
+function useDebounced<T>(value: T, delay = 400): T {
+    const [v, setV] = useState(value);
+    useEffect(() => {
+        const t = setTimeout(() => setV(value), delay);
+        return () => clearTimeout(t);
+    }, [value, delay]);
+    return v;
 }
 
-type SortField = 'joinedAt' | 'user.fullName' | 'user.phone' | 'role' | 'status';
-type SortOrder = 'asc' | 'desc';
-type RoleFilter = 'all' | 'system_admin' | 'seller' | 'buyer' | 'viewer';
-type StatusFilter = 'all' | 'active' | 'pending' | 'paused' | 'banned';
-
-export default function ArmAdminMembers() {
-    const { currentSlug, currentArm } = useSelector((state: RootState) => state.arm);
-    const searchParams = useSearchParams();
-    const initialStatus = (searchParams.get('status') as StatusFilter) || 'all';
-    const [members, setMembers] = useState<Member[]>([]);
-    const [loading, setLoading] = useState(true);
-    const [searchQuery, setSearchQuery] = useState('');
-    const [roleFilter, setRoleFilter] = useState<RoleFilter>('all');
-    //const [statusFilter, setStatusFilter] = useState<StatusFilter>('all');
-    const [sortField, setSortField] = useState<SortField>('joinedAt');
-    const [sortOrder, setSortOrder] = useState<SortOrder>('desc');
-    const [selectedMember, setSelectedMember] = useState<Member | null>(null);
-    const [isDetailModalOpen, setIsDetailModalOpen] = useState(false);
-    const [showFilters, setShowFilters] = useState(false);
-    const [isLoadingAction, setIsLoadingAction] = useState(false);
-    const [statusFilter, setStatusFilter] = useState<StatusFilter>(initialStatus);
-    // ============================================================
-    // پیجینگ
-    // ============================================================
-    const [page, setPage] = useState(1);
-    const [totalPages, setTotalPages] = useState(1);
-    const [totalItems, setTotalItems] = useState(0);
-    const limit = 20;
-
-    // ============================================================
-    // ✅ واکشی اعضا از بک‌اند
-    // ============================================================
-    const fetchMembers = async () => {
-        if (!currentSlug) {
-            setLoading(false);
-            return;
-        }
-
-        setLoading(true);
-        try {
-            const sortByMap: Record<string, string> = {
-                'user.fullName': 'name',
-                'user.phone': 'phone',
-                'role': 'role',
-                'status': 'status',
-                'joinedAt': 'joinedAt',
-            };
-
-            const data = await apiService.armAdmin.members.getList(currentSlug, {
-                page,
-                limit,
-                search: searchQuery || undefined,
-                role: roleFilter === 'all' ? undefined : roleFilter,
-                status: statusFilter === 'all' ? undefined : statusFilter,
-                sortBy: sortByMap[sortField] || 'joinedAt',
-                sortOrder,
-            });
-
-            setMembers(data.items);
-            setTotalPages(data.pagination.totalPages);
-            setTotalItems(data.pagination.total);
-        } catch (error: any) {
-            console.error('Error fetching members:', error);
-            toast.error(error?.message || 'خطا در دریافت لیست اعضا');
-        } finally {
-            setLoading(false);
-        }
-    };
-
-    // ✅ واکشی با تغییر صفحه یا فیلترها
-    useEffect(() => {
-        fetchMembers();
-    }, [currentSlug, page, searchQuery, roleFilter, statusFilter, sortField, sortOrder]);
-
-    // ✅ ریست صفحه وقتی فیلترها تغییر میکنن
-    useEffect(() => {
-        setPage(1);
-    }, [searchQuery, roleFilter, statusFilter]);
-
-    useEffect(() => {
-        const paramStatus = searchParams.get('status') as StatusFilter;
-        if (paramStatus) {
-            setStatusFilter(paramStatus);
-        }
-    }, [searchParams]);
-
-    // ============================================================
-    // ✅ آمار
-    // ============================================================
-    const stats = useMemo(() => {
-        const total = members.length;
-        const active = members.filter(m => m.status === 'active').length;
-        const admins = members.filter(m => m.role === 'system_admin').length;
-        const sellers = members.filter(m => m.role === 'seller').length;
-        const buyers = members.filter(m => m.role === 'buyer').length;
-        return { total, active, admins, sellers, buyers };
-    }, [members]);
-
-    // ============================================================
-    // ✅ رندر وضعیت
-    // ============================================================
-    const getStatusBadge = (status: string) => {
-        const styles = {
-            active: 'bg-green-500/10 text-green-600 border-green-200',
-            pending: 'bg-amber-500/10 text-amber-600 border-amber-200', // ✅
-            paused: 'bg-yellow-500/10 text-yellow-600 border-yellow-200',
-            banned: 'bg-red-500/10 text-red-600 border-red-200',
-            rejected: 'bg-red-500/10 text-red-600 border-red-200', // در صورت نیاز
-        };
-        const labels = {
-            active: 'فعال',
-            pending: 'در انتظار',     // ✅
-            paused: 'تعلیق',
-            banned: 'مسدود',
-            rejected: 'رد شده',
-            removed: 'حذف شده',
-        };
-        const icons = {
-            active: CheckCircle,
-            pending: Clock,           // ✅
-            paused: Clock,
-            banned: XCircle,
-            rejected: XCircle,
-        };
-        const Icon = icons[status as keyof typeof icons] || AlertCircle;
-
+function Logo({ url, size = 44, fallback: FallbackIcon = Store }: { url?: string | null; size?: number; fallback?: any }) {
+    const [broken, setBroken] = useState(false);
+    if (!url || broken) {
         return (
-            <span className={cn(
-                "inline-flex items-center gap-1.5 px-2.5 py-1 text-xs font-medium rounded-full border",
-                styles[status as keyof typeof styles] || styles.active
-            )}>
-            <Icon className="w-3 h-3" />
-                {labels[status as keyof typeof labels] || status}
-        </span>
-        );
-    };
-
-    const getRoleBadge = (role: string) => {
-        const styles = {
-            arm_member: 'bg-purple-500/10 text-purple-600 border-purple-200',
-            arm_owner: 'bg-blue-500/10 text-blue-600 border-blue-200',
-            buyer: 'bg-emerald-500/10 text-emerald-600 border-emerald-200',
-            viewer: 'bg-gray-500/10 text-gray-600 border-gray-200',
-        };
-        const labels = {
-            arm_member: 'عضو',
-            arm_owner: 'مدیر بازار',
-            buyer: 'خریدار',
-            viewer: 'بازدیدکننده',
-        };
-
-        return (
-            <span className={cn(
-                "inline-flex items-center gap-1 px-2.5 py-1 text-xs font-medium rounded-full border",
-                styles[role as keyof typeof styles] || styles.viewer
-            )}>
-                {role === 'system_admin' && <Crown className="w-3 h-3" />}
-                {labels[role as keyof typeof labels] || role}
-            </span>
-        );
-    };
-
-    const getVerificationBadge = (tier: string) => {
-        if (tier === 'none' || !tier) return null;
-        const colors = {
-            blue: 'text-blue-600 bg-blue-50',
-            silver: 'text-gray-600 bg-gray-50',
-            gold: 'text-yellow-600 bg-yellow-50',
-        };
-        return (
-            <span className={cn(
-                "inline-flex items-center gap-0.5 text-[10px] px-1.5 py-0.5 rounded-full",
-                colors[tier as keyof typeof colors] || colors.blue
-            )}>
-                <BadgeCheck className="w-3 h-3" />
-                {tier === 'gold' ? 'طلایی' : tier === 'silver' ? 'نقره‌ای' : 'آبی'}
-            </span>
-        );
-    };
-
-    // ============================================================
-    // ✅ مودال جزئیات عضو
-    // ============================================================
-    const MemberDetailModal = () => {
-        if (!selectedMember) return null;
-
-        return (
-            <div className="fixed inset-0 z-[100] flex items-center justify-center bg-black/50 backdrop-blur-sm p-4">
-                <div className="bg-surface w-full max-w-2xl max-h-[90vh] overflow-y-auto rounded-2xl shadow-2xl border border-outline-variant">
-                    {/* هدر */}
-                    <div className="flex items-center justify-between p-4 border-b border-outline-variant sticky top-0 bg-surface rounded-t-2xl">
-                        <div className="flex items-center gap-3">
-                            <div className="w-10 h-10 rounded-full bg-primary/10 flex items-center justify-center">
-                                <User className="w-5 h-5 text-primary" />
-                            </div>
-                            <div>
-                                <h3 className="text-lg font-semibold text-on-surface">
-                                    {selectedMember.user.fullName || 'کاربر ناشناس'}
-                                </h3>
-                                <p className="text-sm text-on-surface-variant">{selectedMember.user.phone}</p>
-                            </div>
-                        </div>
-                        <button
-                            onClick={() => {
-                                setIsDetailModalOpen(false);
-                                setSelectedMember(null);
-                            }}
-                            className="p-1.5 hover:bg-surface-container-high rounded-lg transition-colors"
-                        >
-                            <X className="w-5 h-5 text-on-surface-variant" />
-                        </button>
-                    </div>
-
-                    {/* محتوا */}
-                    <div className="p-4 space-y-4">
-                        {/* اطلاعات کاربر */}
-                        <div className="grid grid-cols-2 gap-3">
-                            <div className="bg-surface-container-low p-3 rounded-xl">
-                                <p className="text-xs text-on-surface-variant">نقش</p>
-                                <div className="mt-1">{getRoleBadge(selectedMember.role)}</div>
-                            </div>
-                            <div className="bg-surface-container-low p-3 rounded-xl">
-                                <p className="text-xs text-on-surface-variant">وضعیت</p>
-                                <div className="mt-1">{getStatusBadge(selectedMember.status)}</div>
-                            </div>
-                            <div className="bg-surface-container-low p-3 rounded-xl col-span-2">
-                                <p className="text-xs text-on-surface-variant">تاریخ پیوند</p>
-                                <p className="text-sm font-medium text-on-surface mt-1">
-                                    {new Date(selectedMember.joinedAt).toLocaleDateString('fa-IR')}
-                                </p>
-                            </div>
-                            <div className="bg-surface-container-low p-3 rounded-xl col-span-2">
-                                <p className="text-xs text-on-surface-variant">تایید موبایل</p>
-                                <p className="text-sm font-medium text-on-surface mt-1">
-                                    {selectedMember.user.isPhoneVerified ? (
-                                        <span className="text-green-600 flex items-center gap-1">
-                                            <CheckCircle className="w-4 h-4" /> تایید شده
-                                        </span>
-                                    ) : (
-                                        <span className="text-yellow-600 flex items-center gap-1">
-                                            <AlertCircle className="w-4 h-4" /> تایید نشده
-                                        </span>
-                                    )}
-                                </p>
-                            </div>
-                        </div>
-
-                        {/* کسب‌وکار */}
-                        {selectedMember.business ? (
-                            <div className="border-t border-outline-variant pt-4">
-                                <h4 className="text-sm font-semibold text-on-surface mb-3 flex items-center gap-2">
-                                    <Building2 className="w-4 h-4 text-primary" />
-                                    اطلاعات کسب‌وکار
-                                </h4>
-                                <div className="bg-surface-container-low p-4 rounded-xl space-y-2">
-                                    <div className="flex items-center justify-between">
-                                        <span className="text-sm text-on-surface-variant">نام</span>
-                                        <span className="font-medium text-on-surface">{selectedMember.business.name}</span>
-                                    </div>
-                                    <div className="flex items-center justify-between">
-                                        <span className="text-sm text-on-surface-variant">نوع</span>
-                                        <span className="text-sm text-on-surface">{selectedMember.business.type}</span>
-                                    </div>
-                                    <div className="flex items-center justify-between">
-                                        <span className="text-sm text-on-surface-variant">موقعیت</span>
-                                        <span className="text-sm text-on-surface flex items-center gap-1">
-                                            <MapPin className="w-3 h-3" />
-                                            {selectedMember.business.city}، {selectedMember.business.province}
-                                        </span>
-                                    </div>
-                                    <div className="flex items-center justify-between">
-                                        <span className="text-sm text-on-surface-variant">تیک اعتماد</span>
-                                        <span>{getVerificationBadge(selectedMember.business.verificationTier)}</span>
-                                    </div>
-                                    <div className="flex items-center justify-between">
-                                        <span className="text-sm text-on-surface-variant">امتیاز اعتماد</span>
-                                        <span className="font-bold text-primary">{selectedMember.business.trustScore}</span>
-                                    </div>
-                                </div>
-                            </div>
-                        ) : (
-                            <div className="border-t border-outline-variant pt-4">
-                                <div className="bg-surface-container-low p-4 rounded-xl text-center text-sm text-on-surface-variant">
-                                    <Building2 className="w-8 h-8 mx-auto mb-2 text-on-surface-variant/30" />
-                                    این کاربر هنوز کسب‌وکاری ثبت نکرده است
-                                </div>
-                            </div>
-                        )}
-
-                        {/* دکمه‌های اقدام */}
-                        <div className="border-t border-outline-variant pt-4 flex gap-3">
-                            <button
-                                onClick={() => {
-                                    setIsDetailModalOpen(false);
-                                    setSelectedMember(null);
-                                }}
-                                className="flex-1 px-4 py-2 border border-outline text-on-surface rounded-xl hover:bg-surface-container-low transition-colors text-sm font-medium"
-                            >
-                                بستن
-                            </button>
-                            {selectedMember.business && (
-                                <button
-                                    onClick={() => {
-                                        // TODO: رفتن به صفحه کسب‌وکار
-                                        toast.info('قابلیت مشاهده کسب‌وکار به زودی اضافه می‌شود');
-                                    }}
-                                    className="flex-1 px-4 py-2 bg-primary text-on-primary rounded-xl hover:bg-primary/90 transition-colors text-sm font-medium flex items-center justify-center gap-2"
-                                >
-                                    <Eye className="w-4 h-4" />
-                                    مشاهده کسب‌وکار
-                                </button>
-                            )}
-                        </div>
-                    </div>
-                </div>
-            </div>
-        );
-    };
-
-    // ============================================================
-    // ✅ در حال بارگذاری
-    // ============================================================
-    if (loading && members.length === 0) {
-        return (
-            <div className="flex items-center justify-center min-h-[60vh]">
-                <div className="text-center">
-                    <Loader2 className="w-12 h-12 animate-spin text-primary mx-auto" />
-                    <p className="mt-4 text-on-surface-variant">در حال بارگذاری اعضا...</p>
-                </div>
+            <div style={{ width: size, height: size }}
+                 className="rounded-xl bg-surface-container-high flex items-center justify-center flex-shrink-0 overflow-hidden">
+                <FallbackIcon className="w-1/2 h-1/2 text-on-surface-variant/40" />
             </div>
         );
     }
-
-    // ============================================================
-    // ✅ رندر اصلی
-    // ============================================================
     return (
-        <div>
-            {/* هدر */}
-            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-6">
-                <div>
-                    <h1 className="text-2xl font-bold text-on-surface">مدیریت اعضا</h1>
-                    <p className="text-sm text-on-surface-variant">
-                        {currentArm?.name || currentSlug} | مدیریت اعضای بازار
-                    </p>
-                </div>
-                <div className="flex items-center gap-2 text-sm bg-surface-container-low px-3 py-1.5 rounded-lg">
-                    <Users className="w-4 h-4 text-primary" />
-                    <span>{totalItems} عضو</span>
-                    <span className="text-on-surface-variant/50">|</span>
-                    <span className="text-green-600">{stats.active} فعال</span>
-                </div>
+        // eslint-disable-next-line @next/next/no-img-element
+        <img src={url} alt="" style={{ width: size, height: size }}
+             onError={() => setBroken(true)}
+             className="rounded-xl object-cover flex-shrink-0 border border-outline-variant/30" />
+    );
+}
+
+function RowSkeleton({ h = 96 }: { h?: number }) {
+    return <div style={{ height: h }} className="rounded-2xl bg-surface-container-high/50 animate-pulse" />;
+}
+
+// ═══════════════════════════════════════════
+// صفحهٔ اعضای بازار — فروشندگان / خریداران
+// ═══════════════════════════════════════════
+export default function ArmAdminMembersPage() {
+    const router = useRouter();
+    const searchParams = useSearchParams();
+    const { currentSlug, currentArm } = useSelector((s: RootState) => s.arm);
+
+    const initialTab = searchParams.get('tab') === 'buyers' ? 'buyers' : 'sellers';
+    const [tab, setTab] = useState<'sellers' | 'buyers'>(initialTab as any);
+
+    const changeTab = (t: 'sellers' | 'buyers') => {
+        setTab(t);
+        const params = new URLSearchParams(searchParams.toString());
+        params.set('tab', t);
+        router.replace(`?${params.toString()}`, { scroll: false });
+    };
+
+    if (!currentSlug) {
+        return <div className="text-center py-16 text-sm text-on-surface-variant">ابتدا بازار را انتخاب کنید</div>;
+    }
+
+    return (
+        <div className="space-y-5">
+            {/* ─── هدر ─── */}
+            <div>
+                <h1 className=" font-bold text-on-surface"> فروشندگان و خریدارانِ تابلوی {currentArm?.name || currentSlug}</h1>
+                <p className="text-sm text-on-surface-variant mt-0.5 p-2">
+                   شما بعنوان مالک بازار و با توجه به صنف کسب و کار، تعیین می کنید چه کسی فروشنده و چه کسی خریدار بازار باشد.
+                </p>
             </div>
 
-            {/* کارت‌های آماری */}
-            <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 mb-6">
-                <div className="bg-surface-container-low border border-outline-variant p-3 rounded-xl text-center">
-                    <p className="text-2xl font-bold text-primary">{totalItems}</p>
-                    <p className="text-[10px] text-on-surface-variant">کل اعضا</p>
-                </div>
-                <div className="bg-surface-container-low border border-outline-variant p-3 rounded-xl text-center">
-                    <p className="text-2xl font-bold text-green-600">{stats.active}</p>
-                    <p className="text-[10px] text-on-surface-variant">فعال</p>
-                </div>
-                <div className="bg-surface-container-low border border-outline-variant p-3 rounded-xl text-center">
-                    <p className="text-2xl font-bold text-purple-600">{stats.admins}</p>
-                    <p className="text-[10px] text-on-surface-variant">مدیر</p>
-                </div>
-                <div className="bg-surface-container-low border border-outline-variant p-3 rounded-xl text-center">
-                    <p className="text-2xl font-bold text-blue-600">{stats.sellers + stats.buyers}</p>
-                    <p className="text-[10px] text-on-surface-variant">فروشنده/خریدار</p>
-                </div>
+            {/* ─── دو دنیا ─── */}
+            <div className="grid grid-cols-2 gap-3">
+                <button onClick={() => changeTab('sellers')}
+                        className={cn(
+                            'rounded-2xl border p-4 text-right transition-all',
+                            tab === 'sellers'
+                                ? 'border-primary bg-primary/5 ring-1 ring-primary/30'
+                                : 'border-outline-variant/40 bg-white dark:bg-gray-900 hover:border-primary/30',
+                        )}>
+                    <span className={cn('w-10 h-10 rounded-xl flex items-center justify-center mb-2',
+                        tab === 'sellers' ? 'bg-primary text-on-primary' : 'bg-surface-container-high text-on-surface-variant')}>
+                        <Store className="w-5 h-5" />
+                    </span>
+                    <span className="block text-sm font-extrabold text-on-surface">فروشندگان بازار</span>
+                    <span className="block text-[10px] text-on-surface-variant/70 mt-0.5 leading-4">
+                        کاتالوگ‌هایی که روی تابلوی قیمت می‌فروشند
+                    </span>
+                </button>
+                <button onClick={() => changeTab('buyers')}
+                        className={cn(
+                            'rounded-2xl border p-4 text-right transition-all',
+                            tab === 'buyers'
+                                ? 'border-primary bg-primary/5 ring-1 ring-primary/30'
+                                : 'border-outline-variant/40 bg-white dark:bg-gray-900 hover:border-primary/30',
+                        )}>
+                    <span className={cn('w-10 h-10 rounded-xl flex items-center justify-center mb-2',
+                        tab === 'buyers' ? 'bg-primary text-on-primary' : 'bg-surface-container-high text-on-surface-variant')}>
+                        <ShoppingCart className="w-5 h-5" />
+                    </span>
+                    <span className="block text-sm font-extrabold text-on-surface">خریداران بازار</span>
+                    <span className="block text-[10px] text-on-surface-variant/70 mt-0.5 leading-4">
+                        کسب‌وکارهایی که مشتریِ تابلوی قیمت‌اند
+                    </span>
+                </button>
             </div>
 
-            {/* فیلترها */}
-            <div className="bg-surface-container-low border border-outline-variant p-4 rounded-xl mb-6">
-                <div className="flex flex-col sm:flex-row gap-3">
-                    <div className="relative flex-1">
-                        <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-on-surface-variant" />
-                        <input
-                            type="text"
-                            value={searchQuery}
-                            onChange={(e) => setSearchQuery(e.target.value)}
-                            placeholder="جستجوی نام، شماره یا کسب‌وکار..."
-                            className="w-full bg-surface-container-lowest border border-outline rounded-lg h-10 px-3 pr-9 text-sm focus:ring-2 focus:ring-primary/20 focus:border-primary outline-none transition-all"
-                        />
+            {tab === 'sellers' ? <SellersTab slug={currentSlug} /> : <BuyersTab slug={currentSlug} />}
+        </div>
+    );
+}
+
+// ═══════════════════════════════════════════
+// تب فروشندگان
+// ═══════════════════════════════════════════
+function SellersTab({ slug }: { slug: string }) {
+    const searchParams = useSearchParams();
+    const queryClient = useQueryClient();
+    const { currentArm } = useSelector((s: RootState) => s.arm);
+
+    const [qInput, setQInput] = useState('');
+    const [onlyMine, setOnlyMine] = useState(false);
+    const q = useDebounced(qInput.trim(), 400);
+
+    const sellersQ = useArmSellers(slug, {});
+    const candidatesQ = useArmSellerCandidates(slug, q, onlyMine, true);
+    const needsQ = useArmNeedsCategory(slug, true);
+
+    const addMut = useAddSeller(slug);
+    const pauseMut = useToggleSellerPaused(slug);
+    const removeMut = useRemoveSeller(slug);
+    const assignMut = useSetAdMarketCategoryAdmin(slug);
+
+    const [confirmRemoveId, setConfirmRemoveId] = useState<string | null>(null);
+    const [addResult, setAddResult] = useState<{ name: string; stamped: number; needs: number } | null>(null);
+
+    const sellers: any[] = sellersQ.data?.items ?? [];
+    const candidates: any[] = candidatesQ.data?.items ?? [];
+    const needs: any[] = needsQ.data?.items ?? [];
+    const categoryTree = useMemo<any[]>(() => (currentArm as any)?.categoryTree || [], [currentArm]);
+
+    const totals = useMemo(() => ({
+        total: sellers.length,
+        active: sellers.filter((s) => s.status === 'active').length,
+        onTable: sellers.reduce((sum, s) => sum + (s.activeOnTable || 0), 0),
+        needs: sellers.reduce((sum, s) => sum + (s.needsCategory || 0), 0),
+    }), [sellers]);
+
+    const handleAdd = (c: any) => {
+        addMut.mutate(c.id, {
+            onSuccess: (res: any) => {
+                setAddResult({ name: c.name, stamped: res?.stamped ?? 0, needs: res?.needsCategory?.length ?? 0 });
+                toast.success(res?.message || 'به بازار اضافه شد');
+            },
+        });
+    };
+
+    const handleAssign = (item: any, categoryId: string) => {
+        if (!categoryId) return;
+        assignMut.mutate(
+            { adId: item.id, categoryId },
+            {
+                onSuccess: () => {
+                    queryClient.setQueryData(armMemberKeys.needs(slug), (old: any) => ({
+                        items: (old?.items ?? []).filter((n: any) => n.id !== item.id),
+                    }));
+                },
+            },
+        );
+    };
+
+    return (
+        <div className="space-y-4">
+            {/* ─── آمار ─── */}
+            <div className="grid grid-cols-4 gap-2">
+                {[
+                    { label: 'فروشنده', value: totals.total, cls: 'text-primary' },
+                    { label: 'فعال', value: totals.active, cls: 'text-emerald-600' },
+                    { label: 'روی تابلو', value: totals.onTable, cls: 'text-emerald-600' },
+                    { label: 'بی‌دسته', value: totals.needs, cls: 'text-amber-600' },
+                ].map((s) => (
+                    <div key={s.label} className="bg-white dark:bg-gray-900 rounded-xl border border-outline-variant/40 p-2.5 text-center">
+                        <p className={cn('text-lg font-extrabold', s.cls)}>{fmt(s.value)}</p>
+                        <p className="text-[9px] text-on-surface-variant/70">{s.label}</p>
                     </div>
+                ))}
+            </div>
 
-                    <button
-                        onClick={() => setShowFilters(!showFilters)}
-                        className="flex items-center gap-2 px-4 py-2 bg-surface-container-lowest border border-outline rounded-lg text-sm hover:border-primary/50 transition-colors"
-                    >
-                        <Filter className="w-4 h-4" />
-                        فیلترها
-                        {(roleFilter !== 'all' || statusFilter !== 'all') && (
-                            <span className="w-2 h-2 rounded-full bg-primary" />
-                        )}
-                    </button>
-
-                    {(roleFilter !== 'all' || statusFilter !== 'all' || searchQuery) && (
-                        <button
-                            onClick={() => {
-                                setSearchQuery('');
-                                setRoleFilter('all');
-                                setStatusFilter('all');
-                            }}
-                            className="text-xs text-error hover:underline flex items-center gap-1"
-                        >
-                            <X className="w-3 h-3" />
-                            پاک کردن فیلترها
+            {/* ─── جعبهٔ افزودن فروشنده — زنده ─── */}
+            <div className="bg-white dark:bg-gray-900 rounded-2xl border border-primary/25 overflow-hidden">
+                <div className="px-4 pt-3.5 pb-2 flex items-center gap-2">
+                    <UserPlus className="w-4 h-4 text-primary" />
+                    <h3 className="text-xs font-extrabold text-on-surface">افزودن محصولات کاتالوگ به بازار</h3>
+                    <span className="flex-1" />
+                    <label className="flex items-center gap-1.5 cursor-pointer">
+                        <button type="button" role="switch" aria-checked={onlyMine}
+                                onClick={() => setOnlyMine((v) => !v)}
+                                className={cn('relative w-8 h-4.5 rounded-full transition-colors',
+                                    onlyMine ? 'bg-primary' : 'bg-outline-variant/50')}>
+                            <span className={cn('absolute top-0.5 w-3.5 h-3.5 rounded-full bg-white shadow transition-all',
+                                onlyMine ? 'right-0.5' : 'right-[1.125rem]')} />
                         </button>
-                    )}
+                        <span className="text-[10px] font-bold text-on-surface-variant">جذب‌شده‌های من</span>
+                    </label>
+                </div>
+                <div className="px-4 pb-3">
+                    <div className="relative">
+                        <Search className="absolute right-3 top-1/2 -translate-y-1/2 w-4 h-4 text-on-surface-variant/50" />
+                        <input
+                            value={qInput}
+                            onChange={(e) => setQInput(e.target.value)}
+                            placeholder="جستجوی کاتالوگ، کسب‌وکار، مالک…"
+                            className="w-full h-10 pr-9 pl-8 rounded-xl bg-surface-container-lowest border border-outline-variant/40
+                                dark:border-gray-700 text-sm outline-none focus:ring-2 focus:ring-primary/30 focus:border-primary transition-all"
+                        />
+                        {qInput && (
+                            <button onClick={() => setQInput('')}
+                                    className="absolute left-2.5 top-1/2 -translate-y-1/2 p-1 text-on-surface-variant/60">
+                                <X className="w-3.5 h-3.5" />
+                            </button>
+                        )}
+                    </div>
                 </div>
 
-                {showFilters && (
-                    <div className="flex flex-wrap items-center gap-3 mt-3 pt-3 border-t border-outline-variant/50">
-                        <div className="flex items-center gap-2">
-                            <span className="text-xs text-on-surface-variant">نقش:</span>
-                            <select
-                                value={roleFilter}
-                                onChange={(e) => setRoleFilter(e.target.value as RoleFilter)}
-                                className="bg-surface-container-lowest border border-outline rounded-lg h-8 px-2 text-xs focus:ring-2 focus:ring-primary/20 focus:border-primary outline-none transition-all"
-                            >
-                                <option value="all">همه</option>
-                                <option value="arm_member">مدیر بازار</option>
-                                <option value="arm_owner">عضو بازار</option>
-
-                            </select>
-                        </div>
-                        <div className="flex items-center gap-2">
-                            <span className="text-xs text-on-surface-variant">وضعیت:</span>
-                            <select
-                                value={statusFilter}
-                                onChange={(e) => setStatusFilter(e.target.value as StatusFilter)}
-                                className="bg-surface-container-lowest border border-outline rounded-lg h-8 px-2 text-xs focus:ring-2 focus:ring-primary/20 focus:border-primary outline-none transition-all"
-                            >
-                                <option value="all">همه</option>
-                                <option value="pending">در انتظار تأیید</option>
-                                <option value="active">فعال</option>
-                                <option value="paused">تعلیق</option>
-                                <option value="banned">مسدود</option>
-                                <option value="removed">حذف شده</option>
-                            </select>
-                        </div>
-                        <div className="flex items-center gap-2">
-                            <span className="text-xs text-on-surface-variant">مرتب‌سازی:</span>
-                            <select
-                                value={`${sortField}-${sortOrder}`}
-                                onChange={(e) => {
-                                    const [field, order] = e.target.value.split('-');
-                                    setSortField(field as SortField);
-                                    setSortOrder(order as SortOrder);
-                                }}
-                                className="bg-surface-container-lowest border border-outline rounded-lg h-8 px-2 text-xs focus:ring-2 focus:ring-primary/20 focus:border-primary outline-none transition-all"
-                            >
-                                <option value="joinedAt-desc">جدیدترین</option>
-                                <option value="joinedAt-asc">قدیمی‌ترین</option>
-                                <option value="user.fullName-asc">نام (الفبا)</option>
-                                <option value="user.fullName-desc">نام (الفبا معکوس)</option>
-                                <option value="role-asc">نقش</option>
-                                <option value="status-asc">وضعیت</option>
-                            </select>
-                        </div>
+                {/* نتایج زنده */}
+                {candidatesQ.isFetching && q ? (
+                    <div className="px-4 pb-3"><RowSkeleton h={64} /></div>
+                ) : candidates.length > 0 ? (
+                    <div className="px-3 pb-3 space-y-1.5 max-h-72 overflow-y-auto scrollbar-slim">
+                        {candidates.map((c) => {
+                            const busy = addMut.isPending && addMut.variables === c.id;
+                            return (
+                                <div key={c.id}
+                                     className="flex items-center gap-3 p-2.5 rounded-xl bg-surface-container-lowest/60
+                                         border border-outline-variant/30 hover:border-primary/30 transition-colors">
+                                    <Logo url={c.logoUrl} size={38} fallback={LibraryBig} />
+                                    <div className="flex-1 min-w-0">
+                                        <p className="text-[12px] font-extrabold text-on-surface truncate">{c.name}</p>
+                                        <p className="text-[10px] text-on-surface-variant/70 truncate">
+                                            {[
+                                                c.businessName,
+                                                c.industryName,
+                                                c.owner?.fullName,
+                                                `${fmt(c._count?.ads)} کالا`,
+                                            ].filter(Boolean).join(' · ')}
+                                        </p>
+                                    </div>
+                                    <span className={cn('text-[9px] font-bold px-1.5 py-0.5 rounded flex-shrink-0', salesCls(c.salesType))}>
+                                        {salesLabel(c.salesType)}
+                                    </span>
+                                    <button onClick={() => handleAdd(c)} disabled={busy}
+                                            className="h-8 px-3 rounded-lg bg-primary text-on-primary text-[10px] font-extrabold
+                                                inline-flex items-center gap-1 hover:bg-primary/90 active:scale-95 transition-all
+                                                disabled:opacity-50 flex-shrink-0">
+                                        {busy ? <Loader2 className="w-3 h-3 animate-spin" /> : <Plus className="w-3.5 h-3.5" />}
+                                        افزودن
+                                    </button>
+                                </div>
+                            );
+                        })}
                     </div>
-                )}
+                ) : q || onlyMine ? (
+                    <p className="text-xs text-on-surface-variant/70 text-center pb-4">
+                        کاتالوگی با این مشخصات پیدا نشد
+                    </p>
+                ) : null}
             </div>
 
-            {/* لیست اعضا */}
-            {members.length === 0 ? (
-                <div className="text-center py-12 bg-surface-container-low border border-outline-variant rounded-xl">
-                    <Users className="w-16 h-16 text-on-surface-variant/30 mx-auto mb-4" />
-                    <h3 className="text-lg font-semibold text-on-surface">هیچ عضوی یافت نشد</h3>
-                    <p className="text-sm text-on-surface-variant">
-                        {searchQuery || roleFilter !== 'all' || statusFilter !== 'all'
-                            ? 'با فیلترهای اعمال‌شده هیچ عضوی پیدا نشد'
-                            : 'هیچ کسی در این بازار عضو نشده است'}
-                    </p>
+            {/* ─── نتیجهٔ آخرین افزودن ─── */}
+            {addResult && (
+                <div className="rounded-2xl border border-emerald-300/50 bg-emerald-50/70 dark:bg-emerald-900/15 dark:border-emerald-800/50 p-4">
+                    <div className="flex items-start gap-3">
+                        <span className="w-9 h-9 rounded-xl bg-emerald-500 grid place-items-center flex-shrink-0">
+                            <CheckCircle2 className="w-4.5 h-4.5 text-white" />
+                        </span>
+                        <div className="flex-1 min-w-0">
+                            <p className="text-sm font-extrabold text-emerald-800 dark:text-emerald-300">
+                                محصولات «{addResult.name}» به بازار اضافه شد
+                            </p>
+                            <p className="text-xs text-emerald-700/80 dark:text-emerald-400/80 mt-1">
+                                {fmt(addResult.stamped)} کالا منتشر شد
+                                {addResult.needs > 0 && ` — ${fmt(addResult.needs)} کالا نیاز به تعیین دسته دارد`}
+                            </p>
+                        </div>
+                        <button onClick={() => setAddResult(null)}
+                                className="w-7 h-7 rounded-lg text-emerald-600/60 hover:bg-emerald-500/10 grid place-items-center">
+                            <X className="w-4 h-4" />
+                        </button>
+                    </div>
                 </div>
-            ) : (
-                <div className="space-y-2">
-                    {members.map((member) => (
-                        <div
-                            key={member.id}
-                            className="bg-surface-container-lowest border border-outline-variant p-4 rounded-xl hover:shadow-md transition-shadow"
-                        >
-                            <div className="flex flex-col sm:flex-row sm:items-center gap-3">
-                                {/* اطلاعات کاربر */}
-                                <div className="flex items-center gap-3 min-w-0 flex-1">
-                                    <div className="w-10 h-10 rounded-full bg-primary/10 flex items-center justify-center flex-shrink-0">
-                                        <User className="w-5 h-5 text-primary" />
-                                    </div>
-                                    <div className="min-w-0">
+            )}
+
+            {/* ─── هشدار بی‌دسته ─── */}
+            {needs.length > 0 && (
+                <button onClick={() => {}}
+                        className="w-full bg-amber-50/70 dark:bg-amber-900/10 border border-amber-300/50 dark:border-amber-800/50
+                        rounded-2xl p-3.5 flex items-center gap-3 text-right">
+                    <AlertTriangle className="w-5 h-5 text-amber-600 flex-shrink-0" />
+                    <span className="flex-1 text-xs font-extrabold text-amber-800 dark:text-amber-300">
+                        {fmt(needs.length)} کالای منتشرشده نیاز به تعیین دستهٔ بازاری دارد
+                    </span>
+                    <ArrowLeft className="w-4 h-4 text-amber-600 flex-shrink-0" />
+                </button>
+            )}
+
+            {/* ─── لیست فروشندگان ─── */}
+            <div className="space-y-3">
+                <h3 className="text-xs font-extrabold text-on-surface-variant px-1 flex items-center gap-1.5">
+                    <Store className="w-3.5 h-3.5" /> فروشندگان بازار ({fmt(sellers.length)})
+                </h3>
+
+                {sellersQ.isPending ? (
+                    <><RowSkeleton /><RowSkeleton /><RowSkeleton /></>
+                ) : sellers.length === 0 ? (
+                    <div className="rounded-2xl border border-dashed border-outline-variant/50 p-10 text-center">
+                        <Store className="w-12 h-12 text-on-surface-variant/20 mx-auto mb-3" />
+                        <h4 className="text-sm font-extrabold text-on-surface">هنوز فروشنده‌ای نداری</h4>
+                        <p className="text-xs text-on-surface-variant mt-1.5">
+                            از جعبهٔ بالا کاتالوگ‌های مناسب را پیدا کن و به تابلوی قیمت اضافه کن
+                        </p>
+                    </div>
+                ) : (
+                    sellers.map((c) => {
+                        const isPaused = c.status !== 'active';
+                        const busyPause = pauseMut.isPending && pauseMut.variables?.catalogId === c.catalog.id;
+                        const busyRemove = removeMut.isPending && removeMut.variables === c.catalog.id;
+                        const busy = busyPause || busyRemove;
+                        const confirming = confirmRemoveId === c.membershipId;
+                        return (
+                            <div key={c.membershipId}
+                                 className={cn('bg-white dark:bg-gray-900 rounded-2xl border p-4 transition-all',
+                                     isPaused ? 'border-outline-variant/30 opacity-75' : 'border-outline-variant/40 hover:shadow-md')}>
+                                <div className="flex items-start gap-3.5">
+                                    <Logo url={c.catalog.logoUrl} />
+                                    <div className="flex-1 min-w-0">
                                         <div className="flex items-center gap-2 flex-wrap">
-                                            <p className="font-medium text-sm text-on-surface truncate">
-                                                {member.user.fullName || 'کاربر ناشناس'}
-                                            </p>
-                                            {getRoleBadge(member.role)}
+                                            <p className="text-sm font-extrabold text-on-surface truncate">{c.catalog.name}</p>
+                                            <span className={cn('text-[9px] font-bold px-1.5 py-0.5 rounded', salesCls(c.catalog.salesType))}>
+                                                {salesLabel(c.catalog.salesType)}
+                                            </span>
                                         </div>
-                                        <div className="flex items-center gap-2 text-xs text-on-surface-variant">
-                                            <span>{member.user.phone}</span>
-                                            {member.business && (
-                                                <>
-                                                    <span className="text-on-surface-variant/30">|</span>
-                                                    <span className="truncate max-w-[120px]">{member.business.name}</span>
-                                                </>
+                                        {/* ✅ مشخصات کسب‌وکار مالک کاتالوگ — همان چیزی که مالک برای تصمیم می‌خواهد */}
+                                        <div className="flex items-center gap-2 text-[10px] text-on-surface-variant/70 mt-1 flex-wrap">
+                                            {c.catalog.businessName && (
+                                                <span className="inline-flex items-center gap-0.5 font-bold text-on-surface-variant">
+                                                    <Building2 className="w-3 h-3" /> {c.catalog.businessName}
+                                                </span>
+                                            )}
+                                            {c.catalog.businessIndustry && <span>{c.catalog.businessIndustry}</span>}
+                                            {c.catalog.owner?.fullName && <span>{c.catalog.owner.fullName}</span>}
+                                            {c.catalog.owner?.phone && <span dir="ltr">{c.catalog.owner.phone}</span>}
+                                            {c.catalog.city && <span className="inline-flex items-center gap-0.5"><MapPin className="w-3 h-3" />{c.catalog.city}</span>}
+                                        </div>
+                                        <div className="flex items-center gap-1.5 flex-wrap mt-2">
+                                            {isPaused ? (
+                                                <span className="inline-flex items-center gap-1 text-[10px] font-bold px-2 py-0.5 rounded-full bg-amber-50 text-amber-700 dark:bg-amber-900/30 dark:text-amber-300">
+                                                    <PauseCircle className="w-3 h-3" /> متوقف
+                                                </span>
+                                            ) : (
+                                                <span className="inline-flex items-center gap-1 text-[10px] font-bold px-2 py-0.5 rounded-full bg-emerald-50 text-emerald-700 dark:bg-emerald-900/30 dark:text-emerald-300">
+                                                    <CheckCircle2 className="w-3 h-3" /> فعال
+                                                </span>
+                                            )}
+                                            {c.publishState === 'published' && (
+                                                <span className="inline-flex items-center gap-1 text-[10px] font-bold px-2 py-0.5 rounded-full bg-emerald-50 text-emerald-700 dark:bg-emerald-900/30 dark:text-emerald-300">
+                                                    <Sparkles className="w-3 h-3" /> روی تابلو
+                                                </span>
+                                            )}
+                                            {c.needsCategory > 0 && (
+                                                <span className="inline-flex items-center gap-1 text-[10px] font-bold px-2 py-0.5 rounded-full bg-amber-50 text-amber-700 dark:bg-amber-900/30 dark:text-amber-300">
+                                                    <AlertTriangle className="w-3 h-3" /> {fmt(c.needsCategory)} بی‌دسته
+                                                </span>
+                                            )}
+                                            {c.isStale && (
+                                                <span className="inline-flex items-center gap-1 text-[10px] font-bold px-2 py-0.5 rounded-full bg-orange-50 text-orange-700 dark:bg-orange-900/30 dark:text-orange-300">
+                                                    <RefreshCw className="w-3 h-3" /> قیمت‌ها کهنه
+                                                </span>
                                             )}
                                         </div>
                                     </div>
-                                </div>
-
-                                {/* اطلاعات تکمیلی */}
-                                <div className="flex flex-wrap items-center gap-3 sm:gap-4">
-                                    <div className="flex items-center gap-1 text-xs text-on-surface-variant">
-                                        <Calendar className="w-3.5 h-3.5" />
-                                        {new Date(member.joinedAt).toLocaleDateString('fa-IR')}
+                                    <div className="hidden sm:flex flex-col items-center px-3 py-1.5 rounded-xl bg-surface-container-high/50
+                                        border border-outline-variant/30 flex-shrink-0">
+                                        <p className="text-lg font-extrabold text-emerald-600 dark:text-emerald-400">{fmt(c.activeOnTable)}</p>
+                                        <p className="text-[9px] text-on-surface-variant/70">روی تابلو</p>
                                     </div>
-                                    {member.business && (
-                                        <div className="flex items-center gap-0.5">
-                                            {getVerificationBadge(member.business.verificationTier)}
-                                        </div>
-                                    )}
-                                    <div>{getStatusBadge(member.status)}</div>
                                 </div>
 
-                                {/* دکمه‌ها */}
-                                <div className="flex items-center gap-1.5 self-end sm:self-center">
-                                    <Link
-                                        href={`/arm-admin/members/${member.userId}`}
-                                        className="p-1.5 hover:bg-surface-container-high rounded-lg transition-colors"
-                                        title="مشاهده جزئیات"
-                                    >
-                                        <Eye className="w-4 h-4 text-on-surface-variant" />
-                                    </Link>
+                                <div className="flex items-center gap-1.5 mt-3 pt-3 border-t border-outline-variant/20 flex-wrap">
+                                    <span className="sm:hidden inline-flex items-center gap-1 text-[11px] font-bold text-emerald-600">
+                                        <Package className="w-3 h-3" /> {fmt(c.activeOnTable)} روی تابلو
+                                    </span>
+                                    <span className="flex-1" />
+                                    {c.catalog.slug && (
+                                        <a href={`/${c.catalog.slug}`} target="_blank" rel="noreferrer" title="مشاهده کاتالوگ"
+                                           className="h-8 w-8 rounded-lg border border-outline-variant/50 grid place-items-center
+                                               text-on-surface-variant hover:text-primary hover:border-primary/40 transition-colors">
+                                            <Eye className="w-3.5 h-3.5" />
+                                        </a>
+                                    )}
+                                    <button onClick={() => pauseMut.mutate({ catalogId: c.catalog.id, paused: !isPaused })}
+                                            disabled={busy}
+                                            title={isPaused ? 'ادامهٔ انتشار' : 'توقف انتشار'}
+                                            className={cn('h-8 px-3 rounded-lg text-[11px] font-bold inline-flex items-center gap-1.5 transition-colors disabled:opacity-50',
+                                                isPaused ? 'bg-emerald-500/10 text-emerald-600 hover:bg-emerald-500/20'
+                                                    : 'bg-amber-500/10 text-amber-600 hover:bg-amber-500/20')}>
+                                        {busyPause ? <Loader2 className="w-3.5 h-3.5 animate-spin" />
+                                            : isPaused ? <PlayCircle className="w-3.5 h-3.5" /> : <PauseCircle className="w-3.5 h-3.5" />}
+                                        {isPaused ? 'ادامه' : 'توقف'}
+                                    </button>
+                                    {confirming ? (
+                                        <div className="flex items-center gap-1.5">
+                                            <button onClick={() => removeMut.mutate(c.catalog.id, { onSuccess: () => setConfirmRemoveId(null) })}
+                                                    disabled={busy}
+                                                    className="h-8 px-3 rounded-lg bg-error text-white text-[11px] font-bold inline-flex items-center gap-1.5 disabled:opacity-50">
+                                                {busyRemove ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <Trash2 className="w-3.5 h-3.5" />}
+                                                تایید حذف
+                                            </button>
+                                            <button onClick={() => setConfirmRemoveId(null)}
+                                                    className="h-8 w-8 rounded-lg border border-outline-variant/50 grid place-items-center text-on-surface-variant">
+                                                <X className="w-3.5 h-3.5" />
+                                            </button>
+                                        </div>
+                                    ) : (
+                                        <button onClick={() => setConfirmRemoveId(c.membershipId)} title="حذف از بازار"
+                                                className="h-8 w-8 rounded-lg text-error/60 hover:text-error hover:bg-error/10 grid place-items-center transition-colors">
+                                            <Trash2 className="w-3.5 h-3.5" />
+                                        </button>
+                                    )}
                                 </div>
+                            </div>
+                        );
+                    })
+                )}
+            </div>
+
+            {/* ─── کالاهای بی‌دسته (پنل مالک) ─── */}
+            {needs.length > 0 && categoryTree.length > 0 && (
+                <div className="space-y-3">
+                    <h3 className="text-xs font-extrabold text-on-surface-variant px-1 flex items-center gap-1.5">
+                        <Layers className="w-3.5 h-3.5 text-amber-500" /> کالاهای نیازمند دستهٔ بازاری
+                    </h3>
+                    {needs.map((item) => (
+                        <div key={item.id} className="bg-white dark:bg-gray-900 rounded-2xl border border-amber-300/40 p-4">
+                            <div className="flex items-start justify-between gap-3">
+                                <div className="min-w-0">
+                                    <p className="text-sm font-extrabold text-on-surface truncate">{item.title}</p>
+                                    <p className="text-[10px] text-on-surface-variant/70 mt-1">
+                                        {item.catalogName}
+                                        {item.catalogCategoryTitle && ` · دسته در کاتالوگ: ${item.catalogCategoryTitle}`}
+                                    </p>
+                                </div>
+                                {assignMut.isPending && assignMut.variables?.adId === item.id && (
+                                    <Loader2 className="w-4 h-4 animate-spin text-primary flex-shrink-0" />
+                                )}
+                            </div>
+                            <div className="mt-3">
+                                <CategoryPicker
+                                    value=""
+                                    onChange={(id: string) => handleAssign(item, id)}
+                                    tree={categoryTree}
+                                    disabled={assignMut.isPending}
+                                />
                             </div>
                         </div>
                     ))}
                 </div>
             )}
+        </div>
+    );
+}
 
-            {/* پیجینگ */}
-            {totalPages > 1 && (
-                <div className="flex items-center justify-between mt-4 pt-4 border-t border-outline-variant/50">
-                    <span className="text-sm text-on-surface-variant">
-                        نمایش {((page - 1) * limit) + 1} تا {Math.min(page * limit, totalItems)} از {totalItems}
-                    </span>
-                    <div className="flex gap-2">
-                        <button
-                            onClick={() => setPage(p => Math.max(1, p - 1))}
-                            disabled={page === 1}
-                            className="px-3 py-1.5 border border-outline rounded-lg text-sm hover:bg-surface-container-low transition-colors disabled:opacity-50"
-                        >
-                            قبلی
+// ═══════════════════════════════════════════
+// تب خریداران
+// ═══════════════════════════════════════════
+function BuyersTab({ slug }: { slug: string }) {
+    const [qInput, setQInput] = useState('');
+    const [onlyMine, setOnlyMine] = useState(false);
+    const q = useDebounced(qInput.trim(), 400);
+
+    const buyersQ = useArmBuyers(slug, {});
+    const candidatesQ = useArmBuyerCandidates(slug, q, onlyMine, true);
+    const addMut = useAddBuyer(slug);
+    const removeMut = useRemoveBuyer(slug);
+
+    const buyers: any[] = buyersQ.data?.items ?? [];
+    const candidates: any[] = candidatesQ.data?.items ?? [];
+
+    const [confirmRemoveId, setConfirmRemoveId] = useState<string | null>(null);
+
+    const buyerTypeLabel = (t: string) => {
+        const map: Record<string, string> = {
+            producer: 'تولیدی', wholesaler: 'عمده‌فروش', importer: 'واردکننده', exporter: 'صادرکننده',
+            distributor: 'پخش‌کننده', retailer: 'خرده‌فروش', contractor: 'پیمانکار',
+            service_provider: 'خدمات', other: 'سایر',
+        };
+        return map[t] || t;
+    };
+
+    return (
+        <div className="space-y-4">
+            {/* ─── توضیح ─── */}
+            <div className="rounded-xl bg-surface-container-low border border-outline-variant/30 p-3 flex items-start gap-2.5">
+                <Info className="w-4 h-4 text-primary mt-0.5 flex-shrink-0" />
+                <p className="text-[11px] text-on-surface-variant leading-5">
+                    کسب‌وکارهایی که خریدار بازار تو هستند رو انتخاب کن.
+                </p>
+            </div>
+
+            {/* ─── جعبهٔ افزودن خریدار ─── */}
+            <div className="bg-white dark:bg-gray-900 rounded-2xl border border-primary/25 overflow-hidden">
+                <div className="px-4 pt-3.5 pb-2 flex items-center gap-2">
+                    <UserPlus className="w-4 h-4 text-primary" />
+                    <h3 className="text-xs font-extrabold text-on-surface">افزودن خریدار به بازار</h3>
+                    <span className="flex-1" />
+                    <label className="flex items-center gap-1.5 cursor-pointer">
+                        <button type="button" role="switch" aria-checked={onlyMine}
+                                onClick={() => setOnlyMine((v) => !v)}
+                                className={cn('relative w-8 h-4.5 rounded-full transition-colors',
+                                    onlyMine ? 'bg-primary' : 'bg-outline-variant/50')}>
+                            <span className={cn('absolute top-0.5 w-3.5 h-3.5 rounded-full bg-white shadow transition-all',
+                                onlyMine ? 'right-0.5' : 'right-[1.125rem]')} />
                         </button>
-                        <span className="px-3 py-1.5 bg-primary/10 text-primary rounded-lg text-sm">
-                            {page}
-                        </span>
-                        <button
-                            onClick={() => setPage(p => Math.min(totalPages, p + 1))}
-                            disabled={page === totalPages}
-                            className="px-3 py-1.5 border border-outline rounded-lg text-sm hover:bg-surface-container-low transition-colors disabled:opacity-50"
-                        >
-                            بعدی
-                        </button>
+                        <span className="text-[10px] font-bold text-on-surface-variant">جذب‌شده‌های من</span>
+                    </label>
+                </div>
+                <div className="px-4 pb-3">
+                    <div className="relative">
+                        <Search className="absolute right-3 top-1/2 -translate-y-1/2 w-4 h-4 text-on-surface-variant/50" />
+                        <input
+                            value={qInput}
+                            onChange={(e) => setQInput(e.target.value)}
+                            placeholder="جستجوی کسب‌وکار، صنف، مالک…"
+                            className="w-full h-10 pr-9 pl-8 rounded-xl bg-surface-container-lowest border border-outline-variant/40
+                                dark:border-gray-700 text-sm outline-none focus:ring-2 focus:ring-primary/30 focus:border-primary transition-all"
+                        />
+                        {qInput && (
+                            <button onClick={() => setQInput('')}
+                                    className="absolute left-2.5 top-1/2 -translate-y-1/2 p-1 text-on-surface-variant/60">
+                                <X className="w-3.5 h-3.5" />
+                            </button>
+                        )}
                     </div>
                 </div>
-            )}
 
-            {/* مودال جزئیات */}
-            {isDetailModalOpen && <MemberDetailModal />}
+                {candidatesQ.isFetching && q ? (
+                    <div className="px-4 pb-3"><RowSkeleton h={64} /></div>
+                ) : candidates.length > 0 ? (
+                    <div className="px-3 pb-3 space-y-1.5 max-h-72 overflow-y-auto scrollbar-slim">
+                        {candidates.map((b) => {
+                            const busy = addMut.isPending && addMut.variables === b.id;
+                            return (
+                                <div key={b.id}
+                                     className="flex items-center gap-3 p-2.5 rounded-xl bg-surface-container-lowest/60
+                                         border border-outline-variant/30 hover:border-primary/30 transition-colors">
+                                    <Logo url={b.logoUrl} size={38} fallback={Building2} />
+                                    <div className="flex-1 min-w-0">
+                                        <p className="text-[12px] font-extrabold text-on-surface truncate">{b.name}</p>
+                                        <p className="text-[10px] text-on-surface-variant/70 truncate">
+                                            {[
+                                                b.industryName,
+                                                buyerTypeLabel(b.type),
+                                                b.owner?.fullName,
+                                                b.city,
+                                            ].filter(Boolean).join(' · ')}
+                                        </p>
+                                    </div>
+                                    <button onClick={() => addMut.mutate(b.id)} disabled={busy}
+                                            className="h-8 px-3 rounded-lg bg-primary text-on-primary text-[10px] font-extrabold
+                                                inline-flex items-center gap-1 hover:bg-primary/90 active:scale-95 transition-all
+                                                disabled:opacity-50 flex-shrink-0">
+                                        {busy ? <Loader2 className="w-3 h-3 animate-spin" /> : <Plus className="w-3.5 h-3.5" />}
+                                        افزودن
+                                    </button>
+                                </div>
+                            );
+                        })}
+                    </div>
+                ) : q || onlyMine ? (
+                    <p className="text-xs text-on-surface-variant/70 text-center pb-4">کسب‌وکاری پیدا نشد</p>
+                ) : null}
+            </div>
+
+            {/* ─── لیست خریداران ─── */}
+            <div className="space-y-3">
+                <h3 className="text-xs font-extrabold text-on-surface-variant px-1 flex items-center gap-1.5">
+                    <ShoppingCart className="w-3.5 h-3.5" /> خریداران بازار ({fmt(buyers.length)})
+                </h3>
+
+                {buyersQ.isPending ? (
+                    <><RowSkeleton /><RowSkeleton /><RowSkeleton /></>
+                ) : buyers.length === 0 ? (
+                    <div className="rounded-2xl border border-dashed border-outline-variant/50 p-10 text-center">
+                        <ShoppingCart className="w-12 h-12 text-on-surface-variant/20 mx-auto mb-3" />
+                        <h4 className="text-sm font-extrabold text-on-surface">هنوز خریداری نداری</h4>
+                        <p className="text-xs text-on-surface-variant mt-1.5">
+                            سوپرمارکت‌ها، فروشگاه‌ها و کسب‌وکارهای مرتبط را از جعبهٔ بالا اضافه کن —
+                            آن‌ها تابلوی تو را هر روز می‌بینند
+                        </p>
+                    </div>
+                ) : (
+                    <div className="space-y-2">
+                        {buyers.map((b) => {
+                            const busyRemove = removeMut.isPending && removeMut.variables === b.membershipId;
+                            const confirming = confirmRemoveId === b.membershipId;
+                            const BizIcon = b.business?.logoUrl ? null : Building2;
+                            return (
+                                <div key={b.membershipId}
+                                     className={cn('bg-white dark:bg-gray-900 rounded-2xl border p-3.5 flex items-start gap-3.5 transition-all',
+                                         b.status !== 'active' ? 'opacity-70 border-outline-variant/30' : 'border-outline-variant/40 hover:shadow-sm')}>
+                                    <Logo url={b.business?.logoUrl} size={44} fallback={Building2} />
+                                    <div className="flex-1 min-w-0">
+                                        <div className="flex items-center gap-2 flex-wrap">
+                                            <p className="text-sm font-extrabold text-on-surface truncate">
+                                                {b.business?.name || 'بدون کسب‌وکار ثبت‌شده'}
+                                            </p>
+                                            {b.business && (
+                                                <span className="text-[9px] font-bold px-1.5 py-0.5 rounded bg-surface-container-high text-on-surface-variant">
+                                                    {buyerTypeLabel(b.business.type)}
+                                                </span>
+                                            )}
+                                        </div>
+                                        <div className="flex items-center gap-2 text-[10px] text-on-surface-variant/70 mt-1 flex-wrap">
+                                            {b.business?.industryName && <span>{b.business.industryName}</span>}
+                                            {b.business?.city && <span className="inline-flex items-center gap-0.5"><MapPin className="w-3 h-3" />{b.business.city}</span>}
+                                            {b.user?.fullName && <span>{b.user.fullName}</span>}
+                                            {b.user?.phone && <span dir="ltr">{b.user.phone}</span>}
+                                            {b.business?.hasCatalog && (
+                                                <span className="text-emerald-600 font-bold">· کاتالوگ دارد: {b.business.catalogName}</span>
+                                            )}
+                                        </div>
+                                        {!b.business && (
+                                            <p className="text-[10px] text-amber-600 mt-1">این عضو هنوز کسب‌وکار ثبت نکرده — پس از تکمیل، اینجا کامل می‌شود</p>
+                                        )}
+                                    </div>
+                                    <div className="flex items-center gap-1.5 flex-shrink-0 self-center">
+                                        {confirming ? (
+                                            <>
+                                                <button onClick={() => removeMut.mutate(b.membershipId, { onSuccess: () => setConfirmRemoveId(null) })}
+                                                        disabled={busyRemove}
+                                                        className="h-8 px-3 rounded-lg bg-error text-white text-[10px] font-bold inline-flex items-center gap-1 disabled:opacity-50">
+                                                    {busyRemove ? <Loader2 className="w-3 h-3 animate-spin" /> : <Trash2 className="w-3 h-3" />}
+                                                    تایید
+                                                </button>
+                                                <button onClick={() => setConfirmRemoveId(null)}
+                                                        className="h-8 w-8 rounded-lg border border-outline-variant/50 grid place-items-center text-on-surface-variant">
+                                                    <X className="w-3.5 h-3.5" />
+                                                </button>
+                                            </>
+                                        ) : (
+                                            <button onClick={() => setConfirmRemoveId(b.membershipId)} title="حذف از بازار"
+                                                    className="h-8 w-8 rounded-lg text-error/60 hover:text-error hover:bg-error/10 grid place-items-center transition-colors">
+                                                <Trash2 className="w-3.5 h-3.5" />
+                                            </button>
+                                        )}
+                                    </div>
+                                </div>
+                            );
+                        })}
+                    </div>
+                )}
+            </div>
         </div>
     );
 }

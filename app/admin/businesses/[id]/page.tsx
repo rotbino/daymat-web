@@ -1,4 +1,4 @@
-// app/admin/businesses/[id]/page.tsx
+// app/admin/cataloges/[id]/page.tsx
 'use client';
 
 import React, { useState, useEffect, useMemo, useRef, useCallback } from 'react';
@@ -26,20 +26,20 @@ const QUICK_RANGES = [
     { label: '۳۰ روز گذشته', days: 30 },
 ];
 
-const BUSINESS_TYPE_LABELS: Record<string, string> = {
+const CATALOG_TYPE_LABELS: Record<string, string> = {
     producer: 'تولیدی', wholesaler: 'عمده‌فروش', importer: 'واردکننده',
     exporter: 'صادرکننده', distributor: 'توزیع‌کننده', retailer: 'خرده‌فروش',
     contractor: 'پیمانکار', service_provider: 'خدمات', other: 'سایر',
 };
 
-export default function AdminBusinessDetailPage() {
+export default function AdminCatalogDetailPage() {
     const router = useRouter();
     const params = useParams();
     const searchParams = useSearchParams();
-    const businessId = params.id as string;
+    const catalogId = params.id as string;
     const initialTab = (searchParams.get('tab') as TabType) || 'info';
 
-    const [business, setBusiness] = useState<any>(null);
+    const [catalog, setCatalog] = useState<any>(null);
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState<string | null>(null);
     const [refreshing, setRefreshing] = useState(false);
@@ -69,31 +69,31 @@ export default function AdminBusinessDetailPage() {
     }, [activeTab, router]);
 
     const fetchDetail = useCallback(async (showLoading = true) => {
-        if (!businessId) return;
+        if (!catalogId) return;
         if (showLoading) setLoading(true); else setRefreshing(true);
         try {
-            const data = await apiService.admin.businesses.getDetail(businessId);
-            setBusiness(data);
+            const data = await apiService.admin.cataloges.getDetail(catalogId);
+            setCatalog(data);
             setError(null);
         } catch (err: any) {
             setError(err?.message || 'خطا');
             toast.error(err?.message || 'خطا');
-            if (err?.response?.status === 404) router.push('/admin/businesses');
+            if (err?.response?.status === 404) router.push('/admin/cataloges');
         } finally {
             setLoading(false);
             setRefreshing(false);
         }
-    }, [businessId]);
+    }, [catalogId]);
 
     useEffect(() => { fetchDetail(); }, [fetchDetail]);
 
     // ======================== تب‌ها ========================
     const tabs: { id: TabType; label: string; icon: any; count?: number; badge?: boolean }[] = [
         { id: 'info', label: 'اطلاعات', icon: Building2 },
-        { id: 'verification', label: 'مدارک', icon: Shield, badge: business?.verificationStatus === 'pending' },
-        { id: 'ads', label: 'آگهی‌ها', icon: Package, count: business?.ads?.length || 0 },
-        { id: 'payments', label: 'تراکنش‌ها', icon: CreditCard, count: (business?.credits?.length || 0) + (business?.creditRequests?.length || 0) },
-        { id: 'arms', label: 'بازارها', icon: Store, count: business?.armMemberships?.length || 0 },
+        { id: 'verification', label: 'مدارک', icon: Shield, badge: catalog?.verificationStatus === 'pending' },
+        { id: 'ads', label: 'آگهی‌ها', icon: Package, count: catalog?.ads?.length || 0 },
+        { id: 'payments', label: 'تراکنش‌ها', icon: CreditCard, count: (catalog?.credits?.length || 0) + (catalog?.creditRequests?.length || 0) },
+        { id: 'arms', label: 'بازارها', icon: Store, count: catalog?.armMemberships?.length || 0 },
     ];
 
     // اسکرول تب‌ها
@@ -111,9 +111,9 @@ export default function AdminBusinessDetailPage() {
             const body: any = { action: actionMode };
             if (actionMode === 'approve') body.tier = selectedTier;
             else body.reason = rejectReason;
-            body.verificationId = business?.latestVerification?.id;
+            body.verificationId = catalog?.latestVerification?.id;
 
-            await apiService.admin.businesses.verify(businessId, body);
+            await apiService.admin.cataloges.verify(catalogId, body);
             toast.success(actionMode === 'approve' ? 'تیک با موفقیت تأیید شد' : 'درخواست رد شد');
             setActionMode('none');
             fetchDetail(false);
@@ -126,8 +126,8 @@ export default function AdminBusinessDetailPage() {
 
     // ======================== فیلتر تراکنش‌ها ========================
     const allTransactions = useMemo(() => {
-        if (!business) return [];
-        const credits = (business.credits || []).map((c: any) => ({
+        if (!catalog) return [];
+        const credits = (catalog.credits || []).map((c: any) => ({
             id: c.id,
             type: 'credit' as const,
             amount: c.amount,
@@ -138,7 +138,7 @@ export default function AdminBusinessDetailPage() {
             date: c.createdAt,
             arm: c.arm,
         }));
-        const requests = (business.creditRequests || []).map((r: any) => ({
+        const requests = (catalog.creditRequests || []).map((r: any) => ({
             id: r.id,
             type: 'creditRequest' as const,
             amount: r.amount,
@@ -150,7 +150,7 @@ export default function AdminBusinessDetailPage() {
             arm: r.arm,
         }));
         return [...credits, ...requests].sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime());
-    }, [business]);
+    }, [catalog]);
 
     const filteredTransactions = useMemo(() => {
         let result = [...allTransactions];
@@ -203,29 +203,29 @@ export default function AdminBusinessDetailPage() {
     const fileUrl = (id: string) => `${process.env.NEXT_PUBLIC_API_BASE_URL}/file/${id}`;
 
     if (loading) return <div className="flex justify-center py-20"><Loader2 className="animate-spin w-8 h-8" /></div>;
-    if (error && !business) return <div className="text-center py-20 text-error"><AlertCircle className="w-16 h-16 mx-auto mb-4" /><p>{error}</p></div>;
-    if (!business) return null;
+    if (error && !catalog) return <div className="text-center py-20 text-error"><AlertCircle className="w-16 h-16 mx-auto mb-4" /><p>{error}</p></div>;
+    if (!catalog) return null;
 
-    const latestVer = business.latestVerification;
+    const latestVer = catalog.latestVerification;
 
     return (
         <div className="pb-8">
             {/* هدر */}
             <div className="flex items-start sm:items-center gap-3 mb-6 bg-surface-container-lowest p-4 rounded-xl border border-outline-variant/30">
-                <button onClick={() => router.push('/admin/businesses')} className="p-2 hover:bg-surface-container-high rounded-lg">
+                <button onClick={() => router.push('/admin/cataloges')} className="p-2 hover:bg-surface-container-high rounded-lg">
                     <ArrowRight className="w-5 h-5 text-on-surface-variant" />
                 </button>
                 <div className="flex-1 min-w-0">
                     <div className="flex items-center gap-2 flex-wrap">
-                        <h1 className="text-lg sm:text-xl font-bold truncate">{business.name}</h1>
-                        {business.verificationTier !== 'none' && (
+                        <h1 className="text-lg sm:text-xl font-bold truncate">{catalog.name}</h1>
+                        {catalog.verificationTier !== 'none' && (
                             <BadgeCheck className="w-5 h-5 text-primary" />
                         )}
                     </div>
                     <div className="flex items-center gap-3 mt-1 text-sm text-on-surface-variant">
-                        <span>{BUSINESS_TYPE_LABELS[business.type] || business.type}</span>
-                        {business.city && <span><MapPin className="w-3.5 h-3.5 inline ml-1" />{business.city}</span>}
-                        <span>{business.phone}</span>
+                        <span>{CATALOG_TYPE_LABELS[catalog.type] || catalog.type}</span>
+                        {catalog.city && <span><MapPin className="w-3.5 h-3.5 inline ml-1" />{catalog.city}</span>}
+                        <span>{catalog.phone}</span>
                     </div>
                 </div>
                 <button onClick={() => fetchDetail(false)} disabled={refreshing} className="p-2 hover:bg-surface-container-high rounded-lg">
@@ -276,25 +276,25 @@ export default function AdminBusinessDetailPage() {
                 {/* ══════ اطلاعات ══════ */}
                 {activeTab === 'info' && (
                     <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
-                        <InfoCard label="نام" value={business.name} icon={Building2} />
-                        <InfoCard label="معرفی کوتاه" value={business.shortDescription || '—'} icon={FileText} />
-                        <InfoCard label="نوع" value={BUSINESS_TYPE_LABELS[business.type] || business.type} icon={Tag} />
-                        <InfoCard label="شهر" value={business.city || '—'} icon={MapPin} />
-                        <InfoCard label="تلفن" value={business.phone} icon={Phone} dir="ltr" />
-                        <InfoCard label="وب‌سایت" value={business.website || '—'} icon={Globe} />
-                        <InfoCard label="وضعیت" value={business.status === 'active' ? 'فعال' : 'غیرفعال'} icon={CheckCircle} />
+                        <InfoCard label="نام" value={catalog.name} icon={Building2} />
+                        <InfoCard label="معرفی کوتاه" value={catalog.shortDescription || '—'} icon={FileText} />
+                        <InfoCard label="نوع" value={CATALOG_TYPE_LABELS[catalog.type] || catalog.type} icon={Tag} />
+                        <InfoCard label="شهر" value={catalog.city || '—'} icon={MapPin} />
+                        <InfoCard label="تلفن" value={catalog.phone} icon={Phone} dir="ltr" />
+                        <InfoCard label="وب‌سایت" value={catalog.website || '—'} icon={Globe} />
+                        <InfoCard label="وضعیت" value={catalog.status === 'active' ? 'فعال' : 'غیرفعال'} icon={CheckCircle} />
                         <InfoCard label="تیک اعتماد" value={
-                            business.verificationStatus === 'none' ? 'ندارد' :
-                                business.verificationStatus === 'pending' ? 'در انتظار' :
-                                    business.verificationStatus === 'approved' ? `تأیید شده (${business.verificationTier})` : 'رد شده'
+                            catalog.verificationStatus === 'none' ? 'ندارد' :
+                                catalog.verificationStatus === 'pending' ? 'در انتظار' :
+                                    catalog.verificationStatus === 'approved' ? `تأیید شده (${catalog.verificationTier})` : 'رد شده'
                         } icon={Shield} />
-                        <InfoCard label="اعتبار" value={business.trustScore?.toString() || '0'} icon={Award} />
-                        <InfoCard label="تاریخ ثبت" value={formatDate(business.createdAt)} icon={CalendarIcon} />
-                        <InfoCard label="آخرین ویرایش" value={formatDate(business.updatedAt)} icon={Clock} />
-                        <InfoCard label="صنف" value={business.industryId || '—'} icon={Building2} />
-                        {business.description && (
+                        <InfoCard label="اعتبار" value={catalog.trustScore?.toString() || '0'} icon={Award} />
+                        <InfoCard label="تاریخ ثبت" value={formatDate(catalog.createdAt)} icon={CalendarIcon} />
+                        <InfoCard label="آخرین ویرایش" value={formatDate(catalog.updatedAt)} icon={Clock} />
+                        <InfoCard label="صنف" value={catalog.industryId || '—'} icon={Building2} />
+                        {catalog.description && (
                             <div className="col-span-full">
-                                <InfoCard label="توضیحات" value={business.description} icon={FileText} />
+                                <InfoCard label="توضیحات" value={catalog.description} icon={FileText} />
                             </div>
                         )}
                     </div>
@@ -383,9 +383,9 @@ export default function AdminBusinessDetailPage() {
 
                 {/* ══════ آگهی‌ها ══════ */}
                 {activeTab === 'ads' && (
-                    business.ads?.length > 0 ? (
+                    catalog.ads?.length > 0 ? (
                         <div className="space-y-2">
-                            {business.ads.map((ad: any) => (
+                            {catalog.ads.map((ad: any) => (
                                 <div key={ad.id} className="bg-surface rounded-xl border border-outline-variant/20 p-3 flex items-center justify-between flex-wrap gap-2">
                                     <div className="min-w-0">
                                         <p className="text-sm font-medium truncate">{ad.title}</p>
@@ -482,9 +482,9 @@ export default function AdminBusinessDetailPage() {
 
                 {/* ══════ بازارها ══════ */}
                 {activeTab === 'arms' && (
-                    business.armMemberships?.length > 0 ? (
+                    catalog.armMemberships?.length > 0 ? (
                         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
-                            {business.armMemberships.map((m: any) => (
+                            {catalog.armMemberships.map((m: any) => (
                                 <div key={m.id} className="bg-surface rounded-xl border border-outline-variant/20 p-4 hover:shadow-md transition-shadow">
                                     <div className="flex items-center gap-3">
                                         <div className="w-10 h-10 rounded-lg flex items-center justify-center text-white font-bold text-sm flex-shrink-0" style={{ backgroundColor: m.arm?.colorPrimary || '#8b0000' }}>

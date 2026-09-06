@@ -47,8 +47,8 @@ export default function AdDetailClient({ adId, initialData }: Props) {
     const isSaved = localSaved !== null ? localSaved : (savedData?.isSaved || false);
 
     const isOwner = useMemo(() => {
-        if (!ad?.business?.owner?.id || !user?.id) return false;
-        return ad.business.owner.id === user.id;
+        if (!ad?.catalog?.owner?.id || !user?.id) return false;
+        return ad.catalog.owner.id === user.id;
     }, [ad, user]);
 
     const displayAd = ad || initialData;
@@ -94,7 +94,7 @@ export default function AdDetailClient({ adId, initialData }: Props) {
             if (window.innerWidth < 768) {
                 window.location.href = `tel:${phone}`;
             } else {
-                toast.info(`${info.businessName}\n${phone}`, { duration: 8000 });
+                toast.info(`${info.catalogName}\n${phone}`, { duration: 8000 });
                 navigator.clipboard.writeText(phone).catch(() => {});
             }
         } catch (error: any) {

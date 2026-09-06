@@ -95,7 +95,7 @@ export function ArmForm({ initialData, onSubmit, isSubmitting = false, isEditMod
                     allowManualRoleSelection: true,
                     requireAdminApprovalForMembership: false,
                     requirePhoneVerification: false,
-                    requireBusinessVerification: false,
+                    requireCatalogVerification: false,
                     restrictMembershipByLocation: false,
                 },
                 locationSelections: [],

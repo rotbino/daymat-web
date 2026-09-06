@@ -39,7 +39,7 @@ export function CopyAdModal({ isOpen, onClose, ad, onSuccess }: CopyAdModalProps
         setIsSubmitting(true);
         try {
             const data = {
-                armSlug: currentSlug || 'barton',
+                armSlug: currentSlug || 'tamino',
                 categoryId: ad.categoryId,
                 customCategoryId: ad.customCategoryId,
                 unitId: ad.unitId,

@@ -14,8 +14,8 @@ import { useSelector } from 'react-redux';
 interface VerificationModalProps {
     isOpen: boolean;
     onClose: () => void;
-    businessId: string;
-    businessName: string;
+    catalogId: string;
+    catalogName: string;
     currentLevel?: 'none' | 'blue' | 'silver' | 'gold';
     isProfileComplete?: boolean;
     onSuccess?: () => void;
@@ -30,8 +30,8 @@ const LEVEL_DEFS = [
 export function VerificationModal({
                                       isOpen,
                                       onClose,
-                                      businessId,
-                                      businessName,
+                                      catalogId,
+                                      catalogName,
                                       currentLevel = 'none',
                                       isProfileComplete = true,
                                       onSuccess,
@@ -149,8 +149,8 @@ export function VerificationModal({
     const uploadFileAsync = async (file: File, fieldKey: string): Promise<string> => {
         const result = await uploadMutation.mutateAsync({
             file,
-            model: 'Business',
-            modelId: businessId,
+            model: 'Catalog',
+            modelId: catalogId,
             fieldKey,
         });
         return result.id;
@@ -185,7 +185,7 @@ export function VerificationModal({
                 awardFileIds: awardIds,
             };
 
-            await apiService.business.requestVerification(businessId, payload);
+            await apiService.catalog.requestVerification(catalogId, payload);
             const levelNames = { blue: 'آبی', silver: 'نقره‌ای', gold: 'طلایی' };
             toast.success(`درخواست تیک ${levelNames[activeLevel]} با موفقیت ارسال شد`);
             onSuccess?.();
@@ -208,7 +208,7 @@ export function VerificationModal({
                         </div>
                         <div>
                             <h3 className="text-lg font-semibold text-on-surface">تیک اعتماد</h3>
-                            <p className="text-xs text-on-surface-variant">{businessName}</p>
+                            <p className="text-xs text-on-surface-variant">{catalogName}</p>
                         </div>
                     </div>
                     <button onClick={onClose} className="p-2 rounded-full hover:bg-surface-container-low transition-colors">
@@ -284,8 +284,8 @@ export function VerificationModal({
                         <div className="space-y-1.5">
                             <label className="text-xs font-medium text-on-surface-variant">تصویر کارت ملی <span className="text-red-500">*</span></label>
                             <FileUploader
-                                model="Business"
-                                modelId={businessId}
+                                model="Catalog"
+                                modelId={catalogId}
                                 fieldKey="nationalCard"
                                 value={null}
                                 onFileSelect={(file) => {
@@ -316,8 +316,8 @@ export function VerificationModal({
                                 {licenseFiles.map((file, idx) => (
                                     <div key={idx} className="relative">
                                         <FileUploader
-                                            model="Business"
-                                            modelId={businessId}
+                                            model="Catalog"
+                                            modelId={catalogId}
                                             fieldKey={`license-${idx}`}
                                             value={null}
                                             onFileSelect={(f) => {
@@ -358,8 +358,8 @@ export function VerificationModal({
                                 {awardFiles.map((file, idx) => (
                                     <div key={idx} className="relative">
                                         <FileUploader
-                                            model="Business"
-                                            modelId={businessId}
+                                            model="Catalog"
+                                            modelId={catalogId}
                                             fieldKey={`award-${idx}`}
                                             value={null}
                                             onFileSelect={(f) => {

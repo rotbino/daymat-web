@@ -160,16 +160,16 @@ export function LocationFilter() {
         <>
             <button
                 onClick={openModal}
-                aria-label="انتخاب موقعیت"
+                aria-label="موقعیت"
                 className={cn(
-                    'flex h-8 items-center gap-1 py-1.5 px-2 text-[11px] transition-all duration-200 rounded-full border',
+                    'flex h-10 items-center gap-1 py-1.5 px-2.5 text-[10px] transition-all duration-200 rounded border',
                     hasActiveFilter
                         ? 'text-primary border-primary/30 bg-primary/5'
                         : 'text-on-surface-variant border-outline-variant/50 hover:bg-surface-container-low',
                 )}
             >
-                <MapPin className="w-3.5 h-3.5" />
-                <span className="whitespace-nowrap">{getButtonLabel()}</span>
+                <MapPin className="w-4.5 h-4.5" />
+                {/*<span className="whitespace-nowrap">{getButtonLabel()}</span>*/}
                 {hasActiveFilter && <span className="w-1.5 h-1.5 rounded-full bg-primary animate-pulse" />}
             </button>
 

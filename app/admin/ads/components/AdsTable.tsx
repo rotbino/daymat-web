@@ -62,7 +62,7 @@ export function AdsTable({ ads, pagination, page, sortField, sortOrder, onSort, 
                                             <p className="text-sm font-medium text-on-surface truncate max-w-[180px]">{ad.title}</p>
                                             {ad.isBumped && <span className="text-[9px] bg-orange-50 text-orange-600 px-1.5 py-0.5 rounded-full flex-shrink-0">نردبان</span>}
                                         </div>
-                                        <p className="text-[10px] text-on-surface-variant/50">{ad.business?.name}</p>
+                                        <p className="text-[10px] text-on-surface-variant/50">{ad.catalog?.name}</p>
                                     </div>
                                 </td>
                                 <td className="px-3 py-2.5 text-sm font-bold text-on-surface whitespace-nowrap">
@@ -108,7 +108,7 @@ export function AdsTable({ ads, pagination, page, sortField, sortOrder, onSort, 
                                         <span className="text-[9px] bg-orange-50 text-orange-600 px-1.5 py-0.5 rounded-full flex-shrink-0">نردبان</span>
                                     )}
                                 </div>
-                                <p className="text-[10px] text-on-surface-variant/60 mt-0.5">{ad.business?.name}</p>
+                                <p className="text-[10px] text-on-surface-variant/60 mt-0.5">{ad.catalog?.name}</p>
                             </div>
                             <span className="flex-shrink-0">{getStatusBadge(ad.status)}</span>
                         </div>

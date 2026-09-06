@@ -4,7 +4,7 @@
 import React from 'react';
 import { useSelector } from 'react-redux';
 import { RootState } from '@/lib/store/store';
-import { AppHeader, AppFooter } from '@/app/components';
+import { AppHeader, AppFooter } from '@/app_/components';
 import {
     Target, TrendingUp, MapPin, Layers, Store, Users,
     Phone, Clock, Gift, CreditCard, Globe, ArrowRight

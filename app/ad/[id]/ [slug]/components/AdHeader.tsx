@@ -26,8 +26,8 @@ function getTierLabel(tier: string | undefined) {
 
 export default function AdHeader({ ad }: Props) {
     const router = useRouter();
-    const tierLabel = getTierLabel(ad.business?.verificationTier);
-    const tierBadge = getTierBadge(ad.business?.verificationTier);
+    const tierLabel = getTierLabel(ad.catalog?.verificationTier);
+    const tierBadge = getTierBadge(ad.catalog?.verificationTier);
     const { currentArm, currentSlug } = useSelector(
         (state: RootState) => state.arm
     );

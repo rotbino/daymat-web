@@ -50,7 +50,7 @@ export function AccessRulesSection({ watch, setValue, onSave, isSaving, isAdmin 
                     adminOnly: false,
                 },
                 {
-                    key: 'requireBusinessForMembership',
+                    key: 'requireCatalogForMembership',
                     label: 'نیاز به کسب‌وکار برای پیوستن به باار',
                     hint: 'اگر فعال باشد، کاربر باید کسب‌وکار خود را ثبت کرده و انتخاب کند',
                     icon: Building2,
@@ -77,7 +77,7 @@ export function AccessRulesSection({ watch, setValue, onSave, isSaving, isAdmin 
             icon: Shield,
             rules: [
                 { key: 'requirePhoneVerification', label: 'تأیید موبایل اجباری', hint: 'کاربر باید شماره موبایلش تأیید شده باشد', icon: Phone, adminOnly: true },
-                { key: 'requireBusinessVerification', label: 'تیک اعتماد اجباری', hint: 'کاربر باید تیک اعتماد داشته باشد', icon: Shield, adminOnly: true },
+                { key: 'requireCatalogVerification', label: 'تیک اعتماد اجباری', hint: 'کاربر باید تیک اعتماد داشته باشد', icon: Shield, adminOnly: true },
             ],
         },
     ];

@@ -4,7 +4,7 @@
 import React from 'react';
 import { useSelector } from 'react-redux';
 import { RootState } from '@/lib/store/store';
-import { AppHeader, AppFooter } from '@/app/components';
+import { AppHeader, AppFooter } from '@/app_/components';
 import {
     Store,
     Network,
@@ -330,7 +330,7 @@ export default function MarketOwnerClient() {
                     </div>
                 </section>
 
-                {/* Business model */}
+                {/* Catalog model */}
                 <section className="px-4 sm:px-6 lg:px-8 py-16 bg-primary/5 dark:bg-primary/10">
                     <div className="max-w-4xl mx-auto">
                         <div className="text-center">

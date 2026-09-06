@@ -4,11 +4,11 @@ import type { Metadata, Viewport } from "next";
 import { Vazirmatn } from "next/font/google";
 import "./globals.css";
 import { Providers } from "@/lib/providers/providers";
-import { ArmProvider } from "@/lib/providers/ArmProvider";
 import { ThemeProvider } from "@/lib/providers/ThemeProvider";
-import { FloatingAdminButton } from "@/app/components/FloatingAdminButton";
-import { AuthSync } from "@/app/components/AuthSync";
-import ClientLayout from "@/app/ClientLayout";
+import { FloatingAdminButton } from "@/app_/components/FloatingAdminButton";
+import { AuthSync } from "@/app_/components/AuthSync";
+import ClientLayout from "@/app_/ClientLayout";
+import RefCapture from "@/app/components/RefCapture";
 
 const vazirmatn = Vazirmatn({
     subsets: ["arabic"],
@@ -18,8 +18,8 @@ const vazirmatn = Vazirmatn({
 });
 
 export const metadata: Metadata = {
-    title: "Daymat | نمایشگر روزانه قیمت  ",
-    description: "Daymat اصناف مرتبط را به هم وصل می کند.",
+    title: "Daymat | کاتالوگ روزانه قیمت  ",
+    description: "Daymat ساخت کاتالوگ شخصی قیمت و نمایش قیمت در بازارهای تخصصی .",
 };
 
 export const viewport: Viewport = {
@@ -38,12 +38,11 @@ export default function RootLayout({
         <body className={`${vazirmatn.variable} antialiased min-h-screen flex flex-col bg-background text-foreground`}>
         <Providers>
             <ThemeProvider>
-                <ArmProvider>
                     <AuthSync />
                     <ClientLayout>
+                        <RefCapture />
                         {children}
                     </ClientLayout>
-                </ArmProvider>
             </ThemeProvider>
         </Providers>
         </body>

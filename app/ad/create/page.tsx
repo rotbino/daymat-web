@@ -1,10 +1,17 @@
-import {AdForm} from "@/app/ad/AdForm";
-import {AdCreationGate} from "@/app/components/AdCreationGate";
+// app/ad/create/page.tsx
+'use client';
 
-export default function CreateAdPage( ) {
+import React, { Suspense } from 'react';
+import { AdForm } from '@/app/ad/AdForm';
+
+export default function CreateAdPage() {
     return (
-        <AdCreationGate>
+        <Suspense fallback={
+            <div className="min-h-screen flex items-center justify-center">
+                <div className="animate-spin rounded-full h-10 w-10 border-2 border-amber-500 border-t-transparent" />
+            </div>
+        }>
             <AdForm />
-        </AdCreationGate>
+        </Suspense>
     );
 }

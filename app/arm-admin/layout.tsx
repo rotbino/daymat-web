@@ -17,16 +17,17 @@ import {
     Home,
     LogOut,
     Store,
-    Package,
+    Package, BookOpen,
 } from 'lucide-react';
 import { toast } from 'sonner';
 import { apiService } from '@/lib/api/apiService';
-import { ThemeToggle } from '@/app/components/ThemeToggle';
+import { ThemeToggle } from '@/app_/components/ThemeToggle';
 import { cn } from '@/lib/utils';
 import { useQuery } from '@tanstack/react-query';
 
 const menuItems = [
     { href: '/arm-admin', label: 'داشبورد', icon: LayoutDashboard, exact: true },
+    { href: '/arm-admin/catalogs', label: 'کاتالوگ‌ها', icon: BookOpen },
     { href: '/arm-admin/ads', label: 'آگهی‌ها', icon: Package },
     { href: '/arm-admin/members', label: 'اعضا', icon: Users },
     { href: '/arm-admin/financial', label: 'مالی', icon: CreditCard },

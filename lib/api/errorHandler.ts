@@ -99,7 +99,7 @@ export function getFriendlyErrorMessage(error: any): string {
         return getSystemErrorMessage(error);
     }
 
-    // خطاهای business logic با errorCode
+    // خطاهای catalog logic با errorCode
     if (error?.response?.data?.errorCode) {
         const errorMessages: Record<string, string> = {
             'DUPLICATE_PHONE': 'این شماره موبایل قبلاً ثبت شده است',
@@ -108,12 +108,12 @@ export function getFriendlyErrorMessage(error: any): string {
             'NOT_MEMBER': 'شما عضو این بازار نیستید. لطفا ابتدا عضو بازار شوید.',
             'ALREADY_MEMBER': 'شما قبلاً عضو این بازار هستید',
             'INSUFFICIENT_CREDIT': 'اعتبار شما کافی نیست',
-            'DUPLICATE_BUSINESS_NAME': 'شما قبلاً یک کسب‌وکار با این نام ثبت کرده‌اید',
-            'BUSINESS_NOT_FOUND': 'کسب‌وکار یافت نشد',
+            'DUPLICATE_CATALOG_NAME': 'شما قبلاً یک کسب‌وکار با این نام ثبت کرده‌اید',
+            'CATALOG_NOT_FOUND': 'کسب‌وکار یافت نشد',
             'CATEGORY_NOT_AVAILABLE_IN_ARM': 'این دسته‌بندی برای بازارفعلی فعال نیست',
             'CATEGORY_REQUIRED': 'انتخاب دسته کالا الزامی است',
             'UNIT_NOT_FOUND': 'واحد برای این دسته‌بندی یافت نشد',
-            'NO_ACTIVE_BUSINESS': 'ابتدا یک کسب‌وکار ثبت کنید',
+            'NO_ACTIVE_CATALOG': 'ابتدا یک کسب‌وکار ثبت کنید',
             'FILE_TOO_LARGE': 'حجم فایل بیشتر از حد مجاز است',
             'INVALID_FILE_TYPE': 'نوع فایل مجاز نیست',
         };

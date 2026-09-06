@@ -226,7 +226,7 @@ export function GeneralSection({
                         </label>
                         <input
                             {...register('slug', { required: true })}
-                            placeholder="barton"
+                            placeholder="tamino"
                             readOnly={!canEditSlug}
                             className={cn(
                                 "w-full border rounded-xl h-10 px-3 text-sm text-right placeholder:text-on-surface-variant/30",
@@ -584,7 +584,7 @@ export function GeneralSection({
                         </label>
                         <input
                             {...register('config.support.email')}
-                            placeholder="support@barton.ir"
+                            placeholder="support@tamino.ir"
                             readOnly={!canEditSupport}
                             className={cn(
                                 "w-full rounded-xl h-10 border px-3 text-sm text-right placeholder:text-on-surface-variant/30",

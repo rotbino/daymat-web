@@ -5,8 +5,8 @@ import {
     ApiError,
     LoginCredentials,
     RegisterCredentials,
-    CreateBusinessDto,
-    UpdateBusinessDto,
+    CreateCatalogDto,
+    UpdateCatalogDto,
     CreateArmDto,
     CreateAdDto,
     AdListQuery,
@@ -18,6 +18,7 @@ import { toast } from 'sonner';
 import { useSelector } from "react-redux";
 import { RootState } from "@/lib/store/store";
 import { useCallback, useMemo } from 'react';
+import {apiRequest} from "@/lib/api/apiRequest";
 // ═══════════════════════════════════════════════════════════
 // ✅ تابع کمکی برای تشخیص کاربر لاگین و توکن
 // ═══════════════════════════════════════════════════════════
@@ -55,85 +56,81 @@ export const useRegister = () => {
 };
 
 // ============================================================
-// BUSINESS HOOKS
+// CATALOG HOOKS
 // ============================================================
-export const useBusinesses = () => {
+export const useCataloges = () => {
     const { hasAccess } = useAuthState();
 
     return useQuery({
-        queryKey: ['businesses'],
-        queryFn: () => apiService.business.getAll(),
+        queryKey: ['cataloges'],
+        queryFn: () => apiService.catalog.getAll(),
         enabled: hasAccess, // ✅ فقط کاربر لاگین
         staleTime: 5 * 60 * 1000,
     });
 };
 
-export const useActiveBusiness = () => {
+export const useActiveCatalog = () => {
     const { hasAccess } = useAuthState();
 
     return useQuery({
-        queryKey: ['business', 'active'],
-        queryFn: () => apiService.business.getActive(),
+        queryKey: ['catalog', 'active'],
+        queryFn: () => apiService.catalog.getActive(),
         enabled: hasAccess, // ✅ فقط کاربر لاگین
         retry: false,
         staleTime: 1000 * 60 * 5,
     });
 };
 
-export const useBusiness = (id: string) => {
+export const useCatalog = (id: string) => {
     const { hasAccess } = useAuthState();
 
     return useQuery({
-        queryKey: ['business', id],
-        queryFn: () => apiService.business.getOne(id),
+        queryKey: ['catalog', id],
+        queryFn: () => apiService.catalog.getOne(id),
         enabled: !!id && hasAccess, // ✅ فقط کاربر لاگین
         staleTime: 5 * 60 * 1000,
         refetchOnMount: false,
         refetchOnWindowFocus: false,
     });
 };
-
-export const useBusinessAds = (
-    businessId: string,
-    page: number = 1,
-    limit: number = 10,
-    status?: string,
-) => {
-    const { hasAccess } = useAuthState();
-
-    return useQuery({
-        queryKey: ['business-ads', businessId, page, limit, status],
-        queryFn: () => apiService.ad.getBusinessAds(businessId, page, limit, status),
-        enabled: !!businessId && hasAccess, // ✅ فقط کاربر لاگین
-        staleTime: 5 * 60 * 1000,
-        refetchOnMount: false,
-        refetchOnWindowFocus: false,
-    });
-};
-
 // ============================================================
-// CATALOG HOOKS - عمومی
+// CATALOG ADS — لیست کالاهای یک کاتالوگ
+// عمومی (مهمان هم می‌تواند) + با پشتیبانی search و status و limit
 // ============================================================
 export const useCatalogAds = (
-    businessId: string,
+    catalogId: string,
     page: number = 1,
-    limit: number = 100,
-    search?: string,
+    limit: number = 10,
+    options?: {
+        search?: string;
+        status?: string;      // active | pending | archived
+        requireAuth?: boolean; // نسخهٔ داشبورد که فقط برای مالک بود
+    },
 ) => {
+    const { hasAccess } = useAuthState();
+    const search = options?.search;
+    const status = options?.status;
+    const requireAuth = options?.requireAuth ?? false;
+
     return useQuery({
-        queryKey: ['catalog-ads', businessId, page, limit, search],
-        queryFn: () => apiService.catalog.getCatalogAds(businessId, page, limit, search),
-        enabled: !!businessId, // ✅ عمومی
+        queryKey: ['catalog-ads', catalogId, page, limit, search ?? null, status ?? null],
+        queryFn: () => {
+            // هر دو مسیر به یک endpoint می‌رسند — با پارامترهای ارسالی متفاوت
+            const qs = new URLSearchParams({ page: String(page), limit: String(limit) });
+            if (search) qs.set('search', search);
+            if (status) qs.set('status', status);
+            return apiRequest(`/ad/catalog/${catalogId}?${qs.toString()}`);
+        },
+        enabled: !!catalogId && (!requireAuth || hasAccess),
         staleTime: 5 * 60 * 1000,
         refetchOnMount: false,
         refetchOnWindowFocus: false,
     });
 };
-
-export const useBusinessBySlug = (slug: string) => {
+export const useCatalogBySlug = (slug: string) => {
     return useQuery({
-        queryKey: ['business', 'by-slug', slug],
-        queryFn: () => apiService.business.getBySlug(slug),
+        queryKey: ['catalog', 'by-slug', slug],
+        queryFn: () => apiService.catalog.getBySlug(slug),
         enabled: !!slug, // ✅ عمومی
         staleTime: 5 * 60 * 1000,
         refetchOnMount: false,
@@ -141,24 +138,24 @@ export const useBusinessBySlug = (slug: string) => {
     });
 };
 
-export const useCatalogSaved = (businessId: string) => {
+export const useCatalogSaved = (catalogId: string) => {
     const { hasAccess } = useAuthState();
 
     return useQuery({
-        queryKey: ['catalog-saved', businessId],
-        queryFn: () => apiService.catalog.isSaved(businessId),
-        enabled: !!businessId && hasAccess, // ✅ فقط کاربر لاگین
+        queryKey: ['catalog-saved', catalogId],
+        queryFn: () => apiService.catalog.isSaved(catalogId),
+        enabled: !!catalogId && hasAccess, // ✅ فقط کاربر لاگین
         staleTime: 5 * 60 * 1000,
         refetchOnMount: true,
         refetchOnWindowFocus: false,
     });
 };
 
-export const useCatalogStats = (businessId: string) => {
+export const useCatalogStats = (catalogId: string) => {
     return useQuery({
-        queryKey: ['catalog-stats', businessId],
-        queryFn: () => apiService.catalog.getStats(businessId),
-        enabled: !!businessId, // ✅ عمومی
+        queryKey: ['catalog-stats', catalogId],
+        queryFn: () => apiService.catalog.getStats(catalogId),
+        enabled: !!catalogId, // ✅ عمومی
         staleTime: 2 * 60 * 1000,
         refetchOnMount: true,
         refetchOnWindowFocus: false,
@@ -191,18 +188,18 @@ export const useLocationsTree = () => {
 };
 
 // ============================================================
-// BUSINESS MUTATIONS
+// CATALOG MUTATIONS
 // ============================================================
-export const useCreateBusiness = () => {
+export const useCreateCatalog = () => {
     const queryClient = useQueryClient();
     return useMutation({
-        mutationFn: (data: CreateBusinessDto) => apiService.business.create(data),
+        mutationFn: (data: CreateCatalogDto) => apiService.catalog.create(data),
         onSuccess: () => {
-            queryClient.invalidateQueries({ queryKey: ['businesses'] });
-            queryClient.invalidateQueries({ queryKey: ['business', 'active'] });
+            queryClient.invalidateQueries({ queryKey: ['cataloges'] });
+            queryClient.invalidateQueries({ queryKey: ['catalog', 'active'] });
         },
         onError: (error: ApiError) => {
-            if (error.data?.errorCode === 'DUPLICATE_BUSINESS_NAME') {
+            if (error.data?.errorCode === 'DUPLICATE_CATALOG_NAME') {
                 toast.error('شما قبلاً یک کسب‌وکار با این نام ثبت کرده‌اید');
             } else {
                 toast.error(error.message || 'خطا در ثبت کسب‌وکار');
@@ -211,32 +208,31 @@ export const useCreateBusiness = () => {
     });
 };
 
-export const useUpdateBusiness = () => {
+export const useUpdateCatalog = () => {
     const queryClient = useQueryClient();
     return useMutation({
-        mutationFn: ({ id, data }: { id: string; data: UpdateBusinessDto }) =>
-            apiService.business.update(id, data),
-        onSuccess: (_, { id }) => {
-            queryClient.invalidateQueries({ queryKey: ['business', id] });
-            queryClient.invalidateQueries({ queryKey: ['business', 'active'] });
-            queryClient.invalidateQueries({ queryKey: ['businesses'] });
-            toast.success('کسب‌وکار با موفقیت ویرایش شد');
+        mutationFn: ({ id, data }: { id: string; data: any }) =>
+            apiService.catalog.update(id, data),
+        onSuccess: () => {
+            queryClient.invalidateQueries({ queryKey: ['catalogs'] });
+            queryClient.invalidateQueries({ queryKey: ['catalog'] });
+            toast.success('کاتالوگ به‌روزرسانی شد');
         },
-        onError: (error: ApiError) => toast.error(error.message || 'خطا در ویرایش کسب‌وکار'),
+        onError: (error: ApiError) => toast.error(error.message || 'خطا در ویرایش کاتالوگ'),
     });
 };
 
-export const useDeleteBusiness = () => {
+export const useDeleteCatalog = () => {
     const queryClient = useQueryClient();
     return useMutation({
-        mutationFn: (id: string) => apiService.business.delete(id),
+        mutationFn: (id: string) => apiService.catalog.delete(id),
         onSuccess: () => {
-            queryClient.invalidateQueries({ queryKey: ['businesses'] });
-            queryClient.invalidateQueries({ queryKey: ['business', 'active'] });
+            queryClient.invalidateQueries({ queryKey: ['cataloges'] });
+            queryClient.invalidateQueries({ queryKey: ['catalog', 'active'] });
             toast.success('کسب‌وکار با موفقیت حذف شد');
         },
         onError: (error: ApiError) => {
-            if (error.data?.errorCode === 'BUSINESS_HAS_ACTIVE_ADS') {
+            if (error.data?.errorCode === 'CATALOG_HAS_ACTIVE_ADS') {
                 toast.error('این کسب‌وکار آگهی فعال دارد، ابتدا آنها را حذف کنید');
             } else {
                 toast.error(error.message || 'خطا در حذف کسب‌وکار');
@@ -341,8 +337,8 @@ export const useCreateAd = () => {
         onSuccess: () => {
             queryClient.invalidateQueries({ queryKey: ['ads'] });
             queryClient.invalidateQueries({ queryKey: ['vitrine'] });
-            queryClient.invalidateQueries({ queryKey: ['business', 'active'] });
-            queryClient.invalidateQueries({ queryKey: ['businesses'] });
+            queryClient.invalidateQueries({ queryKey: ['catalog', 'active'] });
+            queryClient.invalidateQueries({ queryKey: ['cataloges'] });
             toast.success('آگهی با موفقیت ثبت شد');
         },
         onError: (error: ApiError) => toast.error(error.message || 'خطا در ثبت آگهی'),
@@ -464,7 +460,7 @@ export const useExtendAd = () => {
             queryClient.invalidateQueries({ queryKey: ['ad', id] });
             queryClient.invalidateQueries({ queryKey: ['ads'] });
             queryClient.invalidateQueries({ queryKey: ['vitrine'] });
-            queryClient.invalidateQueries({ queryKey: ['business', 'active'] });
+            queryClient.invalidateQueries({ queryKey: ['catalog', 'active'] });
             toast.success('آگهی با موفقیت تمدید شد');
         },
         onError: (error: ApiError) => toast.error(error.message || 'خطا در تمدید آگهی'),
@@ -480,7 +476,7 @@ export const useUpdateAd = () => {
             queryClient.invalidateQueries({ queryKey: ['ad', id] });
             queryClient.invalidateQueries({ queryKey: ['ads'] });
             queryClient.invalidateQueries({ queryKey: ['vitrine'] });
-            queryClient.invalidateQueries({ queryKey: ['business', 'active'] });
+            queryClient.invalidateQueries({ queryKey: ['catalog', 'active'] });
             toast.success('آگهی با موفقیت ویرایش شد');
         },
         onError: (error: ApiError) => toast.error(error.message || 'خطا در ویرایش آگهی'),
@@ -494,7 +490,7 @@ export const useDeleteAd = () => {
         onSuccess: () => {
             queryClient.invalidateQueries({ queryKey: ['ads'] });
             queryClient.invalidateQueries({ queryKey: ['vitrine'] });
-            queryClient.invalidateQueries({ queryKey: ['business', 'active'] });
+            queryClient.invalidateQueries({ queryKey: ['catalog', 'active'] });
             toast.success('آگهی با موفقیت حذف شد');
         },
         onError: (error: ApiError) => toast.error(error.message || 'خطا در حذف آگهی'),
@@ -509,7 +505,7 @@ export const useBumpAd = () => {
             queryClient.invalidateQueries({ queryKey: ['ad', id] });
             queryClient.invalidateQueries({ queryKey: ['ads'] });
             queryClient.invalidateQueries({ queryKey: ['vitrine'] });
-            queryClient.invalidateQueries({ queryKey: ['business', 'active'] });
+            queryClient.invalidateQueries({ queryKey: ['catalog', 'active'] });
             toast.success('نردبان با موفقیت انجام شد');
         },
         onError: (error: ApiError) => toast.error(error.message || 'خطا در نردبان'),
@@ -525,8 +521,8 @@ export const useBulkUpdateAd = () => {
             variables.updates.forEach(u => {
                 queryClient.invalidateQueries({ queryKey: ['ad', u.id] });
             });
-            queryClient.invalidateQueries({ queryKey: ['business', 'active'] });
-            queryClient.invalidateQueries({ queryKey: ['businesses'] });
+            queryClient.invalidateQueries({ queryKey: ['catalog', 'active'] });
+            queryClient.invalidateQueries({ queryKey: ['cataloges'] });
             toast.success('قیمت‌ها با موفقیت به‌روز شدند');
         },
         onError: (error: ApiError) => toast.error(error.message || 'خطا در به‌روزرسانی'),
@@ -593,7 +589,7 @@ export const useUploadFile = () => {
                          fieldKey,
                      }: {
             file: File;
-            model: 'User' | 'Business' | 'Ad';
+            model: 'User' | 'Catalog' | 'Ad';
             modelId: string;
             fieldKey: string;
         }): Promise<UploadFileResponse> => {
@@ -824,5 +820,335 @@ export const useLocationTree = () => {
         queryFn: () => apiService.location.getFullTree(),
         staleTime: Infinity,
         gcTime: Infinity,
+    });
+};
+
+// ============================================================
+// ARM-ADMIN: CATALOGS — مدیریت کاتالوگ‌های بازار (پنل مالک)
+// ============================================================
+
+/** کلیدهای کش — صرفاً از اینجا مصرف شوند تا invalidation متقاطع همیشه درست کار کند */
+export const armCatalogKeys = {
+    prefix: (slug: string) => ['arm-admin', 'catalogs', slug] as const,
+    list: (slug: string, params: Record<string, unknown> = {}) =>
+        ['arm-admin', 'catalogs', slug, 'list', params] as const,
+    candidates: (slug: string, q = '', mine = false) =>
+        ['arm-admin', 'catalogs', slug, 'candidates', q, mine] as const,
+    needs: (slug: string) => ['arm-admin', 'catalogs', slug, 'needs'] as const,
+    referrals: (slug: string) => ['arm-admin', 'catalogs', slug, 'referrals'] as const,
+};
+
+/**
+ * invalidation مرکزی — بعد از هر تغییرِ عضویت/انتشار/دسته صدا زده می‌شود.
+ * چون کالاهای ویترین آمده‌اند/رفته‌اند، کش ویترین و آمار پنل هم تازه می‌شود.
+ */
+export function useInvalidateArmCatalogs() {
+    const queryClient = useQueryClient();
+    return useCallback((slug: string) => {
+        queryClient.invalidateQueries({ queryKey: armCatalogKeys.prefix(slug) }); // لیست + کاندید + needs
+        queryClient.invalidateQueries({ queryKey: ['vitrine'] });                 // تابلوی بازار تغییر کرده
+        queryClient.invalidateQueries({ queryKey: ['arm-stats'] });               // شمارنده‌های داشبورد مالک
+    }, [queryClient]);
+}
+
+
+/** جستجوی کاتالوگ برای افزودن — placeholderData برای نبودِ فلش هنگام تایپ */
+export const useArmCatalogCandidates = (slug?: string, q = '', onlyMine = false, enabled = true) => {
+    return useQuery({
+        queryKey: armCatalogKeys.candidates(slug ?? '', q, onlyMine),
+        queryFn: () => apiService.armAdmin.catalogs.getCandidates(slug!, q || undefined, onlyMine),
+        enabled: !!slug && enabled,
+        staleTime: 60_000,
+        placeholderData: keepPreviousData,
+    });
+};
+
+/** کالاهای منتشرشدهٔ بدون دستهٔ بازاری */
+export const useArmCatalogNeeds = (slug?: string, enabled = true) => {
+    return useQuery({
+        queryKey: armCatalogKeys.needs(slug ?? ''),
+        queryFn: () => apiService.armAdmin.catalogs.getNeedsCategory(slug!),
+        enabled: !!slug && enabled,
+        staleTime: 30_000,
+    });
+};
+
+/** آمار جذب مالک بازار — به‌ندرت تغییر می‌کند؛ کش بلند */
+export const useArmCatalogReferrals = (slug?: string, enabled = true) => {
+    return useQuery({
+        queryKey: armCatalogKeys.referrals(slug ?? ''),
+        queryFn: () => apiService.armAdmin.catalogs.getReferralStats(slug!),
+        enabled: !!slug && enabled,
+        staleTime: 5 * 60_000,
+    });
+};
+
+// ─── Mutations ───
+// نکته: وضعیت per-row با mutation.isPending + mutation.variables تشخیص داده می‌شود
+// — بدون هیچ state دستیِ busyId
+
+export const useAddCatalogToArm = (slug?: string) => {
+    const invalidate = useInvalidateArmCatalogs();
+    return useMutation({
+        mutationFn: (catalogId: string) =>
+            apiService.armAdmin.catalogs.addCatalog(slug!, catalogId),
+        onSuccess: () => invalidate(slug!),
+        onError: (error: ApiError) => toast.error(error.message || 'خطا در افزودن کاتالوگ'),
+    });
+};
+
+export const useToggleCatalogPaused = (slug?: string) => {
+    const invalidate = useInvalidateArmCatalogs();
+    return useMutation({
+        mutationFn: ({ catalogId, paused }: { catalogId: string; paused: boolean }) =>
+            apiService.armAdmin.catalogs.setPaused(slug!, catalogId, paused),
+        onSuccess: (_, { paused }) =>
+            toast.success(paused ? 'عضویت متوقف شد — کالاها از تابلو برداشته شد' : 'عضویت ادامه یافت'),
+        onError: (error: ApiError) => toast.error(error.message || 'خطا'),
+    });
+};
+
+export const useRemoveCatalogFromArm = (slug?: string) => {
+    const invalidate = useInvalidateArmCatalogs();
+    return useMutation({
+        mutationFn: (catalogId: string) =>
+            apiService.armAdmin.catalogs.remove(slug!, catalogId),
+        onSuccess: () => toast.success('کاتالوگ از بازار حذف شد'),
+        onError: (error: ApiError) => toast.error(error.message || 'خطا'),
+    });
+};
+
+export const useSetAdMarketCategory = (slug?: string) => {
+    const invalidate = useInvalidateArmCatalogs();
+    return useMutation({
+        mutationFn: ({ adId, categoryId }: { adId: string; categoryId: string }) =>
+            apiService.armAdmin.catalogs.setAdCategory(slug!, adId, categoryId),
+        onSuccess: () => invalidate(slug!),
+        onError: (error: ApiError) => toast.error(error.message || 'خطا'),
+    });
+};
+
+// ============================================================
+// MARKET SETUP — کالاهای بی‌دستهٔ کاربر در بازار (داشبورد)
+// ============================================================
+export const useMyUncategorized = (enabled = true) => {
+    const { hasAccess } = useAuthState();
+    return useQuery({
+        queryKey: ['my-uncategorized'],
+        queryFn: () => apiService.userMarket.getMyNeedsCategory(),
+        enabled: !!enabled && hasAccess,
+        staleTime: 30_000,
+    });
+};
+
+export const useSetOwnAdCategory = () => {
+    const queryClient = useQueryClient();
+    return useMutation({
+        mutationFn: ({ adId, categoryId }: { adId: string; categoryId: string }) =>
+            apiService.userMarket.setAdCategory(adId, categoryId),
+        onSuccess: () => {
+            queryClient.invalidateQueries({ queryKey: ['my-uncategorized'] });
+            queryClient.invalidateQueries({ queryKey: ['catalog-products'] });
+            queryClient.invalidateQueries({ queryKey: ['notifications-derived'] });
+            queryClient.invalidateQueries({ queryKey: ['vitrine'] });
+            toast.success('دستهٔ بازاری ثبت شد — کالای تو حالا در فیلترهای بازار پیدا می‌شود');
+        },
+        onError: (error: ApiError) => toast.error(error.message || 'خطا'),
+    });
+};
+
+// ============================================================
+// ARM-ADMIN: گسترش useArmCatalogs با پارامترهای سرور-side (جایگزین قبلی)
+// ============================================================
+export const useArmCatalogs = (
+    slug?: string,
+    params?: { search?: string; ownerStatus?: string; sortBy?: string; sortOrder?: string },
+) => {
+    return useQuery({
+        queryKey: armCatalogKeys.list(slug ?? '', params ?? {}),
+        queryFn: () => apiService.armAdmin.catalogs.getList(slug!, params),
+        enabled: !!slug,
+        staleTime: 30_000,
+        placeholderData: keepPreviousData,
+    });
+};
+
+// ============================================================
+// BUSINESS — نهاد تجاری
+// ============================================================
+export const useMyBusinesses = (enabled = true) => {
+    const { hasAccess } = useAuthState();
+    return useQuery({
+        queryKey: ['businesses-entity'],
+        queryFn: () => apiService.business.getMy(),
+        enabled: !!enabled && hasAccess,
+        staleTime: 5 * 60_000,
+    });
+};
+
+export const useCreateBusinessEntity = () => {
+    const queryClient = useQueryClient();
+    return useMutation({
+        mutationFn: (data: any) => apiService.business.create(data),
+        onSuccess: () => {
+            queryClient.invalidateQueries({ queryKey: ['businesses-entity'] });
+            toast.success('کسب‌وکار ثبت شد');
+        },
+        onError: (error: ApiError) => toast.error(error.message || 'خطا در ثبت کسب‌وکار'),
+    });
+};
+
+export const useUpdateBusinessEntity = () => {
+    const queryClient = useQueryClient();
+    return useMutation({
+        mutationFn: ({ id, data }: { id: string; data: any }) => apiService.business.update(id, data),
+        onSuccess: () => {
+            queryClient.invalidateQueries({ queryKey: ['businesses-entity'] });
+            toast.success('کسب‌وکار به‌روزرسانی شد');
+        },
+        onError: (error: ApiError) => toast.error(error.message || 'خطا'),
+    });
+};
+
+// ============================================================
+// ARM-ADMIN: MEMBERSHIPS — فروشندگان و خریداران بازار (دو-مرحله‌ای)
+// ============================================================
+export const armMemberKeys = {
+    prefix: (slug: string) => ['arm-admin', 'memberships', slug] as const,
+    sellers: (slug: string, params: Record<string, unknown> = {}) =>
+        ['arm-admin', 'memberships', slug, 'sellers', params] as const,
+    sellerCandidates: (slug: string, q = '', mine = false) =>
+        ['arm-admin', 'memberships', slug, 'seller-candidates', q, mine] as const,
+    buyers: (slug: string, params: Record<string, unknown> = {}) =>
+        ['arm-admin', 'memberships', slug, 'buyers', params] as const,
+    buyerCandidates: (slug: string, q = '', mine = false) =>
+        ['arm-admin', 'memberships', slug, 'buyer-candidates', q, mine] as const,
+    needs: (slug: string) => ['arm-admin', 'memberships', slug, 'needs'] as const,
+};
+
+/** invalidation مرکزی — ویترین هم همیشه تازه شود */
+export function useInvalidateArmMembers() {
+    const queryClient = useQueryClient();
+    return useCallback((slug: string) => {
+        queryClient.invalidateQueries({ queryKey: armMemberKeys.prefix(slug) });
+        queryClient.invalidateQueries({ queryKey: ['vitrine'] });
+        queryClient.invalidateQueries({ queryKey: ['arm-stats'] });
+        queryClient.invalidateQueries({ queryKey: ['notifications-derived'] });
+    }, [queryClient]);
+}
+
+// ─── فروشندگان ───
+export const useArmSellers = (slug?: string, params?: Record<string, any>) => {
+    return useQuery({
+        queryKey: armMemberKeys.sellers(slug ?? '', params ?? {}),
+        queryFn: () => apiRequest(`/arm-admin/${slug}/memberships/sellers`, { params }),
+        enabled: !!slug,
+        staleTime: 30_000,
+        placeholderData: keepPreviousData,
+    });
+};
+
+export const useArmSellerCandidates = (slug?: string, q = '', onlyMine = false, enabled = true) => {
+    return useQuery({
+        queryKey: armMemberKeys.sellerCandidates(slug ?? '', q, onlyMine),
+        queryFn: () => apiRequest(`/arm-admin/${slug}/memberships/sellers/candidates`, {
+            params: { ...(q ? { q } : {}), ...(onlyMine ? { myReferrals: '1' } : {}) },
+        }),
+        enabled: !!slug && enabled,
+        staleTime: 60_000,
+        placeholderData: keepPreviousData,
+    });
+};
+
+export const useAddSeller = (slug?: string) => {
+    const invalidate = useInvalidateArmMembers();
+    return useMutation({
+        mutationFn: (catalogId: string) =>
+            apiRequest(`/arm-admin/${slug}/memberships/sellers`, { method: 'POST', data: { catalogId } }),
+        onSuccess: () => invalidate(slug!),
+        onError: (error: ApiError) => toast.error(error.message || 'خطا در افزودن فروشنده'),
+    });
+};
+
+export const useToggleSellerPaused = (slug?: string) => {
+    const invalidate = useInvalidateArmMembers();
+    return useMutation({
+        mutationFn: ({ catalogId, paused }: { catalogId: string; paused: boolean }) =>
+            apiRequest(`/arm-admin/${slug}/memberships/sellers/${catalogId}`, { method: 'PATCH', data: { paused } }),
+        onSuccess: (_, { paused }) =>
+            toast.success(paused ? 'فروشنده متوقف شد — کالاهایش از تابلو برداشته شد' : 'فروشنده ادامه یافت'),
+        onError: (error: ApiError) => toast.error(error.message || 'خطا'),
+    });
+};
+
+export const useRemoveSeller = (slug?: string) => {
+    const invalidate = useInvalidateArmMembers();
+    return useMutation({
+        mutationFn: (catalogId: string) =>
+            apiRequest(`/arm-admin/${slug}/memberships/sellers/${catalogId}`, { method: 'DELETE' }),
+        onSuccess: () => toast.success('فروشنده از بازار حذف شد'),
+        onError: (error: ApiError) => toast.error(error.message || 'خطا'),
+    });
+};
+
+export const useSetAdMarketCategoryAdmin = (slug?: string) => {
+    const invalidate = useInvalidateArmMembers();
+    return useMutation({
+        mutationFn: ({ adId, categoryId }: { adId: string; categoryId: string }) =>
+            apiRequest(`/arm-admin/${slug}/memberships/sellers/ads/${adId}/category`, { method: 'PATCH', data: { categoryId } }),
+        onSuccess: () => invalidate(slug!),
+        onError: (error: ApiError) => toast.error(error.message || 'خطا'),
+    });
+};
+
+export const useArmNeedsCategory = (slug?: string, enabled = true) => {
+    return useQuery({
+        queryKey: armMemberKeys.needs(slug ?? ''),
+        queryFn: () => apiRequest(`/arm-admin/${slug}/memberships/needs-category`),
+        enabled: !!slug && enabled,
+        staleTime: 30_000,
+    });
+};
+
+// ─── خریداران ───
+export const useArmBuyers = (slug?: string, params?: Record<string, any>) => {
+    return useQuery({
+        queryKey: armMemberKeys.buyers(slug ?? '', params ?? {}),
+        queryFn: () => apiRequest(`/arm-admin/${slug}/memberships/buyers`, { params }),
+        enabled: !!slug,
+        staleTime: 30_000,
+        placeholderData: keepPreviousData,
+    });
+};
+
+export const useArmBuyerCandidates = (slug?: string, q = '', onlyMine = false, enabled = true) => {
+    return useQuery({
+        queryKey: armMemberKeys.buyerCandidates(slug ?? '', q, onlyMine),
+        queryFn: () => apiRequest(`/arm-admin/${slug}/memberships/buyers/candidates`, {
+            params: { ...(q ? { q } : {}), ...(onlyMine ? { myReferrals: '1' } : {}) },
+        }),
+        enabled: !!slug && enabled,
+        staleTime: 60_000,
+        placeholderData: keepPreviousData,
+    });
+};
+
+export const useAddBuyer = (slug?: string) => {
+    const invalidate = useInvalidateArmMembers();
+    return useMutation({
+        mutationFn: (businessId: string) =>
+            apiRequest(`/arm-admin/${slug}/memberships/buyers`, { method: 'POST', data: { businessId } }),
+        onSuccess: () => invalidate(slug!),
+        onError: (error: ApiError) => toast.error(error.message || 'خطا در افزودن خریدار'),
+    });
+};
+
+export const useRemoveBuyer = (slug?: string) => {
+    const invalidate = useInvalidateArmMembers();
+    return useMutation({
+        mutationFn: (membershipId: string) =>
+            apiRequest(`/arm-admin/${slug}/memberships/buyers/${membershipId}`, { method: 'DELETE' }),
+        onSuccess: () => toast.success('خریدار از بازار حذف شد'),
+        onError: (error: ApiError) => toast.error(error.message || 'خطا'),
     });
 };

@@ -10,27 +10,28 @@ import {
     Briefcase, User, AlertCircle, Loader2, Award, Tag, MapPinned,
     Shield, BadgeCheck, ArrowRight, Clock, XCircle,
 } from 'lucide-react';
-import { ArmLocationSelector } from '@/app/components/ArmLocationSelector';
+import { ArmLocationSelector } from '@/app_/components/ArmLocationSelector';
 import { FileUploader } from '@/components/common/FileUploader';
 import { RootState } from '@/lib/store/store';
-import { useBusiness, useUpdateBusiness, useUploadFile } from '@/lib/api/apiHooks';
-import { USER_POSITIONS, BUSINESS_TYPES } from '@/lib/api/data-types';
+import { useCatalog, useUpdateCatalog, useUploadFile } from '@/lib/api/apiHooks';
+import { USER_POSITIONS, CATALOG_TYPES } from '@/lib/api/data-types';
 import { apiService } from '@/lib/api/apiService';
 import { cn } from '@/lib/utils';
-import { ActivitySelectorModal } from '@/app/components/ActivitySelectorModal';
+import { ActivitySelectorModal } from '@/app_/components/ActivitySelectorModal';
 import { VerificationModal } from '@/app/business/VerificationModal';
+import SlugPicker from "@/app/business/register/SlugPicker";
 
 type EditMode = 'none' | 'basic' | 'location' | 'activities' | 'contact' | 'description';
 
-export default function EditBusinessPage() {
+export default function EditCatalogPage() {
     const router = useRouter();
     const params = useParams();
-    const businessId = params.id as string;
+    const catalogId = params.id as string;
 
     const { user } = useSelector((state: RootState) => state.auth);
     const { currentArm } = useSelector((state: RootState) => state.arm);
-    const { data: business, isLoading, refetch } = useBusiness(businessId);
-    const updateBusiness = useUpdateBusiness();
+    const { data: catalog, isLoading, refetch } = useCatalog(catalogId);
+    const updateCatalog = useUpdateCatalog();
     const uploadMutation = useUploadFile();
 
     const armConfig = currentArm?.config as any || {};
@@ -41,7 +42,7 @@ export default function EditBusinessPage() {
 
     const [formData, setFormData] = useState({
         name: '', shortDescription: '', type: '', province: '', city: '',
-        provinceCode: '', provinceLabel: '', cityCode: '', cityLabel: '',
+        provinceCode: '', provinceLabel: '', cityCode: '', cityLabel: '',slug: '',
         phone: '', address: '', website: '', description: '', position: '',
         logoUrl: '', activityIds: [] as string[], industryId: '',
     });
@@ -53,7 +54,7 @@ export default function EditBusinessPage() {
     const [showActivityModal, setShowActivityModal] = useState(false);
     const [isVerificationModalOpen, setIsVerificationModalOpen] = useState(false);
     const [savingSection, setSavingSection] = useState<EditMode | null>(null);
-
+    const [slug, setSlug] = useState('');
     const availableIndustries = useMemo(() => {
         if (!formData.type) return [];
         return formData.type === 'wholesaler' ? supplierIndustries : buyerIndustries;
@@ -65,50 +66,53 @@ export default function EditBusinessPage() {
     }, [formData.industryId, supplierIndustries, buyerIndustries]);
 
     useEffect(() => {
-        if (business) {
-            const activityIds = business.activities?.map((a: any) => a.id) || [];
+        if (catalog) {
+            const activityIds = catalog.activities?.map((a: any) => a.id) || [];
             setFormData({
-                name: business.name || '',
-                shortDescription: business.shortDescription || '',
-                type: business.type || '',
-                province: business.province || '',
-                city: business.city || '',
-                provinceCode: business.provinceCode || '',
-                provinceLabel: business.province || '',
-                cityCode: business.cityCode || '',
-                cityLabel: business.city || '',
-                phone: business.phone || '',
-                address: business.address || '',
-                website: business.website || '',
-                description: business.description || '',
-                position: business.position || '',
-                logoUrl: business.logoUrl || '',
+                name: catalog.name || '',
+                shortDescription: catalog.shortDescription || '',
+                type: catalog.type || '',
+                province: catalog.province || '',
+                city: catalog.city || '',
+                slug: catalog.slug || undefined,
+                provinceCode: catalog.provinceCode || '',
+                provinceLabel: catalog.province || '',
+                cityCode: catalog.cityCode || '',
+                cityLabel: catalog.city || '',
+                phone: catalog.phone || '',
+                address: catalog.address || '',
+                website: catalog.website || '',
+                description: catalog.description || '',
+                position: catalog.position || '',
+                logoUrl: catalog.logoUrl || '',
                 activityIds: activityIds,
-                industryId: business.industryId || '',
+                industryId: catalog.industryId || '',
             });
-            setCurrentLogoFileId(business.logoUrl || '');
+            setCurrentLogoFileId(catalog.logoUrl || '');
 
-            setSelectedActivities(business.activities || []);
+            setSelectedActivities(catalog.activities || []);
         }
-    }, [business]);
-
+    }, [catalog]);
     useEffect(() => {
-        if (business && user && business.ownerUserId !== user.id) {
+        if (catalog?.slug != null) setSlug(catalog.slug);
+    }, [catalog?.slug]);
+    useEffect(() => {
+        if (catalog && user && catalog.ownerUserId !== user.id) {
             toast.error('شما به این کسب‌وکار دسترسی ندارید');
             router.push('/profile');
         }
-    }, [business, user, router]);
+    }, [catalog, user, router]);
 
     const handleLogoUpload = async (file: File) => {
         setIsUploading(true);
         try {
             const result = await uploadMutation.mutateAsync({
-                file, model: 'Business', modelId: businessId, fieldKey: 'logo',
+                file, model: 'Catalog', modelId: catalogId, fieldKey: 'logo',
             });
             setCurrentLogoFileId(result.id);
             setFormData(prev => ({ ...prev, logoUrl: result.id }));
             toast.success('لوگو با موفقیت آپلود شد');
-            await updateBusiness.mutateAsync({ id: businessId, data: { logoFileId: result.id } });
+            await updateCatalog.mutateAsync({ id: catalogId, data: { logoFileId: result.id } });
             refetch();
         } catch (error: any) {
             toast.error(error?.message || 'خطا در آپلود لوگو');
@@ -129,6 +133,7 @@ export default function EditBusinessPage() {
                 city: formData.cityLabel || formData.city,
                 provinceCode: formData.provinceCode,
                 cityCode: formData.cityCode,
+                slug: formData.slug,
                 phone: formData.phone.trim(),
                 address: formData.address.trim(),
                 website: formData.website.trim(),
@@ -138,7 +143,7 @@ export default function EditBusinessPage() {
                 activityIds: formData.activityIds.length > 0 ? formData.activityIds : undefined,
                 industryId: formData.industryId || undefined,
             };
-            await updateBusiness.mutateAsync({ id: businessId, data: updateData });
+            await updateCatalog.mutateAsync({ id: catalogId, data: updateData });
             toast.success('اطلاعات با موفقیت ذخیره شد');
             refetch();
             setEditMode('none');
@@ -149,22 +154,32 @@ export default function EditBusinessPage() {
             setSavingSection(null);
         }
     };
-
+    // ✅ ذخیرهٔ فوری اسلاگ — تیکِ داخل SlugPicker این را صدا می‌زند
+    const handleSlugSave = async (newSlug: string) => {
+        debugger
+        await updateCatalog.mutateAsync({
+            id: catalogId,
+            data: { slug: newSlug },
+        });
+        setSlug(newSlug);
+        refetch();
+        toast.success('آدرس کاتالوگ ذخیره شد — لینک جدیدت آماده است');
+    };
     const resetChanges = () => {
-        if (business) {
-            const activityIds = business.activities?.map((a: any) => a.id) || [];
+        if (catalog) {
+            const activityIds = catalog.activities?.map((a: any) => a.id) || [];
             setFormData({
-                name: business.name || '', shortDescription: business.shortDescription || '',
-                type: business.type || '', province: business.province || '', city: business.city || '',
-                provinceCode: business.provinceCode || '', provinceLabel: business.province || '',
-                cityCode: business.cityCode || '', cityLabel: business.city || '',
-                phone: business.phone || '', address: business.address || '',
-                website: business.website || '', description: business.description || '',
-                position: business.position || '', logoUrl: business.logoUrl || '',
-                activityIds: activityIds, industryId: business.industryId || '',
+                name: catalog.name || '', shortDescription: catalog.shortDescription || '',
+                type: catalog.type || '', province: catalog.province || '', city: catalog.city || '',
+                provinceCode: catalog.provinceCode || '', provinceLabel: catalog.province || '',
+                cityCode: catalog.cityCode || '', cityLabel: catalog.city || '',
+                phone: catalog.phone || '', address: catalog.address || '',
+                website: catalog.website || '', description: catalog.description || '',
+                position: catalog.position || '', logoUrl: catalog.logoUrl || '',
+                activityIds: activityIds, industryId: catalog.industryId || '',
             });
-            setSelectedActivities(business.activities || []);
-            setCurrentLogoFileId(business.logoUrl || '');
+            setSelectedActivities(catalog.activities || []);
+            setCurrentLogoFileId(catalog.logoUrl || '');
         }
         setEditMode('none');
     };
@@ -180,7 +195,7 @@ export default function EditBusinessPage() {
         );
     }
 
-    if (!business) {
+    if (!catalog) {
         return (
             <div className="min-h-screen flex items-center justify-center bg-background dark:bg-gray-950">
                 <div className="text-center">
@@ -207,16 +222,16 @@ export default function EditBusinessPage() {
     ].reduce((a, b) => a + b, 0);
 
     const isComplete = completionPercentage === 100;
-    const businessTypeLabel = BUSINESS_TYPES.find(t => t.value === formData.type)?.label || '';
+    const catalogTypeLabel = CATALOG_TYPES.find(t => t.value === formData.type)?.label || '';
     const positionLabel = USER_POSITIONS.find(p => p.value === formData.position)?.label || '';
     const locationLabel = formData.provinceLabel && formData.cityLabel ? `${formData.provinceLabel}، ${formData.cityLabel}` : '';
 
 
     // محاسبه وضعیت‌ها (همان قبلی، اما isRejected اضافه شود)
-    const isPending = business.verificationStatus === 'pending';
-    const isRejected = business.verificationStatus === 'rejected';
-    const isApproved = business.verificationStatus === 'approved';
-    const currentTier = business.verificationTier;
+    const isPending = catalog.verificationStatus === 'pending';
+    const isRejected = catalog.verificationStatus === 'rejected';
+    const isApproved = catalog.verificationStatus === 'approved';
+    const currentTier = catalog.verificationTier;
     const hasApprovedTier = isApproved && currentTier !== 'none';
     const isGold = currentTier === 'gold' && isApproved;
 
@@ -244,7 +259,7 @@ export default function EditBusinessPage() {
                             </button>
                             <div>
                                 <h1 className="text-lg font-semibold text-on-surface dark:text-gray-100">صفحه کسب‌وکار</h1>
-                                <p className="text-xs text-on-surface-variant/70 dark:text-gray-500">{business.name}</p>
+                                <p className="text-xs text-on-surface-variant/70 dark:text-gray-500">{catalog.name}</p>
                             </div>
                         </div>
                         <div className="flex items-center gap-2">
@@ -316,8 +331,8 @@ export default function EditBusinessPage() {
                                 <div>
                                     <h3 className="font-semibold text-on-surface dark:text-gray-100">درخواست شما رد شد</h3>
                                     <p className="text-sm text-on-surface-variant dark:text-gray-400">
-                                        {business.latestVerification?.notes
-                                            ? `دلیل: ${business.latestVerification.notes}`
+                                        {catalog.latestVerification?.notes
+                                            ? `دلیل: ${catalog.latestVerification.notes}`
                                             : 'می‌توانید مدارک خود را اصلاح کرده و دوباره ارسال کنید.'}
                                     </p>
                                 </div>
@@ -393,7 +408,7 @@ export default function EditBusinessPage() {
                         <div className="relative mx-auto sm:mx-0">
                             <FileUploader
                                 value={currentLogoFileId}
-                                previewUrl={business?.logoFile?.path || null} // ✅ اضافه کردن این خط
+                                previewUrl={catalog?.logoFile?.path || null} // ✅ اضافه کردن این خط
                                 onFileSelect={(file) => { if (file) handleLogoUpload(file); }}
                                 onRemove={() => { setCurrentLogoFileId(''); setFormData(prev => ({ ...prev, logoUrl: '' })); }}
                                 rounded={true}
@@ -418,10 +433,17 @@ export default function EditBusinessPage() {
                                 </h1>
                                 {formData.type && (
                                     <span className="hidden sm:inline-block px-2.5 py-0.5 bg-primary/10 dark:bg-primary/20 text-primary dark:text-primary-400 text-xs rounded-full font-medium">
-                                        {businessTypeLabel}
+                                        {catalogTypeLabel}
                                     </span>
                                 )}
                             </div>
+                            <SlugPicker
+                                value={slug}
+                                onChange={setSlug}
+                                industryName={catalog?.industryName || undefined}
+                                excludeId={catalog?.id}
+                                onSave={handleSlugSave}     // ✅ تیک = ذخیرهٔ فوری
+                            />
                             <div className="text-on-surface dark:text-gray-300 truncate mt-0.5">{formData.shortDescription || 'معرفی کوتاه'}</div>
                             <div className="flex flex-wrap items-center gap-x-4 gap-y-1 mt-2 text-sm text-on-surface-variant dark:text-gray-400">
                                 {locationLabel && <span className="flex items-center gap-1"><MapPin className="w-3.5 h-3.5" />{locationLabel}</span>}
@@ -440,23 +462,7 @@ export default function EditBusinessPage() {
                             )}
                         </div>
 
-                        <div className="flex items-center gap-2 w-full sm:w-auto">
-                            {editMode === 'none' ? (
-                                <button onClick={() => setEditMode('basic')}
-                                        className="w-full sm:w-auto flex items-center justify-center gap-2 px-5 py-2.5 bg-primary text-on-primary rounded-xl hover:bg-primary/90 transition-all text-sm font-medium">
-                                    <Pencil className="w-4 h-4" /> ویرایش اطلاعات
-                                </button>
-                            ) : (
-                                <div className="flex items-center gap-2 w-full sm:w-auto">
-                                    <button onClick={resetChanges}
-                                            className="flex-1 sm:flex-none px-4 py-2.5 border border-outline dark:border-gray-700 text-on-surface dark:text-gray-300 rounded-xl hover:bg-surface-container-low dark:hover:bg-gray-800 transition-colors text-sm font-medium">انصراف</button>
-                                    <button onClick={() => handleSectionSave(editMode)} disabled={isSaving}
-                                            className="flex-1 sm:flex-none px-4 py-2.5 bg-primary text-on-primary rounded-xl hover:bg-primary/90 transition-all disabled:opacity-50 text-sm font-medium flex items-center justify-center gap-2">
-                                        {isSaving ? <Loader2 className="w-4 h-4 animate-spin" /> : <Check className="w-4 h-4" />} ذخیره
-                                    </button>
-                                </div>
-                            )}
-                        </div>
+
                     </div>
 
                     {formData.description && editMode === 'none' && (
@@ -494,13 +500,13 @@ export default function EditBusinessPage() {
                                 <div>
                                     <label className="text-xs font-medium text-on-surface-variant dark:text-gray-400 block mb-1">نام کسب‌وکار <span className="text-primary">*</span></label>
                                     <input type="text" value={formData.name} onChange={(e) => setFormData({ ...formData, name: e.target.value })}
-                                           placeholder={labels['business.name.placeholder'] || 'نام کسب‌وکار را وارد کنید'}
+                                           placeholder={labels['catalog.name.placeholder'] || 'نام کسب‌وکار را وارد کنید'}
                                            className="w-full bg-surface-container-lowest dark:bg-gray-800 border border-outline dark:border-gray-700 rounded-lg h-10 px-3 text-sm text-right focus:ring-2 focus:ring-primary/20 focus:border-primary outline-none transition-all" />
                                 </div>
                                 <div>
                                     <label className="text-xs font-medium text-on-surface-variant dark:text-gray-400 block mb-1">معرفی کوتاه</label>
                                     <input type="text" value={formData.shortDescription} onChange={(e) => setFormData({ ...formData, shortDescription: e.target.value })}
-                                           placeholder={labels['business.shortDescription.placeholder'] || 'مثال: تولید کننده انواع آجر فشاری'}
+                                           placeholder={labels['catalog.shortDescription.placeholder'] || 'مثال: تولید کننده انواع آجر فشاری'}
                                            className="w-full bg-surface-container-lowest dark:bg-gray-800 border border-outline dark:border-gray-700 rounded-lg h-10 px-3 text-sm text-right focus:ring-2 focus:ring-primary/20 focus:border-primary outline-none transition-all" />
                                 </div>
                                 <div>
@@ -508,7 +514,7 @@ export default function EditBusinessPage() {
                                     <select value={formData.type} onChange={(e) => setFormData({ ...formData, type: e.target.value, industryId: '' })}
                                             className="w-full bg-surface-container-lowest dark:bg-gray-800 border border-outline dark:border-gray-700 rounded-lg h-10 px-3 text-sm text-right appearance-none focus:ring-2 focus:ring-primary/20 focus:border-primary outline-none transition-all">
                                         <option value="">انتخاب نوع...</option>
-                                        {BUSINESS_TYPES.map((type) => <option key={type.value} value={type.value}>{type.label}</option>)}
+                                        {CATALOG_TYPES.map((type) => <option key={type.value} value={type.value}>{type.label}</option>)}
                                     </select>
                                 </div>
                                 <div>
@@ -538,7 +544,7 @@ export default function EditBusinessPage() {
                             <div className="space-y-2 text-sm">
                                 <div className="flex justify-between py-1.5 border-b border-outline-variant/30 dark:border-gray-800"><span className="text-on-surface-variant dark:text-gray-400">نام</span><span className="text-on-surface dark:text-gray-200 font-medium">{formData.name || '—'}</span></div>
                                 <div className="flex justify-between py-1.5 border-b border-outline-variant/30 dark:border-gray-800"><span className="text-on-surface-variant dark:text-gray-400">معرفی کوتاه</span><span className="text-on-surface dark:text-gray-200 font-medium">{formData.shortDescription || '—'}</span></div>
-                                <div className="flex justify-between py-1.5 border-b border-outline-variant/30 dark:border-gray-800"><span className="text-on-surface-variant dark:text-gray-400">نوع</span><span className="text-on-surface dark:text-gray-200">{businessTypeLabel || '—'}</span></div>
+                                <div className="flex justify-between py-1.5 border-b border-outline-variant/30 dark:border-gray-800"><span className="text-on-surface-variant dark:text-gray-400">نوع</span><span className="text-on-surface dark:text-gray-200">{catalogTypeLabel || '—'}</span></div>
                                 <div className="flex justify-between py-1.5 border-b border-outline-variant/30 dark:border-gray-800"><span className="text-on-surface-variant dark:text-gray-400">سمت</span><span className="text-on-surface dark:text-gray-200">{positionLabel || '—'}</span></div>
                               {/*  {restrictMembershipByIndustry && <div className="flex justify-between py-1.5"><span className="text-on-surface-variant dark:text-gray-400">صنف</span><span className="text-on-surface dark:text-gray-200">{industryLabel || '—'}</span></div>}*/}
                             </div>
@@ -752,9 +758,9 @@ export default function EditBusinessPage() {
             <VerificationModal
                 isOpen={isVerificationModalOpen}
                 onClose={() => setIsVerificationModalOpen(false)}
-                businessId={businessId}
-                businessName={business.name}
-                currentLevel={business.verificationTier as 'none' | 'blue' | 'silver' | 'gold' || 'none'}
+                catalogId={catalogId}
+                catalogName={catalog.name}
+                currentLevel={catalog.verificationTier as 'none' | 'blue' | 'silver' | 'gold' || 'none'}
                 onSuccess={() => refetch()}
             />
         </div>

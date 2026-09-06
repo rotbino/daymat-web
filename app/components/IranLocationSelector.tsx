@@ -71,7 +71,7 @@ export function IranLocationSelector({
         <div className={`flex flex-col sm:flex-row gap-2 ${className}`}>
             <div className="flex-1">
                 <DropSelector
-                    label="استان"
+                    label=""
                     value={provinceCode}
                     options={provinces}
                     onChange={handleProvinceChange}
@@ -81,7 +81,7 @@ export function IranLocationSelector({
             </div>
             <div className="flex-1">
                 <DropSelector
-                    label="شهر"
+                    label=""
                     value={cityCode}
                     options={cities}
                     onChange={handleCityChange}

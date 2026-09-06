@@ -17,7 +17,7 @@ import { toast } from 'sonner';
 import { apiService } from '@/lib/api/apiService';
 import { cn } from '@/lib/utils';
 
-type TabType = 'info' | 'businesses' | 'ads' | 'payments' | 'memberships';
+type TabType = 'info' | 'cataloges' | 'ads' | 'payments' | 'memberships';
 type TransactionStatusFilter = 'all' | 'pending' | 'approved' | 'rejected' | 'success' | 'failed';
 
 const QUICK_RANGES = [
@@ -76,7 +76,7 @@ export default function AdminUserDetailPage() {
     // ============================================================
     const tabs: { id: TabType; label: string; icon: any; count?: number }[] = [
         { id: 'info', label: 'اطلاعات پایه', icon: User },
-        { id: 'businesses', label: 'کسب‌وکارها', icon: Building2, count: userData?.businesses?.length || 0 },
+        { id: 'cataloges', label: 'کسب‌وکارها', icon: Building2, count: userData?.cataloges?.length || 0 },
         { id: 'ads', label: 'آگهی‌ها', icon: Package, count: userData?.ads?.length || 0 },
         { id: 'payments', label: 'تراکنش‌ها', icon: CreditCard, count: userData?.allTransactions?.length || 0 },
         { id: 'memberships', label: 'پیوستن به بازارها', icon: Store, count: userData?.armMemberships?.length || 0 },
@@ -271,7 +271,7 @@ export default function AdminUserDetailPage() {
                         <InfoCard label="آخرین ورود" value={userData.lastLoginAt ? formatDate(userData.lastLoginAt) : 'ندارد'} icon={Clock} />
                         <InfoCard label="اشتراک" value={userData.membershipTier === 'free' ? 'رایگان' : userData.membershipTier} icon={Crown} />
                         <InfoCard label="زبان" value={userData.locale === 'fa' ? 'فارسی' : userData.locale} icon={Globe} />
-                        <InfoCard label="کسب‌وکارها" value={`${userData.businesses?.length || 0} عدد`} icon={Building2} />
+                        <InfoCard label="کسب‌وکارها" value={`${userData.cataloges?.length || 0} عدد`} icon={Building2} />
                         <InfoCard label="بازارها" value={`${userData.armMemberships?.length || 0} بازار`} icon={Store} />
                         <InfoCard label="آگهی‌ها" value={`${userData.ads?.length || 0} عدد`} icon={Package} />
                         <InfoCard label="تراکنش‌ها" value={`${userData.allTransactions?.length || 0} عدد`} icon={CreditCard} />
@@ -279,10 +279,10 @@ export default function AdminUserDetailPage() {
                 )}
 
                 {/* ══════════ کسب‌وکارها ══════════ */}
-                {activeTab === 'businesses' && (
-                    userData.businesses?.length > 0 ? (
+                {activeTab === 'cataloges' && (
+                    userData.cataloges?.length > 0 ? (
                         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
-                            {userData.businesses.map((b: any) => (
+                            {userData.cataloges.map((b: any) => (
                                 <div key={b.id} className="bg-surface rounded-xl border border-outline-variant/20 p-4 hover:shadow-md transition-shadow">
                                     <div className="flex items-start gap-3">
                                         <Building2 className="w-5 h-5 text-primary mt-0.5 flex-shrink-0" />

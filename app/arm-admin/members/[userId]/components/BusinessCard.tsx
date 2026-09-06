@@ -1,4 +1,4 @@
-// app/arm-admin/members/[userId]/components/BusinessCard.tsx
+// app/arm-admin/members/[userId]/components/CatalogCard.tsx
 'use client';
 
 import React, { useState } from 'react';
@@ -12,7 +12,7 @@ import { cn } from '@/lib/utils';
 import { getApiUrl } from '@/lib/api/apiRequest';
 
 
-interface Business {
+interface Catalog {
     id: string;
     name: string;
     type: string;
@@ -26,7 +26,7 @@ interface Business {
     website?: string;
     address?: string;
     nationalId?: string;
-    businessLicense?: string;
+    catalogLicense?: string;
     industryName?: string;
     logoUrl?: string;
     logoFileId?: string;
@@ -35,13 +35,13 @@ interface Business {
     position?: string;
 }
 
-interface BusinessCardProps {
-    businesses: Business[];
+interface CatalogCardProps {
+    cataloges: Catalog[];
 }
 
-export function BusinessCard({ businesses }: BusinessCardProps) {
+export function CatalogCard({ cataloges }: CatalogCardProps) {
     const [selectedIndex, setSelectedIndex] = useState(0);
-    const business = businesses[selectedIndex];
+    const catalog = cataloges[selectedIndex];
 
     const getVerificationBadge = (tier: string) => {
         if (tier === 'none' || !tier) return null;
@@ -104,7 +104,7 @@ export function BusinessCard({ businesses }: BusinessCardProps) {
     return (
         <div className="bg-surface-container-low border border-outline-variant rounded-xl p-4 sm:p-6 space-y-6">
             {/* انتخاب کسب‌وکار در صورت وجود چند مورد */}
-            {businesses.length > 1 && (
+            {cataloges.length > 1 && (
                 <div className="flex items-center gap-2 mb-4 pb-4 border-b border-outline-variant/30">
                     <Store className="w-5 h-5 text-primary" />
                     <span className="text-sm font-medium text-on-surface">کسب‌وکار:</span>
@@ -114,7 +114,7 @@ export function BusinessCard({ businesses }: BusinessCardProps) {
                             onChange={(e) => handleSelect(Number(e.target.value))}
                             className="w-full appearance-none bg-surface-container-lowest border border-outline rounded-lg px-3 py-1.5 text-sm focus:ring-2 focus:ring-primary/20 focus:border-primary outline-none transition-all"
                         >
-                            {businesses.map((b, idx) => (
+                            {cataloges.map((b, idx) => (
                                 <option key={b.id} value={idx}>{b.name}</option>
                             ))}
                         </select>
@@ -125,10 +125,10 @@ export function BusinessCard({ businesses }: BusinessCardProps) {
 
             {/* اطلاعات هدر کسب‌وکار */}
             <div className="flex flex-col sm:flex-row items-start sm:items-center gap-4">
-                {business.logoUrl? (
+                {catalog.logoUrl? (
                     <img
-                        src={getApiUrl(`/file/${business.logoUrl}`)}
-                        alt={business.name}
+                        src={getApiUrl(`/file/${catalog.logoUrl}`)}
+                        alt={catalog.name}
                         className="w-20 h-20 rounded-xl object-cover border border-outline-variant"
                     />
                 ) : (
@@ -138,27 +138,27 @@ export function BusinessCard({ businesses }: BusinessCardProps) {
                 )}
                 <div className="flex-1 min-w-0">
                     <div className="flex items-center gap-2 flex-wrap">
-                        <h3 className="text-lg font-bold text-on-surface">{business.name}</h3>
-                        {getVerificationBadge(business.verificationTier)}
-                        {getVerificationStatusBadge(business.verificationStatus)}
+                        <h3 className="text-lg font-bold text-on-surface">{catalog.name}</h3>
+                        {getVerificationBadge(catalog.verificationTier)}
+                        {getVerificationStatusBadge(catalog.verificationStatus)}
                     </div>
-                    <p className="text-sm text-on-surface-variant mt-1">{business.type || 'نوع وارد نشده'}</p>
+                    <p className="text-sm text-on-surface-variant mt-1">{catalog.type || 'نوع وارد نشده'}</p>
                     <div className="flex flex-wrap items-center gap-3 mt-2 text-sm text-on-surface-variant">
-                        {business.city && (
+                        {catalog.city && (
                             <span className="flex items-center gap-1">
                                 <MapPin className="w-4 h-4" />
-                                {business.city}، {business.province}
+                                {catalog.city}، {catalog.province}
                             </span>
                         )}
-                        {business.phone && (
+                        {catalog.phone && (
                             <span className="flex items-center gap-1" dir="ltr">
                                 <Phone className="w-4 h-4" />
-                                {business.phone}
+                                {catalog.phone}
                             </span>
                         )}
                         <span className="flex items-center gap-1">
                             <TrendingUp className="w-4 h-4" />
-                            امتیاز: {business.trustScore}
+                            امتیاز: {catalog.trustScore}
                         </span>
                     </div>
                 </div>
@@ -168,12 +168,12 @@ export function BusinessCard({ businesses }: BusinessCardProps) {
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                 <FieldItem
                     label="صنف / زمینه فعالیت"
-                    value={business.industryName}
+                    value={catalog.industryName}
                     icon={Briefcase}
                 />
                 <FieldItem
                     label="سمت کاربر"
-                    value={business.position}
+                    value={catalog.position}
                     icon={User}
                 />
                 <div className="bg-surface rounded-xl p-3 flex items-start gap-2 sm:col-span-2">
@@ -181,13 +181,13 @@ export function BusinessCard({ businesses }: BusinessCardProps) {
                     <div>
                         <p className="text-xs text-on-surface-variant">آدرس</p>
                         <p className="text-sm font-medium text-on-surface">
-                            {business.address || 'وارد نشده'}
+                            {catalog.address || 'وارد نشده'}
                         </p>
                     </div>
                 </div>
                 <FieldItem
                     label="وب‌سایت"
-                    value={business.website}
+                    value={catalog.website}
                     icon={Globe}
                     dir="ltr"
                 />
@@ -196,7 +196,7 @@ export function BusinessCard({ businesses }: BusinessCardProps) {
                     <div>
                         <p className="text-xs text-on-surface-variant">معرفی کوتاه</p>
                         <p className="text-sm font-medium text-on-surface">
-                            {business.shortDescription || 'وارد نشده'}
+                            {catalog.shortDescription || 'وارد نشده'}
                         </p>
                     </div>
                 </div>
@@ -206,9 +206,9 @@ export function BusinessCard({ businesses }: BusinessCardProps) {
                     <Tag className="w-4 h-4 text-primary mt-0.5 shrink-0" />
                     <div>
                         <p className="text-xs text-on-surface-variant">فعالیت‌ها</p>
-                        {business.activities && business.activities.length > 0 ? (
+                        {catalog.activities && catalog.activities.length > 0 ? (
                             <div className="flex flex-wrap gap-1.5 mt-1">
-                                {business.activities.map((activity) => (
+                                {catalog.activities.map((activity) => (
                                     <span key={activity.id} className="inline-flex items-center gap-1 px-2 py-0.5 bg-primary/5 text-primary text-[10px] rounded-full border border-primary/10">
                                         {activity.title}
                                     </span>
@@ -228,7 +228,7 @@ export function BusinessCard({ businesses }: BusinessCardProps) {
                     <div>
                         <p className="text-xs text-on-surface-variant">توضیحات کامل</p>
                         <p className="text-sm text-on-surface leading-relaxed mt-1">
-                            {business.description || 'وارد نشده'}
+                            {catalog.description || 'وارد نشده'}
                         </p>
                     </div>
                 </div>

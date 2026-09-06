@@ -11,19 +11,19 @@ export const USER_POSITIONS = [
     { label: 'مدیر فروش', value: '5' },
     { label: 'مدیر خرید', value: '6' },
     { label: 'کارشناس فروش', value: '7' },
-    { label: 'کارشناس خرید', value: '7' },
-    { label: 'حسابدار یا امور مالی', value: '8' },
-    { label: 'سایر', value: '9' },
+    { label: 'کارشناس خرید', value: '8' },
+    { label: 'حسابدار یا امور مالی', value: '9' },
+    { label: 'سایر', value: '10' },
 ];
 
 // ============================================================
 // نقش‌های کاربر در بازار (فروشنده/خریدار)
 // ============================================================
-export const BUSINESS_ROLES = [
+export const CATALOG_ROLES = [
     { label: 'فروشنده عمده', value: 'seller' },
     { label: 'خریدار عمده', value: 'buyer' },
 ];
-export const BUSINESS_TYPE_LABELS: Record<string, string> = {
+export const CATALOG_TYPE_LABELS: Record<string, string> = {
     producer: 'تولیدی',
     wholesaler: 'عمده‌فروش',
     importer: 'واردکننده',
@@ -37,7 +37,7 @@ export const BUSINESS_TYPE_LABELS: Record<string, string> = {
 // ============================================================
 // نوع کسب‌وکار
 // ============================================================
-export const BUSINESS_TYPES = [
+export const CATALOG_TYPES = [
     { label: 'تولیدی', value: 'producer' },
     { label: 'عمده‌فروش', value: 'wholesaler' },
     { label: 'واردکننده', value: 'importer' },

@@ -133,7 +133,7 @@ export function DropSelector({
                         error ? "border-error" : "border-outline"
                     } ${
                         isOpen ? "ring-1 ring-primary border-primary" : ""
-                    } rounded-lg ${className}`}
+                    } rounded ${className}`}
                 >
                     <span className={`truncate ${selectedOption ? "text-on-surface" : "text-on-surface-variant"}`}>
                         {selectedOption ? selectedOption.label : placeholder}
@@ -165,7 +165,7 @@ export function DropSelector({
                                         placeholder="جستجو..."
                                         value={search}
                                         onChange={(e) => setSearch(e.target.value)}
-                                        className="w-full bg-surface-container-low border  py-5 border-outline rounded-lg h-8 px-3 pr-8 text-xs text-right focus:ring-1 focus:ring-primary focus:border-primary outline-none transition-all"
+                                        className="w-full bg-surface-container-low border  py-5 border-outline rounded h-8 px-3 pr-8 text-xs text-right focus:ring-1 focus:ring-primary focus:border-primary outline-none transition-all"
                                     />
                                     <Search className="absolute left-2.5 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-on-surface-variant" />
                                 </div>

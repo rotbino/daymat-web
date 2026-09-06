@@ -12,7 +12,7 @@ interface FileUploaderProps {
     className?: string;
     accept?: string;
     label?: string;
-    model?: 'User' | 'Business' | 'Ad';
+    model?: 'User' | 'Catalog' | 'Ad';
     modelId?: string;
     fieldKey?: string;
     value?: string | null;

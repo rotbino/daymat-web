@@ -5,8 +5,8 @@ import {
     LoginResponse,
     RegisterCredentials,
     RegisterResponse,
-    CreateBusinessDto,
-    Business,
+    CreateCatalogDto,
+    Catalog,
     CreateArmDto,
     Arm,
     CreateAdDto,
@@ -14,15 +14,13 @@ import {
     AdListQuery,
     PurchaseCreditDto,
     PurchaseCreditResponse,
-    CreditBalance, User,
+    CreditBalance, User, BusinessEntity,
 } from './apiTypes';
 
 export const apiService = {
     // ============================================================
     // AUTH
     // ============================================================
-// lib/api/apiService.ts – داخل بخش auth
-
     auth: {
         login: (data: LoginCredentials): Promise<LoginResponse> =>
             apiRequest('/auth/login', { method: 'POST', data }),
@@ -43,65 +41,102 @@ export const apiService = {
             apiRequest('/auth/change-password', { method: 'PUT', data }),
     },
 
-
-
+    notification:{
+        // ✅ اعلان‌های مشتق از دیتا (بدون مدل Notification)
+        getDerived: (): Promise<{ items: any[]; unread: number }> =>
+            apiRequest('/ad/notifications'),
+    },
 
     // ============================================================
-    // BUSINESS
+    // BUSINESS — نهاد تجاری (یک‌دقیقه‌ای)
     // ============================================================
     business: {
-        create: (data: CreateBusinessDto): Promise<Business> =>
+        create: (data: any): Promise<any> =>
             apiRequest('/business', { method: 'POST', data }),
+        // ساخت برای نهادِ انتخابی — کاتالوگ دوم به بعد
+        createForBusiness: (data: any): Promise<Catalog> =>
+            apiRequest('/catalog/for-business', { method: 'POST', data }),
 
-        getAll: (): Promise<Business[]> =>
-            apiRequest('/business'),
+        getMyBusinesses: (): Promise<{ items: BusinessEntity[] }> =>
+            apiRequest('/business/my'),
 
-        getActive: (): Promise<Business | null> =>
-            apiRequest('/business/active'),
+        getMy: (): Promise<{ items: BusinessEntity[] }> =>
+            apiRequest('/business/my'),
 
-        getOne: (id: string): Promise<Business> =>
+        getOne: (id: string): Promise<any> =>
             apiRequest(`/business/${id}`),
 
-        update: (id: string, data: Partial<CreateBusinessDto>): Promise<Business> =>
+        update: (id: string, data: any): Promise<any> =>
             apiRequest(`/business/${id}`, { method: 'PUT', data }),
 
-        delete: (id: string): Promise<{ message: string }> =>
+        delete: (id: string): Promise<any> =>
             apiRequest(`/business/${id}`, { method: 'DELETE' }),
 
-        requestVerification: (businessId: string, data: any): Promise<Business> =>
-            apiRequest(`/business/${businessId}/verify`, { method: 'POST', data }),
-
-        getBySlug: (slug: string) => apiRequest(`/business/slug/${slug}`),
+        attachCatalog: (businessId: string, catalogId: string): Promise<any> =>
+            apiRequest(`/business/${businessId}/attach-catalog/${catalogId}`, { method: 'POST' }),
     },
+
+    // ============================================================
+    // CATALOG (ادغام‌شده: ex-Business + تعاملات قدیمی catalog)
+    // ============================================================
     catalog: {
-        // ثبت بازدید
-        trackView: (businessId: string) =>
-            apiRequest(`/catalog/${businessId}/view`, { method: 'POST' }),
+        // ─── مدیریت ───
+        create: (data: CreateCatalogDto): Promise<Catalog> =>
+            apiRequest('/catalog', { method: 'POST', data }),
 
-        // ذخیره کاتالوگ
-        save: (businessId: string) =>
-            apiRequest(`/catalog/${businessId}/save`, { method: 'POST' }),
+        getAll: (): Promise<Catalog[]> =>
+            apiRequest('/catalog'),
 
-        // حذف از ذخیره
-        unsave: (businessId: string) =>
-            apiRequest(`/catalog/${businessId}/save`, { method: 'DELETE' }),
+        getActive: (): Promise<Catalog | null> =>
+            apiRequest('/catalog/active'),
 
-        // بررسی وضعیت ذخیره
-        isSaved: (businessId: string) =>
-            apiRequest(`/catalog/${businessId}/saved-status`),
+        getOne: (id: string): Promise<Catalog> =>
+            apiRequest(`/catalog/${id}`),
 
-        // آمار کاتالوگ
-        getStats: (businessId: string) =>
-            apiRequest(`/catalog/${businessId}/stats`),
+        update: (id: string, data: Partial<CreateCatalogDto>): Promise<Catalog> =>
+            apiRequest(`/catalog/${id}`, { method: 'PUT', data }),
 
-        // لیست کاتالوگ‌های ذخیره شده کاربر
+        delete: (id: string): Promise<{ message: string }> =>
+            apiRequest(`/catalog/${id}`, { method: 'DELETE' }),
+
+        requestVerification: (catalogId: string, data: any): Promise<Catalog> =>
+            apiRequest(`/catalog/${catalogId}/verify`, { method: 'POST', data }),
+
+        updateConfig: (id: string, dto: { units?: any[]; categoryTree?: any[] }): Promise<any> =>
+            apiRequest(`/catalog/${id}/config`, { method: 'PATCH', data: dto }),
+
+        // ─── عمومی ───
+        getBySlug: (slug: string) => apiRequest(`/catalog/slug/${slug}`),
+
+        checkSlug: (slug: string, excludeId?: string): Promise<{ available: boolean; reason?: string; slug?: string }> =>
+            apiRequest(`/catalog/check-slug?slug=${encodeURIComponent(slug)}${excludeId ? `&excludeId=${encodeURIComponent(excludeId)}` : ''}`),
+
+        getFeatured: (limit: number = 12): Promise<{ items: any[] }> =>
+            apiRequest(`/catalog/featured?limit=${limit}`),
+
+        // ─── تعاملات (از شیء قدیمی catalog — آدرس‌ها همان است) ───
+        trackView: (catalogId: string) =>
+            apiRequest(`/catalog/${catalogId}/view`, { method: 'POST' }),
+
+        save: (catalogId: string) =>
+            apiRequest(`/catalog/${catalogId}/save`, { method: 'POST' }),
+
+        unsave: (catalogId: string) =>
+            apiRequest(`/catalog/${catalogId}/save`, { method: 'DELETE' }),
+
+        isSaved: (catalogId: string) =>
+            apiRequest(`/catalog/${catalogId}/saved-status`),
+
+        getStats: (catalogId: string) =>
+            apiRequest(`/catalog/${catalogId}/stats`),
+
         getSavedList: () =>
             apiRequest(`/catalog/saved/list`),
 
-        // آگهی‌های کاتالوگ (اگر قبلاً نداری)
-        getCatalogAds: (businessId: string, page: number = 1, limit: number = 24, search?: string) =>
-            apiRequest(`/ad/catalog/${businessId}?page=${page}&limit=${limit}${search ? `&search=${encodeURIComponent(search)}` : ''}`),
+        getCatalogAds: (catalogId: string, page: number = 1, limit: number = 24, search?: string) =>
+            apiRequest(`/ad/catalog/${catalogId}?page=${page}&limit=${limit}${search ? `&search=${encodeURIComponent(search)}` : ''}`),
     },
+   
 
     // ============================================================
     // ARM
@@ -119,7 +154,7 @@ export const apiService = {
         getStats: (slug: string): Promise<{ members: number; activeAds: number }> =>
             apiRequest(`/arm/${slug}/stats`),
 
-        join: (slug: string, body?: { roleType?: 'seller' | 'buyer'; businessId?: string }): Promise<any> =>
+        join: (slug: string, body?: { roleType?: 'seller' | 'buyer'; catalogId?: string }): Promise<any> =>
             apiRequest(`/arm/${slug}/join`, { method: 'POST', data: body }),
 
         leave: (slug: string): Promise<any> =>
@@ -160,8 +195,19 @@ export const apiService = {
             apiRequest(`/arm/${id}`, { method: 'PUT', data }),
 
         // جدید: دریافت بازار با id
-        findById: (id: string): Promise<Arm> =>
-            apiRequest(`/arm/${id}`),   // بک‌اند باید این route را پشتیبانی کند
+        findById: (id: string): Promise<Arm> => apiRequest(`/arm/${id}`),   // بک‌اند باید این route را پشتیبانی کند
+        // ✅ روشن/خاموش کردن انتشار کاتالوگ در بازار
+        toggleCatalogPublish: (slug: string, data: { catalogId: string; published: boolean }): Promise<any> =>
+            apiRequest(`/arm/${slug}/catalog-publish`, { method: 'PATCH', data }),
+        // ✅ بازارهای فعال پیشنهادی — بدون catalogId: همهٔ بازارهای فعال عمومی
+        //    با catalogId: همان، منهای بازاری که این کاتالوگ عضو/درخواستِ آن است (دوسویه: کشف + پیشنهاد)
+        getSuggestedArms: (catalogId?: string, limit: number = 6): Promise<{ items: any[] }> =>
+            apiRequest('/arm/suggested', {
+                method: 'GET',
+                params: { ...(catalogId ? { catalogId } : {}), limit },
+            }),
+
+
     },
 
     // ============================================================
@@ -171,11 +217,17 @@ export const apiService = {
         create: (data: CreateAdDto): Promise<Ad> =>
             apiRequest('/ad', { method: 'POST', data }),
 
+        // ✅ همهٔ واحدها (عمومی — برای فرم کاتالوگ)
+        getAllUnits: (ids?: string[]): Promise<any[]> =>
+            apiRequest(`/unit/all${ids?.length ? `?ids=${ids.join(',')}` : ''}`),
+
+
+
         getVitrine: (slug: string, query: AdListQuery): Promise<{ arm: any; ads: Ad[]; pagination: any }> =>
             apiRequest(`/ad/arm/${slug}`, { method: 'GET', params: query }),
 
-        getBusinessAds: (businessId: string, page: number = 1, limit: number = 10, status?: string) =>
-            apiRequest(`/ad/business/${businessId}?page=${page}&limit=${limit}${status ? `&status=${status}` : ''}`),
+        getCatalogAds: (catalogId: string, page: number = 1, limit: number = 10, status?: string) =>
+            apiRequest(`/ad/catalog/${catalogId}?page=${page}&limit=${limit}${status ? `&status=${status}` : ''}`),
 
         // app/lib/api/apiService.ts
 
@@ -199,7 +251,7 @@ export const apiService = {
 
 
         getContact: (id: string): Promise<{
-            businessName: string;
+            catalogName: string;
             phone: string;
             remainingCalls: number;
             dailyLimit: number;
@@ -561,10 +613,10 @@ export const apiService = {
             getList: (params?: any): Promise<any> => apiRequest('/admin/payments', { params }),
             getStats: (params?: any): Promise<any> => apiRequest('/admin/payments/stats', { params }),
         },
-        businesses: {
-            getList: (params: any): Promise<any> => apiRequest('/admin/businesses', { params }),
-            getDetail: (id: string): Promise<any> => apiRequest(`/admin/businesses/${id}`),
-            verify: (id: string, data: any): Promise<any> => apiRequest(`/admin/businesses/${id}/verify`, { method: 'POST', data }),
+        cataloges: {
+            getList: (params: any): Promise<any> => apiRequest('/admin/cataloges', { params }),
+            getDetail: (id: string): Promise<any> => apiRequest(`/admin/cataloges/${id}`),
+            verify: (id: string, data: any): Promise<any> => apiRequest(`/admin/cataloges/${id}/verify`, { method: 'POST', data }),
         },
 
         feedbacks: {
@@ -698,8 +750,65 @@ export const apiService = {
             removeMember: (slug: string, userId: string): Promise<any> =>
                 apiRequest(`/arm-admin/${slug}/members/${userId}/remove`, { method: 'POST' }),
         },
+        // ============================================================
+        // مدیریت کاتالوگ‌های بازار (اتصال کاتالوگ به تابلو)
+        // ============================================================
+        catalogs: {
+            // کاتالوگ‌های عضو بازار + آمار تابلو
+            getList: (slug: string, params?: {
+                search?: string;
+                ownerStatus?: string;
+                sortBy?: string;
+                sortOrder?: string;
+            }): Promise<any> =>
+                apiRequest(`/arm-admin/${slug}/catalogs`, { params }),
+
+            // جستجوی کاتالوگ برای افزودن (myReferrals: فقط جذب‌شده‌های من)
+            getCandidates: (slug: string, q?: string, onlyMyReferrals?: boolean): Promise<any> =>
+                apiRequest(`/arm-admin/${slug}/catalogs/candidates`, {
+                    params: {
+                        ...(q ? { q } : {}),
+                        ...(onlyMyReferrals ? { myReferrals: '1' } : {}),
+                    },
+                }),
+
+            // کالاهای منتشرشدهٔ بدون دستهٔ بازاری
+            getNeedsCategory: (slug: string): Promise<any> =>
+                apiRequest(`/arm-admin/${slug}/catalogs/needs-category`),
+
+            // آمار جذب مالک بازار (دعوت‌شدگان + کاتالوگ‌ها)
+            getReferralStats: (slug: string): Promise<any> =>
+                apiRequest(`/arm-admin/${slug}/catalogs/referral-stats`),
+
+            // افزودن کاتالوگ به بازار + مهر انتشار
+            addCatalog: (slug: string, catalogId: string): Promise<any> =>
+                apiRequest(`/arm-admin/${slug}/catalogs`, { method: 'POST', data: { catalogId } }),
+
+            // توقف / ادامهٔ عضو (توسط مالک بازار)
+            setPaused: (slug: string, catalogId: string, paused: boolean): Promise<any> =>
+                apiRequest(`/arm-admin/${slug}/catalogs/${catalogId}`, { method: 'PATCH', data: { paused } }),
+
+            // حذف کاتالوگ از بازار
+            remove: (slug: string, catalogId: string): Promise<any> =>
+                apiRequest(`/arm-admin/${slug}/catalogs/${catalogId}`, { method: 'DELETE' }),
+
+            // تعیین دستهٔ بازاری یک کالا
+            setAdCategory: (slug: string, adId: string, categoryId: string): Promise<any> =>
+                apiRequest(`/arm-admin/${slug}/catalogs/ads/${adId}/category`, { method: 'PATCH', data: { categoryId } }),
+        },
 
 
+    },
+
+    // ============================================================
+    // بازارِ من — برای صاحب کاتالوگ (داشبورد)
+    // ============================================================
+    userMarket: {
+        getMyNeedsCategory: (): Promise<any> =>
+            apiRequest('/user-market/my-uncategorized'),
+
+        setAdCategory: (adId: string, categoryId: string): Promise<any> =>
+            apiRequest(`/user-market/ads/${adId}/category`, { method: 'PATCH', data: { categoryId } }),
     },
 
 

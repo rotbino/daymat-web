@@ -14,7 +14,7 @@ const AdPaymentTab = dynamic(() => import('./AdPaymentTab'), {
     loading: () => <div className="h-32 bg-gray-100 rounded-2xl animate-pulse" />
 });
 
-const AdBusinessTab = dynamic(() => import('./AdBusinessTab'), {
+const AdCatalogTab = dynamic(() => import('./AdCatalogTab'), {
     loading: () => <div className="h-32 bg-gray-100 rounded-2xl animate-pulse" />
 });
 
@@ -36,19 +36,19 @@ export default function AdTabs({ ad, isOwner }: Props) {
     const hasPayment = !!(ad.paymentMethods?.cheque?.length || ad.paymentMethods?.installment?.length);
 
     // ✅ تب اولیه: توضیحات اگر وجود داشت، وگرنه فروشنده
-    const defaultTab = hasDescription ? 'details' : 'business';
+    const defaultTab = hasDescription ? 'details' : 'catalog';
     const [activeTab, setActiveTab] = useState(defaultTab);
 
     // ✅ اگر ad تغییر کرد، تب اولیه ریست شود
     useEffect(() => {
-        setActiveTab(hasDescription ? 'details' : 'business');
+        setActiveTab(hasDescription ? 'details' : 'catalog');
     }, [ad?.id]);
 
     const tabs = useMemo(() => {
         const list = [
             { id: 'details', label: 'توضیحات', icon: <FileText className="w-4 h-4" />, show: hasDescription },
             { id: 'payment', label: 'پرداخت', icon: <CreditCard className="w-4 h-4" />, show: hasPayment },
-            { id: 'business', label: 'فروشنده', icon: <Building2 className="w-4 h-4" />, show: true },
+            { id: 'catalog', label: 'فروشنده', icon: <Building2 className="w-4 h-4" />, show: true },
             ...(isOwner ? [{ id: 'stats', label: 'آمار', icon: <BarChart3 className="w-4 h-4" />, show: true }] : []),
         ];
         return list.filter(tab => tab.show);
@@ -99,8 +99,8 @@ export default function AdTabs({ ad, isOwner }: Props) {
                 )}
 
                 {/* ✅ تب فروشنده - همیشه نمایش داده می‌شود */}
-                <div className={cn(activeTab === 'business' ? 'block' : 'hidden')}>
-                    <AdBusinessTab ad={ad} />
+                <div className={cn(activeTab === 'catalog' ? 'block' : 'hidden')}>
+                    <AdCatalogTab ad={ad} />
                 </div>
 
                 {/* ✅ تب آمار - فقط مالک */}

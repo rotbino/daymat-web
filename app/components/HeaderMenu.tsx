@@ -153,7 +153,7 @@ export default function HeaderMenu({ className }: { className?: string }) {
                             height={30}
                             className="object-contain"
                         />
-                        <span className="text-[12px] text-on-surface-variant">دیمت، نمایش روزانه قیمت</span>
+                        <span className="text-[12px] text-on-surface-variant">دیمت، کاتالوگ روزانه قیمت</span>
                     </div>
                 </div>
             )}

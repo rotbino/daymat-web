@@ -115,7 +115,7 @@ export function ArmCreateWizard() {
                 allowManualRoleSelection: true,
                 requireAdminApprovalForMembership: false,
                 requirePhoneVerification: false,
-                requireBusinessVerification: false,
+                requireCatalogVerification: false,
                 restrictMembershipByLocation: false,
             },
             locationSelections: [],

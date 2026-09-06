@@ -9,9 +9,10 @@ import { Eye, EyeOff, ArrowLeft, Phone, Shield } from 'lucide-react';
 import { toast } from 'sonner';
 import { setUser, setAccessToken, clearUserSession } from '@/lib/store/slices/authSlice';
 import { useLogin, useRegister } from '@/lib/api/apiHooks';
-import { AppFooter } from '@/app/components';
+import { AppFooter } from '@/app_/components';
 import { apiService } from '@/lib/api/apiService';
 import { getApiUrl } from '@/lib/api/apiRequest';
+import { readStoredRef, clearStoredRef } from "@/app/components/RefCapture";
 
 export default function LoginPage() {
     const router = useRouter();
@@ -28,27 +29,32 @@ export default function LoginPage() {
     const loginMutation = useLogin();
     const registerMutation = useRegister();
 
-    const armSlug = searchParams.get('arm') || 'barton';
+    // ✅ بدون fallback به barton — join فقط با arm واقعی در URL
+    const armSlug = searchParams.get('arm');
     const redirectFromUrl = searchParams.get('redirect');
 
-    // ✅ تابع تعیین مسیر redirect
-    const getRedirectPath = () => {
-        // اولویت ۱: redirect از URL
-        if (redirectFromUrl) {
-            return decodeURIComponent(redirectFromUrl);
+    // ✅ مسیرهای مقصدِ نامعتبر بعد از ورود — به my-catalogs هدایت
+    const sanitizeRedirect = (path: string): string => {
+        if (path.startsWith('/catalogs') || path.startsWith('/catalogs/')) {
+            return '/my-catalogs';
         }
-        // اولویت ۲: redirect از localStorage (ذخیره شده توسط apiRequest)
+        return path;
+    };
+
+    const getRedirectPath = () => {
+        if (redirectFromUrl) {
+            return sanitizeRedirect(decodeURIComponent(redirectFromUrl));
+        }
         const savedRedirect = localStorage.getItem('redirectAfterLogin');
         if (savedRedirect) {
             localStorage.removeItem('redirectAfterLogin');
-            return savedRedirect;
+            return sanitizeRedirect(savedRedirect);
         }
-        // اولویت ۳: مسیر پیش‌فرض
-        const lastArm = localStorage.getItem('lastArmSlug') || 'barton';
-        return `/${lastArm}`;
+        const lastArm = localStorage.getItem('lastArmSlug');
+        if (lastArm) return `/${lastArm}`;
+        return '/my-catalogs';
     };
 
-    // ✅ در اولین رندر، اگر redirect در URL هست، از localStorage پاک کن
     useEffect(() => {
         if (redirectFromUrl) {
             localStorage.removeItem('redirectAfterLogin');
@@ -75,9 +81,7 @@ export default function LoginPage() {
         try {
             const checkResponse = await fetch(getApiUrl('/auth/check-phone'), {
                 method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json',
-                },
+                headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({ phone }),
             });
 
@@ -93,14 +97,14 @@ export default function LoginPage() {
                 return;
             }
 
-            // ثبت‌نام جدید
             try {
                 await dispatch(clearUserSession());
 
                 const registerResponse = await registerMutation.mutateAsync({
                     phone,
                     password: '123456',
-                });
+                    refCode: readStoredRef() ?? undefined,
+                } as any);
 
                 dispatch(setUser(registerResponse.user));
                 dispatch(setAccessToken(registerResponse.access_token));
@@ -108,7 +112,7 @@ export default function LoginPage() {
                 if (armSlug) {
                     try {
                         await apiService.arm.join(armSlug);
-                        toast.success(`با موفقیت به بازار پیوستید`);
+                        toast.success('با موفقیت به بازار پیوستید');
                     } catch (error: any) {
                         if (error?.data?.errorCode !== 'ALREADY_MEMBER') {
                             console.error('Join error:', error);
@@ -118,9 +122,9 @@ export default function LoginPage() {
 
                 toast.success('ثبت‌نام با موفقیت انجام شد');
 
-                // ✅ هدایت به مسیر قبلی
-                const redirectPath = getRedirectPath();
-                router.replace(redirectPath);
+                // ✅ کاربرِ تازه‌ثبت‌نام — همیشه my-catalogs (کارت ساخت کاتالوگ را می‌بیند)
+                clearStoredRef();
+                router.replace('/my-catalogs');
                 return;
             } catch (registerError: any) {
                 if (registerError?.data?.errorCode === 'DUPLICATE_PHONE') {
@@ -156,10 +160,7 @@ export default function LoginPage() {
         try {
             await dispatch(clearUserSession());
 
-            const loginResponse = await loginMutation.mutateAsync({
-                phone,
-                password,
-            });
+            const loginResponse = await loginMutation.mutateAsync({ phone, password });
 
             dispatch(setUser(loginResponse.user));
             dispatch(setAccessToken(loginResponse.access_token));
@@ -176,7 +177,6 @@ export default function LoginPage() {
 
             toast.success('خوش آمدید');
 
-            // ✅ هدایت به مسیر قبلی
             const redirectPath = getRedirectPath();
             router.replace(redirectPath);
         } catch (error: any) {
@@ -223,18 +223,13 @@ export default function LoginPage() {
                     {step === 'phone' ? (
                         <form onSubmit={handlePhoneSubmit} className="space-y-6">
                             <div className="text-right mb-8">
-                                <h2 className="font-headline-md text-headline-md text-on-surface">
-                                    خوش آمدید
-                                </h2>
-                                <p className="text-body-md text-on-surface-variant mt-1">
-                                    شماره موبایل خود را وارد کنید
-                                </p>
+                                <h2 className="font-headline-md text-headline-md text-on-surface">خوش آمدید</h2>
+                                <p className="text-body-md text-on-surface-variant mt-1">شماره موبایل خود را وارد کنید</p>
                             </div>
 
                             <div className="flex flex-col gap-2">
                                 <label className="font-label-md text-label-md text-on-surface-variant flex items-center gap-1">
-                                    شماره موبایل
-                                    <span className="text-primary">*</span>
+                                    شماره موبایل <span className="text-primary">*</span>
                                 </label>
                                 <div className="relative">
                                     <input
@@ -250,9 +245,7 @@ export default function LoginPage() {
                                         }}
                                         placeholder="09123456789"
                                         maxLength={11}
-                                        className={`w-full bg-surface-container-lowest border h-14 px-4 pr-12 font-mono-data text-right focus:ring-1 focus:ring-primary focus:border-primary outline-none transition-all ${
-                                            errors.phone ? 'border-error' : 'border-outline'
-                                        }`}
+                                        className={`w-full bg-surface-container-lowest border h-14 px-4 pr-12 font-mono-data text-right focus:ring-1 focus:ring-primary focus:border-primary outline-none transition-all ${errors.phone ? 'border-error' : 'border-outline'}`}
                                     />
                                     <div className="absolute inset-y-0 left-4 flex items-center text-on-surface-variant opacity-60">
                                         <Phone className="w-5 h-5" />
@@ -266,11 +259,7 @@ export default function LoginPage() {
                                 disabled={isLoading}
                                 className="w-full bg-primary text-on-primary h-14 font-headline-sm text-headline-sm flex items-center justify-center gap-2 active:scale-95 transition-transform duration-150"
                             >
-                                {isLoading ? (
-                                    'در حال بررسی...'
-                                ) : (
-                                    'تایید'
-                                )}
+                                {isLoading ? 'در حال بررسی...' : 'تایید'}
                             </button>
 
                             <div className="text-center text-xs text-on-surface-variant">
@@ -280,18 +269,13 @@ export default function LoginPage() {
                     ) : (
                         <form onSubmit={handlePasswordSubmit} className="space-y-6">
                             <div className="text-right mb-8">
-                                <h2 className="font-headline-md text-headline-md text-on-surface">
-                                    خوش آمدید
-                                </h2>
-                                <p className="text-body-md text-on-surface-variant mt-1">
-                                    برای {phone}، رمز عبور خود را وارد کنید
-                                </p>
+                                <h2 className="font-headline-md text-headline-md text-on-surface">خوش آمدید</h2>
+                                <p className="text-body-md text-on-surface-variant mt-1">برای {phone}، رمز عبور خود را وارد کنید</p>
                             </div>
 
                             <div className="flex flex-col gap-2">
                                 <label className="font-label-md text-label-md text-on-surface-variant flex items-center gap-1">
-                                    رمز عبور
-                                    <span className="text-primary">*</span>
+                                    رمز عبور <span className="text-primary">*</span>
                                 </label>
                                 <div className="relative">
                                     <input
@@ -303,9 +287,7 @@ export default function LoginPage() {
                                             if (errors.password) setErrors({ ...errors, password: undefined });
                                         }}
                                         placeholder="••••••"
-                                        className={`w-full bg-surface-container-lowest border h-14 px-4 pr-12 font-mono-data text-right focus:ring-1 focus:ring-primary focus:border-primary outline-none transition-all ${
-                                            errors.password ? 'border-error' : 'border-outline'
-                                        }`}
+                                        className={`w-full bg-surface-container-lowest border h-14 px-4 pr-12 font-mono-data text-right focus:ring-1 focus:ring-primary focus:border-primary outline-none transition-all ${errors.password ? 'border-error' : 'border-outline'}`}
                                     />
                                     <button
                                         type="button"
@@ -323,11 +305,8 @@ export default function LoginPage() {
                                     type="button"
                                     onClick={() => {
                                         const supportPhone = '09123456789';
-                                        if (window.innerWidth < 768) {
-                                            window.location.href = `tel:${supportPhone}`;
-                                        } else {
-                                            toast.info(`شماره پشتیبانی: ${supportPhone}`);
-                                        }
+                                        if (window.innerWidth < 768) window.location.href = `tel:${supportPhone}`;
+                                        else toast.info(`شماره پشتیبانی: ${supportPhone}`);
                                     }}
                                     className="text-sm text-primary hover:underline transition-colors flex items-center gap-1"
                                 >
@@ -353,14 +332,7 @@ export default function LoginPage() {
                                 disabled={isLoading}
                                 className="w-full bg-primary text-on-primary h-14 font-headline-sm text-headline-sm flex items-center justify-center gap-2 active:scale-95 transition-transform duration-150"
                             >
-                                {isLoading ? (
-                                    'در حال ورود...'
-                                ) : (
-                                    <>
-                                        ورود
-                                        <ArrowLeft className="w-5 h-5" />
-                                    </>
-                                )}
+                                {isLoading ? 'در حال ورود...' : <><ArrowLeft className="w-5 h-5" />ورود</>}
                             </button>
                         </form>
                     )}

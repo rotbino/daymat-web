@@ -1,4 +1,4 @@
-// app/ad/[id]/[slug]/components/AdBusinessTab.tsx
+// app/ad/[id]/[slug]/components/AdCatalogTab.tsx
 'use client';
 
 import {
@@ -33,8 +33,8 @@ function fmt(n: number | undefined) {
     return n?.toLocaleString('fa-IR') ?? '—';
 }
 
-export default function AdBusinessTab({ ad }: Props) {
-    const seller = ad.business;
+export default function AdCatalogTab({ ad }: Props) {
+    const seller = ad.catalog;
     if (!seller) return null;
 
     const tierLabel = getTierLabel(seller.verificationTier);

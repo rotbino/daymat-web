@@ -6,8 +6,8 @@ export type SystemRole = 'system_admin' | 'system_user';
 // نقش‌های سطح بازار (Arm) - ساده شده
 export type ArmRole = 'arm_owner' | 'arm_seller' | 'arm_buyer' | 'arm_member';
 
-// نقش‌های سطح کسب‌وکار (Business) - ساده شده
-export type BusinessRole = 'business_owner' | 'business_admin' | 'business_seller';
+// نقش‌های سطح کسب‌وکار (Catalog) - ساده شده
+export type CatalogRole = 'catalog_owner' | 'catalog_admin' | 'catalog_seller';
 
 // ==================== Base ====================
 export class ApiError extends Error {
@@ -78,8 +78,8 @@ export interface ApiErrorResponse {
 
 
 
-// ==================== Business ====================
-export interface Business {
+// ==================== Catalog ====================
+export interface Catalog {
     id: string;
     name: string;
     type: string;
@@ -123,7 +123,7 @@ export interface ArmMembership {
     joinedAt: string;
 }
 
-export interface CreateBusinessDto {
+export interface CreateCatalogDto {
     name: string;
     type: string;
     city?: string;
@@ -135,7 +135,7 @@ export interface CreateBusinessDto {
     website?: string;
 }
 
-export interface UpdateBusinessDto {
+export interface UpdateCatalogDto {
     name?: string;
     type?: string;
     city?: string;
@@ -147,7 +147,7 @@ export interface UpdateBusinessDto {
     website?: string;
 }
 
-export interface ActiveBusinessResponse extends Business {
+export interface ActiveCatalogResponse extends Catalog {
     activeAdsCount: number;
     activeMembershipsCount: number;
 }
@@ -237,7 +237,7 @@ export interface Ad {
     availableQuantity?: number;
     unit: { id: string; title: string; shortCode: string };
     category: { id: string; title: string; path: string };
-    business: { id: string; name: string; verificationTier: string };
+    catalog: { id: string; name: string; verificationTier: string };
     city: string;
     province?: string;
     cityCode?: string;
@@ -452,7 +452,47 @@ export interface ClearHistoryResponse {
     deleted: number;
 }
 
+// ==================== Business (نهاد تجاری) ====================
+export interface BusinessEntity {
+    id: string;
+    name: string;
+    type: string;
+    industryName?: string | null;
+    shortDescription?: string | null;
+    province?: string | null;
+    provinceCode?: string | null;
+    city?: string | null;
+    cityCode?: string | null;
+    address?: string | null;
+    phone?: string | null;
+    website?: string | null;
+    logoUrl?: string | null;
+    nationalId?: string | null;
+    businessLicense?: string | null;
+    status: string;
+    createdAt: string;
+    updatedAt: string;
+    catalogsCount?: number;
+    _count?: { catalogs: number };
+}
 
+export interface CreateBusinessEntityDto {
+    name: string;
+    type?: string;
+    industryName?: string;
+    shortDescription?: string;
+    description?: string;
+    province?: string;
+    provinceCode?: string;
+    city?: string;
+    cityCode?: string;
+    address?: string;
+    phone?: string;
+    website?: string;
+    logoUrl?: string;
+    nationalId?: string;
+    businessLicense?: string;
+}
 
 
 
@@ -505,6 +545,7 @@ export const PERMISSION_LEVELS = {
         canEditPayment: true,
         canEditEconomy: true,
     },
+
 };
 
 

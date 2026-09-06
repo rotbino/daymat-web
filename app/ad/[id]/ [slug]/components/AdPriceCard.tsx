@@ -83,7 +83,7 @@ export default function AdPriceCard({ ad, isOwner, isSaved, onSaveToggle, onCont
         service_provider: 'خدمات',
         other: 'سایر',
     };
-    const bizType = bizTypeMap[ad.business?.type] || '';
+    const bizType = bizTypeMap[ad.catalog?.type] || '';
 
     return (
         <div className="space-y-3.5">
@@ -254,11 +254,11 @@ export default function AdPriceCard({ ad, isOwner, isSaved, onSaveToggle, onCont
             ) : (
                 <div className="bg-white dark:bg-gray-900 rounded-2xl border border-gray-200/80 dark:border-gray-800 shadow-sm p-5 space-y-3">
                     <div className="flex items-start gap-3">
-                        {ad.business?.owner?.avatarFile?.thumbnailPath ? (
+                        {ad.catalog?.owner?.avatarFile?.thumbnailPath ? (
                             <div className="w-12 h-12 rounded-full overflow-hidden border-2 border-gray-200 dark:border-gray-700 flex-shrink-0">
                                 <Image
-                                    src={getUrl(ad.business.owner.avatarFile)}
-                                    alt={ad.business?.owner?.fullName || ''}
+                                    src={getUrl(ad.catalog.owner.avatarFile)}
+                                    alt={ad.catalog?.owner?.fullName || ''}
                                     width={48}
                                     height={48}
                                     className="object-cover w-full h-full"
@@ -273,7 +273,7 @@ export default function AdPriceCard({ ad, isOwner, isSaved, onSaveToggle, onCont
                         <div className="flex-1 min-w-0">
                             <div className="flex items-center gap-1.5 flex-wrap">
                                 <p className="text-sm font-bold text-gray-800 dark:text-white">
-                                    {ad.business?.name || 'فروشنده'}
+                                    {ad.catalog?.name || 'فروشنده'}
                                 </p>
                                 {bizType && (
                                     <span className="text-[9px] px-1.5 py-0.5 rounded-full bg-primary/10 text-primary">
@@ -282,17 +282,17 @@ export default function AdPriceCard({ ad, isOwner, isSaved, onSaveToggle, onCont
                                 )}
                             </div>
                             <p className="text-[11px] text-gray-400 dark:text-gray-500 truncate mt-0.5">
-                                {ad.business?.owner?.fullName || ''}
+                                {ad.catalog?.owner?.fullName || ''}
                             </p>
-                            {ad.business?.shortDescription && (
+                            {ad.catalog?.shortDescription && (
                                 <p className="text-[11px] text-gray-500 dark:text-gray-400 line-clamp-2 mt-1">
-                                    {ad.business.shortDescription}
+                                    {ad.catalog.shortDescription}
                                 </p>
                             )}
                         </div>
-                        {ad.business?.verificationTier && ad.business.verificationTier !== 'none' && (
+                        {ad.catalog?.verificationTier && ad.catalog.verificationTier !== 'none' && (
                             <span className="text-[10px] font-semibold px-2 py-0.5 rounded-full bg-amber-50 dark:bg-amber-950/30 text-amber-700 dark:text-amber-300 border border-amber-200/60 dark:border-amber-800/40 flex-shrink-0">
-                                {ad.business.verificationTier === 'gold' ? 'طلایی' : ad.business.verificationTier === 'silver' ? 'نقره‌ای' : 'آبی'}
+                                {ad.catalog.verificationTier === 'gold' ? 'طلایی' : ad.catalog.verificationTier === 'silver' ? 'نقره‌ای' : 'آبی'}
                             </span>
                         )}
                     </div>
@@ -306,9 +306,9 @@ export default function AdPriceCard({ ad, isOwner, isSaved, onSaveToggle, onCont
                             تماس با فروشنده
                         </button>
 
-                        {ad.business?.slug && (
+                        {ad.catalog?.slug && (
                             <button
-                                onClick={() => router.push(`/c/${ad.business.slug}`)}
+                                onClick={() => router.push(`/${ad.catalog.slug}`)}
                                 className="h-12 px-4 rounded border border-primary/30 dark:border-primary/40 text-primary hover:bg-primary/10 active:scale-[0.98] font-bold text-sm flex items-center justify-center gap-1.5 transition-all duration-200 shrink-0"
                             >
                                 کاتالوگ

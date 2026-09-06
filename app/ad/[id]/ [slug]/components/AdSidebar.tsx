@@ -30,8 +30,8 @@ export default function AdSidebar({ ad, isOwner, isSaved, onSaveToggle }: AdSide
     const [showFullImage, setShowFullImage] = useState(false);
 
     // ✅ عکس‌ها
-    const ownerAvatarThumb = ad?.business?.owner?.avatarFile?.thumbnailPath || ad?.business?.owner?.avatarUrl;
-    const ownerAvatarFull = ad?.business?.owner?.avatarFile?.path || ownerAvatarThumb; // ✅ عکس اصلی
+    const ownerAvatarThumb = ad?.catalog?.owner?.avatarFile?.thumbnailPath || ad?.catalog?.owner?.avatarUrl;
+    const ownerAvatarFull = ad?.catalog?.owner?.avatarFile?.path || ownerAvatarThumb; // ✅ عکس اصلی
 
     const unit = ad?.unit?.shortCode || 'تن';
     const expiry = timeLeft(ad?.expiresAt);
@@ -39,7 +39,7 @@ export default function AdSidebar({ ad, isOwner, isSaved, onSaveToggle }: AdSide
     const hasCheque = ad?.paymentMethods?.cheque?.length > 0;
     const hasInstallment = ad?.paymentMethods?.installment?.length > 0;
 
-    const seller = ad?.business;
+    const seller = ad?.catalog;
     const owner = seller?.owner;
 
     const handleContact = async () => {
@@ -60,7 +60,7 @@ export default function AdSidebar({ ad, isOwner, isSaved, onSaveToggle }: AdSide
             if (window.innerWidth < 768) {
                 window.location.href = `tel:${phoneToUse}`;
             } else {
-                toast.info(`${info.businessName}\n${phoneToUse}`, { duration: 8000 });
+                toast.info(`${info.catalogName}\n${phoneToUse}`, { duration: 8000 });
                 navigator.clipboard.writeText(phoneToUse).catch(() => {});
             }
         } catch (e: any) {

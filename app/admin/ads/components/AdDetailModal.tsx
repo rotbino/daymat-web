@@ -21,7 +21,7 @@ export function AdDetailModal({ ad, isOpen, onClose, onStatusChange, onDelete }:
         ['حداقل سفارش', `${ad.minQuantity} ${ad.unit?.shortCode}`],
         ['وضعیت', ad.status === 'active' ? 'فعال' : ad.status],
         ['بازار', ad.arm?.name],
-        ['کسب‌وکار', ad.business?.name],
+        ['کسب‌وکار', ad.catalog?.name],
         ['ایجادکننده', ad.createdBy?.fullName || ad.createdBy?.phone],
         ['شهر', `${ad.city}${ad.province ? `، ${ad.province}` : ''}`],
         ['بازدید', ad.viewCount?.toLocaleString('fa-IR')],

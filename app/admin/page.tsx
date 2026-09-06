@@ -60,7 +60,7 @@ export default function AdminDashboard() {
         { title: 'بازارها', value: stats?.totalArms || 0, icon: Store, color: 'text-blue-500', bg: 'bg-blue-500/10' },
         { title: 'بازارهای فعال', value: stats?.activeArms || 0, icon: Store, color: 'text-green-500', bg: 'bg-green-500/10' },
         { title: 'کاربران', value: stats?.totalUsers || 0, icon: Users, color: 'text-purple-500', bg: 'bg-purple-500/10' },
-        { title: 'کسب‌وکارها', value: stats?.totalBusinesses || 0, icon: Building2, color: 'text-cyan-500', bg: 'bg-cyan-500/10' },
+        { title: 'کسب‌وکارها', value: stats?.totalCataloges || 0, icon: Building2, color: 'text-cyan-500', bg: 'bg-cyan-500/10' },
         { title: 'آگهی‌ها', value: stats?.totalAds || 0, icon: Package, color: 'text-orange-500', bg: 'bg-orange-500/10' },
         { title: 'اعتبارات', value: stats?.totalCredits || 0, icon: CreditCard, color: 'text-emerald-500', bg: 'bg-emerald-500/10' },
     ];
@@ -116,7 +116,7 @@ export default function AdminDashboard() {
 
                     {stats?.pendingVerifications > 0 && (
                         <Link
-                            href="/admin/businesses?verificationStatus=pending"
+                            href="/admin/cataloges?verificationStatus=pending"
                             className="bg-blue-50 dark:bg-blue-900/20 border border-blue-300 dark:border-blue-700 rounded-2xl p-4 flex items-center gap-3 hover:shadow-md transition-all"
                         >
                             <BadgeCheck className="w-6 h-6 text-blue-600" />

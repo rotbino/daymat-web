@@ -1,1709 +1,1029 @@
-// app/ad/AdForm.tsx
+// app_/ad/AdForm.tsx
 'use client';
 
-import React, { useState, useEffect, useMemo, useCallback } from 'react';
-import { useRouter } from 'next/navigation';
-import Link from 'next/link';
-import { useSelector } from 'react-redux';
-import { RootState } from '@/lib/store/store';
-import {
-    useCreateAd, useActiveBusiness, useCreditBalance,
-    useUploadFile, useAd, useUpdateAd
-} from '@/lib/api/apiHooks';
+import React, { useEffect, useMemo, useRef, useState } from 'react';
+import { useRouter, useSearchParams } from 'next/navigation';
+import { useQuery, useQueryClient } from '@tanstack/react-query';
+import { apiService } from '@/lib/api/apiService';
+import { useCreateAd, useUpdateAd, useAd, useUploadFile, useDeleteFile } from '@/lib/api/apiHooks';
 import { toast } from 'sonner';
 import {
-    Package, Send, Edit2, MapPin, Clock,
-    ArrowLeft, ArrowRight, TrendingUp, Plus, Check,
-    Settings, Layers, ClipboardCheck, CreditCard, AlertTriangle, FileText, Pencil,
-    Info, Wallet, Lock, Star, X,
+    ArrowLeft, ArrowRight, Camera, Check, ChevronDown, ClipboardCheck, Clock, Images,
+    Loader2, MapPin, Package, Pencil, Plus, Search, Store, Tag, Wallet, X,
 } from 'lucide-react';
-import { ArmLocationSelector } from '@/app/components/ArmLocationSelector';
-import { NumberInput } from "@/components/common";
-import { FileUploader } from '@/components/common/FileUploader';
 import { cn } from '@/lib/utils';
-import { CategoryGridSelector } from "@/app/ad/CategoryGridSelector";
-import { apiService } from '@/lib/api/apiService';
-import { FormHeader } from "@/app/components";
-import { SpecsSection } from './components/SpecsSection';
-import { PaymentMethodsSection } from './components/PaymentMethodsSection';
-import { useDeleteFile } from '@/lib/api/apiHooks';
+import { NumberInput } from '@/components/common/NumberInput';
+import { DropSelector } from '@/components/common/DropSelector';
+import { IranLocationSelector } from '@/app/components/IranLocationSelector';
+import UnitSettingsModal from './components/UnitSettingsModal';
+import CategorySettingsModal from './components/CategorySettingsModal';
+import CategoryPicker from './components/CategoryPicker';
 
-const BASE_STEPS = [
-    { title: 'گروه', icon: Layers },
-    { title: 'قیمت', icon: Package },
-    { title: 'موقعیت', icon: MapPin },
-    { title: 'انتشار', icon: Settings },
-    { title: 'بررسی', icon: ClipboardCheck },
+const VALIDITY_OPTIONS = [
+    { value: 24, label: '۱ روز' },
+    { value: 48, label: '۲ روز' },
+    { value: 72, label: '۳ روز' },
+    { value: 168, label: '۵ روز' },
+    { value: 240, label: '۱۰ روز' },
 ];
+const MAX_IMAGES = 6;
+const CURRENCY = 'تومان';
 
-interface AdFormProps {
-    adId?: string;
-    onSuccess?: () => void;
-}
-
-interface QuantityConstraints {
-    min: number | null;
-    max: number | null;
-}
-
-interface UnitOption {
-    unitId: string;
-    unitTitle: string;
-    unitShortCode: string;
-    isVariableQty: boolean;
-    qty: number | null;
-    isDefault: boolean;
-}
-
-function getCategoryConstraintsFromTree(categoryId: string, categoryTree: any[]): QuantityConstraints {
-    const findNodeInTree = (nodes: any[], id: string): any => {
-        for (const node of nodes) {
-            if (node.id === id || node.categoryId === id) return node;
-            if (node.children) {
-                const found = findNodeInTree(node.children, id);
-                if (found) return found;
-            }
-        }
-        return null;
-    };
-
-    const node = findNodeInTree(categoryTree, categoryId);
-    if (node) {
-        return {
-            min: node.minQuantityOverride ?? null,
-            max: node.maxQuantityOverride ?? null,
-        };
+// ═══ ابزارهای درخت ═══
+function findNodeInTree(nodes: any[], id: string): any {
+    for (const n of nodes) {
+        if (n.id === id || n.categoryId === id) return n;
+        if (n.children) { const f = findNodeInTree(n.children, id); if (f) return f; }
     }
-    return { min: null, max: null };
+    return null;
 }
-
+interface UnitOption {
+    unitId: string; unitTitle: string; unitShortCode: string;
+    isVariableQty: boolean; qty: number | null; isDefault: boolean;
+}
 function getAvailableUnits(categoryId: string, categoryTree: any[]): UnitOption[] {
-    const findNodeInTree = (nodes: any[], id: string): any => {
-        for (const node of nodes) {
-            if (node.id === id || node.categoryId === id) return node;
-            if (node.children) {
-                const found = findNodeInTree(node.children, id);
-                if (found) return found;
-            }
-        }
-        return null;
-    };
-
     const node = findNodeInTree(categoryTree, categoryId);
-    if (node && (node.overrideUnitId || node.alternativeUnits?.length > 0)) {
-        const units: UnitOption[] = [];
-
-        if (node.overrideUnitId) {
+    if (!node) return [];
+    const units: UnitOption[] = [];
+    if (node.overrideUnitId) {
+        units.push({
+            unitId: node.overrideUnitId, unitTitle: node.overrideUnitTitle || '',
+            unitShortCode: node.overrideUnitShortCode || node.overrideUnitTitle || '',
+            isVariableQty: node.overrideUnitIsVariableQty === true,
+            qty: node.overrideUnitQty ?? null, isDefault: true,
+        });
+    }
+    (node.alternativeUnits || []).forEach((au: any) => {
+        if (au.unitId && au.isActive !== false) {
             units.push({
-                unitId: node.overrideUnitId,
-                unitTitle: node.overrideUnitTitle || '',
-                unitShortCode: node.overrideUnitShortCode || '',
-                isVariableQty: node.overrideUnitIsVariableQty === true,
-                qty: node.overrideUnitQty ?? null,
-                isDefault: true,
+                unitId: au.unitId, unitTitle: au.unitTitle || '', unitShortCode: au.unitShortCode || au.unitTitle || '',
+                isVariableQty: au.isVariableQty === true, qty: au.qty ?? null, isDefault: false,
             });
         }
-
-        (node.alternativeUnits || []).forEach((au: any) => {
-            if (au.unitId && au.isActive !== false) {
-                units.push({
-                    unitId: au.unitId,
-                    unitTitle: au.unitTitle || '',
-                    unitShortCode: au.unitShortCode || '',
-                    isVariableQty: au.isVariableQty === true,
-                    qty: au.qty ?? null,
-                    isDefault: false,
-                });
-            }
-        });
-
-        return units;
-    }
-    return [];
+    });
+    return units;
+}
+function getCategoryConstraints(categoryId: string, categoryTree: any[]) {
+    const node = findNodeInTree(categoryTree, categoryId);
+    return { min: node?.minQuantityOverride ?? null, max: node?.maxQuantityOverride ?? null };
 }
 
-function findCategoryPathInTree(tree: any[], categoryId: string): string[] {
-    function search(nodes: any[], path: string[]): string[] | null {
-        for (const node of nodes) {
-            const currentPath = [...path, node.id || node.categoryId];
-            if (node.id === categoryId || node.categoryId === categoryId) {
-                return currentPath;
-            }
-            if (node.children && node.children.length > 0) {
-                const found = search(node.children, currentPath);
-                if (found) return found;
-            }
-        }
-        return null;
-    }
-    return search(tree, []) || [];
+interface ImageSlot {
+    id?: string;        // فایل موجود روی سرور
+    url?: string;       // آدرس نمایش فایل موجود
+    file?: File;        // فایل جدید
+    previewUrl?: string;
 }
 
-export function AdForm({ adId, onSuccess }: AdFormProps) {
+const STEP_TITLES = ['کالا', 'قیمت', 'موقعیت', 'بررسی'];
+
+export function AdForm({ adId, onSuccess }: { adId?: string; onSuccess?: () => void }) {
     const router = useRouter();
-    const { currentSlug, currentArm } = useSelector((state: RootState) => state.arm);
-    const { data: business, isLoading: businessLoading } = useActiveBusiness();
-    const { data: creditBalance, refetch: refetchBalance, isLoading: creditLoading } = useCreditBalance();
-    const { data: existingAd, isLoading: adLoading } = useAd(adId || '');
+    const searchParams = useSearchParams();
+    const queryClient = useQueryClient();
     const uploadMutation = useUploadFile();
     const deleteFileMutation = useDeleteFile();
+    const createAdMutation = useCreateAd();
+    const updateAdMutation = useUpdateAd();
+    const { data: existingAd, isLoading: adLoading } = useAd(adId || '');
+    const imageInputRef = useRef<HTMLInputElement>(null);
 
     const isEditMode = !!adId;
 
-    const [isSubmitting, setIsSubmitting] = useState(false);
-    const [currentStep, setCurrentStep] = useState(1);
-    const [showCategorySelector, setShowCategorySelector] = useState(false);
+    // ═══ کاتالوگ مقصد — از سه منبع ═══
+    const catalogFromUrl = searchParams.get('catalog');
+    const catalogId = catalogFromUrl || (existingAd?.catalogId as string) || '';
+    const hasCatalogId = !!catalogId;
 
-    const createAdMutation = useCreateAd();
-    const updateAdMutation = useUpdateAd();
-
-    const armConfig = currentArm?.config as any || {};
-    const priceTable = armConfig.modules?.priceTable || {};
-
-    const currencyUnit = useMemo(() => {
-        const code = armConfig.economy?.currency || 'IRR';
-        const currencyMap: Record<string, string> = {
-            'IRR': 'تومان', 'IRR1': 'ریال', 'USD': 'دلار', 'EUR': 'یورو',
-        };
-        return currencyMap[code] || code || 'تومان';
-    }, [armConfig.economy?.currency]);
-
-    const categoryTree = useMemo(
-        () => (Array.isArray(currentArm?.categoryTree) ? currentArm.categoryTree : []),
-        [currentArm?.categoryTree]
+    // ✅ ویرایش: catalog داخل includeٔ آگهی هست — صفر درخواست اضافه
+    const catalogFromAd = useMemo(
+        () => (isEditMode ? (existingAd?.catalog as any) ?? null : null),
+        [isEditMode, existingAd],
     );
 
-    const maxActiveAdsPerUser = useMemo(() => priceTable.maxActiveAdsPerUser ?? 5, [priceTable.maxActiveAdsPerUser]);
-    const maxTotalFreeAdPerUser = useMemo(() => priceTable.maxTotalFreeAdPerUser ?? 20, [priceTable.maxTotalFreeAdPerUser]);
-    const bumpCost = useMemo(() => priceTable.bumpCost ?? 10, [priceTable.bumpCost]);
-    const adCreationCost = useMemo(() => priceTable.adCreationCost ?? 10, [priceTable.adCreationCost]);
-    const extraActiveAdCostPerDay = useMemo(() => priceTable.extraActiveAdCost ?? 2, [priceTable.extraActiveAdCost]);
-    const allowAnonymousPublishing = useMemo(() => priceTable.allowAnonymousPublishing ?? true, [priceTable.allowAnonymousPublishing]);
-    const adValidityDefaultHours = useMemo(() => priceTable.adValidityDefaultHours ?? 24, [priceTable.adValidityDefaultHours]);
-    const maxImagesPerAd = useMemo(() => priceTable.maxImagesPerAd ?? 1, [priceTable.maxImagesPerAd]);
+    // ✅ ایجاد: کش pre-seed شده یا fetch سبک تک‌رکوردی (فقط deep-link)
+    const { data: cachedCatalog, isLoading: cachedLoading } = useQuery({
+        queryKey: ['catalog', 'by-id', catalogId],
+        queryFn: () => apiService.catalog.getOne(catalogId),
+        enabled: !isEditMode && hasCatalogId,
+        staleTime: 60_000,
+    });
 
-    const validityOptions = useMemo(() => {
-        const configValidity = adValidityDefaultHours;
-        const defaultOptions = [
-            { value: '24', label: '۱ روز' },
-            { value: '48', label: '۲ روز' },
-            { value: '72', label: '۳ روز' },
-            { value: '168', label: '۵ روز' },
-            { value: '240', label: '۱۰ روز' },
-        ];
-        if (configValidity && !defaultOptions.some(opt => opt.value === String(configValidity))) {
-            defaultOptions.unshift({
-                value: String(configValidity),
-                label: `${configValidity} ساعت`,
-            });
-        }
-        return defaultOptions;
-    }, [adValidityDefaultHours]);
+    const selectedCatalog = useMemo(() => {
+        if (isEditMode) return catalogFromAd;
+        return (cachedCatalog as any) ?? null;
+    }, [isEditMode, catalogFromAd, cachedCatalog]);
 
+    const catalogLoading = !selectedCatalog && (isEditMode ? adLoading : cachedLoading);
+
+    // ✅ نوع فروش کاتالوگ — عمده/تک
+    const salesType: 'wholesale' | 'retail' = useMemo(() => {
+        const st = selectedCatalog?.salesType;
+        if (st === 'retail' || st === 'wholesale') return st;
+        return selectedCatalog?.type === 'retailer' ? 'retail' : 'wholesale';
+    }, [selectedCatalog]);
+    const isWholesale = salesType === 'wholesale';
+
+    // ✅ تنظیمات اختصاصی کاتالوگ
+    const catalogConfig = (selectedCatalog?.config as any) || {};
+    const catalogUnitSettings: { unitId: string; containsQty?: number; qtyIsFixed?: boolean }[] =
+        catalogConfig.units || [];
+    const catalogCategoryTree: any[] = catalogConfig.categoryTree || [];
+    const [localUnitSettings, setLocalUnitSettings] =
+        useState<{ unitId: string; containsQty?: number; qtyIsFixed?: boolean }[]>(catalogUnitSettings);
+    const [localCategoryTree, setLocalCategoryTree] = useState<any[]>(catalogCategoryTree);
+
+    useEffect(() => {
+        setLocalUnitSettings(catalogUnitSettings);
+        setLocalCategoryTree(catalogCategoryTree);
+        // eslint-disable-next-line react-hooks/exhaustive-deps
+    }, [catalogId, selectedCatalog?.id]);
+
+    const { data: arms } = useQuery({
+        queryKey: ['arms'],
+        queryFn: () => apiService.arm.getUserArms(),
+        staleTime: 60_000,
+    });
+    const armCategoryTree: any[] = useMemo(() => {
+        if (!catalogId) return [];
+        const m = (arms ?? []).find((x: any) => x.status === 'active' && x.catalogId === catalogId)
+            ?? (arms ?? []).find((x: any) => x.status === 'active');
+        const src = m?.arm?.categoryTree;
+        return Array.isArray(src) ? src : [];
+    }, [arms, catalogId]);
+    const categoryTree: any[] = localCategoryTree.length > 0 ? localCategoryTree : armCategoryTree;
+    const hasCategoryTree = categoryTree.length > 0;
+
+    // ═══ state فرم ═══
+    const [currentStep, setCurrentStep] = useState(1);
+    const TOTAL_STEPS = 4;
     const [formData, setFormData] = useState({
-        categoryId: '',
-        productType: '',
-        singleUnitPrice: 0,
-        unitPrice: 0,
-        consumerPrice: 0,
-        minQuantity: 0,
-        availableQuantity: 0,
-        cityCode: '',
-        cityLabel: '',
-        provinceCode: '',
-        provinceLabel: '',
-        validityHours: String(adValidityDefaultHours || validityOptions[0]?.value || '24'),
-        isAnonymous: false,
-        isBumped: false,
-        description: '',
-        unitId: '',
-        unitTitle: '',
+        categoryId: '', productType: '',
+        singleUnitPrice: 0, unitPrice: 0,
+        minQuantity: 1, availableQuantity: 0,
+        cityCode: '', cityLabel: '', provinceCode: '', provinceLabel: '',
+        validityHours: 24, description: '',
+        unitId: '', unitTitle: '',
         unitQty: null as number | null,
-        unitIsVariableQty: false,
-        isEditingQty: false,
+        unitIsVariableQty: false, isEditingQty: false,
+        giftPrice: 0,
+        volumeTiers: [] as { minQty: number; price: number }[],
     });
+    const [images, setImages] = useState<ImageSlot[]>([]);
+    const [submitting, setSubmitting] = useState(false);
+    const [unitModalOpen, setUnitModalOpen] = useState(false);
+    const [catModalOpen, setCatModalOpen] = useState(false);
 
-    const [bumpDurationHours, setBumpDurationHours] = useState<number>(24);
-    const [specsEnabled, setSpecsEnabled] = useState(false);
-    const [specs, setSpecs] = useState<Record<string, string>>({});
-    const [paymentMethods, setPaymentMethods] = useState({
-        enabled: false,
-        description: '',
-        cheque: { enabled: false, description: '', options: [] as { price: number; days: number }[] },
-        installment: { enabled: false, description: '', options: [] as { price: number; months: number; prepaymentPercent: number }[] },
-    });
-    const [adImageFiles, setAdImageFiles] = useState<{ id?: string; file?: File; previewUrl?: string }[]>([]);
-    const [availableUnits, setAvailableUnits] = useState<UnitOption[]>([]);
-    const [activeAdsCount, setActiveAdsCount] = useState(0);
-    const [totalAdsCount, setTotalAdsCount] = useState(0);
-    const [loadingAdsCounts, setLoadingAdsCounts] = useState(true);
+    const selectedCategoryNode = useMemo(
+        () => (formData.categoryId ? findNodeInTree(categoryTree, formData.categoryId) : null),
+        [formData.categoryId, categoryTree],
+    );
+    const unitName = formData.unitTitle || selectedCategoryNode?.overrideUnitTitle || 'واحد';
+    const baseUnitTitle = selectedCategoryNode?.baseUnitTitle || 'واحد';
 
-    // ═══════════════════════════════════════
-    // محاسبات نردبان (Bump)
-    // ═══════════════════════════════════════
-    const bumpOptions = useMemo(() => {
-        const maxHours = parseInt(formData.validityHours) || 24;
-        const options = [24, 48, 72];
-        const validOptions = options.filter(h => h <= maxHours);
-        if (validOptions.length === 0) {
-            validOptions.push(maxHours);
-        }
-        if (maxHours > 72) {
-            for (let h = 96; h <= maxHours; h += 24) {
-                validOptions.push(h);
-            }
-        }
-        return validOptions;
-    }, [formData.validityHours]);
-
-    const totalBumpCost = useMemo(() => {
-        if (!formData.isBumped) return 0;
-        const costPer24Hours = bumpCost || 10;
-        const hours = bumpDurationHours || 24;
-        return Math.round((hours / 24) * costPer24Hours);
-    }, [formData.isBumped, bumpDurationHours, bumpCost]);
-
-    useEffect(() => {
-        if (formData.isBumped) {
-            const maxAllowed = parseInt(formData.validityHours);
-            if (maxAllowed && (!bumpDurationHours || bumpDurationHours > maxAllowed)) {
-                setBumpDurationHours(maxAllowed);
-            }
-        }
-    }, [formData.isBumped, formData.validityHours]);
-
-    const findNodeById = (nodes: any[], id: string): any => {
-        for (const node of nodes) {
-            if (node.id === id || node.categoryId === id) return node;
-            if (node.children) {
-                const found = findNodeById(node.children, id);
-                if (found) return found;
-            }
-        }
-        return null;
-    };
-
-    const selectedCategoryData = useMemo(() => {
-        if (formData.categoryId && categoryTree) {
-            return findNodeById(categoryTree, formData.categoryId);
-        }
-        return null;
+    // ═══ suggestedUnitIds ═══
+    const suggestedUnitIds = useMemo(() => {
+        if (!formData.categoryId) return [];
+        const node = findNodeInTree(categoryTree, formData.categoryId);
+        if (!node) return [];
+        const ids: string[] = [];
+        if (node.overrideUnitId) ids.push(node.overrideUnitId);
+        if (node.baseUnitId) ids.push(node.baseUnitId);
+        for (const alt of node.alternativeUnits ?? []) ids.push(alt.unitId);
+        return [...new Set(ids)];
     }, [formData.categoryId, categoryTree]);
 
-    const unitName = formData.unitTitle || selectedCategoryData?.overrideUnitTitle || 'تن';
-    const baseUnitTitle = selectedCategoryData?.baseUnitTitle || 'واحد';
+    // ═══ واحدها ═══
+    const { data: allUnits = [], isLoading: unitsLoading } = useQuery({
+        queryKey: ['units-all'],
+        queryFn: () => apiService.ad.getAllUnits(),
+        staleTime: 1000 * 60 * 60,
+    });
+    const { data: suggestedUnits = [] } = useQuery({
+        queryKey: ['units-ids', suggestedUnitIds.join(',')],
+        queryFn: () => apiService.ad.getAllUnits(suggestedUnitIds),
+        enabled: suggestedUnitIds.length > 0,
+        staleTime: 1000 * 60 * 60,
+    });
 
-    const locationTree = currentArm?.locationTree || [];
-    const totalCities = useMemo(() => {
-        let count = 0;
-        for (const province of locationTree) {
-            if (province.children) count += province.children.filter((c: any) => c.type === 'city').length;
+    // ═══ توابع واحد و قیمت ═══
+    function recalcUnitPrice(single: number, qty: number | null): number {
+        return single > 0 && qty ? Math.round(single * qty) : 0;
+    }
+
+    const selectUnit = (unitId: string, unitTitle: string) => {
+        const catSetting = localUnitSettings.find((s) => s.unitId === unitId);
+        const globalUnit = allUnits.find((u: any) => u.id === unitId) as any;
+        let qty: number | null = null;
+        let isVariable = false;
+        if (catSetting?.containsQty != null) {
+            qty = catSetting.containsQty;
+            isVariable = !catSetting.qtyIsFixed;
+        } else if (globalUnit?.containsQty != null) {
+            qty = globalUnit.containsQty;
+            isVariable = !globalUnit.qtyIsFixed;
         }
-        return count;
-    }, [locationTree]);
-
-    const hasSingleCity = totalCities === 1;
-    const singleCityData = useMemo(() => {
-        if (hasSingleCity) {
-            for (const province of locationTree) {
-                const city = province.children?.find((c: any) => c.type === 'city');
-                if (city) return { city, province };
-            }
-        }
-        return null;
-    }, [locationTree, hasSingleCity]);
-
-    // ═══════════════════════════════════════
-    // شمارش آگهی‌های کسب‌وکار
-    // ═══════════════════════════════════════
-    useEffect(() => {
-        const fetchCounts = async () => {
-            if (!business || !currentSlug) {
-                setLoadingAdsCounts(false);
-                return;
-            }
-            try {
-                const now = new Date();
-                const allBusinessAds = business.ads || [];
-                const armAds = allBusinessAds.filter((ad: any) => ad.armId === currentArm?.id);
-
-                const activeAds = armAds.filter(
-                    (ad: any) => ad.status === 'active' && new Date(ad.expiresAt) > now
-                );
-                const totalAds = armAds.filter(
-                    (ad: any) => ad.status !== 'deleted'
-                );
-
-                setActiveAdsCount(activeAds.length);
-                setTotalAdsCount(totalAds.length);
-            } catch {
-                setActiveAdsCount(0);
-                setTotalAdsCount(0);
-            } finally {
-                setLoadingAdsCounts(false);
-            }
-        };
-        fetchCounts();
-    }, [business, currentSlug, currentArm]);
-
-    const isLoading = businessLoading || creditLoading || (isEditMode && adLoading) || loadingAdsCounts;
-
-    // ═══════════════════════════════════════
-    // محاسبه سهمیه‌ها و هزینه‌ها
-    // ═══════════════════════════════════════
-    const remainingActiveSlots = Math.max(0, maxActiveAdsPerUser - activeAdsCount);
-    const remainingTotalSlots = Math.max(0, maxTotalFreeAdPerUser - totalAdsCount);
-
-    const hasReachedActiveLimit = !isEditMode && activeAdsCount >= maxActiveAdsPerUser;
-    const hasReachedTotalLimit = !isEditMode && totalAdsCount >= maxTotalFreeAdPerUser;
-
-    const isAdFree = remainingActiveSlots > 0 && remainingTotalSlots > 0;
-
-    // هزینه ثبت آگهی اضافه
-    const totalCreationCost = useMemo(() => {
-        if (isEditMode) return 0;
-        let cost = 0;
-        if (hasReachedActiveLimit) {
-            const days = Math.max(1, Math.ceil(parseInt(formData.validityHours) / 24));
-            cost += extraActiveAdCostPerDay * days;
-        }
-        if (hasReachedTotalLimit) cost += adCreationCost;
-        return cost;
-    }, [isEditMode, hasReachedActiveLimit, hasReachedTotalLimit, extraActiveAdCostPerDay, adCreationCost, formData.validityHours]);
-
-    const totalCostWithBump = totalCreationCost + (formData.isBumped ? totalBumpCost : 0);
-
-    const needsCredit = totalCreationCost > 0;
-    const insufficientCredit = needsCredit && (creditBalance?.balance ?? 0) < totalCostWithBump;
-
-    const isBumpActive = isEditMode && existingAd?.isBumped && existingAd?.bumpExpiresAt && new Date(existingAd.bumpExpiresAt) > new Date();
-    const bumpExpiresAtLabel = existingAd?.bumpExpiresAt ? new Date(existingAd.bumpExpiresAt).toLocaleDateString('fa-IR') : '';
-
-    const stepMeta = useMemo(() => {
-        if (isEditMode) {
-            return [
-                { title: 'گروه', icon: Layers },
-                { title: 'قیمت', icon: Package },
-                { title: 'موقعیت', icon: MapPin },
-                { title: 'انتشار', icon: Settings },
-                { title: 'جزئیات', icon: CreditCard },
-                { title: 'بررسی', icon: ClipboardCheck },
-            ];
-        }
-        return BASE_STEPS;
-    }, [isEditMode]);
-
-    const TOTAL_STEPS = stepMeta.length;
-
-    const [categoryConstraints, setCategoryConstraints] = useState<QuantityConstraints>({ min: null, max: null });
-
-    // ✅ وقتی کتگوری تغییر میکنه
-    useEffect(() => {
-        if (formData.categoryId && categoryTree) {
-            const constraints = getCategoryConstraintsFromTree(formData.categoryId, categoryTree);
-            setCategoryConstraints(constraints);
-
-            const units = getAvailableUnits(formData.categoryId, categoryTree);
-            setAvailableUnits(units);
-
-            if (units.length > 0) {
-                const currentUnitExists = units.some(u => u.unitId === formData.unitId);
-                if (!currentUnitExists) {
-                    const defaultUnit = units.find(u => u.isDefault) || units[0];
-                    setFormData(prev => ({
-                        ...prev,
-                        unitId: defaultUnit.unitId,
-                        unitTitle: defaultUnit.unitTitle,
-                        unitQty: defaultUnit.qty,
-                        unitIsVariableQty: defaultUnit.isVariableQty,
-                    }));
-                }
-            }
-        } else {
-            setCategoryConstraints({ min: null, max: null });
-            setAvailableUnits([]);
-        }
-    }, [formData.categoryId, categoryTree]);
-
-    const recalculateUnitPrice = (singlePrice: number, qty: number | null) => {
-        if (singlePrice > 0 && qty) {
-            return Math.round(singlePrice * qty);
-        }
-        return 0;
-    };
-
-    const handleSingleUnitPriceChange = (value: number) => {
-        const calculated = recalculateUnitPrice(value, formData.unitQty);
-        setFormData(prev => ({
-            ...prev,
-            singleUnitPrice: value,
-            unitPrice: calculated,
+        setFormData((p) => ({
+            ...p, unitId, unitTitle,
+            unitQty: qty,
+            unitIsVariableQty: isVariable,
+            isEditingQty: false,
+            unitPrice: recalcUnitPrice(p.singleUnitPrice, qty),
         }));
     };
 
-    const handleUnitPriceChange = (value: number) => {
+    const handleSingleUnitPriceChange = (v: number) => {
+        setFormData((p) => ({ ...p, singleUnitPrice: v, unitPrice: recalcUnitPrice(v, p.unitQty) }));
+    };
+    const handleUnitPriceChange = (v: number) => {
         const qty = formData.unitQty || 1;
-        const calculatedSingle = qty > 0 ? Math.round(value / qty) : 0;
-        setFormData(prev => ({
-            ...prev,
-            unitPrice: value,
-            singleUnitPrice: calculatedSingle,
-        }));
+        setFormData((p) => ({ ...p, unitPrice: v, singleUnitPrice: qty > 0 ? Math.round(v / qty) : 0 }));
     };
-
-    const handleUnitQtyChange = (value: number | null) => {
-        const calculated = recalculateUnitPrice(formData.singleUnitPrice, value);
-        setFormData(prev => ({
-            ...prev,
-            unitQty: value,
-            unitPrice: calculated,
-        }));
+    const handleUnitQtyChange = (v: number | null) => {
+        setFormData((p) => ({ ...p, unitQty: v, unitPrice: recalcUnitPrice(p.singleUnitPrice, v) }));
     };
+    const liveProfit = useMemo(() => {
+        if (formData.consumerPrice > 0 && formData.singleUnitPrice > 0)
+            return formData.consumerPrice - formData.singleUnitPrice;
+        return null;
+    }, [formData.consumerPrice, formData.singleUnitPrice]);
 
-    // ✅ اگر validityHours خالی است یا در لیست نیست
-    useEffect(() => {
-        if (!formData.validityHours || !validityOptions.some(opt => opt.value === formData.validityHours)) {
-            const defaultValidity = validityOptions[0]?.value || '24';
-            setFormData(prev => ({
-                ...prev,
-                validityHours: defaultValidity,
-            }));
+    // ═══ گزینه‌های DropSelector واحد ═══
+    const unitOptions = useMemo(() => {
+        const opts: { value: string; label: string; extra?: any }[] = [];
+        for (const s of localUnitSettings) {
+            const u = allUnits.find((x: any) => x.id === s.unitId);
+            if (!u) continue;
+            opts.push({ value: u.id, label: u.title, extra: { catQty: s.containsQty ?? null, suggested: true } });
         }
-    }, [validityOptions]);
+        for (const uid of suggestedUnitIds) {
+            if (opts.some((o) => o.value === uid)) continue;
+            const u = allUnits.find((x: any) => x.id === uid);
+            if (!u) continue;
+            opts.push({ value: u.id, label: u.title, extra: { suggested: true, catQty: null } });
+        }
+        for (const u of allUnits as any[]) {
+            if (!opts.some((o) => o.value === u.id)) {
+                opts.push({ value: u.id, label: u.title, extra: { suggested: false, catQty: null } });
+            }
+        }
+        return opts;
+    }, [localUnitSettings, suggestedUnitIds, allUnits]);
 
-    // ✅ لود داده‌های آگهی در حالت ویرایش
+    // ═══ auto-select واحد پیش‌فرض ═══
+    useEffect(() => {
+        if (!formData.categoryId || !hasCategoryTree) return;
+        const catUnits = getAvailableUnits(formData.categoryId, categoryTree);
+        if (catUnits.length > 0) {
+            const ok = catUnits.some((u) => u.unitId === formData.unitId);
+            if (!ok) {
+                const def = catUnits.find((u) => u.isDefault) || catUnits[0];
+                selectUnit(def.unitId, def.unitTitle);
+            }
+        }
+        // eslint-disable-next-line react-hooks/exhaustive-deps
+    }, [formData.categoryId, categoryTree]);
+
+    // ═══ عکس‌ها — اسلات‌محور؛ موجود = {id, url}، جدید = {file, previewUrl} ═══
     useEffect(() => {
         if (isEditMode && existingAd) {
-            setFormData({
-                categoryId: existingAd.categoryId || '',
-                productType: existingAd.productType || '',
-                singleUnitPrice: existingAd.singleUnitPrice || 0,
-                unitPrice: existingAd.unitPrice || 0,
-                consumerPrice: existingAd.consumerPrice || 0,
-                minQuantity: existingAd.minQuantity || 0,
-                availableQuantity: existingAd.availableQuantity || 0,
-                cityCode: existingAd.cityCode || '',
-                cityLabel: existingAd.city || '',
-                provinceCode: existingAd.provinceCode || '',
-                provinceLabel: existingAd.province || '',
-                validityHours: String(existingAd.validityHours || adValidityDefaultHours || 24),
-                isAnonymous: existingAd.isAnonymous || false,
-                isBumped: existingAd.isBumped || false,
-                description: existingAd.description || '',
-                unitId: existingAd.unitId || '',
-                unitTitle: existingAd.unit?.title || '',
-                unitQty: existingAd.unitQty ?? null,
-                unitIsVariableQty: existingAd.unitIsVariableQty ?? false,
-                isEditingQty: false,
-            });
-
-            if (existingAd.paymentMethods) {
-                const hasCheque = Array.isArray(existingAd.paymentMethods.cheque) && existingAd.paymentMethods.cheque.length > 0;
-                const hasInstallment = Array.isArray(existingAd.paymentMethods.installment) && existingAd.paymentMethods.installment.length > 0;
-                const hasDescription = existingAd.paymentMethods.description && existingAd.paymentMethods.description.trim().length > 0;
-
-                setPaymentMethods({
-                    enabled: hasCheque || hasInstallment || hasDescription,
-                    description: existingAd.paymentMethods.description || '',
-                    cheque: {
-                        enabled: hasCheque,
-                        description: existingAd.paymentMethods.chequeDescription || '',
-                        options: hasCheque ? existingAd.paymentMethods.cheque : [],
-                    },
-                    installment: {
-                        enabled: hasInstallment,
-                        description: existingAd.paymentMethods.installmentDescription || '',
-                        options: hasInstallment ? existingAd.paymentMethods.installment : [],
-                    },
-                });
-            }
-
-            if (existingAd.specs && Object.keys(existingAd.specs).length > 0) {
-                setSpecs(existingAd.specs);
-                setSpecsEnabled(true);
-            }
-
-            const images = (existingAd.files || [])
+            const imgs = (existingAd.files || [])
                 .filter((f: any) => f.fieldKey?.startsWith('ad-image'))
-                .sort((a: any, b: any) => parseInt(a.fieldKey.split('-')[2] || '0') - parseInt(b.fieldKey.split('-')[2] || '0'));
-            setAdImageFiles(images.map((img: any) => ({ id: img.id })));
-
-            if (existingAd.isBumped) {
-                setBumpDurationHours(existingAd.bumpDurationHours || 24);
-            }
-
-            setShowCategorySelector(false);
+                .sort((a: any, b: any) =>
+                    parseInt(a.fieldKey.split('-')[2] || '0') - parseInt(b.fieldKey.split('-')[2] || '0'));
+            setImages(imgs.map((img: any) => ({
+                id: img.id,
+                url: img.thumbnailPath || img.path,
+            })));
+        } else {
+            setImages([]);
         }
     }, [isEditMode, existingAd]);
 
-    // ✅ ست کردن شهر از بیزینس در حالت ایجاد
-    useEffect(() => {
-        if (isEditMode) return;
-
-        if (hasSingleCity && singleCityData) {
-            setFormData(prev => ({
-                ...prev,
-                cityCode: singleCityData.city.cityCode || singleCityData.city.id || singleCityData.city.code,
-                cityLabel: singleCityData.city.title,
-                provinceCode: singleCityData.province.provinceCode || singleCityData.province.id || singleCityData.province.code,
-                provinceLabel: singleCityData.province.title,
-            }));
-        } else if (business?.cityCode && !hasSingleCity) {
-            setFormData(prev => ({
-                ...prev,
-                cityCode: business.cityCode || '',
-                cityLabel: business.city || '',
-                provinceCode: business.provinceCode || '',
-                provinceLabel: business.province || '',
-            }));
-        }
-    }, [business, hasSingleCity, singleCityData, isEditMode]);
-
-    useEffect(() => {
-        if (!isEditMode && adImageFiles.length === 0) {
-            setAdImageFiles([{}]);
-        }
-    }, [isEditMode]);
-
-    const uploadedCount = useMemo(() => adImageFiles.filter(s => s.id || s.file).length, [adImageFiles]);
-
-    const validateStep = (step: number): boolean => {
-        const errors: string[] = [];
-        if (step === 1) {
-            if (uploadedCount === 0) errors.push('تصویر آگهی را آپلود نکردی.');
-            if (!formData.categoryId) errors.push('دسته‌بندی کالا را انتخاب کنید.');
-            if (selectedCategoryData && !formData.productType.trim()) errors.push('عنوان کالا را وارد کنید.');
-        } else if (step === 2) {
-            if (formData.minQuantity <= 0) errors.push('حداقل حجم فروش را وارد کنید.');
-            if (formData.unitPrice <= 0) errors.push('قیمت واحد را وارد کنید.');
-            if (formData.availableQuantity <= 0) errors.push('موجودی تضمینی انبار را وارد کنید.');
-            if (formData.minQuantity > formData.availableQuantity) {
-                errors.push('حداقل حجم فروش نمی‌تواند از موجودی بیشتر باشد.');
-            }
-            if (categoryConstraints.min !== null && formData.minQuantity < categoryConstraints.min) {
-                errors.push(`حداقل حجم فروش نمی‌تواند کمتر از ${categoryConstraints.min.toLocaleString()} ${unitName} باشد.`);
-            }
-            if (categoryConstraints.max !== null && formData.minQuantity > categoryConstraints.max) {
-                errors.push(`حداقل حجم فروش نمی‌تواند بیشتر از ${categoryConstraints.max.toLocaleString()} ${unitName} باشد.`);
-            }
-            if (formData.consumerPrice > 0 && formData.singleUnitPrice > 0 &&
-                formData.consumerPrice < formData.singleUnitPrice) {
-                errors.push('قیمت مصرف‌کننده نمی‌تواند از قیمت عمده کمتر باشد.');
-            }
-        } else if (step === 3) {
-            if (!formData.cityCode && !hasSingleCity) {
-                errors.push('محل کالا را انتخاب کنید.');
-            }
-            if (!formData.validityHours) {
-                errors.push('مدت اعتبار قیمت را انتخاب کنید.');
-            }
-        }
-        if (errors.length > 0) {
-            errors.forEach(msg => toast.error(msg));
-            return false;
-        }
-        return true;
-    };
-
-    const nextStep = () => {
-        if (currentStep < TOTAL_STEPS && validateStep(currentStep)) {
-            setCurrentStep(prev => prev + 1);
-            window.scrollTo({ top: 0, behavior: 'smooth' });
-        }
-    };
-
-    const prevStep = () => {
-        setCurrentStep(prev => Math.max(1, prev - 1));
-        window.scrollTo({ top: 0, behavior: 'smooth' });
-    };
-
-    const goToStep = (step: number) => {
-        if (step < currentStep) {
-            setCurrentStep(step);
-            window.scrollTo({ top: 0, behavior: 'smooth' });
-        }
-    };
+    const uploadedCount = useMemo(() => images.filter((s) => s.id || s.file).length, [images]);
 
     const handleAddImageSlot = () => {
-        if (adImageFiles.length < maxImagesPerAd) {
-            setAdImageFiles(prev => [...prev, {}]);
-        }
+        if (images.length < MAX_IMAGES) imageInputRef.current?.click();
     };
-
     const handleRemoveImageSlot = async (index: number) => {
-        const slot = adImageFiles[index];
+        const slot = images[index];
         if (slot?.previewUrl) URL.revokeObjectURL(slot.previewUrl);
         if (slot?.id) {
             try { await deleteFileMutation.mutateAsync(slot.id); } catch {}
         }
-        setAdImageFiles(prev => {
-            const updated = [...prev];
-            updated.splice(index, 1);
-            return isEditMode ? updated : (updated.length === 0 ? [{}] : updated);
-        });
+        setImages((p) => p.filter((_, j) => j !== index));
+    };
+    const handleImageSelected = (file: File | null) => {
+        if (!file || images.length >= MAX_IMAGES) return;
+        setImages((p) => [...p, { file, previewUrl: URL.createObjectURL(file) }]);
     };
 
-    const handleSetImageFile = (index: number, file: File | null) => {
-        setAdImageFiles(prev => {
-            const updated = [...prev];
-            if (updated[index]?.previewUrl) URL.revokeObjectURL(updated[index].previewUrl!);
-            const previewUrl = file ? URL.createObjectURL(file) : undefined;
-            updated[index] = { file: file ?? undefined, previewUrl };
-            return updated;
-        });
+    // ═══ پیش‌فرض شهر ═══
+    useEffect(() => {
+        if (isEditMode || !selectedCatalog) return;
+        if (!formData.cityCode && selectedCatalog.cityCode) {
+            setFormData((p) => ({
+                ...p,
+                cityCode: selectedCatalog.cityCode || '', cityLabel: selectedCatalog.city || '',
+                provinceCode: selectedCatalog.provinceCode || '', provinceLabel: selectedCatalog.province || '',
+            }));
+        }
+        // eslint-disable-next-line react-hooks/exhaustive-deps
+    }, [selectedCatalog, isEditMode]);
+
+    // ═══ لود آگهی (edit) — prefill کامل ═══
+    useEffect(() => {
+        if (isEditMode && existingAd) {
+            setFormData((p) => ({
+                ...p,
+                categoryId: existingAd.categoryId || '',
+                productType: existingAd.productType || existingAd.title || '',
+                singleUnitPrice: existingAd.singleUnitPrice || 0,
+                unitPrice: existingAd.unitPrice || 0,
+                minQuantity: existingAd.minQuantity || 1,
+                availableQuantity: existingAd.availableQuantity || 0,
+                cityCode: existingAd.cityCode || '', cityLabel: existingAd.city || '',
+                provinceCode: existingAd.provinceCode || '', provinceLabel: existingAd.province || '',
+                validityHours: existingAd.validityHours || 24,
+                description: existingAd.description || '',
+                unitId: existingAd.unitId || '', unitTitle: existingAd.unit?.title || '',
+                unitQty: existingAd.unitQty ?? null,
+                unitIsVariableQty: existingAd.unitIsVariableQty ?? false, isEditingQty: false,
+                giftPrice: (existingAd as any).giftPrice || 0,
+                volumeTiers: (existingAd as any).volumeTiers || [],
+            }));
+        }
+    }, [isEditMode, existingAd]);
+
+    // ═══ validate ═══
+    const validateStep = (step: number): boolean => {
+        const errs: string[] = [];
+        if (step === 1) {
+            if (uploadedCount === 0) errs.push('حداقل یک تصویر انتخاب کن.');
+            if (!formData.productType.trim()) errs.push('عنوان کالا را وارد کن.');
+            if (!formData.unitId) errs.push('واحد فروش را انتخاب کن.');
+        } else if (step === 2) {
+            if (isWholesale) {
+                if (formData.minQuantity <= 0) errs.push('حداقل حجم فروش را وارد کن.');
+                if (formData.singleUnitPrice <= 0) errs.push('قیمت تکی را وارد کن.');
+                if (formData.unitPrice <= 0) errs.push('قیمت عمده را وارد کن.');
+                if (formData.availableQuantity <= 0) errs.push('موجودی تضمینی را وارد کن.');
+                if (formData.minQuantity > formData.availableQuantity)
+                    errs.push('حداقل حجم فروش نمی‌تواند از موجودی بیشتر باشد.');
+                const constraints = getCategoryConstraints(formData.categoryId, categoryTree);
+                if (constraints.min !== null && formData.minQuantity < constraints.min)
+                    errs.push(`حداقل حجم فروش نمی‌تواند کمتر از ${constraints.min.toLocaleString('fa-IR')} ${unitName} باشد.`);
+                if (constraints.max !== null && formData.minQuantity > constraints.max)
+                    errs.push(`حداقل حجم فروش نمی‌تواند بیشتر از ${constraints.max.toLocaleString('fa-IR')} ${unitName} باشد.`);
+                if (formData.consumerPrice > 0 && formData.singleUnitPrice > 0 &&
+                    formData.consumerPrice < formData.singleUnitPrice)
+                    errs.push('قیمت مصرف‌کننده نمی‌تواند از قیمت عمده کمتر باشد.');
+            } else {
+                if (formData.unitPrice <= 0) errs.push('قیمت را وارد کن.');
+            }
+        } else if (step === 3) {
+            if (!formData.cityCode) errs.push('محل کالا را انتخاب کن.');
+        }
+        if (errs.length) { errs.forEach((m) => toast.error(m)); return false; }
+        return true;
+    };
+    const nextStep = () => {
+        if (currentStep < TOTAL_STEPS && validateStep(currentStep)) {
+            setCurrentStep((p) => p + 1);
+            window.scrollTo({ top: 0, behavior: 'smooth' });
+        }
+    };
+    const prevStep = () => {
+        setCurrentStep((p) => Math.max(1, p - 1));
+        window.scrollTo({ top: 0, behavior: 'smooth' });
+    };
+    const goToStep = (s: number) => {
+        if (s < currentStep) {
+            setCurrentStep(s);
+            window.scrollTo({ top: 0, behavior: 'smooth' });
+        }
     };
 
+    // ═══ عنوان ترکیبی ═══
+    const composedTitle = useMemo(() => {
+        const cat = selectedCategoryNode?.title || '';
+        return formData.productType ? `${cat ? cat + ' ' : ''}${formData.productType}`.trim() : formData.productType;
+    }, [formData.productType, selectedCategoryNode]);
+
+    // ═══ submit ═══
     const handleSubmit = async () => {
-        if (currentStep !== TOTAL_STEPS) return;
-        if (isSubmitting) return;
-
-        for (let s = 1; s <= 3; s++) {
-            if (!validateStep(s)) {
-                setCurrentStep(s);
-                return;
-            }
+        if (submitting) return;
+        for (let s = 1; s < TOTAL_STEPS; s++) {
+            if (!validateStep(s)) { setCurrentStep(s); return; }
         }
-
-        // بررسی اعتبار کافی برای هزینه‌ها (فقط در حالت ایجاد)
-        // بررسی اعتبار کافی برای هزینه‌ها (فقط در حالت ایجاد)
-        if (!isEditMode) {
-            const balance = creditBalance?.balance ?? 0;
-            const needed = totalCostWithBump;
-
-            if (needed > balance && formData.isBumped) {
-                // ✅ کاربر اعتبار کافی برای نردبان ندارد
-                toast.warning('اعتبار شما برای نردبان کافی نیست. آگهی به‌صورت عادی ثبت می‌شود.');
-                setFormData(prev => ({ ...prev, isBumped: false }));
-            } else if (needed > balance) {
-                toast.error(`اعتبار کافی نیست. نیاز به ${needed} اعتبار دارید.`);
-                return;
-            }
-        }
-
-        setIsSubmitting(true);
+        setSubmitting(true);
         try {
-            let uploadedIds: string[] = [];
-            const filesToUpload = adImageFiles.filter(slot => slot.file).map(slot => slot.file!);
-            if (filesToUpload.length > 0) {
-                const uploadPromises = filesToUpload.map((file, index) =>
-                    uploadMutation.mutateAsync({
-                        file,
-                        model: 'Ad',
-                        modelId: 'temp',
-                        fieldKey: `ad-image-${index}`,
-                    }).then(res => res.id)
-                );
-                uploadedIds = await Promise.all(uploadPromises);
-            }
+            const newFiles = images.filter((s) => s.file).map((s) => s.file!);
+            let adResultId: string | null = null;
 
-            const title = formData.productType
-                ? `${selectedCategoryData?.title || ''} ${formData.productType}`
-                : selectedCategoryData?.title || '';
-
-            const paymentData = paymentMethods.enabled ? {
-                description: paymentMethods.description || '',
-                cheque: paymentMethods.cheque.enabled ? paymentMethods.cheque.options : [],
-                chequeDescription: paymentMethods.cheque.description || '',
-                installment: paymentMethods.installment.enabled ? paymentMethods.installment.options : [],
-                installmentDescription: paymentMethods.installment.description || '',
-            } : null;
-
-            const specsData = Object.keys(specs).length > 0 ? specs : null;
-
-            let ad;
             if (isEditMode) {
-                ad = await updateAdMutation.mutateAsync({
+                await updateAdMutation.mutateAsync({
                     id: adId,
                     data: {
-                        categoryId: formData.categoryId,
+                        categoryId: formData.categoryId || undefined,
                         unitId: formData.unitId,
-                        title,
+                        title: composedTitle,
                         productType: formData.productType,
                         unitPrice: formData.unitPrice,
                         singleUnitPrice: formData.singleUnitPrice || null,
                         consumerPrice: formData.consumerPrice || null,
                         minQuantity: formData.minQuantity,
                         availableQuantity: formData.availableQuantity,
-                        city: formData.cityLabel,
-                        cityCode: formData.cityCode,
+                        city: formData.cityLabel, cityCode: formData.cityCode,
                         provinceCode: formData.provinceCode,
-                        validityHours: parseInt(formData.validityHours),
-                        isAnonymous: formData.isAnonymous,
+                        validityHours: formData.validityHours,
                         description: formData.description,
                         unitQty: formData.unitQty,
                         unitIsVariableQty: formData.unitIsVariableQty,
-                        paymentMethods: paymentData,
-                        specs: specsData,
+                        giftPrice: formData.giftPrice || null,
+                        volumeTiers: formData.volumeTiers.length > 0 ? formData.volumeTiers : null,
                     },
                 });
-                toast.success('آگهی ویرایش شد');
+                adResultId = adId;
+                // عکس‌های جدید — با modelId = آگهی موجود
+                for (let i = 0; i < newFiles.length; i++) {
+                    await uploadMutation.mutateAsync({
+                        file: newFiles[i], model: 'Ad', modelId: adId, fieldKey: `ad-image-new-${i}`,
+                    });
+                }
+                toast.success('کالا ویرایش شد');
             } else {
-                ad = await createAdMutation.mutateAsync({
-                    armSlug: currentSlug || 'barton',
-                    categoryId: formData.categoryId,
+                const created: any = await createAdMutation.mutateAsync({
+                    catalogId: catalogId,
+                    categoryId: formData.categoryId || undefined,
                     unitId: formData.unitId,
-                    title,
+                    title: composedTitle,
                     productType: formData.productType,
                     unitPrice: formData.unitPrice,
                     singleUnitPrice: formData.singleUnitPrice || null,
                     consumerPrice: formData.consumerPrice || null,
                     minQuantity: formData.minQuantity,
-                    availableQuantity: formData.availableQuantity,
-                    city: formData.cityLabel,
-                    cityCode: formData.cityCode,
+                    availableQuantity: formData.availableQuantity || undefined,
+                    city: formData.cityLabel, cityCode: formData.cityCode,
                     provinceCode: formData.provinceCode,
-                    locationDetail: '',
-                    validityHours: parseInt(formData.validityHours),
-                    isAnonymous: formData.isAnonymous,
-                    isBumped: formData.isBumped,
+                    validityHours: formData.validityHours,
                     description: formData.description,
                     unitQty: formData.unitQty,
                     unitIsVariableQty: formData.unitIsVariableQty,
-
+                    giftPrice: formData.giftPrice || null,
+                    volumeTiers: formData.volumeTiers.length > 0 ? formData.volumeTiers : null,
                 });
-                toast.success('آگهی ثبت شد');
+                if (!created?.id) throw new Error('پاسخ سرور ناقص است — آگهی ساخته نشد');
+                adResultId = created.id;
+                // عکس‌ها بعد از ساخت آگهی — الگوی relatedModel/relatedId + fieldKey ایندکسی
+                for (let i = 0; i < newFiles.length; i++) {
+                    await uploadMutation.mutateAsync({
+                        file: newFiles[i], model: 'Ad', modelId: adResultId, fieldKey: `ad-image-${i}`,
+                    });
+                }
+                toast.success('محصول اضافه شد — تا ۲۴ ساعت معتبر است');
             }
 
-            if (uploadedIds.length > 0 && ad?.id) {
-                await Promise.all(uploadedIds.map(fileId => apiService.file.updateRelatedId(fileId, ad.id)));
-            }
-
-            await refetchBalance();
+            queryClient.invalidateQueries({ queryKey: ['catalog', 'by-id', catalogId] });
+            queryClient.invalidateQueries({ queryKey: ['catalog'] });
+            queryClient.invalidateQueries({ queryKey: ['home-ads-summary'] });
+            queryClient.invalidateQueries({ queryKey: ['catalog-ads'] });
+            queryClient.invalidateQueries({ queryKey: ['catalog-products', adResultId] });
             onSuccess?.();
-            router.push('/profile');
-        } catch (error: any) {
-            toast.error(error?.message || 'خطا');
+            router.push('/my-catalogs');
+        } catch (err: any) {
+            toast.error(err?.message || 'خطا در ثبت');
         } finally {
-            setIsSubmitting(false);
+            setSubmitting(false);
         }
     };
 
+    const inputCls = (hasErr?: string) => cn(
+        'w-full h-11 px-3.5 text-sm text-right rounded-xl bg-surface-container-lowest border',
+        'focus:ring-2 focus:ring-amber-500/30 focus:border-amber-500 outline-none transition-all',
+        hasErr ? 'border-error' : 'border-outline-variant/40 dark:border-gray-700',
+    );
+    const SectionTitle = ({ icon: Icon, text }: any) => (
+        <p className="text-[11px] font-bold text-on-surface-variant flex items-center gap-1.5 mb-2">
+            <Icon className="w-3.5 h-3.5 text-amber-500" /> {text}
+        </p>
+    );
+    const StepBadge = ({ n }: any) => (
+        <span className="w-5 h-5 rounded-md bg-amber-100 text-amber-700 dark:bg-amber-900/40 dark:text-amber-400 flex items-center justify-center text-[10px] font-black">{n}</span>
+    );
 
-
-    if (isLoading || !business) {
+    // ═══ گاردها — بعد از همهٔ هوک‌ها ═══
+    if (!hasCatalogId) {
+        return (
+            <div className="min-h-screen grid place-items-center bg-surface dark:bg-gray-950 text-center px-4">
+                <div>
+                    <Package className="w-12 h-12 text-on-surface-variant/20 mx-auto mb-4" />
+                    <p className="text-sm font-bold text-on-surface">کاتالوگ مقصد مشخص نیست</p>
+                    <p className="text-xs text-on-surface-variant mt-2">از کاتالوگ موردنظرت دکمهٔ «افزودن محصول» را بزن.</p>
+                    <button onClick={() => router.push('/my-catalogs')}
+                            className="mt-4 text-primary text-sm font-bold">رفتن به کاتالوگ‌های من</button>
+                </div>
+            </div>
+        );
+    }
+    if (catalogLoading || (isEditMode && !existingAd && adLoading)) {
         return (
             <div className="min-h-screen flex items-center justify-center">
-                <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary" />
+                <div className="animate-spin rounded-full h-10 w-10 border-2 border-amber-500 border-t-transparent" />
+            </div>
+        );
+    }
+    if (!selectedCatalog) {
+        return (
+            <div className="min-h-screen grid place-items-center bg-surface dark:bg-gray-950 text-center px-4">
+                <div>
+                    <Package className="w-12 h-12 text-on-surface-variant/20 mx-auto mb-4" />
+                    <p className="text-sm font-bold text-on-surface">کاتالوگ یافت نشد</p>
+                    <button onClick={() => router.push('/my-catalogs')}
+                            className="mt-4 text-primary text-sm font-bold">رفتن به کاتالوگ‌های من</button>
+                </div>
             </div>
         );
     }
 
+    // ═══ رندر ═══
     return (
-        <div className="min-h-screen flex flex-col bg-surface pb-28">
-            <FormHeader title={isEditMode ? "ویرایش کامل آگهی" : "ثبت قیمت جدید"} backUrl="/profile" />
+        <div className="min-h-screen bg-gradient-to-b from-surface via-surface to-surface-container-low/40 dark:from-gray-950 dark:via-gray-950 dark:to-gray-900/40 pb-28">
+            {/* هدر */}
+            <header className="sticky top-0 z-40 bg-white/85 dark:bg-gray-950/85 backdrop-blur border-b border-outline-variant/20">
+                <div className="max-w-lg mx-auto px-4 py-3 flex items-center gap-3">
+                    <button onClick={() => router.back()} aria-label="بستن"
+                            className="p-2 -m-1 rounded-full hover:bg-surface-container-high text-on-surface-variant">
+                        <X className="w-5 h-5" />
+                    </button>
+                    <h1 className="flex-1 text-sm font-extrabold text-on-surface">
+                        {isEditMode ? 'ویرایش کالا' : 'افزودن محصول'}
+                    </h1>
+                    <span className="text-[10px] font-bold text-amber-600 dark:text-amber-400">
+                        {isWholesale ? 'عمده‌فروشی' : 'تک‌فروشی'}
+                    </span>
+                </div>
+            </header>
 
-            <main className="flex-1 w-full max-w-2xl mx-auto px-4 pt-20">
+            <main className="max-w-lg mx-auto px-4 pt-5 space-y-4">
                 {/* نوار پیشرفت */}
-                <div className="flex flex-row-reverse items-start mb-10">
-                    {stepMeta.map((meta, idx) => {
-                        const stepNum = idx + 1;
-                        const isActive = stepNum === currentStep;
-                        const isDone = stepNum < currentStep;
-                        const isLast = idx === stepMeta.length - 1;
-                        const Icon = meta.icon;
+                <div className="flex items-center justify-between px-1">
+                    {STEP_TITLES.map((t, i) => {
+                        const n = i + 1;
+                        const active = n === currentStep, done = n < currentStep;
                         return (
-                            <React.Fragment key={stepNum}>
-                                <button
-                                    type="button"
-                                    onClick={() => goToStep(stepNum)}
-                                    disabled={stepNum > currentStep}
-                                    className="flex flex-col items-center flex-shrink-0 cursor-default"
-                                >
-                                    <div className={cn(
-                                        "w-10 h-10 rounded-full flex items-center justify-center text-sm font-bold transition-all duration-300 border-2",
-                                        isActive && "bg-primary text-white border-primary ring-4 ring-primary/20 scale-110 shadow-lg",
-                                        isDone && "bg-emerald-500 text-white border-emerald-500",
-                                        !isActive && !isDone && "bg-surface-container-high text-on-surface-variant border-outline-variant/50",
-                                        stepNum > currentStep && "opacity-40"
-                                    )}>
-                                        {isDone ? <Check className="w-4 h-4" /> : <Icon className="w-4 h-4" />}
-                                    </div>
-                                    <span className={cn(
-                                        "text-[10px] sm:text-[11px] mt-2.5",
-                                        isActive && "text-primary",
-                                        isDone && "text-emerald-600",
-                                        !isActive && !isDone && "text-on-surface-variant/70"
-                                    )}>
-                                        {meta.title}
+                            <React.Fragment key={t}>
+                                <div className={cn('flex flex-col items-center gap-1', !active && !done && 'opacity-40')}>
+                                    <span className={cn('w-8 h-8 rounded-full grid place-items-center text-xs font-black border-2 transition-all',
+                                        active && 'bg-amber-500 text-white border-amber-500 scale-110',
+                                        done && 'bg-emerald-500 text-white border-emerald-500',
+                                        !active && !done && 'bg-surface-container-high text-on-surface-variant border-outline-variant/40')}>
+                                        {done ? <Check className="w-4 h-4" /> : n}
                                     </span>
-                                </button>
-                                {!isLast && (
-                                    <div className="flex-1 flex items-center pt-[18px] px-1 min-w-[12px]">
-                                        <div className={cn(
-                                            "w-full h-[3px] rounded-full",
-                                            isDone ? "bg-emerald-500" : "bg-outline-variant/20"
-                                        )} />
-                                    </div>
-                                )}
+                                    <span className={cn('text-[9px] font-bold',
+                                        active ? 'text-amber-600 dark:text-amber-400' : done ? 'text-emerald-600' : 'text-on-surface-variant/70')}>{t}</span>
+                                </div>
+                                {i < 3 && <div className={cn('flex-1 h-[3px] rounded-full -mt-4', done ? 'bg-emerald-500' : 'bg-outline-variant/30')} />}
                             </React.Fragment>
                         );
                     })}
                 </div>
 
-                <div className="space-y-5">
-                    {/* ═══════════════ مرحله ۱: گروه ═══════════════ */}
-                    {currentStep === 1 && (
-                        <div className="space-y-5 animate-in fade-in duration-200">
-                            {isEditMode && !showCategorySelector && selectedCategoryData ? (
-                                <div className="bg-white p-4 rounded-2xl border border-outline-variant/40 shadow-sm space-y-3">
-                                    <label className="text-sm font-bold text-on-surface flex items-center gap-2">
-                                        <span className="w-7 h-7 rounded-lg bg-primary/10 flex items-center justify-center">
-                                            <Layers className="w-3.5 h-3.5 text-primary" />
-                                        </span>
-                                        دسته‌بندی
-                                    </label>
-                                    <div className="flex items-center justify-between p-3.5 bg-surface-container-low border border-outline-variant/40 rounded-xl">
-                                        <div className="flex items-center gap-2">
-                                            <Package className="w-4 h-4 text-primary" />
-                                            <span className="text-sm font-medium">{selectedCategoryData.title}</span>
-                                            {selectedCategoryData.customCode && (
-                                                <span className="text-[10px] font-mono px-1.5 py-0.5 rounded bg-gray-100 text-gray-500">
-                                                    {selectedCategoryData.customCode}
-                                                </span>
-                                            )}
-                                        </div>
-                                        <button
-                                            type="button"
-                                            onClick={() => setShowCategorySelector(true)}
-                                            className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-primary bg-primary/10 hover:bg-primary/20 transition-colors text-xs font-medium"
-                                        >
-                                            <Edit2 className="w-3.5 h-3.5" />
-                                            تغییر دسته‌بندی
+                {/* ═══ مرحله ۱: کالا ═══ */}
+                {currentStep === 1 && (
+                    <div className="space-y-4 animate-in fade-in duration-200">
+                        <section className="rounded-2xl bg-surface-container-low/60 border border-outline-variant/30 p-4 space-y-3">
+                            <SectionTitle icon={Images} text="تصویر کالا" />
+                            <div className="flex flex-wrap gap-2.5 items-start">
+                                {images.map((slot, idx) => (
+                                    <div key={idx} className="relative w-20 h-20 rounded-xl overflow-hidden border border-outline-variant/40 flex-shrink-0">
+                                        {slot.previewUrl ? (
+                                            // eslint-disable-next-line @next/next/no-img-element
+                                            <img src={slot.previewUrl} alt="" className="w-full h-full object-cover" />
+                                        ) : slot.url ? (
+                                            // eslint-disable-next-line @next/next/no-img-element
+                                            <img src={slot.url} alt="" className="w-full h-full object-cover" />
+                                        ) : null}
+                                        <button type="button" onClick={() => handleRemoveImageSlot(idx)}
+                                                className="absolute top-1 left-1 w-5 h-5 rounded-full bg-black/60 text-white grid place-items-center">
+                                            <X className="w-3 h-3" />
                                         </button>
                                     </div>
-                                </div>
-                            ) : (
-                                <>
-                                    <CategoryGridSelector
-                                        categoryTree={categoryTree || []}
-                                        selectedCategoryId={formData.categoryId}
-                                        onSelect={(categoryId) => {
-                                            setFormData(prev => ({
-                                                ...prev,
-                                                categoryId,
-                                                minQuantity: 0,
-                                                unitPrice: 0,
-                                                singleUnitPrice: 0,
-                                                consumerPrice: 0,
-                                                unitId: '',
-                                                unitTitle: '',
-                                                unitQty: null,
-                                            }));
-                                            if (isEditMode) {
-                                                setShowCategorySelector(false);
-                                            }
-                                        }}
-                                    />
-                                    {isEditMode && showCategorySelector && (
-                                        <button
-                                            type="button"
-                                            onClick={() => setShowCategorySelector(false)}
-                                            className="w-full h-11 rounded-xl border-2 border-outline-variant/40 text-sm text-on-surface-variant hover:bg-surface-container-lowest"
-                                        >
-                                            انصراف
-                                        </button>
-                                    )}
-                                </>
-                            )}
-
-                            {selectedCategoryData && (
-                                <div className="bg-white p-4 rounded-2xl border border-outline-variant/40 shadow-sm space-y-2.5">
-                                    <label className="text-sm font-bold text-on-surface flex items-center gap-2">
-                                        <span className="w-7 h-7 rounded-lg bg-primary/10 flex items-center justify-center">
-                                            <Package className="w-3.5 h-3.5 text-primary" />
-                                        </span>
-                                        عنوان کالا
-                                        <span className="text-error text-xs">*</span>
-                                    </label>
-                                    <input
-                                        type="text"
-                                        maxLength={30}
-                                        value={formData.productType}
-                                        onChange={(e) => setFormData(prev => ({ ...prev, productType: e.target.value }))}
-                                        placeholder="عنوان کوتاه کالا را وارد کنید."
-                                        className="w-full h-12 bg-surface-container-lowest border border-outline/60 px-4 text-sm text-right rounded-xl outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary"
-                                    />
-                                </div>
-                            )}
-
-                            {availableUnits.length > 0 && (
-                                <div className="bg-white p-4 rounded-2xl border border-outline-variant/40 shadow-sm space-y-3">
-                                    <label className="text-sm font-bold text-on-surface flex items-center gap-2">
-                                        <span className="w-7 h-7 rounded-lg bg-amber-100 flex items-center justify-center">
-                                            <Package className="w-3.5 h-3.5 text-amber-600" />
-                                        </span>
-                                        واحد فروش
-                                    </label>
-                                    <div className="space-y-2">
-                                        {availableUnits.map((unit, idx) => {
-                                            const isSelected = formData.unitId === unit.unitId;
-                                            const isEditingQty = isSelected && unit.isVariableQty && formData.isEditingQty;
-                                            return (
-                                                <div key={idx} className={cn(
-                                                    "rounded-xl border transition-all overflow-hidden",
-                                                    isSelected ? "border-primary bg-primary/5" : "border-outline-variant/20 hover:border-primary/30"
-                                                )}>
-                                                    <div
-                                                        role="button"
-                                                        tabIndex={0}
-                                                        onClick={() => {
-                                                            setFormData(prev => ({
-                                                                ...prev,
-                                                                unitId: unit.unitId,
-                                                                unitTitle: unit.unitTitle,
-                                                                unitQty: unit.qty,
-                                                                unitIsVariableQty: unit.isVariableQty,
-                                                                isEditingQty: false,
-                                                            }));
-                                                            if (formData.singleUnitPrice > 0 && unit.qty) {
-                                                                setFormData(prev => ({
-                                                                    ...prev,
-                                                                    unitPrice: Math.round(formData.singleUnitPrice * unit.qty),
-                                                                }));
-                                                            }
-                                                        }}
-                                                        onKeyDown={(e) => {
-                                                            if (e.key === 'Enter' || e.key === ' ') {
-                                                                e.preventDefault();
-                                                                e.currentTarget.click();
-                                                            }
-                                                        }}
-                                                        className="w-full text-right px-4 py-3 flex items-center justify-between gap-2 cursor-pointer"
-                                                    >
-                                                        <div className="flex items-center gap-2 flex-1 min-w-0">
-                                                            <div className={cn(
-                                                                "w-5 h-5 rounded-full border-2 flex items-center justify-center flex-shrink-0",
-                                                                isSelected ? "border-primary bg-primary" : "border-outline-variant/40"
-                                                            )}>
-                                                                {isSelected && <Check className="w-3 h-3 text-white" />}
-                                                            </div>
-                                                            <span className="font-medium text-sm truncate">{unit.unitTitle}</span>
-                                                            {unit.isDefault && (
-                                                                <span className="text-[9px] bg-primary/10 text-primary px-1.5 py-0.5 rounded-full">پیش‌فرض</span>
-                                                            )}
-                                                        </div>
-                                                        <div className="flex items-center gap-1.5 flex-shrink-0">
-                                                            {formData.unitQty != null && isSelected && (
-                                                                <span className="text-[11px] text-on-surface-variant bg-surface-container-high/80 px-2 py-1 rounded-lg">
-                                                                    {formData.unitQty.toLocaleString()} {baseUnitTitle}
-                                                                </span>
-                                                            )}
-                                                            {isSelected && unit.isVariableQty && (
-                                                                <button
-                                                                    type="button"
-                                                                    onClick={(e) => {
-                                                                        e.stopPropagation();
-                                                                        setFormData(prev => ({ ...prev, isEditingQty: !prev.isEditingQty }));
-                                                                    }}
-                                                                    className="p-1.5 hover:bg-primary/10 rounded-lg"
-                                                                    title={`ویرایش تعداد ${baseUnitTitle} در هر ${unit.unitTitle}`}
-                                                                >
-                                                                    <Pencil className="w-3.5 h-3.5" />
-                                                                </button>
-                                                            )}
-                                                        </div>
-                                                    </div>
-
-                                                    {isEditingQty && (
-                                                        <div className="px-4 pb-3 pt-1 border-t border-primary/10 bg-primary/5">
-                                                            <NumberInput
-                                                                value={formData.unitQty || undefined}
-                                                                onChange={(val) => handleUnitQtyChange(val || null)}
-                                                                placeholder={`مثلاً ${unit.qty || 24}`}
-                                                                className="h-10"
-                                                                autoFocus
-                                                            />
-                                                            <p className="text-[10px] text-on-surface-variant/50 mt-1.5">
-                                                                💡 تعداد {baseUnitTitle} در هر {unit.unitTitle}
-                                                            </p>
-                                                        </div>
-                                                    )}
-                                                </div>
-                                            );
-                                        })}
-                                    </div>
-                                </div>
-                            )}
-
-                            {(selectedCategoryData && maxImagesPerAd > 0) && (
-                                <div className="bg-white p-4 rounded-2xl border border-outline-variant/40 shadow-sm space-y-3">
-                                    <label className="text-sm font-bold text-on-surface flex items-center gap-2">
-                                        <span className="w-7 h-7 rounded-lg bg-primary/10 flex items-center justify-center">
-                                            <svg className="w-3.5 h-3.5 text-primary" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
-                                                <rect x="3" y="3" width="18" height="18" rx="2"/><circle cx="8.5" cy="8.5" r="1.5"/><path d="m21 15-5-5L5 21"/>
-                                            </svg>
-                                        </span>
-                                        تصویر محصول
-                                        <span className="text-error text-xs">*</span>
-                                        <span className="text-[10px] font-normal text-on-surface-variant/60 mr-auto">
-                                            {uploadedCount}/{maxImagesPerAd}
-                                        </span>
-                                    </label>
-                                    <div className="flex flex-wrap gap-3 items-start">
-                                        {adImageFiles.map((slot, idx) => (
-                                            <FileUploader
-                                                key={idx}
-                                                model="Ad"
-                                                modelId="temp"
-                                                fieldKey={`ad-image-${idx}`}
-                                                value={slot.id || null}
-                                                previewUrl={slot.previewUrl}
-                                                onFileSelect={(file) => handleSetImageFile(idx, file)}
-                                                onRemove={() => handleRemoveImageSlot(idx)}
-                                                showDeleteBtn={!!slot.id || !!slot.file}
-                                                rounded={false}
-                                                width={80}
-                                                height={80}
-                                                disabled={isSubmitting}
-                                                label={slot.id ? 'تعویض' : 'آپلود'}
-                                            />
-                                        ))}
-                                        {adImageFiles.length < maxImagesPerAd && (
-                                            <button
-                                                type="button"
-                                                onClick={handleAddImageSlot}
-                                                className="w-20 h-20 border-2 border-dashed border-outline-variant/40 rounded-xl flex flex-col items-center justify-center text-on-surface-variant/40 hover:border-primary/50 hover:text-primary/60"
-                                            >
-                                                <Plus className="w-5 h-5" />
-                                                <span className="text-[9px]">افزودن</span>
-                                            </button>
-                                        )}
-                                    </div>
-                                </div>
-                            )}
-                        </div>
-                    )}
-
-                    {/* ═══════════════ مرحله ۲: قیمت ═══════════════ */}
-                    {currentStep === 2 && selectedCategoryData && (
-                        <div className="space-y-4 animate-in fade-in duration-200">
-                            <div className="bg-gradient-to-l from-primary/10 to-primary/5 border border-primary/20 rounded-2xl p-4">
-                                <div className="flex items-center gap-2 text-primary">
-                                    <Package className="w-5 h-5" />
-                                    <h3 className="font-bold text-sm">تعیین قیمت عمده</h3>
-                                </div>
-                            </div>
-
-                            <div className="bg-white rounded-2xl p-4 border border-outline-variant/40 shadow-sm space-y-2.5">
-                                <label className="text-xs font-bold text-on-surface flex items-center gap-1.5">
-                                    <span className="w-5 h-5 rounded-md bg-amber-100 text-amber-700 flex items-center justify-center text-[10px] font-black">۱</span>
-                                    حداقل حجم فروش ({unitName})
-                                    {categoryConstraints.min && categoryConstraints.max
-                                        ? ` بین ${categoryConstraints.min.toLocaleString()} تا ${categoryConstraints.max.toLocaleString()}`
-                                        : categoryConstraints.min
-                                            ? ` حداقل ${categoryConstraints.min.toLocaleString()}`
-                                            : categoryConstraints.max
-                                                ? ` حداکثر ${categoryConstraints.max.toLocaleString()}`
-                                                : ``}
-                                    <span className="text-error text-xs">*</span>
-                                </label>
-                                <NumberInput
-                                    value={formData.minQuantity || undefined}
-                                    onChange={(val) => setFormData(prev => ({ ...prev, minQuantity: val || 0 }))}
-                                    unit={unitName}
-                                    className="w-full h-14 font-extrabold"
-                                />
-                            </div>
-
-                            <div className="bg-white rounded-2xl p-4 border border-outline-variant/40 shadow-sm space-y-2.5">
-                                <label className="text-xs font-bold text-on-surface flex items-center gap-1.5">
-                                    <span className="w-5 h-5 rounded-md bg-blue-100 text-blue-700 flex items-center justify-center text-[10px] font-black">۲</span>
-                                    قیمت تکی (هر {baseUnitTitle})
-                                    <span className="text-error text-xs">*</span>
-                                </label>
-                                <p className="text-[10px] text-gray-400">
-                                    {formData.minQuantity > 0
-                                        ? `قیمت عمده هر ${baseUnitTitle} برای خرید ${formData.minQuantity.toLocaleString('fa-IR')} ${unitName}`
-                                        : `قیمت عمده هر ${baseUnitTitle} را وارد کنید`}
-                                </p>
-                                <NumberInput
-                                    value={formData.singleUnitPrice || undefined}
-                                    onChange={handleSingleUnitPriceChange}
-                                    unit={`${currencyUnit}/${baseUnitTitle}`}
-                                    //placeholder={`قیمت عمده هر ${baseUnitTitle}`}
-                                    className="w-full h-12"
-                                />
-                            </div>
-
-                            <div className="bg-white rounded-2xl p-4 border border-primary/30 ring-1 ring-primary/10 shadow-sm space-y-2.5">
-                                <label className="text-xs font-bold text-on-surface flex items-center gap-1.5">
-                                    <span className="w-5 h-5 rounded-md bg-primary text-white flex items-center justify-center text-[10px] font-black">۳</span>
-                                    قیمت هر {unitName} (واحد فروش عمده)
-                                    <span className="text-error text-xs">*</span>
-                                </label>
-                                <NumberInput
-                                    value={formData.unitPrice || undefined}
-                                    onChange={handleUnitPriceChange}
-                                    unit={currencyUnit}
-                                    className="w-full h-14 text-xl font-extrabold"
-                                />
-                                {formData.singleUnitPrice > 0 && formData.unitQty && (
-                                    <p className="text-[11px] text-primary/80 bg-primary/5 rounded-lg px-3 py-2">
-                                        💡 {formData.singleUnitPrice.toLocaleString('fa-IR')} × {formData.unitQty.toLocaleString('fa-IR')} {baseUnitTitle} = {formData.unitPrice.toLocaleString('fa-IR')} {currencyUnit}
-                                    </p>
-                                )}
-                                {formData.unitQty && !formData.singleUnitPrice && (
-                                    <p className="text-[10px] text-gray-400">
-                                        {formData.unitQty.toLocaleString('fa-IR')} {baseUnitTitle} در هر {unitName}
-                                    </p>
-                                )}
-                            </div>
-
-                            <div className="bg-white rounded-2xl p-4 border border-outline-variant/40 shadow-sm space-y-2.5">
-                                <label className="text-xs font-bold text-on-surface flex items-center gap-1.5">
-                                    <span className="w-5 h-5 rounded-md bg-emerald-100 text-emerald-700 flex items-center justify-center text-[10px] font-black">۴</span>
-                                    موجودی تضمینی انبار ({unitName})
-                                    <span className="text-error text-xs">*</span>
-                                </label>
-                                <NumberInput
-                                    value={formData.availableQuantity || undefined}
-                                    onChange={(val) => setFormData(prev => ({ ...prev, availableQuantity: val || 0 }))}
-                                    unit={unitName}
-                                    className="w-full h-12"
-                                    //placeholder="موجودی تضمینی را وارد کنید"
-                                />
-                            </div>
-
-                            <div className="bg-white rounded-2xl p-4 border border-outline-variant/40 shadow-sm space-y-2.5">
-                                <label className="text-xs font-bold text-on-surface flex items-center gap-1.5">
-                                    <span className="w-5 h-5 rounded-md bg-gray-100 text-gray-600 flex items-center justify-center text-[10px] font-black">۵</span>
-                                    قیمت تکی برای مصرف‌کننده (اختیاری)
-                                </label>
-                                <p className="text-[10px] text-gray-400">
-                                    قیمتی که مصرف‌کننده نهایی در خرده‌فروشی پرداخت می‌کند — برای محاسبه سود خریدار عمده
-                                </p>
-                                <NumberInput
-                                    value={formData.consumerPrice || undefined}
-                                    onChange={(val) => setFormData(prev => ({ ...prev, consumerPrice: val || 0 }))}
-                                    unit={`${currencyUnit}/${baseUnitTitle}`}
-                                    //placeholder={`مثلاً قیمت هر ${baseUnitTitle} برای مصرف‌کننده`}
-                                    className="w-full h-12"
-                                />
-                                {formData.consumerPrice > 0 && formData.singleUnitPrice > 0 && (
-                                    <>
-                                        {formData.consumerPrice < formData.singleUnitPrice ? (
-                                            <p className="text-[11px] text-red-600 bg-red-50 rounded-lg px-3 py-2">
-                                                ⚠️ قیمت مصرف‌کننده از قیمت عمده کمتر است!
-                                                ({formData.consumerPrice.toLocaleString('fa-IR')} {'<'} {formData.singleUnitPrice.toLocaleString('fa-IR')})
-                                            </p>
-                                        ) : (
-                                            <p className="text-[11px] text-emerald-600 bg-emerald-50 rounded-lg px-3 py-2">
-                                                💰 سود خرده فروش یا خریدار عمده از هر {baseUnitTitle}: {(formData.consumerPrice - formData.singleUnitPrice).toLocaleString('fa-IR')} {currencyUnit}
-                                            </p>
-                                        )}
-                                    </>
-                                )}
-                            </div>
-                        </div>
-                    )}
-
-                    {/* ═══════════════ مرحله ۳: موقعیت ═══════════════ */}
-                    {currentStep === 3 && (
-                        <div className="space-y-4 animate-in fade-in duration-200">
-                            <div className="bg-white p-4 rounded-2xl border border-outline-variant/40 shadow-sm space-y-2.5">
-                                <label className="text-sm font-bold text-on-surface flex items-center gap-2">
-                                    <span className="w-7 h-7 rounded-lg bg-rose-100 flex items-center justify-center">
-                                        <MapPin className="w-3.5 h-3.5 text-rose-600" />
-                                    </span>
-                                    محل کالا
-                                    <span className="text-error text-xs">*</span>
-                                </label>
-
-                                {hasSingleCity ? (
-                                    <div className="flex items-center gap-2.5 p-3.5 bg-surface-container-low border border-outline-variant/40 rounded-xl text-sm">
-                                        <MapPin className="w-4 h-4 text-primary flex-shrink-0" />
-                                        <span>{singleCityData?.city.title}</span>
-                                    </div>
-                                ) : (
-                                    <ArmLocationSelector
-                                        provinceCode={formData.provinceCode}
-                                        cityCode={formData.cityCode}
-                                        onProvinceChange={(code, label) =>
-                                            setFormData(prev => ({ ...prev, provinceCode: code, provinceLabel: label, cityCode: '', cityLabel: '' }))
-                                        }
-                                        onCityChange={(code, label) =>
-                                            setFormData(prev => ({ ...prev, cityCode: code, cityLabel: label }))
-                                        }
-                                    />
-                                )}
-                            </div>
-
-                            <div className="bg-white p-4 rounded-2xl border border-outline-variant/40 shadow-sm space-y-2.5">
-                                <label className="text-sm font-bold text-on-surface flex items-center gap-2">
-                                    <span className="w-7 h-7 rounded-lg bg-purple-100 flex items-center justify-center">
-                                        <FileText className="w-3.5 h-3.5 text-purple-600" />
-                                    </span>
-                                    توضیحات
-                                    <span className="text-xs text-on-surface-variant/60">(اختیاری)</span>
-                                </label>
-                                <textarea
-                                    value={formData.description}
-                                    onChange={(e) => setFormData(prev => ({ ...prev, description: e.target.value }))}
-                                    rows={3}
-                                    placeholder="توضیحات تکمیلی"
-                                    className="w-full border border-outline/60 px-4 py-3 rounded-xl resize-none outline-none focus:ring-2 focus:ring-primary/20"
-                                />
-                            </div>
-
-                            <div className="bg-white p-4 rounded-2xl border border-outline-variant/40 shadow-sm space-y-2.5">
-                                <label className="text-sm font-bold text-on-surface flex items-center gap-2">
-                                    <span className="w-7 h-7 rounded-lg bg-blue-100 flex items-center justify-center">
-                                        <Clock className="w-3.5 h-3.5 text-blue-600" />
-                                    </span>
-                                    مدت اعتبار قیمت
-                                </label>
-                                <div className="grid grid-cols-3 gap-2">
-                                    {validityOptions.map(opt => (
-                                        <button
-                                            key={opt.value}
-                                            type="button"
-                                            onClick={() => setFormData(prev => ({ ...prev, validityHours: opt.value }))}
-                                            className={cn(
-                                                "h-12 rounded-xl text-sm font-medium border-2 transition-all",
-                                                formData.validityHours === opt.value
-                                                    ? "border-primary bg-primary/10 text-primary font-bold"
-                                                    : "border-outline-variant/40 hover:border-primary/30"
-                                            )}
-                                        >
-                                            {opt.label}
-                                        </button>
-                                    ))}
-                                </div>
-                                <p className="text-xs text-on-surface-variant">
-                                    آگهی شما تا {formData.validityHours} ساعت روی تابلو می‌ماند.
-                                </p>
-                            </div>
-                        </div>
-                    )}
-
-                    {/* ═══════════════ مرحله ۴: انتشار ═══════════════ */}
-                    {currentStep === 4 && (
-                        <div className="space-y-4 animate-in fade-in duration-200">
-                            {/* ✅ نمایش هزینه‌ها اگر وجود داشته باشد */}
-                            {!isEditMode && needsCredit && (
-                                <div className="bg-amber-50 border border-amber-200 rounded-2xl p-4 space-y-3">
-                                    <div className="flex items-center gap-2 text-amber-800">
-                                        <Info className="w-4 h-4" />
-                                        <span className="text-xs font-bold">هزینه‌های این آگهی</span>
-                                    </div>
-                                    <div className="space-y-2 text-xs">
-                                        {hasReachedActiveLimit && (
-                                            <div className="flex items-center justify-between">
-                                                <span className="text-amber-700">آگهی اضافه روی تابلو (روز):</span>
-                                                <span className="font-bold">{extraActiveAdCostPerDay.toLocaleString('fa-IR')} اعتبار</span>
-                                            </div>
-                                        )}
-                                        {hasReachedTotalLimit && (
-                                            <div className="flex items-center justify-between">
-                                                <span className="text-amber-700">آگهی اضافه (بیش از سهمیه کل، ماهیانه):</span>
-                                                <span className="font-bold">{adCreationCost.toLocaleString('fa-IR')} اعتبار</span>
-                                            </div>
-                                        )}
-                                        {formData.isBumped && (
-                                            <div className="flex items-center justify-between">
-                                                <span className="text-amber-700">نردبان:</span>
-                                                <span className="font-bold">{totalBumpCost.toLocaleString('fa-IR')} اعتبار</span>
-                                            </div>
-                                        )}
-                                        <div className="border-t border-amber-200 pt-2 flex items-center justify-between">
-                                            <span className="text-amber-800 font-bold">مجموع:</span>
-                                            <span className="font-extrabold text-amber-900">{totalCostWithBump.toLocaleString('fa-IR')} اعتبار</span>
-                                        </div>
-                                        <div className="flex items-center justify-between text-[10px]">
-                                            <span className="text-amber-600">موجودی فعلی:</span>
-                                            <span className={cn(
-                                                "font-bold",
-                                                (creditBalance?.balance ?? 0) >= totalCostWithBump ? 'text-emerald-600' : 'text-red-600'
-                                            )}>
-                                                {creditBalance?.balance ?? 0} اعتبار
-                                            </span>
-                                        </div>
-                                    </div>
-                                </div>
-                            )}
-
-                            {/* نردبان */}
-                            <div className="bg-white rounded-2xl border border-outline-variant/40 shadow-sm overflow-hidden">
-                                {isBumpActive ? (
-                                    <div className="p-4 bg-blue-50/50 border-blue-200/60 text-blue-700">
-                                        <div className="flex items-center gap-3">
-                                            <TrendingUp className="w-5 h-5 text-blue-600" />
-                                            <div>
-                                                <span className="text-sm font-bold block">نردبان فعال است</span>
-                                                <span className="text-xs text-blue-600/70">
-                                                    این آگهی تا تاریخ <span className="font-medium">{bumpExpiresAtLabel}</span> در حال نردبان است.
-                                                </span>
-                                            </div>
-                                        </div>
-                                    </div>
-                                ) : (
-                                    <>
-                                        <div className="flex items-center justify-between p-4 border-b border-outline-variant/10">
-                                            <div className="flex items-center gap-3">
-                                                <span className="w-10 h-10 rounded-xl bg-gradient-to-br from-amber-400 to-orange-500 flex items-center justify-center shadow-sm shadow-amber-500/20">
-                                                    <TrendingUp className="w-5 h-5 text-white" />
-                                                </span>
-                                                <div>
-                                                    <span className="text-sm font-bold text-on-surface block">نردبان (بالاترین نمایش)</span>
-                                                    <span className="text-[11px] text-on-surface-variant/70">
-                                                        هر ۲۴ ساعت {bumpCost} اعتبار
-                                                        {formData.isBumped && bumpOptions.length > 0 && ` • ${totalBumpCost} اعتبار`}
-                                                    </span>
-                                                </div>
-                                            </div>
-                                            <label className="relative inline-flex items-center cursor-pointer flex-shrink-0">
-                                                <input type="checkbox" checked={formData.isBumped}
-                                                       onChange={(e) => {
-                                                           const willEnable = e.target.checked;
-                                                           setFormData(prev => ({ ...prev, isBumped: willEnable }));
-                                                           if (willEnable) {
-                                                               const maxAllowed = parseInt(formData.validityHours);
-                                                               setBumpDurationHours(maxAllowed);
-
-                                                               // ✅ بررسی اعتبار کافی
-                                                               const totalCost = totalCreationCost + (bumpCost * (maxAllowed / 24));
-                                                               const currentBalance = creditBalance?.balance ?? 0;
-
-                                                               if (currentBalance < totalCost) {
-                                                                   toast.warning(
-                                                                       'اعتبار شما برای نردبان کردن کافی نیست. فعلاً می‌توانید آگهی را به‌صورت عادی ثبت کنید، سپس با خرید اعتبار از قسمت ویرایش آن را نردبان کنید.',
-                                                                       { duration: 6000 }
-                                                                   );
-                                                                   // ✅ تیک نردبان را بردار
-                                                                   setFormData(prev => ({ ...prev, isBumped: false }));
-                                                               } else {
-                                                                   toast.info(`نردبان فعال شد. مدت: ${maxAllowed} ساعت، هزینه: ${totalBumpCost} اعتبار`, { duration: 4000 });
-                                                               }
-                                                           }
-                                                       }}
-
-                                                       className="sr-only peer" />
-                                                <div className="w-12 h-7 bg-gray-200 peer-focus:outline-none peer-focus:ring-2 peer-focus:ring-primary/20 rounded-full peer
-                                                    after:content-[''] after:absolute after:top-[3px] after:right-[3px]
-                                                    after:bg-white after:rounded-full after:h-[22px] after:w-[22px] after:transition-all after:shadow-sm
-                                                    peer-checked:bg-primary peer-checked:after:-translate-x-full" />
-                                            </label>
-                                        </div>
-                                        {formData.isBumped && bumpOptions.length > 1 && (
-                                            <div className="p-4 bg-amber-50/20 border-t border-amber-200/10">
-                                                <label className="text-xs font-medium text-on-surface-variant mb-2 block">مدت زمان نردبان:</label>
-                                                <div className="flex gap-2">
-                                                    {bumpOptions.map(hours => (
-                                                        <button
-                                                            key={hours}
-                                                            type="button"
-                                                            onClick={() => setBumpDurationHours(hours)}
-                                                            className={cn(
-                                                                "flex-1 py-2 rounded-lg text-sm font-medium border-2 transition-all",
-                                                                bumpDurationHours === hours
-                                                                    ? "border-primary bg-primary/10 text-primary"
-                                                                    : "border-outline-variant/30 text-on-surface-variant hover:border-primary/30"
-                                                            )}
-                                                        >
-                                                            {hours} ساعت
-                                                        </button>
-                                                    ))}
-                                                </div>
-                                            </div>
-                                        )}
-                                        {formData.isBumped && (
-                                            <div className="mx-4 mb-4 bg-amber-50 border border-amber-200/60 rounded-xl p-3 flex items-start gap-2.5">
-                                                <TrendingUp className="w-4 h-4 text-amber-600 mt-0.5 flex-shrink-0" />
-                                                <div className="text-xs text-amber-800/80 space-y-1">
-                                                    <p><span className="font-bold">{totalBumpCost}</span> اعتبار از حساب شما کسر خواهد شد.</p>
-                                                    {creditBalance && (creditBalance.balance < totalBumpCost) && (
-                                                        <p className="text-red-600 font-bold">
-                                                            ⚠️ اعتبار شما برای نردبان کافی نیست. می‌توانید آگهی را عادی ثبت کنید و بعداً از بخش ویرایش نردبان کنید.
-                                                        </p>
-                                                    )}
-                                                </div>
-                                            </div>
-                                        )}
-                                    </>
-                                )}
-                            </div>
-
-                            {allowAnonymousPublishing && (
-                                <div className="bg-white rounded-2xl border border-outline-variant/40 shadow-sm overflow-hidden">
-                                    <div className="flex items-center justify-between p-4">
-                                        <div className="flex items-center gap-3">
-                                            <span className="w-10 h-10 rounded-xl bg-gradient-to-br from-slate-400 to-slate-600 flex items-center justify-center shadow-sm shadow-slate-500/20">
-                                                <svg className="w-5 h-5 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>
-                                            </span>
-                                            <div>
-                                                <span className="text-sm font-bold text-on-surface block">انتشار ناشناس</span>
-                                            </div>
-                                        </div>
-                                        <label className="relative inline-flex items-center cursor-pointer flex-shrink-0">
-                                            <input
-                                                type="checkbox"
-                                                checked={formData.isAnonymous}
-                                                onChange={(e) => setFormData(prev => ({ ...prev, isAnonymous: e.target.checked }))}
-                                                className="sr-only peer"
-                                            />
-                                            <div className="w-12 h-7 bg-gray-200 peer-focus:outline-none peer-focus:ring-2 peer-focus:ring-primary/20 rounded-full peer
-                                                after:content-[''] after:absolute after:top-[3px] after:right-[3px]
-                                                after:bg-white after:rounded-full after:h-[22px] after:w-[22px] after:transition-all after:shadow-sm
-                                                peer-checked:bg-primary peer-checked:after:-translate-x-full" />
-                                        </label>
-                                    </div>
-                                    {formData.isAnonymous && (
-                                        <div className="px-4 pb-4">
-                                            <div className="p-3 bg-surface-container-low/60 rounded-xl border border-outline-variant/20 text-xs text-on-surface-variant leading-relaxed">
-                                                کسی نمی‌داند این قیمت برای شماست. مگر آنکه تماس بگیرد.
-                                            </div>
-                                        </div>
-                                    )}
-                                </div>
-                            )}
-
-                            <div className="bg-surface-container-low rounded-2xl p-4 flex flex-col gap-1.5">
-                                <div className="flex items-center gap-3">
-                                    <span className="w-9 h-9 rounded-xl bg-primary/10 flex items-center justify-center">
-                                        <svg className="w-4 h-4 text-primary" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}><rect x="1" y="4" width="22" height="16" rx="2"/><line x1="1" y1="10" x2="23" y2="10"/></svg>
-                                    </span>
-                                    <div className="text-sm">
-                                        <span className="text-on-surface-variant">اعتبار فعلی:</span>{' '}
-                                        <span className="font-bold text-on-surface">{creditBalance?.balance ?? '—'}</span>
-                                    </div>
-                                </div>
-                                {remainingActiveSlots > 0 && remainingTotalSlots > 0 && !isEditMode && (
-                                    <div className="flex items-center gap-3 text-emerald-600 bg-emerald-50/50 px-3 py-1.5 rounded-lg border border-emerald-200/50">
-                                        <span className="text-[10px] font-medium">🎁 {Math.min(remainingActiveSlots, remainingTotalSlots)} آگهی رایگان باقیمانده</span>
-                                    </div>
-                                )}
-                                {hasReachedActiveLimit && (
-                                    <div className="flex items-center gap-3 text-amber-600 bg-amber-50/50 px-3 py-1.5 rounded-lg border border-amber-200/50">
-                                        <span className="text-[10px] font-medium">
-                                            ⚠️ سهمیه آگهی فعال پر است. هر آگهی جدید {extraActiveAdCostPerDay.toLocaleString('fa-IR')} اعتبار در ماه مصرف می‌کند.
-                                        </span>
-                                    </div>
-                                )}
-                                {hasReachedTotalLimit && !hasReachedActiveLimit && (
-                                    <div className="flex items-center gap-3 text-amber-600 bg-amber-50/50 px-3 py-1.5 rounded-lg border border-amber-200/50">
-                                        <span className="text-[10px] font-medium">
-                                            ⚠️ سهمیه کل آگهی‌های شما پر شده است. هر آگهی جدید {adCreationCost.toLocaleString('fa-IR')} اعتبار در ماه مصرف می‌کند.
-                                        </span>
-                                    </div>
-                                )}
-                            </div>
-                        </div>
-                    )}
-
-                    {/* ═══════════════ مرحله ۵: جزئیات تکمیلی (فقط ویرایش) ═══════════════ */}
-                    {isEditMode && currentStep === 5 && (
-                        <div className="space-y-4 animate-in fade-in duration-200">
-                            <SpecsSection
-                                specs={specs}
-                                setSpecs={setSpecs}
-                                enabled={specsEnabled}
-                                setEnabled={setSpecsEnabled}
-                            />
-                            <PaymentMethodsSection
-                                paymentMethods={paymentMethods}
-                                setPaymentMethods={setPaymentMethods}
-                            />
-                        </div>
-                    )}
-
-                    {/* ═══════════════ مرحله آخر: بررسی نهایی ═══════════════ */}
-                    {currentStep === TOTAL_STEPS && (
-                        <div className="space-y-4 animate-in fade-in duration-200">
-                            <div className="bg-gradient-to-l from-emerald-500/10 to-emerald-500/5 border border-emerald-500/20 rounded-2xl p-4 flex items-center gap-3">
-                                <span className="w-10 h-10 rounded-xl bg-emerald-500 flex items-center justify-center shadow-sm shadow-emerald-500/30">
-                                    <ClipboardCheck className="w-5 h-5 text-white" />
-                                </span>
-                                <div>
-                                    <h3 className="font-bold text-sm text-emerald-800">اطلاعات را بررسی کنید</h3>
-                                    <p className="text-[11px] text-emerald-700/70">پس از تأیید، آگهی منتشر خواهد شد.</p>
-                                </div>
-                            </div>
-
-                            {/* خلاصه هزینه‌ها */}
-                            {!isEditMode && needsCredit && (
-                                <div className="bg-amber-50 border border-amber-200 rounded-2xl p-4 space-y-2">
-                                    <div className="flex items-center gap-2 text-amber-800">
-                                        <Info className="w-4 h-4" />
-                                        <span className="text-xs font-bold">هزینه‌های این آگهی</span>
-                                    </div>
-                                    <div className="space-y-1 text-xs text-amber-700">
-                                        {hasReachedActiveLimit && <p>• آگهی اضافه روی تابلو: {extraActiveAdCostPerDay.toLocaleString('fa-IR')} اعتبار/ماه</p>}
-                                        {hasReachedTotalLimit && <p>• آگهی اضافه (بیش از سهمیه کل): {adCreationCost.toLocaleString('fa-IR')} اعتبار/ماه</p>}
-                                        {formData.isBumped && <p>• نردبان: {totalBumpCost.toLocaleString('fa-IR')} اعتبار</p>}
-                                        <p className="font-bold text-amber-900 border-t border-amber-200 pt-2">مجموع: {totalCostWithBump.toLocaleString('fa-IR')} اعتبار</p>
-                                    </div>
-                                </div>
-                            )}
-
-                            {/* سایر بخش‌های بررسی */}
-                            <div className="bg-white rounded-2xl border border-outline-variant/40 shadow-sm overflow-hidden">
-                                <button type="button" onClick={() => goToStep(1)}
-                                        className="w-full flex items-center justify-between p-4 hover:bg-surface-container-lowest/50 transition-colors">
-                                    <span className="text-sm font-bold text-on-surface flex items-center gap-2">
-                                        <Layers className="w-4 h-4 text-primary" /> دسته‌بندی و کالا
-                                    </span>
-                                    <Edit2 className="w-3.5 h-3.5 text-primary/50" />
-                                </button>
-                                <div className="px-4 pb-4 space-y-1.5 border-t border-outline-variant/20 pt-3">
-                                    <div className="flex justify-between text-xs">
-                                        <span className="text-on-surface-variant">دسته‌بندی</span>
-                                        <span className="font-medium text-on-surface">{selectedCategoryData?.title || '---'}</span>
-                                    </div>
-                                    <div className="flex justify-between text-xs">
-                                        <span className="text-on-surface-variant">عنوان کالا</span>
-                                        <span className="font-medium text-on-surface">{formData.productType || '---'}</span>
-                                    </div>
-                                    <div className="flex justify-between text-xs">
-                                        <span className="text-on-surface-variant">تصاویر</span>
-                                        <span className="font-medium text-on-surface">{uploadedCount > 0 ? `${uploadedCount} عدد` : 'بدون تصویر'}</span>
-                                    </div>
-                                </div>
-                            </div>
-
-                            <div className="bg-white rounded-2xl border border-outline-variant/40 shadow-sm overflow-hidden">
-                                <button type="button" onClick={() => goToStep(2)}
-                                        className="w-full flex items-center justify-between p-4 hover:bg-surface-container-lowest/50 transition-colors">
-                                    <span className="text-sm font-bold text-on-surface flex items-center gap-2">
-                                        <Package className="w-4 h-4 text-primary" /> قیمت و حجم
-                                    </span>
-                                    <Edit2 className="w-3.5 h-3.5 text-primary/50" />
-                                </button>
-                                <div className="px-4 pb-4 space-y-1.5 border-t border-outline-variant/20 pt-3">
-                                    <div className="flex justify-between text-xs">
-                                        <span className="text-on-surface-variant">حداقل حجم</span>
-                                        <span className="font-medium text-on-surface">{formData.minQuantity.toLocaleString()} {unitName}</span>
-                                    </div>
-                                    <div className="flex justify-between text-xs">
-                                        <span className="text-on-surface-variant">قیمت هر {unitName}</span>
-                                        <span className="font-bold text-primary">{formData.unitPrice.toLocaleString()} {currencyUnit}</span>
-                                    </div>
-                                    <div className="flex justify-between text-xs">
-                                        <span className="text-on-surface-variant">موجودی</span>
-                                        <span className="font-medium text-on-surface">{formData.availableQuantity.toLocaleString()} {unitName}</span>
-                                    </div>
-                                    {formData.consumerPrice > 0 && (
-                                        <div className="flex justify-between text-xs">
-                                            <span className="text-on-surface-variant">قیمت مصرف‌کننده</span>
-                                            <span className="font-medium text-on-surface">{formData.consumerPrice.toLocaleString()} {currencyUnit}</span>
-                                        </div>
-                                    )}
-                                </div>
-                            </div>
-
-                            <div className="bg-white rounded-2xl border border-outline-variant/40 shadow-sm overflow-hidden">
-                                <button type="button" onClick={() => goToStep(3)}
-                                        className="w-full flex items-center justify-between p-4 hover:bg-surface-container-lowest/50 transition-colors">
-                                    <span className="text-sm font-bold text-on-surface flex items-center gap-2">
-                                        <MapPin className="w-4 h-4 text-primary" /> موقعیت و زمان
-                                    </span>
-                                    <Edit2 className="w-3.5 h-3.5 text-primary/50" />
-                                </button>
-                                <div className="px-4 pb-4 space-y-1.5 border-t border-outline-variant/20 pt-3">
-                                    <div className="flex justify-between text-xs">
-                                        <span className="text-on-surface-variant">شهر</span>
-                                        <span className="font-medium text-on-surface">{formData.cityLabel || singleCityData?.city.title || '---'}</span>
-                                    </div>
-                                    <div className="flex justify-between text-xs">
-                                        <span className="text-on-surface-variant">اعتبار قیمت</span>
-                                        <span className="font-medium text-on-surface">{formData.validityHours} ساعت</span>
-                                    </div>
-                                </div>
-                            </div>
-
-                            <div className="bg-white rounded-2xl border border-outline-variant/40 shadow-sm overflow-hidden">
-                                <button type="button" onClick={() => goToStep(4)}
-                                        className="w-full flex items-center justify-between p-4 hover:bg-surface-container-lowest/50 transition-colors">
-                                    <span className="text-sm font-bold text-on-surface flex items-center gap-2">
-                                        <Settings className="w-4 h-4 text-primary" /> تنظیمات انتشار
-                                    </span>
-                                    <Edit2 className="w-3.5 h-3.5 text-primary/50" />
-                                </button>
-                                <div className="px-4 pb-4 space-y-1.5 border-t border-outline-variant/20 pt-3">
-                                    <div className="flex justify-between text-xs items-center">
-                                        <span className="text-on-surface-variant">نردبان</span>
-                                        {formData.isBumped ? (
-                                            <span className="font-bold text-amber-600 bg-amber-50 px-2.5 py-0.5 rounded-full text-[10px]">
-                                                فعال ({bumpDurationHours} ساعت − {totalBumpCost} اعتبار)
-                                            </span>
-                                        ) : (
-                                            <span className="text-on-surface-variant/50">غیرفعال</span>
-                                        )}
-                                    </div>
-                                    <div className="flex justify-between text-xs items-center">
-                                        <span className="text-on-surface-variant">انتشار ناشناس</span>
-                                        {formData.isAnonymous ? (
-                                            <span className="font-bold text-slate-600 bg-slate-100 px-2.5 py-0.5 rounded-full text-[10px]">فعال</span>
-                                        ) : (
-                                            <span className="text-on-surface-variant/50">غیرفعال</span>
-                                        )}
-                                    </div>
-                                </div>
-                            </div>
-
-                            {isEditMode && (
-                                <div className="bg-white rounded-2xl border border-outline-variant/40 shadow-sm overflow-hidden">
-                                    <button type="button" onClick={() => goToStep(5)}
-                                            className="w-full flex items-center justify-between p-4 hover:bg-surface-container-lowest/50 transition-colors">
-                                        <span className="text-sm font-bold text-on-surface flex items-center gap-2">
-                                            <CreditCard className="w-4 h-4 text-primary" /> جزئیات تکمیلی
-                                        </span>
-                                        <Edit2 className="w-3.5 h-3.5 text-primary/50" />
+                                ))}
+                                {images.length < MAX_IMAGES && (
+                                    <button type="button" onClick={() => imageInputRef.current?.click()}
+                                            className="w-20 h-20 rounded-xl border-2 border-dashed border-outline-variant/50
+                                                flex flex-col items-center justify-center gap-1 text-on-surface-variant/60
+                                                hover:border-amber-500/50 hover:text-amber-500 transition-colors">
+                                        <Camera className="w-5 h-5" />
+                                        <span className="text-[9px] font-bold">عکس</span>
                                     </button>
-                                    <div className="px-4 pb-4 space-y-1.5 border-t border-outline-variant/20 pt-3">
-                                        <div className="flex justify-between text-xs">
-                                            <span className="text-on-surface-variant">مشخصات فنی</span>
-                                            {Object.keys(specs).length > 0 ? (
-                                                <span className="font-medium text-on-surface">
-                                                    {Object.keys(specs).length} ویژگی
-                                                </span>
-                                            ) : (
-                                                <span className="text-on-surface-variant/50">ثبت نشده</span>
-                                            )}
-                                        </div>
-                                        <div className="flex justify-between text-xs">
-                                            <span className="text-on-surface-variant">روش‌های پرداخت</span>
-                                            {paymentMethods.enabled ? (
-                                                <span className="font-medium text-on-surface">
-                                                    {paymentMethods.cheque.enabled && 'چکی '}
-                                                    {paymentMethods.installment.enabled && 'اقساطی'}
-                                                </span>
-                                            ) : (
-                                                <span className="text-on-surface-variant/50">ثبت نشده</span>
-                                            )}
-                                        </div>
-                                    </div>
+                                )}
+                                <input ref={imageInputRef} type="file" accept="image/*" className="hidden"
+                                       onChange={(e) => { handleImageSelected(e.target.files?.[0] ?? null); e.target.value = ''; }} />
+                            </div>
+                            <p className="text-[10px] text-on-surface-variant/60">اولین عکس، عکس اصلی کارت می‌شود — تا {MAX_IMAGES} عکس</p>
+                        </section>
+
+                        <section className="rounded-2xl bg-surface-container-low/60 border border-outline-variant/30 p-4 space-y-3">
+                            <SectionTitle icon={Store} text="کاتالوگ" />
+                            <div className="flex items-center gap-2.5 h-11 px-3.5 rounded-xl bg-amber-50/60 dark:bg-amber-900/10
+                                border border-amber-200/50 dark:border-amber-800/40">
+                                <Store className="w-4 h-4 text-amber-600 dark:text-amber-400 flex-shrink-0" />
+                                <span className="text-sm font-bold text-on-surface truncate flex-1">{selectedCatalog.name}</span>
+                            </div>
+                        </section>
+
+                        <section className="rounded-2xl bg-surface-container-low/60 border border-outline-variant/30 p-4 space-y-3">
+                            <SectionTitle icon={Tag} text="کالا" />
+                            {hasCategoryTree && (
+                                <CategoryPicker
+                                    value={formData.categoryId}
+                                    onChange={(id) => setFormData((p) => ({ ...p, categoryId: id, unitId: '', unitTitle: '', unitQty: null }))}
+                                    tree={categoryTree}
+                                />
+                            )}
+                            <div className="space-y-1.5">
+                                <label className="text-xs font-medium text-on-surface block">
+                                    عنوان کالا <span className="text-primary">*</span>
+                                </label>
+                                <input type="text" maxLength={60} value={formData.productType}
+                                       onChange={(e) => setFormData((p) => ({ ...p, productType: e.target.value }))}
+                                       placeholder="مثال: ماکارونی فرمی ۵۰۰ گرمی" className={inputCls()} />
+                            </div>
+                        </section>
+
+                        <section className="rounded-2xl bg-surface-container-low/60 border border-outline-variant/30 p-4 space-y-3">
+                            <div className="flex items-center justify-between">
+                                <SectionTitle icon={Package} text="واحد فروش" />
+                                <button type="button" onClick={() => setUnitModalOpen(true)}
+                                        className="text-[10px] font-bold text-amber-600 dark:text-amber-400
+                                            flex items-center gap-1 hover:gap-1.5 transition-all">
+                                    <Plus className="w-3 h-3" /> واحدهای اختصاصی کاتالوگ
+                                </button>
+                            </div>
+
+                            {(localUnitSettings.length > 0 || suggestedUnitIds.length > 0) && (
+                                <div className="flex flex-wrap gap-1.5">
+                                    {localUnitSettings.map((s) => {
+                                        const u = allUnits.find((x: any) => x.id === s.unitId);
+                                        if (!u) return null;
+                                        const isSelected = formData.unitId === u.id;
+                                        return (
+                                            <button key={s.unitId} type="button" onClick={() => selectUnit(u.id, u.title)}
+                                                    className={cn('h-8 px-3 rounded-full text-[11px] font-bold border transition-colors flex items-center gap-1',
+                                                        isSelected ? 'bg-amber-500 border-amber-500 text-white' : 'border-outline-variant/50 text-on-surface-variant hover:border-amber-500/50')}>
+                                                {u.title}{s.containsQty ? ` (${s.containsQty} عددی)` : ''}
+                                            </button>
+                                        );
+                                    })}
+                                    {suggestedUnitIds.filter((uid) => !localUnitSettings.some((s) => s.unitId === uid)).map((uid) => {
+                                        const u = allUnits.find((x: any) => x.id === uid);
+                                        if (!u) return null;
+                                        const isSelected = formData.unitId === u.id;
+                                        return (
+                                            <button key={uid} type="button" onClick={() => selectUnit(u.id, u.title)}
+                                                    className={cn('h-8 px-3 rounded-full text-[11px] font-bold border transition-colors flex items-center gap-1',
+                                                        isSelected ? 'bg-amber-500 border-amber-500 text-white' : 'border-outline-variant/50 text-on-surface-variant hover:border-amber-500/50')}>
+                                                {u.title}
+                                                <span className="text-[8px] opacity-70">این دسته</span>
+                                            </button>
+                                        );
+                                    })}
                                 </div>
                             )}
-                        </div>
-                    )}
-                </div>
 
-                {/* دکمه‌های ناوبری */}
-                <div className="flex flex-row-reverse items-center justify-between pt-6 mt-2 border-t border-outline-variant/20">
+                            <DropSelector
+                                label="واحد فروش"
+                                value={formData.unitId}
+                                options={unitOptions}
+                                placeholder="انتخاب واحد…"
+                                onChange={(val, opt) => selectUnit(val, opt.label)}
+                                renderOption={(o) => (
+                                    <span className="flex items-center gap-1.5 text-xs text-on-surface">
+                                        {o.label}
+                                        {o.extra?.catQty != null && (
+                                            <span className="text-[8px] px-1.5 py-0.5 rounded-full bg-amber-100 text-amber-700 dark:bg-amber-900/40 dark:text-amber-400">
+                                                {o.extra.catQty} عددی
+                                            </span>
+                                        )}
+                                        {o.extra?.suggested && o.extra?.catQty == null && (
+                                            <span className="text-[8px] px-1.5 py-0.5 rounded-full bg-amber-100 text-amber-700 dark:bg-amber-900/40 dark:text-amber-400">این دسته</span>
+                                        )}
+                                    </span>
+                                )}
+                            />
+
+                            {formData.unitQty != null && (
+                                <div className="space-y-1.5">
+                                    <label className="text-[11px] font-bold text-on-surface-variant flex items-center gap-1.5">
+                                        <Pencil className="w-3 h-3 text-amber-500" />
+                                        تعداد {baseUnitTitle} در هر {unitName}
+                                        {!formData.unitIsVariableQty && <span className="text-[9px] text-on-surface-variant/50">(ثابت)</span>}
+                                    </label>
+                                    {formData.unitIsVariableQty ? (
+                                        <NumberInput value={formData.unitQty || undefined}
+                                                     onChange={(val) => handleUnitQtyChange(val || null)}
+                                                     unit={baseUnitTitle} className="h-10" />
+                                    ) : (
+                                        <p className="text-xs font-bold text-on-surface bg-surface-container-high/60 px-3 py-2 rounded-lg">
+                                            {formData.unitQty.toLocaleString('fa-IR')} {baseUnitTitle}
+                                        </p>
+                                    )}
+                                </div>
+                            )}
+                        </section>
+                    </div>
+                )}
+
+                {/* ═══ مرحله ۲: قیمت — دو شکلی ═══ */}
+                {currentStep === 2 && (
+                    <div className="space-y-4 animate-in fade-in duration-200">
+                        <div className="rounded-2xl border border-amber-300/40 bg-amber-50 dark:border-amber-800/50 dark:bg-amber-900/10 p-4 flex items-center gap-2.5">
+                            <Package className="w-5 h-5 text-amber-600 dark:text-amber-400" />
+                            <h3 className="text-sm font-bold text-amber-800 dark:text-amber-300">
+                                {isWholesale ? 'تعیین قیمت عمده' : 'تعیین قیمت فروش'}
+                            </h3>
+                        </div>
+
+                        {isWholesale ? (
+                            <>
+                                <section className="rounded-2xl bg-surface-container-low/60 border border-outline-variant/30 p-4 space-y-2.5">
+                                    <label className="text-xs font-bold text-on-surface flex items-center gap-1.5">
+                                        <StepBadge n={1} /> حداقل حجم فروش ({unitName}) <span className="text-error">*</span>
+                                    </label>
+                                    <NumberInput value={formData.minQuantity || undefined}
+                                                 onChange={(val) => setFormData((p) => ({ ...p, minQuantity: val || 0 }))}
+                                                 unit={unitName} className="w-full h-14 font-extrabold" />
+                                </section>
+                                <section className="rounded-2xl bg-surface-container-low/60 border border-outline-variant/30 p-4 space-y-2.5">
+                                    <label className="text-xs font-bold text-on-surface flex items-center gap-1.5">
+                                        <StepBadge n={2} /> قیمت تکی (هر {baseUnitTitle}) <span className="text-error">*</span>
+                                    </label>
+                                    <p className="text-[10px] text-on-surface-variant/60">
+                                        قیمت عمده هر {baseUnitTitle} برای خرید {formData.minQuantity.toLocaleString('fa-IR')} {unitName}
+                                    </p>
+                                    <NumberInput value={formData.singleUnitPrice || undefined}
+                                                 onChange={handleSingleUnitPriceChange}
+                                                 unit={`${CURRENCY}/${baseUnitTitle}`} className="w-full h-12" />
+                                </section>
+                                <section className="rounded-2xl bg-surface-container-low/60 border border-amber-500/30 p-4 space-y-2.5">
+                                    <label className="text-xs font-bold text-on-surface flex items-center gap-1.5">
+                                        <StepBadge n={3} /> قیمت هر {unitName} (واحد فروش عمده) <span className="text-error">*</span>
+                                    </label>
+                                    <NumberInput value={formData.unitPrice || undefined}
+                                                 onChange={handleUnitPriceChange}
+                                                 unit={CURRENCY} className="w-full h-14 text-xl font-extrabold" />
+                                    {formData.singleUnitPrice > 0 && formData.unitQty && (
+                                        <p className="text-[11px] text-amber-700 dark:text-amber-400 bg-amber-50 dark:bg-amber-900/10 rounded-lg px-3 py-2">
+                                            💡 {formData.singleUnitPrice.toLocaleString('fa-IR')} × {formData.unitQty.toLocaleString('fa-IR')} {baseUnitTitle} = {formData.unitPrice.toLocaleString('fa-IR')} {CURRENCY}
+                                        </p>
+                                    )}
+                                </section>
+                                <section className="rounded-2xl bg-surface-container-low/60 border border-outline-variant/30 p-4 space-y-2.5">
+                                    <label className="text-xs font-bold text-on-surface flex items-center gap-1.5">
+                                        <StepBadge n={4} /> موجودی تضمینی ({unitName}) <span className="text-error">*</span>
+                                    </label>
+                                    <NumberInput value={formData.availableQuantity || undefined}
+                                                 onChange={(val) => setFormData((p) => ({ ...p, availableQuantity: val || 0 }))}
+                                                 unit={unitName} className="w-full h-12" />
+                                </section>
+                                <section className="rounded-2xl bg-surface-container-low/60 border border-outline-variant/30 p-4 space-y-2.5">
+                                    <label className="text-xs font-bold text-on-surface flex items-center gap-1.5">
+                                        <StepBadge n={5} /> قیمت تکی مصرف‌کننده (اختیاری)
+                                    </label>
+                                    <p className="text-[10px] text-on-surface-variant/60">سود خریدار عمده از این محاسبه می‌شود</p>
+                                    <NumberInput value={formData.consumerPrice || undefined}
+                                                 onChange={(val) => setFormData((p) => ({ ...p, consumerPrice: val || 0 }))}
+                                                 unit={`${CURRENCY}/${baseUnitTitle}`} className="w-full h-12" />
+                                    {liveProfit !== null && (
+                                        liveProfit < 0
+                                            ? <p className="text-[11px] text-red-600 bg-red-50 dark:bg-red-900/10 rounded-lg px-3 py-2">⚠️ قیمت مصرف‌کننده از قیمت عمده کمتر است!</p>
+                                            : <p className="text-[11px] text-emerald-600 bg-emerald-50 dark:bg-emerald-900/10 rounded-lg px-3 py-2">💰 سود خریدار عمده از هر {baseUnitTitle}: {liveProfit.toLocaleString('fa-IR')} {CURRENCY}</p>
+                                    )}
+                                </section>
+
+                                {/* ✅ تخفیف حجمی */}
+                                <section className="rounded-2xl bg-surface-container-low/60 border border-outline-variant/30 p-4 space-y-2.5">
+                                    <div className="flex items-center justify-between">
+                                        <SectionTitle icon={Wallet} text="تخفیف حجمی (اختیاری)" />
+                                        <button type="button"
+                                                onClick={() => setFormData((p) => ({
+                                                    ...p,
+                                                    volumeTiers: [...p.volumeTiers, { minQty: (p.volumeTiers.at(-1)?.minQty ?? 0) + 5, price: 0 }],
+                                                }))}
+                                                className="h-7 px-2.5 rounded-lg border border-amber-500/40 text-amber-600 dark:text-amber-400
+                                                    text-[10px] font-bold flex items-center gap-1 hover:bg-amber-500/10">
+                                            <Plus className="w-3 h-3" /> پلهٔ جدید
+                                        </button>
+                                    </div>
+                                    {formData.volumeTiers.map((tier, i) => (
+                                        <div key={i} className="flex items-center gap-2">
+                                            <span className="text-[10px] text-on-surface-variant/70 whitespace-nowrap">خرید {i + 2}+:</span>
+                                            <NumberInput value={tier.minQty || undefined}
+                                                         onChange={(v) => setFormData((p) => {
+                                                             const u = [...p.volumeTiers]; u[i] = { ...u[i], minQty: v || 0 }; return { ...p, volumeTiers: u };
+                                                         })}
+                                                         unit={unitName} className="h-9 flex-1" />
+                                            <span className="text-[10px] text-on-surface-variant/60 whitespace-nowrap">هر {baseUnitTitle}:</span>
+                                            <NumberInput value={tier.price || undefined}
+                                                         onChange={(v) => setFormData((p) => {
+                                                             const u = [...p.volumeTiers]; u[i] = { ...u[i], price: v || 0 }; return { ...p, volumeTiers: u };
+                                                         })}
+                                                         unit={CURRENCY} className="h-9 flex-1" />
+                                            <button type="button"
+                                                    onClick={() => setFormData((p) => ({ ...p, volumeTiers: p.volumeTiers.filter((_, j) => j !== i) }))}
+                                                    className="w-7 h-7 rounded-lg text-error hover:bg-error/10 flex items-center justify-center flex-shrink-0">
+                                                <X className="w-3.5 h-3.5" />
+                                            </button>
+                                        </div>
+                                    ))}
+                                    {formData.volumeTiers.length === 0 && (
+                                        <p className="text-[10px] text-on-surface-variant/60 leading-5">
+                                            مثلاً: خرید ۵ کارتن، هر {baseUnitTitle} ۱۲۰ هزار تومان — برای مشتری‌های حجیم.
+                                        </p>
+                                    )}
+                                </section>
+
+                                {/* ✅ قیمت اشانتیون */}
+                                <section className="rounded-2xl bg-surface-container-low/60 border border-outline-variant/30 p-4 space-y-2.5">
+                                    <label className="text-xs font-bold text-on-surface flex items-center gap-1.5">
+                                        <StepBadge n={7} /> قیمت اشانتیون (اختیاری)
+                                    </label>
+                                    <p className="text-[10px] text-on-surface-variant/60">برای کالاهایی که اشانتیون خرید دارند</p>
+                                    <NumberInput value={formData.giftPrice || undefined}
+                                                 onChange={(v) => setFormData((p) => ({ ...p, giftPrice: v }))}
+                                                 unit={`${CURRENCY}/${baseUnitTitle}`} className="w-full h-12" />
+                                </section>
+                            </>
+                        ) : (
+                            <>
+                                <section className="rounded-2xl bg-surface-container-low/60 border border-amber-500/30 p-4 space-y-2.5">
+                                    <label className="text-xs font-bold text-on-surface flex items-center gap-1.5">
+                                        <StepBadge n={1} /> قیمت هر {unitName} <span className="text-error">*</span>
+                                    </label>
+                                    <NumberInput value={formData.unitPrice || undefined}
+                                                 onChange={(v) => setFormData((p) => ({ ...p, unitPrice: v }))}
+                                                 unit={CURRENCY} className="w-full h-14 text-xl font-extrabold" />
+                                </section>
+                                <section className="rounded-2xl bg-surface-container-low/60 border border-outline-variant/30 p-4 space-y-2.5">
+                                    <label className="text-xs font-bold text-on-surface flex items-center gap-1.5">
+                                        <StepBadge n={2} /> موجودی ({unitName}) <span className="text-on-surface-variant/50 text-[10px]">(اختیاری)</span>
+                                    </label>
+                                    <NumberInput value={formData.availableQuantity || undefined}
+                                                 onChange={(val) => setFormData((p) => ({ ...p, availableQuantity: val || 0 }))}
+                                                 unit={unitName} className="w-full h-12" />
+                                </section>
+                            </>
+                        )}
+                    </div>
+                )}
+
+                {/* ═══ مرحله ۳: موقعیت و اعتبار ═══ */}
+                {currentStep === 3 && (
+                    <div className="space-y-4 animate-in fade-in duration-200">
+                        <section className="rounded-2xl bg-surface-container-low/60 border border-outline-variant/30 p-4 space-y-2.5">
+                            <SectionTitle icon={MapPin} text="محل کالا" />
+                            <IranLocationSelector
+                                provinceCode={formData.provinceCode}
+                                cityCode={formData.cityCode}
+                                onProvinceChange={(code, label) => setFormData((p) => ({ ...p, provinceCode: code, provinceLabel: label, cityCode: '', cityLabel: '' }))}
+                                onCityChange={(code, label) => setFormData((p) => ({ ...p, cityCode: code, cityLabel: label }))}
+                            />
+                        </section>
+                        <section className="rounded-2xl bg-surface-container-low/60 border border-outline-variant/30 p-4 space-y-2.5">
+                            <SectionTitle icon={Clock} text="مدت اعتبار قیمت" />
+                            <div className="grid grid-cols-3 gap-2">
+                                {VALIDITY_OPTIONS.map((opt) => (
+                                    <button key={opt.value} type="button"
+                                            onClick={() => setFormData((p) => ({ ...p, validityHours: opt.value }))}
+                                            className={cn('h-12 rounded-xl text-sm font-medium border-2 transition-all',
+                                                formData.validityHours === opt.value
+                                                    ? 'border-amber-500 bg-amber-50 dark:bg-amber-900/10 text-amber-700 dark:text-amber-400 font-bold'
+                                                    : 'border-outline-variant/40 hover:border-amber-500/30')}>
+                                        {opt.label}
+                                    </button>
+                                ))}
+                            </div>
+                            <p className="text-xs text-on-surface-variant">این قیمت تا {formData.validityHours} ساعت روی کاتالوگت معتبر است.</p>
+                        </section>
+                        <section className="rounded-2xl bg-surface-container-low/60 border border-outline-variant/30 p-4">
+                            <SectionTitle icon={Package} text="توضیحات (اختیاری)" />
+                            <textarea value={formData.description}
+                                      onChange={(e) => setFormData((p) => ({ ...p, description: e.target.value }))}
+                                      rows={3} placeholder="توضیحات تکمیلی"
+                                      className="w-full min-h-[72px] py-2.5 px-3.5 text-sm text-right rounded-xl bg-surface-container-lowest
+                                          border border-outline-variant/40 dark:border-gray-700 focus:ring-2 focus:ring-amber-500/30
+                                          focus:border-amber-500 outline-none transition-all resize-none" />
+                        </section>
+                    </div>
+                )}
+
+                {/* ═══ مرحله ۴: بررسی ═══ */}
+                {currentStep === 4 && (
+                    <div className="space-y-4 animate-in fade-in duration-200">
+                        <div className="rounded-2xl border border-emerald-500/20 bg-emerald-500/5 p-4 flex items-center gap-3">
+                            <span className="w-10 h-10 rounded-xl bg-emerald-500 grid place-items-center shadow-sm shadow-emerald-500/30">
+                                <ClipboardCheck className="w-5 h-5 text-white" />
+                            </span>
+                            <div>
+                                <h3 className="font-bold text-sm text-emerald-800 dark:text-emerald-300">بررسی نهایی</h3>
+                                <p className="text-[11px] text-emerald-700/70 dark:text-emerald-400/70">پس از تأیید، کالا روی کاتالوگت منتشر می‌شود.</p>
+                            </div>
+                        </div>
+
+                        <div className="bg-white dark:bg-gray-900 rounded-2xl border border-outline-variant/40 shadow-sm overflow-hidden">
+                            <div className="px-4 pb-4 pt-4 space-y-1.5">
+                                <div className="flex justify-between text-xs"><span className="text-on-surface-variant">کاتالوگ</span><span className="font-medium text-on-surface">{selectedCatalog.name}</span></div>
+                                {formData.categoryId && selectedCategoryNode && (
+                                    <div className="flex justify-between text-xs"><span className="text-on-surface-variant">دسته</span><span className="font-medium text-on-surface">{selectedCategoryNode.title}</span></div>
+                                )}
+                                <div className="flex justify-between text-xs"><span className="text-on-surface-variant">کالا</span><span className="font-medium text-on-surface">{formData.productType || '—'}</span></div>
+                                <div className="flex justify-between text-xs"><span className="text-on-surface-variant">تصاویر</span><span className="font-medium text-on-surface">{uploadedCount} عدد</span></div>
+                                <div className="flex justify-between text-xs"><span className="text-on-surface-variant">واحد</span><span className="font-medium text-on-surface">{unitName}{formData.unitQty ? ` (${formData.unitQty.toLocaleString('fa-IR')} ${baseUnitTitle})` : ''}</span></div>
+                                <div className="flex justify-between text-xs">
+                                    <span className="text-on-surface-variant">{isWholesale ? 'حداقل حجم' : 'موجودی'}</span>
+                                    <span className="font-medium text-on-surface">{(isWholesale ? formData.minQuantity : formData.availableQuantity).toLocaleString('fa-IR')} {unitName}</span>
+                                </div>
+                                <div className="flex justify-between text-xs">
+                                    <span className="text-on-surface-variant">{isWholesale ? 'قیمت عمده' : 'قیمت'}</span>
+                                    <span className="font-extrabold text-amber-600 dark:text-amber-400">{formData.unitPrice.toLocaleString('fa-IR')} {CURRENCY}</span>
+                                </div>
+                                {isWholesale && formData.volumeTiers.length > 0 && (
+                                    <div className="flex justify-between text-xs"><span className="text-on-surface-variant">تخفیف حجمی</span><span className="font-medium text-on-surface">{formData.volumeTiers.length.toLocaleString('fa-IR')} پله</span></div>
+                                )}
+                                {isWholesale && formData.giftPrice > 0 && (
+                                    <div className="flex justify-between text-xs"><span className="text-on-surface-variant">قیمت اشانتیون</span><span className="font-medium text-on-surface">{formData.giftPrice.toLocaleString('fa-IR')} {CURRENCY}</span></div>
+                                )}
+                                {liveProfit !== null && liveProfit >= 0 && (
+                                    <div className="flex justify-between text-xs"><span className="text-on-surface-variant">سود خریدار عمده</span><span className="font-bold text-emerald-600">{liveProfit.toLocaleString('fa-IR')} {CURRENCY}</span></div>
+                                )}
+                                <div className="flex justify-between text-xs"><span className="text-on-surface-variant">محل</span><span className="font-medium text-on-surface">{formData.cityLabel || '—'}</span></div>
+                                <div className="flex justify-between text-xs"><span className="text-on-surface-variant">اعتبار</span><span className="font-medium text-on-surface">{formData.validityHours} ساعت</span></div>
+                            </div>
+                        </div>
+
+                        <div className="grid grid-cols-3 gap-2">
+                            {[1, 2, 3].map((s) => (
+                                <button key={s} type="button" onClick={() => goToStep(s)}
+                                        className="h-9 rounded-xl border border-outline-variant/40 text-[11px] font-bold
+                                            text-on-surface-variant hover:text-amber-600 hover:border-amber-500/40 transition-colors">
+                                    ویرایش بخش {s}
+                                </button>
+                            ))}
+                        </div>
+                    </div>
+                )}
+
+                {/* ناوبری مراحل */}
+                <div className="flex items-center justify-between pt-2">
                     {currentStep > 1 ? (
                         <button type="button" onClick={prevStep}
-                                className="h-12 px-5 rounded-xl border-2 border-outline-variant/40 bg-white text-sm font-medium text-on-surface flex items-center gap-2 hover:bg-surface-container-lowest transition-all active:scale-95">
+                                className="h-11 px-5 rounded-xl border-2 border-outline-variant/40 bg-white dark:bg-gray-900
+                                    text-sm font-medium text-on-surface flex items-center gap-2 hover:bg-surface-container-lowest transition-all">
                             قبلی <ArrowLeft className="w-4 h-4" />
                         </button>
                     ) : <div />}
-
                     {currentStep < TOTAL_STEPS ? (
                         <button type="button" onClick={nextStep}
-                                className="h-12 px-6 rounded-xl bg-primary text-white text-sm font-bold flex items-center gap-2 hover:bg-primary/90 transition-all active:scale-95 shadow-md shadow-primary/20">
+                                className="h-11 px-6 rounded-xl bg-amber-500 text-white text-sm font-bold flex items-center gap-2
+                                    hover:bg-amber-600 transition-all active:scale-95 shadow-md shadow-amber-200/50 dark:shadow-none">
                             بعدی <ArrowRight className="w-4 h-4" />
                         </button>
                     ) : (
-                        <button type="button" onClick={handleSubmit} disabled={isSubmitting}
-                                className="h-12 px-6 rounded-xl bg-emerald-600 text-white text-sm font-bold flex items-center gap-2 hover:bg-emerald-700 transition-all active:scale-95 shadow-md shadow-emerald-600/20 disabled:opacity-50 disabled:cursor-not-allowed">
-                            {isSubmitting ? (
-                                <><div className="animate-spin rounded-full h-4 w-4 border-2 border-white border-t-transparent" /> در حال ثبت...</>
-                            ) : (
-                                <><Send className="w-4 h-4" /> {isEditMode ? 'ویرایش آگهی' : 'ثبت نهایی آگهی'}</>
-                            )}
+                        <button type="button" onClick={handleSubmit} disabled={submitting}
+                                className="h-11 px-6 rounded-xl bg-amber-500 text-white text-sm font-extrabold flex items-center gap-2
+                                    hover:bg-amber-600 transition-all active:scale-95 shadow-md shadow-amber-200/50 dark:shadow-none
+                                    disabled:opacity-50 disabled:cursor-not-allowed">
+                            {submitting
+                                ? <><Loader2 className="w-4 h-4 animate-spin" /> در حال ثبت…</>
+                                : <><Check className="w-4 h-4" /> {isEditMode ? 'ذخیره تغییرات' : 'ثبت نهایی'}</>}
                         </button>
                     )}
                 </div>
             </main>
+
+            {/* مودال‌ها */}
+            <UnitSettingsModal
+                isOpen={unitModalOpen}
+                onClose={() => setUnitModalOpen(false)}
+                catalogId={catalogId}
+                initialUnits={localUnitSettings}
+                onSaved={(units) => {
+                    setLocalUnitSettings(units);
+                    queryClient.invalidateQueries({ queryKey: ['catalog', 'by-id', catalogId] });
+                }}
+            />
+            <CategorySettingsModal
+                isOpen={catModalOpen}
+                onClose={() => setCatModalOpen(false)}
+                catalogId={catalogId}
+                initialTree={localCategoryTree}
+                onSaved={(tree) => {
+                    setLocalCategoryTree(tree);
+                    queryClient.invalidateQueries({ queryKey: ['catalog', 'by-id', catalogId] });
+                }}
+            />
         </div>
     );
 }

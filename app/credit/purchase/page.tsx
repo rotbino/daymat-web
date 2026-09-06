@@ -5,7 +5,7 @@ import React, { useState, useEffect, useMemo } from 'react';
 import { useRouter } from 'next/navigation';
 import { useSelector } from 'react-redux';
 import { RootState } from '@/lib/store/store';
-import { FormHeader } from '@/app/components';
+import { FormHeader } from '@/app_/components';
 import { useCreditBalance, usePurchaseCredit } from '@/lib/api/apiHooks';
 import { toast } from 'sonner';
 import { CreditCard, Banknote, Loader2, Shield, Check, Info, Phone, Sparkles, Users, Rocket } from 'lucide-react';

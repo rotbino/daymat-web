@@ -71,9 +71,9 @@ export function CreditDetailModal({ credit, isOpen, onClose }: Props) {
                     {/* اطلاعات تراکنش */}
                     <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                         <DetailItem icon={User} label="کاربر" value={credit.user?.fullName || '-'} sub={credit.user?.phone} />
-                        <DetailItem icon={Building2} label="کسب‌وکار" value={credit.business?.name || '-'} />
+                        <DetailItem icon={Building2} label="کسب‌وکار" value={credit.catalog?.name || '-'} />
                         <DetailItem icon={Globe} label="بازار" value={credit.arm?.name || '-'} />
-                        <DetailItem icon={MapPin} label="موقعیت" value={[credit.business?.city, credit.business?.province].filter(Boolean).join('، ') || '-'} />
+                        <DetailItem icon={MapPin} label="موقعیت" value={[credit.catalog?.city, credit.catalog?.province].filter(Boolean).join('، ') || '-'} />
                         <DetailItem icon={Wallet} label="روش پرداخت" value={credit.paymentMethod === 'online' ? 'پرداخت آنلاین' : 'کارت به کارت (فیشی)'} />
                         <DetailItem icon={Info} label="نوع اعتبار" value={credit.creditType === 'purchased' ? 'خریداری شده' : credit.creditType || '-'} />
                         <DetailItem icon={Calendar} label="تاریخ" value={new Date(credit.createdAt).toLocaleDateString('fa-IR')} />

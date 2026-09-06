@@ -24,6 +24,8 @@ export interface ActiveChip {
     href: string;
 }
 
+// ─── جستجو در درخت دسته‌بندی ───
+
 export function findNodeById(tree: CategoryNode[], id: string): CategoryNode | null {
     for (const node of tree) {
         if (node.id === id) return node;
@@ -63,6 +65,13 @@ export function findAncestorIds(tree: CategoryNode[], id: string): string[] {
     return path ? path.slice(0, -1).map((n) => n.id) : [];
 }
 
+/** ریشه (سطح اول)ِ گره انتخابی — برای سایدبار باسکولی */
+export function findRootNode(tree: CategoryNode[], id: string): CategoryNode | null {
+    return findPathToNode(tree, id)?.[0] ?? null;
+}
+
+// ─── ساخت URL فیلترها ───
+
 function setOrDelete(params: URLSearchParams, key: string, value: string | null | undefined) {
     if (value === undefined) return;
     if (value === null || value === '') params.delete(key);
@@ -80,12 +89,15 @@ export function buildFilterHref(
     tree: CategoryNode[],
     changes: FilterUrlChanges,
 ): string {
+    // ✅ سپر: basePath خالی = مسیر فعلی صفحه.
+    // لینک نسبیِ فقط-کوئری در App Router قابل اتکا نیست (همان باگ دکمهٔ X) — پس همیشه مطلق می‌سازیم.
+    const base = basePath || (typeof window !== 'undefined' ? window.location.pathname : '/');
     const params = new URLSearchParams(searchParams?.toString() ?? '');
 
     if (changes.resetAll) {
         ['category', 'path', 'search', 'minq', 'minstock', 'sort', 'page'].forEach((k) => params.delete(k));
         const qs = params.toString();
-        return qs ? `${basePath}?${qs}` : basePath;
+        return qs ? `${base}?${qs}` : base;
     }
 
     if (changes.categoryId !== undefined) {
@@ -107,7 +119,7 @@ export function buildFilterHref(
     setOrDelete(params, 'page', changes.page !== undefined ? changes.page : null);
 
     const qs = params.toString();
-    return qs ? `${basePath}?${qs}` : basePath;
+    return qs ? `${base}?${qs}` : base;
 }
 
 const faNum = (v: string) => {
@@ -115,13 +127,12 @@ const faNum = (v: string) => {
     return Number.isFinite(n) ? n.toLocaleString('fa-IR') : v;
 };
 
-/** چیپ‌های فیلتر فعال بر اساس URL */
+/** چیپ‌های فیلتر فعال بر اساس URL — با امکان استثنا (چیپی که جای دیگری نمایش داده می‌شود) */
 export function buildActiveChips(
     basePath: string,
     searchParams: { get(name: string): string | null; toString(): string },
     tree: CategoryNode[],
     exclude: string[] = [],
-
 ): ActiveChip[] {
     const chips: ActiveChip[] = [];
 
@@ -165,12 +176,6 @@ export function buildActiveChips(
             href: buildFilterHref(basePath, searchParams, tree, { minstock: null }),
         });
     }
+
     return chips.filter((c) => !exclude.includes(c.key));
-
 }
-
-// ۱) این تابع را اضافه کن — ریشه (سطح اول)ِ گره انتخابی، برای سایدبار باسکولی
-export function findRootNode(tree: CategoryNode[], id: string): CategoryNode | null {
-    return findPathToNode(tree, id)?.[0] ?? null;
-}
-

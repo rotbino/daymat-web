@@ -31,12 +31,12 @@ import DateObject from 'react-date-object';
 import { toast } from 'sonner';
 import { apiService } from '@/lib/api/apiService';
 import { cn } from '@/lib/utils';
-import { BusinessCard } from './components/BusinessCard';
+import { CatalogCard } from './components/CatalogCard';
 import { AdCard } from './components/AdCard';
 import { AdDetailModal } from './components/AdDetailModal';
 import { TransactionCard } from './components/TransactionCard';
 
-type TabType = 'info' | 'business' | 'ads' | 'payments';
+type TabType = 'info' | 'catalog' | 'ads' | 'payments';
 type TransactionStatusFilter = 'all' | 'pending' | 'approved' | 'rejected' | 'success' | 'failed';
 
 const QUICK_RANGES = [
@@ -151,8 +151,8 @@ export default function MemberDetailPage() {
 
     const tabs: { id: TabType; label: string; icon: any; count?: number }[] = [
         { id: 'info', label: 'اطلاعات پایه', icon: User },
-        { id: 'business', label: 'کسب‌وکار', icon: Building2, count: member?.business ? 1 : 0 },
-        { id: 'ads', label: 'آگهی‌ها', icon: Package, count: member?.business?.ads?.length || 0 },
+        { id: 'catalog', label: 'کسب‌وکار', icon: Building2, count: member?.catalog ? 1 : 0 },
+        { id: 'ads', label: 'آگهی‌ها', icon: Package, count: member?.catalog?.ads?.length || 0 },
         { id: 'payments', label: 'تراکنش‌ها', icon: CreditCard, count: member?.allTransactions?.length || 0 },
     ];
 
@@ -377,9 +377,9 @@ export default function MemberDetailPage() {
                                 <p className="text-sm text-on-surface-variant dark:text-gray-400" dir="ltr">
                                     {member.user.phone}
                                 </p>
-                                {member.business && (
+                                {member.catalog && (
                                     <span className="text-xs bg-surface-container-high dark:bg-gray-800 px-2 py-0.5 rounded-full text-on-surface-variant dark:text-gray-400 truncate max-w-[150px]">
-              {member.business.name}
+              {member.catalog.name}
             </span>
                                 )}
                             </div>
@@ -553,11 +553,11 @@ export default function MemberDetailPage() {
                     </div>
                 )}
 
-                {activeTab === 'business' && (
+                {activeTab === 'catalog' && (
                     <div>
-                        {member.business ? (
-                            <BusinessCard
-                                businesses={[member.business]}
+                        {member.catalog ? (
+                            <CatalogCard
+                                cataloges={[member.catalog]}
                                 isPending={member.status === 'pending'}
                                 onApprove={handleApprove}
                                 onReject={handleReject}
@@ -575,9 +575,9 @@ export default function MemberDetailPage() {
 
                 {activeTab === 'ads' && (
                     <div>
-                        {member.business?.ads && member.business.ads.length > 0 ? (
+                        {member.catalog?.ads && member.catalog.ads.length > 0 ? (
                             <div className="space-y-3">
-                                {member.business.ads.map((ad: any) => (
+                                {member.catalog.ads.map((ad: any) => (
                                     <AdCard key={ad.id} ad={ad} onView={() => { setSelectedAd(ad); setIsAdModalOpen(true); }} />
                                 ))}
                             </div>

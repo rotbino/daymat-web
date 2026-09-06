@@ -36,7 +36,7 @@ import {
     ArrowRight, MessageSquare,
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
-import { ThemeToggle } from '@/app/components/ThemeToggle';
+import { ThemeToggle } from '@/app_/components/ThemeToggle';
 import Image from "next/image";
 
 // ============================================================
@@ -66,7 +66,7 @@ const menuGroups: MenuGroup[] = [
             { href: '/admin', label: 'داشبورد', icon: BarChart3, },
             { href: '/admin/arm', label: 'بازارها', icon: Globe,  },
             { href: '/admin/users', label: 'کاربران', icon: Users },
-            { href: '/admin/businesses', label: 'کسب‌وکارها', icon: Building2 },
+            { href: '/admin/cataloges', label: 'کسب‌وکارها', icon: Building2 },
             { href: '/admin/ads', label: 'آگهی‌ها', icon: Package },
             { href: '/admin/credits', label: 'اعتبارات', icon: CreditCard },
             { href: '/admin/payments', label: 'پرداخت‌ها', icon: Receipt },

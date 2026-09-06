@@ -8,7 +8,7 @@ import { cn } from '@/lib/utils/utils';
 
 interface ImageViewProps {
     fileId?: string | null;
-    model?: 'User' | 'Business' | 'Ad';
+    model?: 'User' | 'Catalog' | 'Ad';
     modelId?: string;
     fieldKey?: string;
     thumbnail?: boolean;

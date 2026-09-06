@@ -5,13 +5,13 @@ import React, { useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { useSelector } from 'react-redux';
 import { RootState } from '@/lib/store/store';
-import { AppHeader, AppFooter } from '@/app/components';
+import { AppHeader, AppFooter } from '@/app_/components';
 import { useSavedAds } from '@/lib/api/apiHooks';
 import { Bookmark, Package, Loader2, Trash2 } from 'lucide-react';
 import { apiService } from '@/lib/api/apiService';
 import { toast } from 'sonner';
 import Image from 'next/image';
-import { formatNum } from '@/app/ad/[id]/ [slug]/components/shared';
+import { formatNum } from '@/app/ad/[id]/[slug]/components/shared';
 import { cn } from '@/lib/utils';
 
 export default function SavedAdsPage() {

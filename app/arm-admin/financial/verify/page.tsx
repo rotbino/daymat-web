@@ -29,8 +29,8 @@ interface PaymentRequest {
         fullName: string | null;
         phone: string;
     };
-    businessId: string;
-    business: {
+    catalogId: string;
+    catalog: {
         name: string;
     };
     amount: number;
@@ -85,7 +85,7 @@ export default function VerifyPaymentsPage() {
     const filteredPayments = payments.filter((payment) => {
         const fullName = (payment.user?.fullName || '').toLowerCase();
         const phone = (payment.user?.phone || '').toLowerCase();
-        const businessName = (payment.business?.name || '').toLowerCase();
+        const catalogName = (payment.catalog?.name || '').toLowerCase();
         const search = searchTerm.trim().toLowerCase();
 
         if (!search) {
@@ -95,7 +95,7 @@ export default function VerifyPaymentsPage() {
         const matchesSearch =
             fullName.includes(search) ||
             phone.includes(search) ||
-            businessName.includes(search);
+            catalogName.includes(search);
 
         const matchesStatus = statusFilter === 'all' || payment.status === statusFilter;
         return matchesSearch && matchesStatus;
@@ -233,7 +233,7 @@ export default function VerifyPaymentsPage() {
                             <Building2 className="w-4 h-4 text-on-surface-variant" />
                             <span className="text-on-surface-variant">کسب‌وکار:</span>
                             <span className="font-medium text-on-surface truncate">
-                                {selectedPayment.business?.name || 'کسب‌وکار نامشخص'}
+                                {selectedPayment.catalog?.name || 'کسب‌وکار نامشخص'}
                             </span>
                         </div>
 
@@ -443,7 +443,7 @@ export default function VerifyPaymentsPage() {
                                                 {payment.user?.phone || 'شماره نامشخص'}
                                             </p>
                                             <p className="text-[10px] text-on-surface-variant/60 truncate">
-                                                {payment.business?.name || 'کسب‌وکار نامشخص'}
+                                                {payment.catalog?.name || 'کسب‌وکار نامشخص'}
                                             </p>
                                         </div>
                                     </div>
