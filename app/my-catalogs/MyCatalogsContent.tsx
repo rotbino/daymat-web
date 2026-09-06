@@ -34,6 +34,7 @@ import BusinessSetupModal from '@/app/components/BusinessSetupModal';
 import CategoryPicker from '@/app/ad/components/CategoryPicker';
 import {IranLocationSelector} from '@/app/components/IranLocationSelector';
 import SlugEditor from "./SlugEditor";
+import PublishToMarketModal from './PublishToMarketModal';
 
 // ═══ هلپرها ═══
 const isAdExpired = (ad: any) => ad.status === 'expired' || new Date(ad.expiresAt).getTime() < Date.now();
@@ -83,6 +84,7 @@ export default function MyCatalogsContent() {
     const [menuOpen, setMenuOpen] = useState(false);
     const [refreshAd, setRefreshAd] = useState<any>(null);
     const [catModalAd, setCatModalAd] = useState<any>(null);
+    const [publishModalAd, setPublishModalAd] = useState<any>(null);
     const [verifyOpen, setVerifyOpen] = useState(false);
     const [passwordOpen, setPasswordOpen] = useState(false);
     const [bizModalOpen, setBizModalOpen] = useState(false);
@@ -664,6 +666,16 @@ export default function MyCatalogsContent() {
                                                 className="h-8 px-3 rounded-lg border border-outline-variant/50 text-[10px] font-bold text-on-surface-variant hover:text-primary hover:border-primary/40 flex items-center gap-1">
                                             <Pencil className="w-3 h-3" /> ویرایش
                                         </button>
+                                        {/* 🆕 انتشار در بازار دیگر — فقط اگه آگهی در تابلو هست */}
+                                        {market && !expired && (
+                                            <button
+                                                onClick={() => setPublishModalAd(ad)}
+                                                title="انتشار این آگهی در بازارهای دیگر"
+                                                className="h-8 px-3 rounded-lg border border-primary/40 bg-primary/5 text-[10px] font-bold text-primary hover:bg-primary/10 flex items-center gap-1 transition-colors"
+                                            >
+                                                <Store className="w-3 h-3" /> بازار دیگر
+                                            </button>
+                                        )}
                                         {ad.status !== 'pending' && ad.status !== 'rejected' && (
                                             <button onClick={() => toggleMarket(ad)}
                                                     disabled={!market && !memberships.length}
@@ -901,6 +913,12 @@ export default function MyCatalogsContent() {
                 business={editBiz}
                 onClose={() => { setBizModalOpen(false); setEditBiz(null); }}
                 onSaved={() => bizQ.refetch()}
+            />
+            <PublishToMarketModal
+                isOpen={!!publishModalAd}
+                onClose={() => setPublishModalAd(null)}
+                ad={publishModalAd}
+                onPublished={() => refreshAll()}
             />
         </div>
     );

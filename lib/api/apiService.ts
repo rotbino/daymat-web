@@ -308,6 +308,39 @@ export const apiService = {
             };
         }> => apiRequest(`/ad/${id}/stats`),
 
+        // ═══ 🆕 Publication endpoints (چند‌بازاری) ═══
+
+        /**
+         * لیست بازارهایی که آگهی در آن‌ها منتشر شده
+         */
+        getPublications: (adId: string): Promise<Array<{
+            id: string;
+            adId: string;
+            armId: string;
+            arm: { id: string; slug: string; name: string; icon: string; colorPrimary: string };
+            catalogId: string;
+            categoryId: string | null;
+            categoryPath: string[];
+            status: 'published' | 'paused' | 'needs_category' | 'rejected';
+            publishedAt: string;
+        }>> => apiRequest(`/ad/${adId}/publications`),
+
+        /**
+         * انتشار آگهی در یک بازار جدید
+         */
+        publishToMarket: (adId: string, armSlug: string): Promise<{
+            success: boolean;
+            arm: { id: string; name: string; slug: string };
+            stamped: number;
+            needsCategory: Array<{ id: string; title: string; catalogCategoryTitle: string | null }>;
+        }> => apiRequest(`/ad/${adId}/publish-to-market`, { method: 'POST', data: { armSlug } }),
+
+        /**
+         * حذف انتشار آگهی از یک بازار
+         */
+        unpublishFromMarket: (adId: string, armSlug: string): Promise<{ success: boolean; message: string }> =>
+            apiRequest(`/ad/${adId}/publish-to-market/${armSlug}`, { method: 'DELETE' }),
+
         getInteractionDetails: (id: string): Promise<{
             views: any[];
             saves: any[];
