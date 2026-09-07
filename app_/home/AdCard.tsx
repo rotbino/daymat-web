@@ -270,8 +270,14 @@ export default function AdCard({ ad, onContact, onDetail }: AdCardProps) {
                 <div className="flex items-baseline justify-between">
                     <span className="text-[11px] text-gray-500 dark:text-gray-400">هر {unit}:</span>
                     <div className="flex items-baseline gap-1">
-                        <span className="text-[16px] font-bold text-primary leading-none">{formatNum(ad.unitPrice)}</span>
-                        <span className="text-[9px] text-gray-500 dark:text-gray-400">تومان</span>
+                        {ad.unitPrice === null || ad.unitPrice === undefined ? (
+                            <span className="text-[11px] font-bold text-amber-600">برای دیدن قیمت عضو شوید</span>
+                        ) : (
+                            <>
+                                <span className="text-[16px] font-bold text-primary leading-none">{formatNum(ad.unitPrice)}</span>
+                                <span className="text-[9px] text-gray-500 dark:text-gray-400">تومان</span>
+                            </>
+                        )}
                     </div>
                 </div>
 
@@ -346,8 +352,14 @@ export default function AdCard({ ad, onContact, onDetail }: AdCardProps) {
                 <div className="flex items-baseline justify-between">
                     <span className="text-[11px] text-gray-500 dark:text-gray-400">هر {unit}</span>
                     <div className="flex items-baseline gap-1">
-                        <span className="text-[16px] font-bold text-primary leading-none">{formatNum(ad.unitPrice)}</span>
-                        <span className="text-[10px] text-gray-500 dark:text-gray-400">تومان</span>
+                        {ad.unitPrice === null || ad.unitPrice === undefined ? (
+                            <span className="text-[11px] font-bold text-amber-600">برای دیدن قیمت عضو شوید</span>
+                        ) : (
+                            <>
+                                <span className="text-[16px] font-bold text-primary leading-none">{formatNum(ad.unitPrice)}</span>
+                                <span className="text-[10px] text-gray-500 dark:text-gray-400">تومان</span>
+                            </>
+                        )}
                     </div>
                 </div>
 
