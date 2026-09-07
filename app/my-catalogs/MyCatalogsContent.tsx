@@ -23,6 +23,7 @@ import {
     Ellipsis, ChevronDown, Sparkles, Unlink, CameraIcon,
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
+import Link from 'next/link';
 import UnitSettingsModal from '@/app/ad/components/UnitSettingsModal';
 import CategorySettingsModal from '@/app/ad/components/CategorySettingsModal';
 import ShareKitModal from '@/app_/profile/components/ShareKitModal';
@@ -605,7 +606,7 @@ export default function MyCatalogsContent() {
                             const market = inMarket(ad) && !!ad.armId;   // ✅ بدون عضویت، تابلو معنا ندارد
                             const onTable = ad.status === 'active' && !expired && market;
                             const uncat = isUncategorized(ad);
-                            const unit = ad.unit?.shortCode || '';
+                            const unit = ad.unit?.title || ad.unit?.shortCode || '';
                             const hours = Math.ceil((new Date(ad.expiresAt).getTime() - Date.now()) / 36e5);
                             const armName = ad.arm?.name || 'بازار';
                             return (
