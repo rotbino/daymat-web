@@ -666,33 +666,14 @@ export default function MyCatalogsContent() {
                                                 className="h-8 px-3 rounded-lg border border-outline-variant/50 text-[10px] font-bold text-on-surface-variant hover:text-primary hover:border-primary/40 flex items-center gap-1">
                                             <Pencil className="w-3 h-3" /> ویرایش
                                         </button>
-                                        {/* 🆕 انتشار در بازار دیگر — فقط اگه آگهی در تابلو هست */}
-                                        {market && !expired && (
-                                            <button
-                                                onClick={() => setPublishModalAd(ad)}
-                                                title="انتشار این آگهی در بازارهای دیگر"
-                                                className="h-8 px-3 rounded-lg border border-primary/40 bg-primary/5 text-[10px] font-bold text-primary hover:bg-primary/10 flex items-center gap-1 transition-colors"
-                                            >
-                                                <Store className="w-3 h-3" /> بازار دیگر
-                                            </button>
-                                        )}
-                                        {ad.status !== 'pending' && ad.status !== 'rejected' && (
-                                            <button onClick={() => toggleMarket(ad)}
-                                                    disabled={!market && !memberships.length}
-                                                    title={market
-                                                        ? `نمایش در تابلوی ${armName}: روشن`
-                                                        : memberships.length
-                                                            ? 'فقط در کاتالوگ نمایش داده می‌شود'
-                                                            : 'این کاتالوگ هنوز عضو هیچ بازاری نیست'}
-                                                    className="flex items-center gap-1.5 disabled:opacity-40">
-                                                        <span className="text-[9px] text-on-surface-variant/70">
-                                                            {market ? `تابلوی ${armName}` : 'تابلو'}
-                                                        </span>
-                                                <span className={cn('relative w-9 h-5 rounded transition-colors block', market ? 'bg-primary' : 'bg-outline-variant/50')}>
-                                                            <span className={cn('absolute top-0.5 w-4 h-4 rounded-full bg-white shadow transition-all', market ? 'right-0.5' : 'right-[1.125rem]')} />
-                                                        </span>
-                                            </button>
-                                        )}
+                                        {/* ✅ دکمه مدیریت انتشار در بازارها — همیشه نشون داده می‌شه */}
+                                        <button
+                                            onClick={() => setPublishModalAd(ad)}
+                                            title="مدیریت انتشار این آگهی در بازارها"
+                                            className="h-8 px-3 rounded-lg border border-primary/40 bg-primary/5 text-[10px] font-bold text-primary hover:bg-primary/10 flex items-center gap-1 transition-colors"
+                                        >
+                                            <Store className="w-3 h-3" /> بازارها
+                                        </button>
                                     </div>
                                 </div>
                             );
