@@ -356,7 +356,7 @@ function SellersTab({ slug }: { slug: string }) {
                         return (
                             <div key={c.membershipId}
                                  className={cn('bg-white dark:bg-gray-900 rounded-2xl border p-4 transition-all',
-                                     isPaused ? 'border-outline-variant/30 opacity-75' : 'border-outline-variant/40 hover:shadow-md')}>
+                                     isPaused ? 'border-outline-variant/20 opacity-50 bg-surface-container-low/30' : 'border-outline-variant/40 hover:shadow-md')}>
                                 <div className="flex items-start gap-3.5">
                                     <Logo url={c.catalog.logoUrl} />
                                     <div className="flex-1 min-w-0">
@@ -634,7 +634,7 @@ function BuyersTab({ slug }: { slug: string }) {
                             return (
                                 <div key={b.membershipId}
                                      className={cn('bg-white dark:bg-gray-900 rounded-2xl border p-3.5 flex items-start gap-3.5 transition-all',
-                                         b.businessStatus === 'paused' ? 'opacity-70 border-outline-variant/30' : 'border-outline-variant/40 hover:shadow-sm')}>
+                                         b.businessStatus === 'paused' ? 'opacity-50 border-outline-variant/20 bg-surface-container-low/30' : 'border-outline-variant/40 hover:shadow-sm')}>
                                     <Logo url={b.business?.logoUrl} size={44} fallback={Building2} />
                                     <div className="flex-1 min-w-0">
                                         <div className="flex items-center gap-2 flex-wrap">
