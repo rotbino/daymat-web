@@ -209,8 +209,8 @@ export default function MarketContent({ search: searchProp }: { search?: string 
     }, [isAuthenticated, isCalling, currentSlug, router, arms, refetchArms]);
 
     // ═══════════════════════════════════════════
-    // انتخاب کارنت: از اعضای فعال کاربر — نه lastArm قدیمی
-    // عضوِ تازه همان اولین بازاری که مالکش عضوش کرده را می‌بیند
+    // ✅ currentSlug از MarketShell (useMarketInit) ست شده
+    // اگه currentSlug نیست، اولین عضویت فعال رو انتخاب کن
     // ═══════════════════════════════════════════
     useEffect(() => {
         if (armLoading) return;

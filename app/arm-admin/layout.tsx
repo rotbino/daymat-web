@@ -3,8 +3,9 @@
 
 import React, { useEffect, useState } from 'react';
 import { useRouter, usePathname } from 'next/navigation';
-import { useSelector } from 'react-redux';
+import { useSelector, useDispatch } from 'react-redux';
 import { RootState } from '@/lib/store/store';
+import { setArm } from '@/lib/store/slices/armSlice';
 import { useArms } from '@/lib/api/apiHooks';
 import Link from 'next/link';
 import {
@@ -63,76 +64,53 @@ export default function ArmAdminLayout({ children }: { children: React.ReactNode
                 return;
             }
 
-            // ✅ اگه currentSlug نیست، اولین arm_owner بازار رو پیدا کن
-            if (!currentSlug) {
-                try {
-                    const arms = await apiService.arm.getUserArms();
-                    const ownerArm = arms.find((a: any) => a.role === 'arm_owner');
-                    if (ownerArm) {
-                        // set as current
-                        localStorage.setItem('lastArmSlug', ownerArm.slug);
-                        // reload to apply
-                        window.location.reload();
-                        return;
-                    }
-                    // no owner arm
+            // اگه userArms از React Query لود شده
+            if (userArms) {
+                // پیدا کن arm_owner بازارها
+                const ownerArms = userArms.filter((a: any) => a.role === 'arm_owner');
+
+                if (ownerArms.length === 0) {
                     toast.error('شما مالک هیچ بازاری نیستید');
                     router.push('/');
                     setLoading(false);
                     return;
-                } catch {
-                    router.push('/');
+                }
+
+                // اگه currentSlug روی یه بازاری هست که arm_owner نیست، سوئیچ کن
+                const isOwnerOfCurrent = ownerArms.some((a: any) => a.slug === currentSlug);
+                if (!isOwnerOfCurrent) {
+                    // اولین arm_owner بازار رو انتخاب کن
+                    const ownerArm = ownerArms[0];
+                    localStorage.setItem('lastArmSlug', ownerArm.slug);
+                    // ✅ dispatch کن به‌جای reload (جلوگیری از لوپ)
+                    dispatch(setArm({
+                        arm: {
+                            id: ownerArm.id,
+                            slug: ownerArm.slug,
+                            name: ownerArm.name,
+                            slogan: ownerArm.slogan || '',
+                            status: 'active',
+                            visibility: 'public',
+                            featuresEnabled: [],
+                            colorPrimary: ownerArm.colorPrimary,
+                        },
+                        slug: ownerArm.slug,
+                    }));
+                    setIsAuthorized(true);
                     setLoading(false);
                     return;
                 }
-            }
 
-            if (userArms) {
-                // ✅ اول چک کن آیا arm_owner این بازار هست
-                const isAdmin = userArms.some(
-                    (a: any) => a.slug === currentSlug && a.role === 'arm_owner'
-                );
-
-                if (!isAdmin) {
-                    // ✅ اگه arm_owner نیست، ببین آیا arm_owner بازار دیگه‌ای هست
-                    const ownerArm = userArms.find((a: any) => a.role === 'arm_owner');
-                    if (ownerArm) {
-                        // سوئیچ کن به اون بازار
-                        localStorage.setItem('lastArmSlug', ownerArm.slug);
-                        window.location.reload();
-                        return;
-                    }
-                    toast.error('شما دسترسی به پنل مدیریت این بازار را ندارید');
-                    router.push(`/${currentSlug}`);
-                    setIsAuthorized(false);
-                    setLoading(false);
-                    return;
-                }
                 setIsAuthorized(true);
                 setLoading(false);
                 return;
             }
-
-            try {
-                const arms = await apiService.arm.getUserArms();
-                const isAdmin = arms.some((a: any) => a.slug === currentSlug && a.role === 'arm_owner');
-                if (!isAdmin) {
-                    toast.error('شما دسترسی به پنل مدیریت این بازار را ندارید');
-                    router.push(`/${currentSlug}`);
-                    return;
-                }
-                setIsAuthorized(true);
-            } catch {
-                router.push(`/${currentSlug}`);
-            } finally {
-                setLoading(false);
-            }
+            // اگه userArms هنوز لود نشده، صبر کن
         };
         checkAuthorization();
-    }, [isAuthenticated, user, currentSlug, router, userArms]);
+    }, [isAuthenticated, user, currentSlug, router, userArms, dispatch]);
 
-
-// ✅ اصلاح تابع تشخیص active
+    // ✅ اصلاح تابع تشخیص active
     const isActive = (href: string, exact?: boolean) => {
         // حذف اسلش انتهایی برای مقایسه دقیق
         const cleanPathname = pathname.endsWith('/') ? pathname.slice(0, -1) : pathname;
