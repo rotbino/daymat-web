@@ -1050,11 +1050,23 @@ export const useArmSellers = (slug?: string, params?: Record<string, any>) => {
     });
 };
 
-export const useArmSellerCandidates = (slug?: string, q = '', onlyMine = false, enabled = true) => {
+export const useArmSellerCandidates = (
+    slug?: string,
+    q = '',
+    onlyMine = false,
+    enabled = true,
+    filters?: { industry?: string; cityCode?: string; provinceCode?: string },
+) => {
     return useQuery({
-        queryKey: armMemberKeys.sellerCandidates(slug ?? '', q, onlyMine),
+        queryKey: armMemberKeys.sellerCandidates(slug ?? '', q, onlyMine, filters),
         queryFn: () => apiRequest(`/arm-admin/${slug}/memberships/sellers/candidates`, {
-            params: { ...(q ? { q } : {}), ...(onlyMine ? { myReferrals: '1' } : {}) },
+            params: {
+                ...(q ? { q } : {}),
+                ...(onlyMine ? { myReferrals: '1' } : {}),
+                ...(filters?.industry ? { industry: filters.industry } : {}),
+                ...(filters?.cityCode ? { cityCode: filters.cityCode } : {}),
+                ...(filters?.provinceCode ? { provinceCode: filters.provinceCode } : {}),
+            },
         }),
         enabled: !!slug && enabled,
         staleTime: 60_000,
@@ -1132,11 +1144,23 @@ export const useArmBuyers = (slug?: string, params?: Record<string, any>) => {
     });
 };
 
-export const useArmBuyerCandidates = (slug?: string, q = '', onlyMine = false, enabled = true) => {
+export const useArmBuyerCandidates = (
+    slug?: string,
+    q = '',
+    onlyMine = false,
+    enabled = true,
+    filters?: { industry?: string; cityCode?: string; provinceCode?: string },
+) => {
     return useQuery({
-        queryKey: armMemberKeys.buyerCandidates(slug ?? '', q, onlyMine),
+        queryKey: armMemberKeys.buyerCandidates(slug ?? '', q, onlyMine, filters),
         queryFn: () => apiRequest(`/arm-admin/${slug}/memberships/buyers/candidates`, {
-            params: { ...(q ? { q } : {}), ...(onlyMine ? { myReferrals: '1' } : {}) },
+            params: {
+                ...(q ? { q } : {}),
+                ...(onlyMine ? { myReferrals: '1' } : {}),
+                ...(filters?.industry ? { industry: filters.industry } : {}),
+                ...(filters?.cityCode ? { cityCode: filters.cityCode } : {}),
+                ...(filters?.provinceCode ? { provinceCode: filters.provinceCode } : {}),
+            },
         }),
         enabled: !!slug && enabled,
         staleTime: 60_000,

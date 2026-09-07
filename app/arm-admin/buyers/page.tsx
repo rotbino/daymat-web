@@ -13,6 +13,7 @@ import {
     Plus, Building2, MapPin, ChevronLeft,
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
+import { IranLocationSelector } from '@/app/components/IranLocationSelector';
 
 const fmt = (n: number | undefined) => n?.toLocaleString('fa-IR') ?? '۰';
 
@@ -230,8 +231,15 @@ function BuyersContent({ slug, armName }: { slug: string; armName: string }) {
 function AddBuyerModal({ slug, onClose }: { slug: string; onClose: () => void }) {
     const [qInput, setQInput] = useState('');
     const [onlyMine, setOnlyMine] = useState(false);
+    const [industryFilter, setIndustryFilter] = useState('');
+    const [provinceCode, setProvinceCode] = useState('');
+    const [cityCode, setCityCode] = useState('');
 
-    const candidatesQ = useArmBuyerCandidates(slug, qInput.trim(), onlyMine, true);
+    const candidatesQ = useArmBuyerCandidates(slug, qInput.trim(), onlyMine, true, {
+        industry: industryFilter || undefined,
+        cityCode: cityCode || undefined,
+        provinceCode: provinceCode || undefined,
+    });
     const addMut = useAddBuyer(slug);
 
     const candidates: any[] = candidatesQ.data?.items ?? [];
@@ -260,8 +268,8 @@ function AddBuyerModal({ slug, onClose }: { slug: string; onClose: () => void })
                     </button>
                 </div>
 
-                {/* جستجو */}
-                <div className="flex-shrink-0 px-4 py-3 border-b border-outline-variant/20">
+                {/* فیلترها */}
+                <div className="flex-shrink-0 px-4 py-3 border-b border-outline-variant/20 space-y-2">
                     <div className="relative">
                         <Search className="absolute right-3 top-1/2 -translate-y-1/2 w-4 h-4 text-on-surface-variant/50" />
                         <input
@@ -277,6 +285,21 @@ function AddBuyerModal({ slug, onClose }: { slug: string; onClose: () => void })
                             </button>
                         )}
                     </div>
+                    <div className="flex gap-2">
+                        <input
+                            value={industryFilter}
+                            onChange={(e) => setIndustryFilter(e.target.value)}
+                            placeholder="صنف..."
+                            className="flex-1 h-9 px-3 rounded-lg bg-surface-container-lowest border border-outline-variant/30 text-xs outline-none focus:ring-1 focus:ring-primary/20"
+                        />
+                        <IranLocationSelector
+                            provinceCode={provinceCode}
+                            cityCode={cityCode}
+                            onProvinceChange={(code) => setProvinceCode(code)}
+                            onCityChange={(code) => setCityCode(code)}
+                            compact
+                        />
+                    </div>
                 </div>
 
                 {/* لیست کاندیداها */}
@@ -289,7 +312,7 @@ function AddBuyerModal({ slug, onClose }: { slug: string; onClose: () => void })
                         <div className="text-center py-10">
                             <Search className="w-10 h-10 text-on-surface-variant/20 mx-auto mb-2" />
                             <p className="text-xs text-on-surface-variant">
-                                {qInput ? 'کسب‌وکاری پیدا نشد' : 'برای جستجو تایپ کنید'}
+                                {qInput || industryFilter || cityCode ? 'کسب‌وکاری پیدا نشد' : 'برای جستجو تایپ کنید'}
                             </p>
                         </div>
                     ) : (
