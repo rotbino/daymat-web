@@ -623,18 +623,32 @@ export default function MyCatalogsContent() {
                                     <div className="flex-1 min-w-0">
                                         <p className="text-[13px] font-bold text-on-surface truncate">{ad.productType || ad.title}</p>
                                         <div className="flex items-center gap-1.5 mt-1 flex-wrap">
-                                            {onTable ? (
-                                                <span className="inline-flex items-center gap-1 text-[9px] font-bold px-2 py-0.5 rounded-full bg-emerald-50 text-emerald-700 dark:bg-emerald-900/30 dark:text-emerald-300">
-                                                            <Store className="w-2.5 h-2.5" /> روی تابلو · {hours < 24 ? `${fmt(hours)} ساعت` : `${fmt(Math.floor(hours / 24))} روز`} مانده
-                                                        </span>
+                                            {/* ✅ چیپس بازارهای فعال — لینک‌دار به صفحه بازار */}
+                                            {ad.publications && ad.publications.length > 0 ? (
+                                                ad.publications.map((pub: any) => (
+                                                    <Link
+                                                        key={pub.armId}
+                                                        href={`/${pub.arm?.slug}`}
+                                                        target="_blank"
+                                                        title={`مشاهده در ${pub.arm?.name}`}
+                                                        className="inline-flex items-center gap-1 text-[9px] font-bold px-2 py-0.5 rounded-full transition-all hover:scale-105"
+                                                        style={{
+                                                            backgroundColor: (pub.arm?.colorPrimary || '#a11f2c') + '15',
+                                                            color: pub.arm?.colorPrimary || '#a11f2c',
+                                                        }}
+                                                    >
+                                                        <Store className="w-2.5 h-2.5" />
+                                                        {pub.arm?.name}
+                                                    </Link>
+                                                ))
                                             ) : !market ? (
                                                 <span className="inline-flex items-center gap-1 text-[9px] font-bold px-2 py-0.5 rounded-full bg-gray-100 text-gray-500 dark:bg-gray-800 dark:text-gray-400">
-                                                            <EyeOff className="w-2.5 h-2.5" /> فقط کاتالوگ
-                                                        </span>
+                                                    <EyeOff className="w-2.5 h-2.5" /> فقط کاتالوگ
+                                                </span>
                                             ) : expired ? (
                                                 <span className="inline-flex items-center gap-1 text-[9px] font-bold px-2 py-0.5 rounded-full bg-amber-100 text-amber-700 dark:bg-amber-900/40 dark:text-amber-300">
-                                                            <Clock className="w-2.5 h-2.5" /> نیازمند قیمت تازه
-                                                        </span>
+                                                    <Clock className="w-2.5 h-2.5" /> نیازمند قیمت تازه
+                                                </span>
                                             ) : (
                                                 <span className="text-[9px] font-bold px-2 py-0.5 rounded-full bg-gray-100 text-gray-500 dark:bg-gray-800">غیرفعال</span>
                                             )}
