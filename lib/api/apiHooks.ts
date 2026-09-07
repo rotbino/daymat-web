@@ -1075,8 +1075,10 @@ export const useToggleSellerPaused = (slug?: string) => {
     return useMutation({
         mutationFn: ({ catalogId, paused }: { catalogId: string; paused: boolean }) =>
             apiRequest(`/arm-admin/${slug}/memberships/sellers/${catalogId}`, { method: 'PATCH', data: { paused } }),
-        onSuccess: (_, { paused }) =>
-            toast.success(paused ? 'فروشنده متوقف شد — کالاهایش از تابلو برداشته شد' : 'فروشنده ادامه یافت'),
+        onSuccess: (_, { paused }) => {
+            toast.success(paused ? 'فروشنده متوقف شد — کالاهایش از تابلو برداشته شد' : 'فروشنده ادامه یافت');
+            invalidate(slug!);
+        },
         onError: (error: ApiError) => toast.error(error.message || 'خطا'),
     });
 };
@@ -1086,7 +1088,10 @@ export const useRemoveSeller = (slug?: string) => {
     return useMutation({
         mutationFn: (catalogId: string) =>
             apiRequest(`/arm-admin/${slug}/memberships/sellers/${catalogId}`, { method: 'DELETE' }),
-        onSuccess: () => toast.success('فروشنده از بازار حذف شد'),
+        onSuccess: () => {
+            toast.success('نقش فروشندگی حذف شد');
+            invalidate(slug!);
+        },
         onError: (error: ApiError) => toast.error(error.message || 'خطا'),
     });
 };
@@ -1150,7 +1155,7 @@ export const useRemoveBuyer = (slug?: string) => {
             apiRequest(`/arm-admin/${slug}/memberships/buyers/${membershipId}`, { method: 'DELETE' }),
         onSuccess: () => {
             toast.success('نقش خریداری حذف شد');
-            invalidate();
+            invalidate(slug!);
         },
         onError: (error: ApiError) => toast.error(error.message || 'خطا'),
     });
@@ -1163,7 +1168,7 @@ export const useToggleBuyerPaused = (slug?: string) => {
             apiRequest(`/arm-admin/${slug}/memberships/buyers/${membershipId}/pause`, { method: 'PATCH', data: { paused } }),
         onSuccess: (_, { paused }) => {
             toast.success(paused ? 'خریدار متوقف شد' : 'خریدار ادامه یافت');
-            invalidate();
+            invalidate(slug!);
         },
         onError: (error: ApiError) => toast.error(error.message || 'خطا'),
     });

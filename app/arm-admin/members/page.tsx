@@ -348,7 +348,7 @@ function SellersTab({ slug }: { slug: string }) {
                     </div>
                 ) : (
                     sellers.map((c) => {
-                        const isPaused = c.status !== 'active';
+                        const isPaused = c.businessStatus === 'paused';
                         const busyPause = pauseMut.isPending && pauseMut.variables?.catalogId === c.catalog.id;
                         const busyRemove = removeMut.isPending && removeMut.variables === c.catalog.id;
                         const busy = busyPause || busyRemove;
@@ -634,7 +634,7 @@ function BuyersTab({ slug }: { slug: string }) {
                             return (
                                 <div key={b.membershipId}
                                      className={cn('bg-white dark:bg-gray-900 rounded-2xl border p-3.5 flex items-start gap-3.5 transition-all',
-                                         b.status !== 'active' ? 'opacity-70 border-outline-variant/30' : 'border-outline-variant/40 hover:shadow-sm')}>
+                                         b.businessStatus === 'paused' ? 'opacity-70 border-outline-variant/30' : 'border-outline-variant/40 hover:shadow-sm')}>
                                     <Logo url={b.business?.logoUrl} size={44} fallback={Building2} />
                                     <div className="flex-1 min-w-0">
                                         <div className="flex items-center gap-2 flex-wrap">
@@ -644,6 +644,11 @@ function BuyersTab({ slug }: { slug: string }) {
                                             {b.business && (
                                                 <span className="text-[9px] font-bold px-1.5 py-0.5 rounded bg-surface-container-high text-on-surface-variant">
                                                     {buyerTypeLabel(b.business.type)}
+                                                </span>
+                                            )}
+                                            {b.businessStatus === 'paused' && (
+                                                <span className="text-[9px] font-bold px-1.5 py-0.5 rounded bg-amber-100 text-amber-700 dark:bg-amber-900/30 dark:text-amber-300">
+                                                    متوقف
                                                 </span>
                                             )}
                                         </div>
@@ -678,19 +683,19 @@ function BuyersTab({ slug }: { slug: string }) {
                                             <>
                                                 {/* ✅ دکمه Pause/Resume */}
                                                 <button
-                                                    onClick={() => pauseMut.mutate({ membershipId: b.membershipId, paused: b.status === 'active' })}
+                                                    onClick={() => pauseMut.mutate({ membershipId: b.membershipId, paused: b.businessStatus === 'active' })}
                                                     disabled={pauseMut.isPending}
-                                                    title={b.status === 'active' ? 'توقف موقت' : 'فعال‌سازی'}
+                                                    title={b.businessStatus === 'active' ? 'توقف موقت' : 'فعال‌سازی'}
                                                     className={cn(
                                                         'h-8 w-8 rounded-lg grid place-items-center transition-colors',
-                                                        b.status === 'active'
+                                                        b.businessStatus === 'active'
                                                             ? 'text-amber-600/70 hover:text-amber-600 hover:bg-amber-500/10'
                                                             : 'text-emerald-600/70 hover:text-emerald-600 hover:bg-emerald-500/10'
                                                     )}
                                                 >
                                                     {pauseMut.isPending && pauseMut.variables?.membershipId === b.membershipId ? (
                                                         <Loader2 className="w-3.5 h-3.5 animate-spin" />
-                                                    ) : b.status === 'active' ? (
+                                                    ) : b.businessStatus === 'active' ? (
                                                         <PauseCircle className="w-3.5 h-3.5" />
                                                     ) : (
                                                         <PlayCircle className="w-3.5 h-3.5" />
