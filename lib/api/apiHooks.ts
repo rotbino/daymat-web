@@ -1026,11 +1026,13 @@ export const armMemberKeys = {
     needs: (slug: string) => ['arm-admin', 'memberships', slug, 'needs'] as const,
 };
 
-/** invalidation مرکزی — ویترین هم همیشه تازه شود */
+/** invalidation مرکزی — فقط لیست‌های اصلی sellers و buyers invalidate می‌شن */
 export function useInvalidateArmMembers() {
     const queryClient = useQueryClient();
     return useCallback((slug: string) => {
-        queryClient.invalidateQueries({ queryKey: armMemberKeys.prefix(slug) });
+        // فقط لیست sellers و buyers رو invalidate کن (نه candidates)
+        queryClient.invalidateQueries({ queryKey: ['arm-admin', 'memberships', slug, 'sellers'] });
+        queryClient.invalidateQueries({ queryKey: ['arm-admin', 'memberships', slug, 'buyers'] });
         queryClient.invalidateQueries({ queryKey: ['vitrine'] });
         queryClient.invalidateQueries({ queryKey: ['arm-stats'] });
         queryClient.invalidateQueries({ queryKey: ['notifications-derived'] });
