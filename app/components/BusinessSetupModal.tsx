@@ -2,12 +2,13 @@
 'use client';
 
 import React, { useEffect, useState } from 'react';
-import { Building2, Loader2, X, Check, Camera } from 'lucide-react';
+import { Building2, Loader2, X, Check } from 'lucide-react';
 import { createPortal } from 'react-dom';
 import { toast } from 'sonner';
 import { cn } from '@/lib/utils';
-import { useCreateBusinessEntity, useUpdateBusinessEntity, useUploadFile } from '@/lib/api/apiHooks';
+import { useCreateBusinessEntity, useUpdateBusinessEntity } from '@/lib/api/apiHooks';
 import { IranLocationSelector } from '@/app/components/IranLocationSelector';
+import IndustryAutocomplete from '@/app/components/IndustryAutocomplete';
 
 interface BusinessEntityLite {
     id?: string;
@@ -46,19 +47,14 @@ export default function BusinessSetupModal({ isOpen, onClose, business, onSaved 
     const isEdit = !!business?.id;
     const createMut = useCreateBusinessEntity();
     const updateMut = useUpdateBusinessEntity();
-    const uploadMut = useUploadFile();
 
     const [name, setName] = useState('');
     const [type, setType] = useState('wholesaler');
     const [industryName, setIndustryName] = useState('');
-    const [shortDescription, setShortDescription] = useState('');
     const [provinceCode, setProvinceCode] = useState('');
     const [provinceLabel, setProvinceLabel] = useState('');
     const [cityCode, setCityCode] = useState('');
     const [cityLabel, setCityLabel] = useState('');
-    const [phone, setPhone] = useState('');
-    const [logoUrl, setLogoUrl] = useState<string | null>(null);
-    const [logoPreview, setLogoPreview] = useState<string | null>(null);
     const [errors, setErrors] = useState<Record<string, string>>({});
 
     useEffect(() => {
@@ -66,38 +62,20 @@ export default function BusinessSetupModal({ isOpen, onClose, business, onSaved 
         setName(business?.name || '');
         setType(business?.type || 'wholesaler');
         setIndustryName(business?.industryName || '');
-        setShortDescription(business?.shortDescription || '');
         setProvinceCode(business?.provinceCode || '');
         setProvinceLabel(business?.province || '');
         setCityCode(business?.cityCode || '');
         setCityLabel(business?.city || '');
-        setPhone(business?.phone || '');
-        setLogoUrl(business?.logoUrl || null);
-        setLogoPreview(null);
         setErrors({});
     }, [isOpen, business]);
 
-    const busy = createMut.isPending || updateMut.isPending || uploadMut.isPending;
-
-    const handleLogo = async (file: File | null) => {
-        if (!file) return;
-        try {
-            const res = await uploadMut.mutateAsync({
-                file,
-                model: 'Business',
-                modelId: business?.id || 'pending',
-                fieldKey: 'logo',
-            });
-            setLogoUrl(res.path || res.thumbnailPath || null);
-            setLogoPreview(res.thumbnailPath || res.path || null);
-        } catch (e: any) {
-            toast.error(e?.message || 'خطا در آپلود لوگو');
-        }
-    };
+    const busy = createMut.isPending || updateMut.isPending;
 
     const validate = () => {
         const e: Record<string, string> = {};
         if (!name.trim()) e.name = 'نام کسب‌وکار الزامی است';
+        if (!industryName.trim()) e.industryName = 'صنف الزامی است';
+        if (!provinceCode) e.location = 'انتخاب موقعیت الزامی است';
         setErrors(e);
         return Object.keys(e).length === 0;
     };
@@ -108,18 +86,16 @@ export default function BusinessSetupModal({ isOpen, onClose, business, onSaved 
             const payload = {
                 name: name.trim(),
                 type,
-                industryName: industryName.trim() || undefined,
-                shortDescription: shortDescription.trim() || undefined,
-                province: provinceLabel || undefined,
-                provinceCode: provinceCode || undefined,
-                city: cityLabel || undefined,
-                cityCode: cityCode || undefined,
-                phone: phone.trim() || undefined,
-                ...(logoUrl ? { logoUrl } : {}),
+                industryName: industryName.trim(),
+                province: provinceLabel,
+                provinceCode,
+                city: cityLabel,
+                cityCode,
             };
             const res = isEdit
                 ? await updateMut.mutateAsync({ id: business!.id!, data: payload })
                 : await createMut.mutateAsync(payload);
+            toast.success(isEdit ? 'کسب‌وکار بروزرسانی شد' : 'کسب‌وکار با موفقیت ثبت شد');
             onSaved?.(res);
             onClose();
         } catch (e: any) {
@@ -143,14 +119,15 @@ export default function BusinessSetupModal({ isOpen, onClose, business, onSaved 
                      max-h-[92dvh] flex flex-col overflow-hidden
                      animate-in slide-in-from-bottom-4 sm:zoom-in-95 duration-300">
 
+                {/* هدر */}
                 <div className="flex-shrink-0 flex items-center justify-between px-4 py-3 border-b border-outline-variant/20">
                     <div className="flex items-center gap-2.5">
                         <span className="w-9 h-9 rounded-xl bg-primary/10 flex items-center justify-center">
                             <Building2 className="w-4.5 h-4.5 text-primary" />
                         </span>
                         <div>
-                            <h3 className="text-sm font-extrabold text-on-surface">{isEdit ? 'ویرایش کسب‌وکار' : 'ثبت کسب‌وکار جدید'}</h3>
-                            <p className="text-[10px] text-on-surface-variant/70">یک دقیقه بیشتر وقت نمی‌گیرد</p>
+                            <h3 className="text-sm font-extrabold text-on-surface">{isEdit ? 'ویرایش کسب‌وکار' : 'ثبت کسب‌وکار'}</h3>
+                            <p className="text-[10px] text-on-surface-variant/70">کمتر از یک دقیقه!</p>
                         </div>
                     </div>
                     <button onClick={() => !busy && onClose()} aria-label="بستن"
@@ -159,45 +136,34 @@ export default function BusinessSetupModal({ isOpen, onClose, business, onSaved 
                     </button>
                 </div>
 
+                {/* بدنه — مینیمال */}
                 <div className="flex-1 min-h-0 overflow-y-auto scrollbar-slim px-4 py-4 space-y-4">
-                    <section className="rounded-2xl bg-surface-container-low/60 border border-outline-variant/30 p-4 space-y-3">
-                        <div className="flex items-center gap-4">
-                            <label className="relative w-16 h-16 rounded-xl overflow-hidden flex-shrink-0
-                                ring-2 ring-primary/15 hover:ring-primary/40 transition-all group cursor-pointer">
-                                {logoPreview || business?.logoUrl ? (
-                                    // eslint-disable-next-line @next/next/no-img-element
-                                    <img src={(logoPreview || business?.logoUrl) as string} alt="" className="w-full h-full object-cover" />
-                                ) : (
-                                    <span className="w-full h-full grid place-items-center bg-surface-container-high">
-                                        <Building2 className="w-6 h-6 text-on-surface-variant/40" />
-                                    </span>
-                                )}
-                                <input type="file" accept="image/*" className="hidden"
-                                       onChange={(e) => { handleLogo(e.target.files?.[0] ?? null); e.target.value = ''; }} />
-                                <span className="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 transition-opacity grid place-items-center">
-                                    <Camera className="w-4 h-4 text-white" />
-                                </span>
-                            </label>
-                            <div className="flex-1 space-y-1.5">
-                                <label className="text-xs font-medium text-on-surface block">
-                                    نام کسب‌وکار <span className="text-primary">*</span>
-                                </label>
-                                <input type="text" value={name}
-                                       onChange={(e) => { setName(e.target.value); setErrors((p) => ({ ...p, name: '' })); }}
-                                       placeholder="مثلا: پخش خوشگوار" className={inputCls(errors.name)} />
-                                {errors.name && <p className="text-error text-[11px]">{errors.name}</p>}
-                            </div>
-                        </div>
+                    {/* نام کسب‌وکار */}
+                    <div className="space-y-1.5">
+                        <label className="text-xs font-medium text-on-surface block">
+                            نام کسب‌وکار <span className="text-primary">*</span>
+                        </label>
+                        <input type="text" value={name}
+                               onChange={(e) => { setName(e.target.value); setErrors((p) => ({ ...p, name: '' })); }}
+                               placeholder="مثلا: پخش خوشگوار" className={inputCls(errors.name)} />
+                        {errors.name && <p className="text-error text-[11px]">{errors.name}</p>}
+                    </div>
 
-                        <div className="space-y-1.5">
-                            <label className="text-xs font-medium text-on-surface block">صنف / زمینه فعالیت</label>
-                            <input type="text" value={industryName} onChange={(e) => setIndustryName(e.target.value)}
-                                   placeholder="مثلاً: پخش مواد غذایی / سوپرمارکت / تولید نوشیدنی"
-                                   className={inputCls()} />
-                        </div>
-                    </section>
+                    {/* صنف — با autocomplete */}
+                    <div className="space-y-1.5">
+                        <label className="text-xs font-medium text-on-surface block">
+                            صنف / زمینه فعالیت <span className="text-primary">*</span>
+                        </label>
+                        <IndustryAutocomplete
+                            value={industryName}
+                            onChange={(v) => { setIndustryName(v); setErrors((p) => ({ ...p, industryName: '' })); }}
+                            placeholder="مثلا: پخش مواد غذایی، سوپرمارکت..."
+                        />
+                        {errors.industryName && <p className="text-error text-[11px]">{errors.industryName}</p>}
+                    </div>
 
-                    <section className="space-y-2">
+                    {/* نوع فعالیت */}
+                    <div className="space-y-2">
                         <label className="text-xs font-medium text-on-surface block">نوع فعالیت</label>
                         <div className="flex flex-wrap gap-1.5">
                             {BIZ_TYPES.map((t) => (
@@ -210,37 +176,31 @@ export default function BusinessSetupModal({ isOpen, onClose, business, onSaved 
                                 </button>
                             ))}
                         </div>
-                        <p className="text-[10px] text-on-surface-variant/60">
-                            چند کسب وکار داری؟ مهم نیست — بعدا برای بقیه هم می توانی بسازی.
-                        </p>
-                    </section>
+                    </div>
 
-                    <section className="space-y-1.5">
-                        <label className="text-xs font-medium text-on-surface block">معرفی کوتاه کسب  و کار (اختیاری ولی در کاتالوگ می آید)</label>
-                        <input value={shortDescription} onChange={(e) => setShortDescription(e.target.value)} rows={2}
-                                  placeholder="مثلا، نمایندگی پخش مواد غذایی، برند ستاره"
-                                  className="w-full min-h-[56px] py-2.5 px-3.5 text-sm text-right rounded-xl bg-surface-container-lowest
-                                      border border-outline-variant/40 dark:border-gray-700 focus:ring-2 focus:ring-primary/20
-                                      focus:border-primary outline-none transition-all resize-none" />
-                    </section>
-
-                    <section className="space-y-2">
-                        <label className="text-xs font-medium text-on-surface block">موقعیت (اختیاری)</label>
+                    {/* موقعیت */}
+                    <div className="space-y-2">
+                        <label className="text-xs font-medium text-on-surface block">
+                            استان و شهر <span className="text-primary">*</span>
+                        </label>
                         <IranLocationSelector
                             provinceCode={provinceCode}
                             cityCode={cityCode}
-                            onProvinceChange={(code, label) => { setProvinceCode(code); setProvinceLabel(label); }}
+                            onProvinceChange={(code, label) => { setProvinceCode(code); setProvinceLabel(label); setErrors((p) => ({ ...p, location: '' })); }}
                             onCityChange={(code, label) => { setCityCode(code); setCityLabel(label); }}
                         />
-                    </section>
+                        {errors.location && <p className="text-error text-[11px]">{errors.location}</p>}
+                    </div>
 
-                    <section className="space-y-1.5">
-                        <label className="text-xs font-medium text-on-surface block">تلفن (اختیاری)</label>
-                        <input type="tel" dir="ltr" value={phone} onChange={(e) => setPhone(e.target.value)}
-                               placeholder="021..." className={cn(inputCls(), 'text-left')} />
-                    </section>
+                    {/* نکته */}
+                    {isEdit && (
+                        <p className="text-[10px] text-on-surface-variant/60 leading-5 pt-2">
+                            برای افزودن لوگو، تلفن و معرفی کوتاه، از صفحه پروفایل استفاده کنید.
+                        </p>
+                    )}
                 </div>
 
+                {/* فوتر */}
                 <div className="flex-shrink-0 px-4 py-3 border-t border-outline-variant/20">
                     <button onClick={handleSave} disabled={busy}
                             className="w-full h-11 rounded-xl text-sm font-extrabold flex items-center justify-center gap-2
