@@ -95,7 +95,12 @@ export default function BusinessSetupModal({ isOpen, onClose, business, onSaved 
             const res = isEdit
                 ? await updateMut.mutateAsync({ id: business!.id!, data: payload })
                 : await createMut.mutateAsync(payload);
-            toast.success(isEdit ? 'کسب‌وکار بروزرسانی شد' : 'کسب‌وکار با موفقیت ثبت شد');
+            toast.success(
+                isEdit
+                    ? 'کسب‌وکار شما بروزرسانی شد'
+                    : 'کسب‌وکار شما ثبت شد! ✅ اکنون با پر کردن فرم زیر، کاتالوگ خود را ایجاد کنید',
+                { duration: 6000 },
+            );
             onSaved?.(res);
             onClose();
         } catch (e: any) {

@@ -1067,22 +1067,21 @@ function CatalogEditModal({ isOpen, onClose, catalog, salesTypeLocked, onSaved }
     const queryClient = useQueryClient();
     const uploadMutation = useUploadFile();
     const updateCatalogMutation = useUpdateCatalog();
+    const { user } = useSelector((s: RootState) => s.auth);
 
     const isService = catalog?.salesType === 'service';
     const typeLabel = SALES_LABEL[catalog?.salesType] || 'فروش';
     const SalesIcon = SALES_ICON[catalog?.salesType] || Store;
 
+    // ✅ business data برای پیش‌فرض
+    const biz = catalog?.business || {};
+    const bizPhone = biz?.phone || user?.phone || '';
+
     const [name, setName] = useState(catalog?.name || '');
     const [slug, setSlug] = useState(catalog?.slug || '');
-    const [industryName, setIndustryName] = useState(catalog?.industryName || '');
     const [shortDescription, setShortDescription] = useState(catalog?.shortDescription || '');
-    const [phone, setPhone] = useState(catalog?.phone || '');
+    const [phone, setPhone] = useState(catalog?.phone || bizPhone);
     const [website, setWebsite] = useState(catalog?.website || '');
-    const [address, setAddress] = useState(catalog?.address || '');
-    const [provinceCode, setProvinceCode] = useState(catalog?.provinceCode || '');
-    const [provinceLabel, setProvinceLabel] = useState(catalog?.province || '');
-    const [cityCode, setCityCode] = useState(catalog?.cityCode || '');
-    const [cityLabel, setCityLabel] = useState(catalog?.city || '');
     const [slugEditing, setSlugEditing] = useState(false);
     const [errors, setErrors] = useState<Record<string, string>>({});
     const [saving, setSaving] = useState(false);
@@ -1103,16 +1102,12 @@ function CatalogEditModal({ isOpen, onClose, catalog, salesTypeLocked, onSaved }
         return (
             name !== (catalog.name || '') ||
             slug !== (catalog.slug || '') ||
-            industryName !== (catalog.industryName || '') ||
             shortDescription !== (catalog.shortDescription || '') ||
-            phone !== (catalog.phone || '') ||
+            phone !== (catalog.phone || bizPhone) ||
             website !== (catalog.website || '') ||
-            address !== (catalog.address || '') ||
-            provinceCode !== (catalog.provinceCode || '') ||
-            cityCode !== (catalog.cityCode || '') ||
             !!pendingLogoFile
         );
-    }, [catalog, name, slug, industryName, shortDescription, phone, website, address, provinceCode, cityCode, pendingLogoFile]);
+    }, [catalog, name, slug, shortDescription, phone, website, pendingLogoFile, bizPhone]);
 
     const uploadLogo = async (): Promise<string | undefined> => {
         if (!pendingLogoFile) return undefined;
@@ -1136,7 +1131,7 @@ function CatalogEditModal({ isOpen, onClose, catalog, salesTypeLocked, onSaved }
     const handleSave = async () => {
         const e: Record<string, string> = {};
         if (!name.trim()) e.name = 'نام کاتالوگ الزامی است';
-        if (slug && slug.length < 3) e.slug = 'آدرس حداقل ۳ حرف است';
+        if (slug && slug.length < 3) e.slug = 'لینک حداقل ۳ حرف است';
         if (slug && slug !== catalog.slug) {
             const check = await apiService.catalog.checkSlug(slug, catalog.id);
             if (!check.available) {
@@ -1154,15 +1149,9 @@ function CatalogEditModal({ isOpen, onClose, catalog, salesTypeLocked, onSaved }
                 data: {
                     name: name.trim(),
                     slug: slug || undefined,
-                    industryName: industryName.trim() || undefined,
                     shortDescription: shortDescription.trim() || undefined,
                     phone: phone.trim() || undefined,
                     website: website.trim() || undefined,
-                    address: address.trim() || undefined,
-                    province: provinceLabel || undefined,
-                    city: cityLabel || undefined,
-                    provinceCode: provinceCode || undefined,
-                    cityCode: cityCode || undefined,
                     ...(logoFileId ? { logoFileId } : {}),
                 },
             });
@@ -1174,8 +1163,8 @@ function CatalogEditModal({ isOpen, onClose, catalog, salesTypeLocked, onSaved }
             setSavedTick(true);
             setTimeout(() => onClose(), 450);
         } catch (err: any) {
-            if (err?.data?.errorCode === 'SLUG_TAKEN') { setErrors((p) => ({ ...p, slug: 'taken' })); toast.error('این آدرس قبلاً گرفته شده'); }
-            else if (err?.data?.errorCode === 'SLUG_RESERVED') { setErrors((p) => ({ ...p, slug: 'reserved' })); toast.error('این آدرس قابل انتخاب نیست'); }
+            if (err?.data?.errorCode === 'SLUG_TAKEN') { setErrors((p) => ({ ...p, slug: 'taken' })); toast.error('این لینک قبلاً گرفته شده'); }
+            else if (err?.data?.errorCode === 'SLUG_RESERVED') { setErrors((p) => ({ ...p, slug: 'reserved' })); toast.error('این لینک قابل انتخاب نیست'); }
             else toast.error(err?.message || 'خطا در ذخیره');
         } finally {
             setSaving(false);
@@ -1224,12 +1213,12 @@ function CatalogEditModal({ isOpen, onClose, catalog, salesTypeLocked, onSaved }
 
                 <div className="flex-1 min-h-0 overflow-y-auto scrollbar-slim px-4 py-4 space-y-4">
 
+                    {/* ═══ لوگو + نام ═══ */}
                     <section className="rounded-2xl bg-surface-container-low/60 border border-outline-variant/30 p-4 space-y-3">
                         <div className="flex items-center gap-4">
                             <label className="relative w-16 h-16 rounded overflow-hidden flex-shrink-0
                                 ring-2 ring-amber-500/20 hover:ring-amber-500/50 transition-all group cursor-pointer">
                                 {logoPreview || catalog.logoUrl ? (
-                                    // eslint-disable-next-line @next/next/no-img-element
                                     <img src={(logoPreview || catalog.logoUrl) as string} alt="" className="w-full h-full object-cover" />
                                 ) : (
                                     <span className="w-full h-full grid place-items-center bg-surface-container-high">
@@ -1262,8 +1251,41 @@ function CatalogEditModal({ isOpen, onClose, catalog, salesTypeLocked, onSaved }
                         </div>
                     </section>
 
+                    {/* ═══ معرفی کوتاه ═══ */}
+                    <section className="rounded-2xl bg-surface-container-low/60 border border-outline-variant/30 p-4 space-y-1.5">
+                        <SectionTitle icon={Settings2} text="معرفی کوتاه" />
+                        <input type="text" value={shortDescription} onChange={(e) => setShortDescription(e.target.value)}
+                               maxLength={120}
+                               placeholder={isService ? 'مثلاً: خدمات حسابداری و مشاوره مالیاتی' : 'مثلاً: تولید و پخش انواع بلوک سیمانی'}
+                               className={inputCls()} />
+                    </section>
+
+                    {/* ═══ تماس ═══ */}
+                    <section className="rounded-2xl bg-surface-container-low/60 border border-outline-variant/30 p-4 space-y-3">
+                        <SectionTitle icon={Phone} text="اطلاعات تماس" />
+                        <div className="space-y-1.5">
+                            <label className="text-xs font-medium text-on-surface block">شماره تماس (های) پشتیبانی مشتری</label>
+                            <input type="tel" dir="ltr" value={phone} onChange={(e) => setPhone(e.target.value)}
+                                   placeholder="0912..." className={cn(inputCls(), 'text-left')} />
+                        </div>
+                        <div className="space-y-1.5">
+                            <label className="text-xs font-medium text-on-surface block">وب‌سایت (اختیاری)</label>
+                            <input type="url" dir="ltr" value={website} onChange={(e) => setWebsite(e.target.value)}
+                                   placeholder="example.com" className={cn(inputCls(), 'text-left')} />
+                        </div>
+                        {/* ✅ اطلاعات کسب‌وکار به‌صورت فقط‌خواندنی */}
+                        {(biz.city || biz.industryName) && (
+                            <div className="rounded bg-surface-container-high/30 px-3 py-2 text-[10px] text-on-surface-variant/70">
+                                {biz.industryName && <span>صنف: {biz.industryName}</span>}
+                                {biz.city && <span> · {biz.province ? `${biz.province}، ` : ''}{biz.city}</span>}
+                                <span className="block mt-1 text-[9px]">برای تغییر صنف و موقعیت، کسب‌وکار را ویرایش کنید</span>
+                            </div>
+                        )}
+                    </section>
+
+                    {/* ═══ لینک کاتالوگ (آخر) ═══ */}
                     <section className="rounded-2xl bg-surface-container-low/60 border border-outline-variant/30 p-4">
-                        <SectionTitle icon={Globe} text="آدرس اختصاصی کاتالوگ" />
+                        <SectionTitle icon={Globe} text="لینک کاتالوگ" />
 
                         {!slugEditing ? (
                             <div className="flex items-center justify-between gap-2">
@@ -1272,10 +1294,10 @@ function CatalogEditModal({ isOpen, onClose, catalog, salesTypeLocked, onSaved }
                                         daymat.ir/<span className="text-primary">{catalog.slug}</span>
                                     </span>
                                 ) : (
-                                    <span className="text-[11px] text-amber-600">آدرس تنظیم نشده</span>
+                                    <span className="text-[11px] text-amber-600">لینک تنظیم نشده</span>
                                 )}
                                 <button type="button" onClick={() => setSlugEditing(true)}
-                                        aria-label="ویرایش آدرس کاتالوگ"
+                                        aria-label="ویرایش لینک کاتالوگ"
                                         className="w-8 h-8 rounded-full bg-surface-container-high/50 grid place-items-center
                                             text-on-surface-variant hover:text-amber-600 hover:bg-amber-500/10 transition-colors flex-shrink-0">
                                     <Pencil className="w-3.5 h-3.5" />
@@ -1293,7 +1315,6 @@ function CatalogEditModal({ isOpen, onClose, catalog, salesTypeLocked, onSaved }
                                         <AlertTriangle className="w-3.5 h-3.5 text-amber-600 dark:text-amber-400 mt-0.5 flex-shrink-0" />
                                         <p className="text-[10px] text-amber-800 dark:text-amber-200 leading-5">
                                             اگر لینک کاتالوگ را عوض کنی، کسانی که آدرس قبلی را دارند و ذخیره‌اش نکرده‌اند دیگر پیدایت نمی‌کنند.
-                                            بهتر است قبل از تغییر به مشتری‌هات اطلاع بدهی.
                                         </p>
                                     </div>
                                 )}
@@ -1305,51 +1326,9 @@ function CatalogEditModal({ isOpen, onClose, catalog, salesTypeLocked, onSaved }
                         )}
                         {errors.slug && !slugEditing && (
                             <p className="text-[10px] text-error mt-1.5 flex items-center gap-1">
-                                <AlertTriangle className="w-3 h-3" /> مشکل در آدرس — دوباره ویرایشش کن
+                                <AlertTriangle className="w-3 h-3" /> مشکل در لینک — دوباره ویرایشش کن
                             </p>
                         )}
-                    </section>
-
-                    <section className="rounded-2xl bg-surface-container-low/60 border border-outline-variant/30 p-4 space-y-1.5">
-                        <SectionTitle icon={Building2} text="صنف (اختیاری)" />
-                        <input type="text" value={industryName} onChange={(e) => setIndustryName(e.target.value)}
-                               placeholder="مثلاً: پخش مواد غذایی" className={inputCls()} />
-                    </section>
-
-                    <section className="rounded-2xl bg-surface-container-low/60 border border-outline-variant/30 p-4 space-y-3">
-                        <SectionTitle icon={Settings2} text="معرفی" />
-                        <div className="space-y-1.5">
-                            <label className="text-xs font-medium text-on-surface block">توضیح کوتاه</label>
-                            <input type="text" value={shortDescription} onChange={(e) => setShortDescription(e.target.value)}
-                                   maxLength={120}
-                                   placeholder={isService ? 'مثلاً: خدمات حسابداری و مشاوره مالیاتی' : 'مثلاً: تولید و پخش انواع بلوک سیمانی'}
-                                   className={inputCls()} />
-                        </div>
-                    </section>
-
-                    <section className="rounded-2xl bg-surface-container-low/60 border border-outline-variant/30 p-4 space-y-3">
-                        <SectionTitle icon={Phone} text="تماس و موقعیت" />
-                        <div className="space-y-1.5">
-                            <label className="text-xs font-medium text-on-surface block">تلفن</label>
-                            <input type="tel" dir="ltr" value={phone} onChange={(e) => setPhone(e.target.value)}
-                                   placeholder="0912..." className={cn(inputCls(), 'text-left')} />
-                        </div>
-                        <div className="space-y-1.5">
-                            <label className="text-xs font-medium text-on-surface block">وب‌سایت</label>
-                            <input type="url" dir="ltr" value={website} onChange={(e) => setWebsite(e.target.value)}
-                                   placeholder="example.com" className={cn(inputCls(), 'text-left')} />
-                        </div>
-                        <IranLocationSelector
-                            provinceCode={provinceCode}
-                            cityCode={cityCode}
-                            onProvinceChange={(code, label) => { setProvinceCode(code); setProvinceLabel(label); }}
-                            onCityChange={(code, label) => { setCityCode(code); setCityLabel(label); }}
-                        />
-                        <div className="space-y-1.5">
-                            <label className="text-xs font-medium text-on-surface block">آدرس دقیق</label>
-                            <input type="text" value={address} onChange={(e) => setAddress(e.target.value)}
-                                   className={inputCls()} />
-                        </div>
                     </section>
                 </div>
 
