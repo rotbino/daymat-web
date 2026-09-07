@@ -10,13 +10,13 @@ import Link from 'next/link';
 import {
     LayoutDashboard,
     CreditCard,
-    Users,
     Settings,
     ChevronRight,
     ChevronLeft,
     Home,
     LogOut,
     Store,
+    ShoppingCart,
     Package, BookOpen,
 } from 'lucide-react';
 import { toast } from 'sonner';
@@ -29,7 +29,8 @@ const menuItems = [
     { href: '/arm-admin', label: 'داشبورد', icon: LayoutDashboard, exact: true },
     { href: '/arm-admin/catalogs', label: 'کاتالوگ‌ها', icon: BookOpen },
     { href: '/arm-admin/ads', label: 'آگهی‌ها', icon: Package },
-    { href: '/arm-admin/members', label: 'اعضا', icon: Users },
+    { href: '/arm-admin/sellers', label: 'فروشندگان', icon: Store },
+    { href: '/arm-admin/buyers', label: 'خریداران', icon: ShoppingCart },
     { href: '/arm-admin/financial', label: 'مالی', icon: CreditCard },
     { href: '/arm-admin/settings', label: 'تنظیمات', icon: Settings },
     { href: '/', label: 'سایت', icon: Home },
@@ -176,7 +177,7 @@ export default function ArmAdminLayout({ children }: { children: React.ReactNode
                     let badgeCount = 0;
                     if (item.href === '/arm-admin/ads') badgeCount = stats?.pendingAds || 0;
                     if (item.href === '/arm-admin/financial') badgeCount = stats?.pendingPayments || 0;
-                    if (item.href === '/arm-admin/members') badgeCount = stats?.pendingMembers || 0;
+                    if (item.href === '/arm-admin/sellers' || item.href === '/arm-admin/buyers') badgeCount = stats?.pendingMembers || 0;
 
                     return (
                         <React.Fragment key={item.href}>
@@ -300,7 +301,7 @@ export default function ArmAdminLayout({ children }: { children: React.ReactNode
                                 let badgeCount = 0;
                                 if (item.href === '/arm-admin/ads') badgeCount = stats?.pendingAds || 0;
                                 if (item.href === '/arm-admin/financial') badgeCount = stats?.pendingPayments || 0;
-                                if (item.href === '/arm-admin/members') badgeCount = stats?.pendingMembers || 0;
+                                if (item.href === '/arm-admin/sellers' || item.href === '/arm-admin/buyers') badgeCount = stats?.pendingMembers || 0;
 
                                 return (
                                     <Link
