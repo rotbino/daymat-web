@@ -1076,7 +1076,11 @@ export const useToggleSellerPaused = (slug?: string) => {
         mutationFn: ({ catalogId, paused }: { catalogId: string; paused: boolean }) =>
             apiRequest(`/arm-admin/${slug}/memberships/sellers/${catalogId}`, { method: 'PATCH', data: { paused } }),
         onSuccess: (_, { paused }) => {
-            toast.success(paused ? 'فروشنده متوقف شد — کالاهایش از تابلو برداشته شد' : 'فروشنده ادامه یافت');
+            toast.success(
+                paused
+                    ? 'عضویت فروشنده موقتاً متوقف شد — آگهی‌هایش فعلاً در این بازار نمایش داده نمی‌شود'
+                    : 'فروشنده دوباره فعال شد — آگهی‌هایش روی تابلوی بازار نمایش داده می‌شود'
+            );
             invalidate(slug!);
         },
         onError: (error: ApiError) => toast.error(error.message || 'خطا'),
@@ -1089,7 +1093,7 @@ export const useRemoveSeller = (slug?: string) => {
         mutationFn: (catalogId: string) =>
             apiRequest(`/arm-admin/${slug}/memberships/sellers/${catalogId}`, { method: 'DELETE' }),
         onSuccess: () => {
-            toast.success('نقش فروشندگی حذف شد');
+            toast.success('نقش فروشندگی این کاتالوگ در بازار حذف شد');
             invalidate(slug!);
         },
         onError: (error: ApiError) => toast.error(error.message || 'خطا'),
@@ -1154,7 +1158,7 @@ export const useRemoveBuyer = (slug?: string) => {
         mutationFn: (membershipId: string) =>
             apiRequest(`/arm-admin/${slug}/memberships/buyers/${membershipId}`, { method: 'DELETE' }),
         onSuccess: () => {
-            toast.success('نقش خریداری حذف شد');
+            toast.success('این کسب‌وکار از نقش خریداری بازار خارج شد');
             invalidate(slug!);
         },
         onError: (error: ApiError) => toast.error(error.message || 'خطا'),
@@ -1167,7 +1171,11 @@ export const useToggleBuyerPaused = (slug?: string) => {
         mutationFn: ({ membershipId, paused }: { membershipId: string; paused: boolean }) =>
             apiRequest(`/arm-admin/${slug}/memberships/buyers/${membershipId}/pause`, { method: 'PATCH', data: { paused } }),
         onSuccess: (_, { paused }) => {
-            toast.success(paused ? 'خریدار متوقف شد' : 'خریدار ادامه یافت');
+            toast.success(
+                paused
+                    ? 'این خریدار موقتاً از بازار خارج شد — حق دیدن قیمت‌ها را ندارد'
+                    : 'این کسب‌وکار دوباره به‌عنوان خریدار بازار فعال شد'
+            );
             invalidate(slug!);
         },
         onError: (error: ApiError) => toast.error(error.message || 'خطا'),

@@ -426,13 +426,13 @@ function SellersTab({ slug }: { slug: string }) {
                                     )}
                                     <button onClick={() => pauseMut.mutate({ catalogId: c.catalog.id, paused: !isPaused })}
                                             disabled={busy}
-                                            title={isPaused ? 'ادامهٔ انتشار' : 'توقف انتشار'}
+                                            title={isPaused ? 'فعال‌سازی مجدد فروشنده' : 'توقف موقت فروشنده'}
                                             className={cn('h-8 px-3 rounded-lg text-[11px] font-bold inline-flex items-center gap-1.5 transition-colors disabled:opacity-50',
                                                 isPaused ? 'bg-emerald-500/10 text-emerald-600 hover:bg-emerald-500/20'
                                                     : 'bg-amber-500/10 text-amber-600 hover:bg-amber-500/20')}>
                                         {busyPause ? <Loader2 className="w-3.5 h-3.5 animate-spin" />
                                             : isPaused ? <PlayCircle className="w-3.5 h-3.5" /> : <PauseCircle className="w-3.5 h-3.5" />}
-                                        {isPaused ? 'ادامه' : 'توقف'}
+                                        {isPaused ? 'فعال‌سازی' : 'توقف موقت'}
                                     </button>
                                     {confirming ? (
                                         <div className="flex items-center gap-1.5">
@@ -685,7 +685,7 @@ function BuyersTab({ slug }: { slug: string }) {
                                                 <button
                                                     onClick={() => pauseMut.mutate({ membershipId: b.membershipId, paused: b.businessStatus === 'active' })}
                                                     disabled={pauseMut.isPending}
-                                                    title={b.businessStatus === 'active' ? 'توقف موقت' : 'فعال‌سازی'}
+                                                    title={b.businessStatus === 'active' ? 'توقف موقت نقش خریدار' : 'فعال‌سازی مجدد خریدار'}
                                                     className={cn(
                                                         'h-8 w-8 rounded-lg grid place-items-center transition-colors',
                                                         b.businessStatus === 'active'
