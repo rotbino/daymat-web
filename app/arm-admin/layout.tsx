@@ -42,6 +42,7 @@ export default function ArmAdminLayout({ children }: { children: React.ReactNode
     const pathname = usePathname();
     const { user, isAuthenticated } = useSelector((state: RootState) => state.auth);
     const { currentSlug, currentArm } = useSelector((state: RootState) => state.arm);
+    const dispatch = useDispatch();
 
     const [isCollapsed, setIsCollapsed] = useState(false);
     const [isAuthorized, setIsAuthorized] = useState<boolean | null>(null);
