@@ -1148,7 +1148,23 @@ export const useRemoveBuyer = (slug?: string) => {
     return useMutation({
         mutationFn: (membershipId: string) =>
             apiRequest(`/arm-admin/${slug}/memberships/buyers/${membershipId}`, { method: 'DELETE' }),
-        onSuccess: () => toast.success('خریدار از بازار حذف شد'),
+        onSuccess: () => {
+            toast.success('نقش خریداری حذف شد');
+            invalidate();
+        },
+        onError: (error: ApiError) => toast.error(error.message || 'خطا'),
+    });
+};
+
+export const useToggleBuyerPaused = (slug?: string) => {
+    const invalidate = useInvalidateArmMembers();
+    return useMutation({
+        mutationFn: ({ membershipId, paused }: { membershipId: string; paused: boolean }) =>
+            apiRequest(`/arm-admin/${slug}/memberships/buyers/${membershipId}/pause`, { method: 'PATCH', data: { paused } }),
+        onSuccess: (_, { paused }) => {
+            toast.success(paused ? 'خریدار متوقف شد' : 'خریدار ادامه یافت');
+            invalidate();
+        },
         onError: (error: ApiError) => toast.error(error.message || 'خطا'),
     });
 };

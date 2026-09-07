@@ -18,7 +18,7 @@ import CategoryPicker from '@/app/ad/components/CategoryPicker';
 import {
     useArmSellers, useArmSellerCandidates, useArmBuyers, useArmBuyerCandidates,
     useAddSeller, useToggleSellerPaused, useRemoveSeller,
-    useAddBuyer, useRemoveBuyer, useSetAdMarketCategoryAdmin,
+    useAddBuyer, useRemoveBuyer, useToggleBuyerPaused, useSetAdMarketCategoryAdmin,
     useArmNeedsCategory, armMemberKeys,
 } from '@/lib/api/apiHooks';
 
@@ -513,6 +513,7 @@ function BuyersTab({ slug }: { slug: string }) {
     const candidates: any[] = candidatesQ.data?.items ?? [];
 
     const [confirmRemoveId, setConfirmRemoveId] = useState<string | null>(null);
+    const pauseMut = useToggleBuyerPaused(slug);
 
     const buyerTypeLabel = (t: string) => {
         const map: Record<string, string> = {
@@ -674,10 +675,33 @@ function BuyersTab({ slug }: { slug: string }) {
                                                 </button>
                                             </>
                                         ) : (
-                                            <button onClick={() => setConfirmRemoveId(b.membershipId)} title="حذف از بازار"
-                                                    className="h-8 w-8 rounded-lg text-error/60 hover:text-error hover:bg-error/10 grid place-items-center transition-colors">
-                                                <Trash2 className="w-3.5 h-3.5" />
-                                            </button>
+                                            <>
+                                                {/* ✅ دکمه Pause/Resume */}
+                                                <button
+                                                    onClick={() => pauseMut.mutate({ membershipId: b.membershipId, paused: b.status === 'active' })}
+                                                    disabled={pauseMut.isPending}
+                                                    title={b.status === 'active' ? 'توقف موقت' : 'فعال‌سازی'}
+                                                    className={cn(
+                                                        'h-8 w-8 rounded-lg grid place-items-center transition-colors',
+                                                        b.status === 'active'
+                                                            ? 'text-amber-600/70 hover:text-amber-600 hover:bg-amber-500/10'
+                                                            : 'text-emerald-600/70 hover:text-emerald-600 hover:bg-emerald-500/10'
+                                                    )}
+                                                >
+                                                    {pauseMut.isPending && pauseMut.variables?.membershipId === b.membershipId ? (
+                                                        <Loader2 className="w-3.5 h-3.5 animate-spin" />
+                                                    ) : b.status === 'active' ? (
+                                                        <PauseCircle className="w-3.5 h-3.5" />
+                                                    ) : (
+                                                        <PlayCircle className="w-3.5 h-3.5" />
+                                                    )}
+                                                </button>
+                                                {/* ✅ دکمه حذف (نقش خریداری) */}
+                                                <button onClick={() => setConfirmRemoveId(b.membershipId)} title="حذف نقش خریداری"
+                                                        className="h-8 w-8 rounded-lg text-error/60 hover:text-error hover:bg-error/10 grid place-items-center transition-colors">
+                                                    <Trash2 className="w-3.5 h-3.5" />
+                                                </button>
+                                            </>
                                         )}
                                     </div>
                                 </div>
