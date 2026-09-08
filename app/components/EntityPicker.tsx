@@ -540,15 +540,34 @@ function EntityPickerModal({
                             {isFetching && allItems.length === 0 ? (
                                 <div className="p-6 text-center"><Loader2 className="w-5 h-5 animate-spin text-primary mx-auto" /></div>
                             ) : allItems.length === 0 ? (
-                                <div className="p-6 text-center">
-                                    <Tag className="w-10 h-10 text-on-surface-variant/20 mx-auto mb-2" />
-                                    <p className="text-xs text-on-surface-variant">
-                                        {!canSearch && search.length > 0
-                                            ? `حداقل ${minSearchChars} حرف تایپ کنید`
-                                            : canSearch && trimmedSearch
-                                                ? 'موردی پیدا نشد'
-                                                : 'برای جستجو تایپ کنید'}
-                                    </p>
+                                // ✅ پیام واضح «پیدا نشد» + دکمه create وسط لیست
+                                <div className="p-6 space-y-4">
+                                    <div className="text-center">
+                                        <Tag className="w-10 h-10 text-on-surface-variant/20 mx-auto mb-2" />
+                                        <p className="text-xs text-on-surface-variant mb-1">
+                                            {!canSearch && search.length > 0
+                                                ? `حداقل ${minSearchChars} حرف تایپ کنید`
+                                                : canSearch && trimmedSearch
+                                                    ? 'موردی با این نام پیدا نشد.'
+                                                    : 'موردی موجود نیست.'}
+                                        </p>
+                                        {canSearch && trimmedSearch && canCreate && (
+                                            <p className="text-[11px] text-on-surface-variant/70 leading-5">
+                                                می‌توانید مورد مورد نیاز خود را به لیست اضافه کنید.
+                                            </p>
+                                        )}
+                                    </div>
+                                    {/* ✅ دکمه create وسط لیست خالی */}
+                                    {canCreate && (
+                                        <button
+                                            type="button"
+                                            onClick={() => setShowCreateForm(true)}
+                                            className="w-full flex items-center justify-center gap-2 p-3 rounded-xl bg-primary text-on-primary hover:bg-primary/90 active:scale-95 transition-all shadow-sm"
+                                        >
+                                            <Plus className="w-4 h-4" />
+                                            <span className="text-xs font-bold">{createLabel}</span>
+                                        </button>
+                                    )}
                                 </div>
                             ) : (
                                 <>
@@ -580,7 +599,6 @@ function EntityPickerModal({
                                                     </>
                                                 )}
                                             </button>
-                                            {/* ✅ آیکون ویرایش — فقط برای isNew و اگه updateFn وجود داشته باشه */}
                                             {updateFn && item.isNew && (
                                                 <button
                                                     type="button"
@@ -602,6 +620,19 @@ function EntityPickerModal({
                                             {isFetching ? <Loader2 className="w-4 h-4 animate-spin mx-auto" /> : 'نمایش بیشتر...'}
                                         </button>
                                     )}
+                                    {/* ✅ دکمه create در ته لیست وقتی سرچ نتیجه داره ولی exact match نیست */}
+                                    {canCreate && (
+                                        <div className="p-3 border-t border-outline-variant/20 mt-2">
+                                            <button
+                                                type="button"
+                                                onClick={() => setShowCreateForm(true)}
+                                                className="w-full flex items-center justify-center gap-2 p-2.5 rounded-xl border-2 border-dashed border-primary/40 text-primary hover:bg-primary/5 active:scale-95 transition-all"
+                                            >
+                                                <Plus className="w-4 h-4" />
+                                                <span className="text-xs font-bold">{createLabel}: «{trimmedSearch}»</span>
+                                            </button>
+                                        </div>
+                                    )}
                                 </>
                             )}
                         </div>
@@ -620,20 +651,10 @@ function EntityPickerModal({
                             </div>
                         )}
 
-                        {/* دکمه ایجاد کالای جدید — وسط، رنگ برند */}
-                        {canCreate && (
+                        {/* ✅ دکمه create پایین مدال وقتی سرچ خالی است و هیچ نتیجه‌ای نیست */}
+                        {canCreate && allItems.length === 0 && (
                             <div className="flex-shrink-0 p-3 border-t border-outline-variant/20">
-                                <button
-                                    type="button"
-                                    onClick={() => setShowCreateForm(true)}
-                                    className="w-full flex items-center justify-center gap-2 p-3 rounded-xl bg-primary text-on-primary hover:bg-primary/90 active:scale-95 transition-all shadow-sm"
-                                >
-                                    <Plus className="w-4 h-4" />
-                                    <span className="text-xs font-bold">
-                                        {createLabel}
-                                    </span>
-                                </button>
-                                <p className="text-[10px] text-center text-on-surface-variant/60 mt-1.5">
+                                <p className="text-[10px] text-center text-on-surface-variant/60 mb-2">
                                     {createHint}
                                 </p>
                             </div>

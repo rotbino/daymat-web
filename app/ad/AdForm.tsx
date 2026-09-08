@@ -294,16 +294,28 @@ export function AdForm({ adId, onSuccess }: { adId?: string; onSuccess?: () => v
     }, [formData.categoryId, categoryTree]);
 
     // ═══ عکس‌ها — اسلات‌محور؛ موجود = {id, url}، جدید = {file, previewUrl} ═══
+    // ✅ اگه آگهی عکس خودش رو نداره ولی کالای مرجع عکس داره، اون رو به‌عنوان fallback نشون بده
     useEffect(() => {
         if (isEditMode && existingAd) {
             const imgs = (existingAd.files || [])
                 .filter((f: any) => f.fieldKey?.startsWith('ad-image'))
                 .sort((a: any, b: any) =>
                     parseInt(a.fieldKey.split('-')[2] || '0') - parseInt(b.fieldKey.split('-')[2] || '0'));
-            setImages(imgs.map((img: any) => ({
+            const adImages = imgs.map((img: any) => ({
                 id: img.id,
                 url: img.thumbnailPath || img.path,
-            })));
+            }));
+            // ✅ اگه عکس آگهی وجود نداره، عکس کالای مرجع رو بذار
+            if (adImages.length === 0) {
+                const productImg = (existingAd as any).productRef?.thumbnailUrl || (existingAd as any).productRef?.imageUrl;
+                if (productImg) {
+                    setImages([{ url: productImg, file: null, previewUrl: null, _fromProduct: true } as any]);
+                } else {
+                    setImages([]);
+                }
+            } else {
+                setImages(adImages);
+            }
         } else {
             setImages([]);
         }
@@ -393,7 +405,7 @@ export function AdForm({ adId, onSuccess }: { adId?: string; onSuccess?: () => v
                 errs.push('کالا را انتخاب کن.');
             }
             if (selectedProduct || formData.productType.trim()) {
-                if (uploadedCount === 0) errs.push('حداقل یک تصویر انتخاب کن.');
+                // ✅ عکس الزامی نیست — اگه عکس آگهی نباشه، عکس کالای مرجع استفاده می‌شه
                 if (!formData.unitId) errs.push('واحد فروش را انتخاب کن.');
             }
         } else if (step === 2) {
