@@ -226,15 +226,14 @@ function FilterModalShell({
 }) {
     return createPortal(
         <div
-            className="fixed inset-0 z-[110] flex items-end sm:items-center justify-center bg-black/50 animate-in fade-in duration-200"
+            className="fixed inset-0 z-[110] flex items-end sm:items-center justify-center bg-black/50 animate-in fade-in duration-200 p-3 sm:p-4 pb-[80px] sm:pb-4"
             onClick={onClose}
         >
             <div
                 onClick={(e) => e.stopPropagation()}
                 className="bg-surface w-full sm:max-w-md rounded-t-3xl sm:rounded-2xl shadow-2xl
-                    max-h-[85dvh] flex flex-col overflow-hidden
-                    animate-in slide-in-from-bottom-4 sm:zoom-in-95 duration-300
-                    mb-[env(safe-area-inset-bottom)]"
+                    min-h-[60dvh] max-h-[80dvh] flex flex-col overflow-hidden
+                    animate-in slide-in-from-bottom-4 sm:zoom-in-95 duration-300"
             >
                 <div className="flex-shrink-0 flex items-center justify-between px-4 py-3 border-b border-outline-variant/20">
                     <h3 className="text-sm font-extrabold text-on-surface">{title}</h3>
@@ -286,7 +285,7 @@ function ProvinceModal({
                         value={search}
                         onChange={(e) => setSearch(e.target.value)}
                         placeholder="جستجوی استان..."
-                        autoFocus
+
                         className="w-full h-10 pr-9 pl-3 rounded-xl bg-surface-container-lowest border border-outline-variant/40 text-sm outline-none focus:ring-2 focus:ring-primary/30 focus:border-primary transition-all"
                     />
                 </div>
@@ -367,7 +366,7 @@ function CityModal({
                         value={search}
                         onChange={(e) => setSearch(e.target.value)}
                         placeholder="جستجوی شهر..."
-                        autoFocus
+
                         className="w-full h-10 pr-9 pl-3 rounded-xl bg-surface-container-lowest border border-outline-variant/40 text-sm outline-none focus:ring-2 focus:ring-primary/30 focus:border-primary transition-all"
                     />
                 </div>
@@ -472,7 +471,7 @@ function IndustryModal({
                             setCreatingNew(false);
                         }}
                         placeholder="نام صنف را جستجو کنید..."
-                        autoFocus
+
                         className="w-full h-10 pr-9 pl-3 rounded-xl bg-surface-container-lowest border border-outline-variant/40 text-sm outline-none focus:ring-2 focus:ring-primary/30 focus:border-primary transition-all"
                     />
                 </div>
@@ -544,7 +543,7 @@ function IndustryModal({
                         value={newIndustryName}
                         onChange={(e) => setNewIndustryName(e.target.value)}
                         placeholder="نام دقیق صنف..."
-                        autoFocus
+
                         className="w-full h-10 px-3 rounded-xl bg-surface-container-lowest border border-amber-400/50 text-sm outline-none focus:ring-2 focus:ring-amber-400/30 focus:border-amber-500 transition-all"
                     />
                     <div className="flex gap-2">
