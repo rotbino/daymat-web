@@ -55,9 +55,7 @@ export default function ProductReferencePicker({
                 imageUrl: data.imageUrl,
                 thumbnailUrl: data.imageUrl,
             })}
-            // ✅ تابع ویرایش
             updateFn={(id, data) => apiService.product.update(id, data)}
-            // ✅ فیلدهای create و edit مشابه هستن
             renderCreateFields={({ title, setTitle, dataRef }) => (
                 <CreateProductExtraFields
                     title={title}
@@ -126,7 +124,7 @@ export default function ProductReferencePicker({
 }
 
 // ═══════════════════════════════════════════════════════════
-// فرم ایجاد کالای جدید — عکس + برند
+// فرم ایجاد/ویرایش کالا — عکس + برند (با EntityPicker)
 // ═══════════════════════════════════════════════════════════
 function CreateProductExtraFields({
     title,
@@ -140,52 +138,24 @@ function CreateProductExtraFields({
     dataRef: React.MutableRefObject<{ [key: string]: any }>;
 }) {
     const [imageUrl, setImageUrl] = useState<string>('');
-    const [brandId, setBrandId] = useState<string>('');
-    const [brandTitle, setBrandTitle] = useState<string>('');
-    const [brandSearch, setBrandSearch] = useState('');
-    const [brandResults, setBrandResults] = useState<any[]>([]);
-    const [brandSearching, setBrandSearching] = useState(false);
+    const [brandValue, setBrandValue] = useState<EntityValue | null>(null);
     const [uploading, setUploading] = useState(false);
     const [logoPreview, setLogoPreview] = useState<string | null>(null);
-    const [pendingFile, setPendingFile] = useState<File | null>(null);
     const uploadMut = useUploadFile();
 
-    // ✅ dataRef رو آپدیت کن تا EntityPicker بتونه imageUrl و brandId رو بخونه
+    // ✅ dataRef رو آپدیت کن
     React.useEffect(() => {
         dataRef.current = {
             ...dataRef.current,
             imageUrl: imageUrl || undefined,
-            brandId: brandId || undefined,
+            brandId: brandValue?.id || undefined,
         };
-    }, [imageUrl, brandId, dataRef]);
-
-    // search brand
-    React.useEffect(() => {
-        if (brandSearch.trim().length < 2) {
-            setBrandResults([]);
-            return;
-        }
-        const timer = setTimeout(async () => {
-            setBrandSearching(true);
-            try {
-                const res = await apiService.brand.search(brandSearch, category, 1, 10);
-                setBrandResults(res.items);
-            } finally {
-                setBrandSearching(false);
-            }
-        }, 300);
-        return () => clearTimeout(timer);
-    }, [brandSearch, category]);
+    }, [imageUrl, brandValue, dataRef]);
 
     const handleFileSelect = (file: File | null) => {
         if (!file) return;
-        setPendingFile(file);
         const url = URL.createObjectURL(file);
         setLogoPreview(url);
-        // ✅ فعلاً imageUrl رو با object URL ست کن — بعد از create، آپلود واقعی انجام می‌شه
-        // این یه مشکل داره: object URL فقط تو همون مرورگر کار می‌کنه
-        // راه بهتر: قبل از create، عکس رو آپلود کن
-        // بذار اینجا آپلود رو انجام بدیم
         uploadImage(file);
     };
 
@@ -239,67 +209,43 @@ function CreateProductExtraFields({
                 </div>
             </div>
 
-            {/* برند (اختیاری) */}
-            <div className="space-y-1.5">
-                <label className="text-xs font-bold text-on-surface block">برند (اختیاری)</label>
-                {brandId ? (
-                    <div className="flex items-center gap-2 p-2 rounded-xl bg-primary/5 border border-primary/30">
-                        <Tag className="w-4 h-4 text-primary flex-shrink-0" />
-                        <span className="flex-1 text-sm font-bold text-on-surface truncate">{brandTitle}</span>
-                        <button
-                            type="button"
-                            onClick={() => { setBrandId(''); setBrandTitle(''); setBrandSearch(''); }}
-                            className="text-[10px] text-error/60 hover:text-error"
-                        >
-                            حذف
-                        </button>
-                    </div>
-                ) : (
+            {/* برند — با EntityPicker کامل (سرچ + ایجاد) */}
+            <EntityPicker
+                value={brandValue}
+                onChange={setBrandValue}
+                label="برند (اختیاری)"
+                placeholder="مثلاً: مکنزی"
+                icon={<Tag className="w-3.5 h-3.5 text-on-surface-variant" />}
+                fetchFn={async (params) => {
+                    const res = await apiService.brand.search(params.q, category, params.page, params.limit);
+                    return { items: res.items, hasMore: res.hasMore };
+                }}
+                createFn={async (data) => {
+                    return apiService.brand.create({ title: data.title, category });
+                }}
+                queryKey={`brands-in-product-${category || 'all'}`}
+                createLabel="افزودن برند جدید"
+                minSearchChars={2}
+                pageSize={10}
+                selectTitle="انتخاب برند"
+                createTitle="افزودن برند جدید"
+                duplicateMessage="این برند قبلاً اضافه شده. با جستجو آن را پیدا و انتخاب کنید."
+                createHint="این برند در لیست وجود ندارد؟ یک بار آن را اضافه کنید تا همه جا قابل استفاده باشد"
+                renderItem={(item) => (
                     <>
-                        <input
-                            type="text"
-                            value={brandSearch}
-                            onChange={(e) => setBrandSearch(e.target.value)}
-                            placeholder="جستجوی برند... (حداقل ۲ حرف)"
-                            className="w-full h-10 px-3 rounded-xl bg-surface-container-lowest border border-outline-variant/40 text-sm outline-none focus:ring-2 focus:ring-primary/30 focus:border-primary transition-all"
-                        />
-                        {brandSearching && (
-                            <p className="text-[10px] text-on-surface-variant">در حال جستجو...</p>
+                        {item.logoUrl ? (
+                            <img src={item.logoUrl} alt="" className="w-9 h-9 rounded-lg object-cover flex-shrink-0" />
+                        ) : (
+                            <span className="w-9 h-9 rounded-lg bg-surface-container-high flex items-center justify-center flex-shrink-0">
+                                <Tag className="w-4 h-4 text-on-surface-variant/50" />
+                            </span>
                         )}
-                        {brandResults.length > 0 && (
-                            <div className="border border-outline-variant/30 rounded-xl max-h-40 overflow-y-auto scrollbar-slim">
-                                {brandResults.map((b: any) => (
-                                    <button
-                                        key={b.id}
-                                        type="button"
-                                        onClick={() => {
-                                            setBrandId(b.id);
-                                            setBrandTitle(b.title);
-                                            setBrandSearch('');
-                                            setBrandResults([]);
-                                        }}
-                                        className="w-full flex items-center gap-2 px-3 py-2 text-right hover:bg-surface-container-low transition-colors"
-                                    >
-                                        {b.logoUrl ? (
-                                            <img src={b.logoUrl} alt="" className="w-7 h-7 rounded object-cover flex-shrink-0" />
-                                        ) : (
-                                            <span className="w-7 h-7 rounded bg-surface-container-high flex items-center justify-center flex-shrink-0">
-                                                <Tag className="w-3.5 h-3.5 text-on-surface-variant/50" />
-                                            </span>
-                                        )}
-                                        <span className="flex-1 text-xs font-medium text-on-surface truncate">{b.title}</span>
-                                    </button>
-                                ))}
-                            </div>
-                        )}
-                        {brandSearch.trim().length >= 2 && !brandSearching && brandResults.length === 0 && (
-                            <p className="text-[10px] text-on-surface-variant">
-                                برندی پیدا نشد. می‌تونی بعداً اضافه کنی.
-                            </p>
-                        )}
+                        <span className="flex-1 text-sm font-medium text-on-surface truncate">{item.title}</span>
+                        {brandValue?.id === item.id && <Check className="w-4 h-4 text-primary flex-shrink-0" />}
                     </>
                 )}
-            </div>
+            />
         </>
     );
 }
+
