@@ -104,7 +104,7 @@ export default function BrandPicker({
                 <EntityPicker
                     value={value}
                     onChange={onChange}
-                    placeholder={placeholder}
+                    placeholder="مثلاً: مکنزی"
                     required={required || allowNoBrand}
                     error={error}
                     icon={<Tag className="w-3.5 h-3.5 text-on-surface-variant" />}

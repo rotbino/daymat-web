@@ -30,7 +30,7 @@ export default function ProductReferencePicker({
     value,
     onChange,
     category,
-    placeholder = 'انتخاب از مرکز کالا...',
+    placeholder = 'مثلاً: تن ماهی ۲۵۰ گرمی مکنزی',
     label = 'کالا',
     required = false,
     error,
@@ -53,18 +53,11 @@ export default function ProductReferencePicker({
                 brandId: data.brandId,
                 category,
                 imageUrl: data.imageUrl,
-                thumbnailUrl: data.imageUrl,  // ✅ فعلاً thumbnail همون imageUrl
+                thumbnailUrl: data.imageUrl,
             })}
-            queryKey={`products-picker-${category || 'all'}`}
-            createLabel="افزودن کالای جدید به مرکز"
-            minSearchChars={2}
-            pageSize={10}
-            selectTitle="انتخاب از مرکز کالا"
-            createTitle="افزودن کالای جدید"
-            duplicateMessage="این کالا قبلاً در مرکز کالا اضافه شده. از لیست بالا انتخاب کنید."
-            createHint="این کالا در مرکز وجود ندارد؟ یک بار آن را اضافه کنید تا همه جا قابل استفاده باشد"
-            showMineOnly={true}
-            mineLabel="فقط کالاهای اضافه‌شده توسط من"
+            // ✅ تابع ویرایش
+            updateFn={(id, data) => apiService.product.update(id, data)}
+            // ✅ فیلدهای create و edit مشابه هستن
             renderCreateFields={({ title, setTitle, dataRef }) => (
                 <CreateProductExtraFields
                     title={title}
@@ -73,6 +66,25 @@ export default function ProductReferencePicker({
                     dataRef={dataRef}
                 />
             )}
+            renderEditFields={({ title, setTitle, dataRef }) => (
+                <CreateProductExtraFields
+                    title={title}
+                    setTitle={setTitle}
+                    category={category}
+                    dataRef={dataRef}
+                />
+            )}
+            queryKey={`products-picker-${category || 'all'}`}
+            createLabel="افزودن کالای جدید به مرکز"
+            minSearchChars={2}
+            pageSize={10}
+            selectTitle="انتخاب از مرکز کالا"
+            createTitle="افزودن کالای جدید"
+            editTitle="ویرایش کالا"
+            duplicateMessage="این کالا قبلاً در مرکز کالا اضافه شده. از لیست بالا انتخاب کنید."
+            createHint="این کالا در مرکز وجود ندارد؟ یک بار آن را اضافه کنید تا همه جا قابل استفاده باشد"
+            showMineOnly={true}
+            mineToggleLabel="کالاهای من"
             renderValue={(v) => (
                 <>
                     {(v as ProductValue).thumbnailUrl || (v as ProductValue).imageUrl ? (

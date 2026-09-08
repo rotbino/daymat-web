@@ -4,7 +4,7 @@
 import React, { useState, useEffect } from 'react';
 import { createPortal } from 'react-dom';
 import { useQuery, useMutation, useQueryClient, keepPreviousData } from '@tanstack/react-query';
-import { Search, X, Plus, Check, Loader2, AlertCircle, Tag } from 'lucide-react';
+import { Search, X, Plus, Check, Loader2, AlertCircle, Tag, Pencil } from 'lucide-react';
 import { cn } from '@/lib/utils';
 
 export interface EntityValue {
@@ -75,6 +75,14 @@ interface Props {
     selectTitle?: string;
     /** عنوان مدال در حالت ایجاد */
     createTitle?: string;
+    /** تابع ویرایش آیتم (اختیاری) — اگه داده بشه، آیکون ویرایش برای isNew نمایش داده می‌شه */
+    updateFn?: (id: string, data: any) => Promise<any>;
+    /** رندر فیلدهای ویرایش (مشابه renderCreateFields) */
+    renderEditFields?: (props: CreateFormProps) => React.ReactNode;
+    /** عنوان مدال ویرایش */
+    editTitle?: string;
+    /** label کوتاه برای toggle mine */
+    mineToggleLabel?: string;
 }
 
 export default function EntityPicker({
@@ -100,6 +108,11 @@ export default function EntityPicker({
     createHint = 'این مورد در مرکز وجود ندارد؟ یک بار آن را اضافه کنید تا همه جا قابل استفاده باشد',
     selectTitle = 'انتخاب',
     createTitle = 'افزودن به مرکز کالا',
+    editTitle = 'ویرایش',
+    mineToggleLabel = 'فقط موارد من',
+    // ✅ props اختیاری بدون default
+    updateFn,
+    renderEditFields,
 }: Props) {
     const [isOpen, setIsOpen] = useState(false);
 
@@ -173,6 +186,10 @@ export default function EntityPicker({
                     createHint={createHint}
                     selectTitle={selectTitle}
                     createTitle={createTitle}
+                    updateFn={updateFn}
+                    renderEditFields={renderEditFields}
+                    editTitle={editTitle}
+                    mineToggleLabel={mineToggleLabel}
                 />
             )}
         </div>
@@ -200,6 +217,10 @@ function EntityPickerModal({
     createHint,
     selectTitle,
     createTitle: createFormTitle,
+    updateFn,
+    renderEditFields,
+    editTitle = 'ویرایش',
+    mineToggleLabel = 'فقط موارد من',
 }: any) {
     const [search, setSearch] = useState('');
     const [debouncedSearch, setDebouncedSearch] = useState('');
@@ -207,9 +228,13 @@ function EntityPickerModal({
     const [allItems, setAllItems] = useState<any[]>([]);
     const [mineOnly, setMineOnly] = useState(false);
     const [showCreateForm, setShowCreateForm] = useState(false);
+    const [editingItem, setEditingItem] = useState<any | null>(null);
+    const [editTitleValue, setEditTitleValue] = useState('');
     const [createTitle, setCreateTitle] = useState('');
     const [createError, setCreateError] = useState<string | null>(null);
+    const [editError, setEditError] = useState<string | null>(null);
     const createDataRef = React.useRef<{ [key: string]: any }>({});
+    const editDataRef = React.useRef<{ [key: string]: any }>({});
     const containerRef = React.useRef<HTMLDivElement>(null);
     const queryClient = useQueryClient();
 
@@ -284,6 +309,28 @@ function EntityPickerModal({
         },
     });
 
+    // ✅ mutation update
+    const updateMut = useMutation({
+        mutationFn: ({ id, data }: { id: string; data: any }) => updateFn(id, data),
+        onSuccess: (updated: any) => {
+            queryClient.invalidateQueries({ queryKey: [queryKey] });
+            setEditingItem(null);
+            // اگه آیتم در حال انتخاب‌شده بود، آپدیتش کن
+            if (value?.id === updated.id) {
+                onChange({
+                    id: updated.id,
+                    title: updated.title,
+                    isByUser: updated.isByUser ?? true,
+                    isNew: updated.isNew ?? true,
+                    ...updated,
+                });
+            }
+        },
+        onError: (err: any) => {
+            setEditError(err?.message || 'خطا در ویرایش');
+        },
+    });
+
     const trimmedSearch = debouncedSearch;
     const canSearch = trimmedSearch.length >= minSearchChars || trimmedSearch.length === 0;
     const exactMatch = allItems.some((i: any) =>
@@ -300,6 +347,32 @@ function EntityPickerModal({
             await createMut.mutateAsync({
                 title: createTitle.trim(),
                 ...createDataRef.current,
+            });
+        } catch (err) {
+            // error handled in onError
+        }
+    };
+
+    // ✅ شروع ویرایش آیتم
+    const handleStartEdit = (item: any) => {
+        setEditingItem(item);
+        setEditTitleValue(item.title || '');
+        setEditError(null);
+        editDataRef.current = {};
+    };
+
+    // ✅ تأیید ویرایش
+    const handleEdit = async (e: React.FormEvent) => {
+        e.preventDefault();
+        if (!editingItem || editTitleValue.trim().length < 2) return;
+        setEditError(null);
+        try {
+            await updateMut.mutateAsync({
+                id: editingItem.id,
+                data: {
+                    title: editTitleValue.trim(),
+                    ...editDataRef.current,
+                },
             });
         } catch (err) {
             // error handled in onError
@@ -344,7 +417,7 @@ function EntityPickerModal({
                 {/* هدر */}
                 <div className="flex-shrink-0 flex items-center justify-between px-4 py-3 border-b border-outline-variant/20">
                     <h3 className="text-sm font-extrabold text-on-surface">
-                        {showCreateForm ? createFormTitle : selectTitle}
+                        {showCreateForm ? createFormTitle : editingItem ? editTitle : selectTitle}
                     </h3>
                     <button onClick={onClose} className="w-8 h-8 flex items-center justify-center rounded-full text-on-surface-variant hover:bg-surface-container-high transition-colors">
                         <X className="w-5 h-5" />
@@ -391,31 +464,72 @@ function EntityPickerModal({
                             </button>
                         </div>
                     </form>
+                ) : editingItem ? (
+                    // ═══ حالت ویرایش ═══
+                    <form onSubmit={handleEdit} className="flex-1 flex flex-col overflow-hidden">
+                        <div className="flex-1 min-h-0 overflow-y-auto scrollbar-slim p-4 space-y-3">
+                            <div className="space-y-1.5">
+                                <label className="text-xs font-bold text-on-surface block">عنوان *</label>
+                                <input
+                                    value={editTitleValue}
+                                    onChange={(e) => setEditTitleValue(e.target.value)}
+                                    autoFocus
+                                    className="w-full h-11 px-3 rounded-xl bg-surface-container-lowest border border-outline-variant/40 text-sm outline-none focus:ring-2 focus:ring-primary/30 focus:border-primary transition-all"
+                                />
+                            </div>
+                            {renderEditFields && renderEditFields({
+                                title: editTitleValue,
+                                setTitle: setEditTitleValue,
+                                dataRef: editDataRef,
+                            })}
+                            {editError && (
+                                <p className="text-error text-[11px]">{editError}</p>
+                            )}
+                        </div>
+                        <div className="flex-shrink-0 p-3 border-t border-outline-variant/20 flex gap-2">
+                            <button
+                                type="button"
+                                onClick={() => setEditingItem(null)}
+                                className="flex-1 h-10 rounded-xl border border-outline-variant/60 text-xs font-bold text-on-surface-variant hover:bg-surface-container-high transition-colors"
+                            >
+                                انصراف
+                            </button>
+                            <button
+                                type="submit"
+                                disabled={editTitleValue.trim().length < 2 || updateMut.isPending}
+                                className="flex-1 h-10 rounded-xl bg-primary text-on-primary text-xs font-bold hover:bg-primary/90 active:scale-95 transition-all disabled:opacity-50"
+                            >
+                                {updateMut.isPending ? <Loader2 className="w-4 h-4 animate-spin mx-auto" /> : 'ذخیره تغییرات'}
+                            </button>
+                        </div>
+                    </form>
                 ) : (
                     // ═══ حالت انتخاب ═══
                     <>
-                        {/* جستجو */}
-                        <div className="flex-shrink-0 p-3 border-b border-outline-variant/20 space-y-2">
-                            <div className="relative">
-                                <Search className="absolute right-3 top-1/2 -translate-y-1/2 w-4 h-4 text-on-surface-variant/50" />
-                                <input
-                                    value={search}
-                                    onChange={(e) => setSearch(e.target.value)}
-                                    placeholder={`جستجو... (حداقل ${minSearchChars} حرف)`}
-                                    className="w-full h-10 pr-9 pl-3 rounded-xl bg-surface-container-lowest border border-outline-variant/40 text-sm outline-none focus:ring-2 focus:ring-primary/30 focus:border-primary transition-all"
-                                />
-                            </div>
-                            {showMineOnly && (
-                                <label className="flex items-center gap-2 cursor-pointer">
+                        {/* جستجو + mine toggle کنار هم */}
+                        <div className="flex-shrink-0 p-3 border-b border-outline-variant/20">
+                            <div className="flex items-center gap-2">
+                                <div className="relative flex-1">
+                                    <Search className="absolute right-3 top-1/2 -translate-y-1/2 w-4 h-4 text-on-surface-variant/50" />
                                     <input
-                                        type="checkbox"
-                                        checked={mineOnly}
-                                        onChange={(e) => setMineOnly(e.target.checked)}
-                                        className="w-4 h-4 rounded accent-primary"
+                                        value={search}
+                                        onChange={(e) => setSearch(e.target.value)}
+                                        placeholder={`جستجو... (حداقل ${minSearchChars} حرف)`}
+                                        className="w-full h-10 pr-9 pl-3 rounded-xl bg-surface-container-lowest border border-outline-variant/40 text-sm outline-none focus:ring-2 focus:ring-primary/30 focus:border-primary transition-all"
                                     />
-                                    <span className="text-[11px] font-bold text-on-surface-variant">{mineLabel}</span>
-                                </label>
-                            )}
+                                </div>
+                                {showMineOnly && (
+                                    <label className="flex items-center gap-1.5 cursor-pointer flex-shrink-0 px-2.5 h-10 rounded-xl border border-outline-variant/40 bg-surface-container-lowest hover:bg-surface-container-low transition-colors">
+                                        <input
+                                            type="checkbox"
+                                            checked={mineOnly}
+                                            onChange={(e) => setMineOnly(e.target.checked)}
+                                            className="w-3.5 h-3.5 rounded accent-primary"
+                                        />
+                                        <span className="text-[10px] font-bold text-on-surface-variant whitespace-nowrap">{mineToggleLabel}</span>
+                                    </label>
+                                )}
+                            </div>
                         </div>
 
                         {/* لیست */}
@@ -436,29 +550,45 @@ function EntityPickerModal({
                             ) : (
                                 <>
                                     {allItems.map((item: any) => (
-                                        <button
+                                        <div
                                             key={item.id}
-                                            onClick={() => onChange({
-                                                id: item.id,
-                                                title: item.title,
-                                                isByUser: item.isByUser,
-                                                isNew: item.isNew,
-                                                ...item,
-                                            })}
                                             className={cn(
                                                 'w-full flex items-center gap-3 px-4 py-2.5 text-right transition-colors',
                                                 value?.id === item.id ? 'bg-primary/10' : 'hover:bg-surface-container-low',
                                             )}
                                         >
-                                            {renderItem ? renderItem(item) : (
-                                                <>
-                                                    <span className="flex-1 text-sm font-medium text-on-surface truncate">
-                                                        {item.title}
-                                                    </span>
-                                                    {value?.id === item.id && <Check className="w-4 h-4 text-primary flex-shrink-0" />}
-                                                </>
+                                            <button
+                                                type="button"
+                                                onClick={() => onChange({
+                                                    id: item.id,
+                                                    title: item.title,
+                                                    isByUser: item.isByUser,
+                                                    isNew: item.isNew,
+                                                    ...item,
+                                                })}
+                                                className="flex items-center gap-3 flex-1 min-w-0 text-right"
+                                            >
+                                                {renderItem ? renderItem(item) : (
+                                                    <>
+                                                        <span className="flex-1 text-sm font-medium text-on-surface truncate">
+                                                            {item.title}
+                                                        </span>
+                                                        {value?.id === item.id && <Check className="w-4 h-4 text-primary flex-shrink-0" />}
+                                                    </>
+                                                )}
+                                            </button>
+                                            {/* ✅ آیکون ویرایش — فقط برای isNew و اگه updateFn وجود داشته باشه */}
+                                            {updateFn && item.isNew && (
+                                                <button
+                                                    type="button"
+                                                    onClick={(e) => { e.stopPropagation(); handleStartEdit(item); }}
+                                                    className="flex-shrink-0 w-7 h-7 rounded-lg text-on-surface-variant/60 hover:text-primary hover:bg-primary/10 grid place-items-center transition-colors"
+                                                    title="ویرایش"
+                                                >
+                                                    <Pencil className="w-3.5 h-3.5" />
+                                                </button>
                                             )}
-                                        </button>
+                                        </div>
                                     ))}
                                     {hasMore && (
                                         <button
