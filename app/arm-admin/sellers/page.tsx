@@ -12,10 +12,10 @@ import { toast } from 'sonner';
 import {
     Store, Search, X, Eye, PauseCircle, PlayCircle, Trash2, Loader2,
     Plus, AlertTriangle, Package, ChevronLeft, Link as LinkIcon,
+    Filter, MapPin, Building2,
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import Link from 'next/link';
-import { IranLocationSelector } from '@/app/components/IranLocationSelector';
 import IndustryAutocomplete from '@/app/components/IndustryAutocomplete';
 import CityAutocomplete from '@/app/components/CityAutocomplete';
 
@@ -24,6 +24,79 @@ const fmt = (n: number | undefined) => n?.toLocaleString('fa-IR') ?? '۰';
 
 function RowSkeleton() {
     return <div className="h-20 rounded-xl bg-surface-container-high/50 animate-pulse" />;
+}
+
+// ═══ کامپوننت فیلتر مشترک ═══
+function FilterBar({
+    searchInput, setSearchInput,
+    industryFilter, setIndustryFilter,
+    cityFilter, setCityFilter,
+    hasActiveFilters, onClearAll,
+}: {
+    searchInput: string;
+    setSearchInput: (v: string) => void;
+    industryFilter: { id: string | null; title: string };
+    setIndustryFilter: (v: { id: string | null; title: string }) => void;
+    cityFilter: { id: string | null; title: string; cityCode?: string; provinceCode?: string };
+    setCityFilter: (v: any) => void;
+    hasActiveFilters: boolean;
+    onClearAll: () => void;
+}) {
+    return (
+        <div className="space-y-2">
+            {/* ردیف اول: جستجوی متنی */}
+            <div className="relative">
+                <Search className="absolute right-3 top-1/2 -translate-y-1/2 w-4 h-4 text-on-surface-variant/50" />
+                <input
+                    value={searchInput}
+                    onChange={(e) => setSearchInput(e.target.value)}
+                    placeholder="جستجوی نام، شماره، شهر…"
+                    className="w-full h-10 pr-9 pl-8 rounded-xl bg-surface-container-lowest border border-outline-variant/40
+                        dark:border-gray-700 text-sm outline-none focus:ring-2 focus:ring-primary/30 focus:border-primary transition-all"
+                />
+                {searchInput && (
+                    <button onClick={() => setSearchInput('')}
+                        className="absolute left-2.5 top-1/2 -translate-y-1/2 p-1 text-on-surface-variant/60">
+                        <X className="w-3.5 h-3.5" />
+                    </button>
+                )}
+            </div>
+
+            {/* ردیف دوم: فیلتر صنف + شهر */}
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
+                <div className="relative">
+                    <Building2 className="absolute right-2.5 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-on-surface-variant/40 pointer-events-none z-10" />
+                    <IndustryAutocomplete
+                        value={industryFilter}
+                        onChange={setIndustryFilter}
+                        placeholder="همه اصناف..."
+                        allowCreate={false}
+                        className="!h-10 !pr-8"
+                    />
+                </div>
+                <div className="relative">
+                    <MapPin className="absolute right-2.5 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-on-surface-variant/40 pointer-events-none z-10" />
+                    <CityAutocomplete
+                        value={cityFilter}
+                        onChange={setCityFilter}
+                        placeholder="همه شهرها..."
+                        className="!h-10 !pr-8"
+                    />
+                </div>
+            </div>
+
+            {/* دکمه پاک کردن همه فیلترها */}
+            {hasActiveFilters && (
+                <button
+                    onClick={onClearAll}
+                    className="flex items-center gap-1 text-[10px] font-bold text-error/70 hover:text-error transition-colors"
+                >
+                    <X className="w-3 h-3" />
+                    پاک کردن همه فیلترها
+                </button>
+            )}
+        </div>
+    );
 }
 
 export default function SellersPage() {
@@ -40,12 +113,27 @@ function SellersContent({ slug, armName }: { slug: string; armName: string }) {
     const [searchInput, setSearchInput] = useState('');
     const [showAddModal, setShowAddModal] = useState(false);
     const [confirmRemoveId, setConfirmRemoveId] = useState<string | null>(null);
+    const [industryFilter, setIndustryFilter] = useState<{ id: string | null; title: string }>({ id: null, title: '' });
+    const [cityFilter, setCityFilter] = useState<{ id: string | null; title: string; cityCode?: string; provinceCode?: string }>({ id: null, title: '' });
 
-    const sellersQ = useArmSellers(slug, { search: searchInput || undefined });
+    const hasActiveFilters = !!(searchInput || industryFilter.title || cityFilter.title);
+
+    const sellersQ = useArmSellers(slug, {
+        search: searchInput || undefined,
+        industry: industryFilter.title || undefined,
+        cityCode: cityFilter.cityCode || undefined,
+        provinceCode: cityFilter.provinceCode || undefined,
+    });
     const pauseMut = useToggleSellerPaused(slug);
     const removeMut = useRemoveSeller(slug);
 
     const sellers: any[] = sellersQ.data?.items ?? [];
+
+    const clearAllFilters = () => {
+        setSearchInput('');
+        setIndustryFilter({ id: null, title: '' });
+        setCityFilter({ id: null, title: '' });
+    };
 
     return (
         <div className="space-y-5">
@@ -66,23 +154,17 @@ function SellersContent({ slug, armName }: { slug: string; armName: string }) {
                 </button>
             </div>
 
-            {/* ─── جستجو ─── */}
-            <div className="relative max-w-md">
-                <Search className="absolute right-3 top-1/2 -translate-y-1/2 w-4 h-4 text-on-surface-variant/50" />
-                <input
-                    value={searchInput}
-                    onChange={(e) => setSearchInput(e.target.value)}
-                    placeholder="جستجوی کاتالوگ، فروشنده، شهر…"
-                    className="w-full h-10 pr-9 pl-8 rounded-xl bg-surface-container-lowest border border-outline-variant/40
-                        dark:border-gray-700 text-sm outline-none focus:ring-2 focus:ring-primary/30 focus:border-primary transition-all"
-                />
-                {searchInput && (
-                    <button onClick={() => setSearchInput('')}
-                        className="absolute left-2.5 top-1/2 -translate-y-1/2 p-1 text-on-surface-variant/60">
-                        <X className="w-3.5 h-3.5" />
-                    </button>
-                )}
-            </div>
+            {/* ─── فیلترها ─── */}
+            <FilterBar
+                searchInput={searchInput}
+                setSearchInput={setSearchInput}
+                industryFilter={industryFilter}
+                setIndustryFilter={setIndustryFilter}
+                cityFilter={cityFilter}
+                setCityFilter={setCityFilter}
+                hasActiveFilters={hasActiveFilters}
+                onClearAll={clearAllFilters}
+            />
 
             {/* ─── آمار ─── */}
             <div className="grid grid-cols-3 gap-3">
@@ -108,9 +190,13 @@ function SellersContent({ slug, armName }: { slug: string; armName: string }) {
             ) : sellers.length === 0 ? (
                 <div className="rounded-2xl border border-dashed border-outline-variant/50 p-12 text-center">
                     <Store className="w-12 h-12 text-on-surface-variant/20 mx-auto mb-3" />
-                    <h4 className="text-sm font-extrabold text-on-surface">هنوز فروشنده‌ای نداری</h4>
+                    <h4 className="text-sm font-extrabold text-on-surface">
+                        {hasActiveFilters ? 'فروشنده‌ای با این فیلترها پیدا نشد' : 'هنوز فروشنده‌ای نداری'}
+                    </h4>
                     <p className="text-xs text-on-surface-variant mt-1.5 max-w-sm mx-auto leading-6">
-                        کاتالوگ‌های فروشنده را از دکمه «افزودن فروشنده» اضافه کن تا روی تابلوی قیمت این بازار نمایش داده شوند
+                        {hasActiveFilters
+                            ? 'فیلترها را عوض کن یا پاک کن'
+                            : 'کاتالوگ‌های فروشنده را از دکمه «افزودن فروشنده» اضافه کن'}
                     </p>
                 </div>
             ) : (
@@ -156,6 +242,11 @@ function SellersContent({ slug, armName }: { slug: string; armName: string }) {
                                                     {s.catalog.businessName}
                                                 </span>
                                             )}
+                                            {s.catalog.businessIndustry && (
+                                                <span className="text-[9px] font-bold px-1.5 py-0.5 rounded bg-primary/10 text-primary">
+                                                    {s.catalog.businessIndustry}
+                                                </span>
+                                            )}
                                             {isPaused && (
                                                 <span className="text-[9px] font-bold px-1.5 py-0.5 rounded bg-amber-100 text-amber-700 dark:bg-amber-900/30 dark:text-amber-300">
                                                     متوقف
@@ -174,7 +265,10 @@ function SellersContent({ slug, armName }: { slug: string; armName: string }) {
                                                 </span>
                                             )}
                                             {s.catalog.city && (
-                                                <span>{s.catalog.city}</span>
+                                                <span className="flex items-center gap-0.5">
+                                                    <MapPin className="w-3 h-3" />
+                                                    {s.catalog.city}
+                                                </span>
                                             )}
                                         </div>
                                     </div>
@@ -198,7 +292,6 @@ function SellersContent({ slug, armName }: { slug: string; armName: string }) {
                                             </>
                                         ) : (
                                             <>
-                                                {/* Pause/Resume */}
                                                 <button
                                                     onClick={() => pauseMut.mutate({ catalogId: s.catalog.id, paused: !isPaused })}
                                                     disabled={busyPause}
@@ -213,7 +306,6 @@ function SellersContent({ slug, armName }: { slug: string; armName: string }) {
                                                     {busyPause ? <Loader2 className="w-4 h-4 animate-spin" /> :
                                                         isPaused ? <PlayCircle className="w-4 h-4" /> : <PauseCircle className="w-4 h-4" />}
                                                 </button>
-                                                {/* Remove */}
                                                 <button
                                                     onClick={() => setConfirmRemoveId(s.membershipId)}
                                                     title="حذف نقش فروشندگی"
@@ -257,6 +349,7 @@ function AddSellerModal({ slug, onClose }: { slug: string; onClose: () => void }
     const addMut = useAddSeller(slug);
 
     const candidates: any[] = candidatesQ.data?.items ?? [];
+    const hasActiveFilters = !!(qInput || industryFilter.title || cityFilter.title);
 
     return (
         <div
@@ -284,7 +377,6 @@ function AddSellerModal({ slug, onClose }: { slug: string; onClose: () => void }
 
                 {/* فیلترها */}
                 <div className="flex-shrink-0 px-4 py-3 border-b border-outline-variant/20 space-y-2">
-                    {/* جستجوی متنی */}
                     <div className="relative">
                         <Search className="absolute right-3 top-1/2 -translate-y-1/2 w-4 h-4 text-on-surface-variant/50" />
                         <input
@@ -300,7 +392,6 @@ function AddSellerModal({ slug, onClose }: { slug: string; onClose: () => void }
                             </button>
                         )}
                     </div>
-                    {/* فیلتر صنف + شهر — ردیفی در دسکتاپ */}
                     <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
                         <div>
                             <label className="text-[10px] font-bold text-on-surface-variant block mb-1">صنف</label>
@@ -308,7 +399,7 @@ function AddSellerModal({ slug, onClose }: { slug: string; onClose: () => void }
                                 value={industryFilter}
                                 onChange={setIndustryFilter}
                                 placeholder="همه اصناف..."
-                                className="h-9"
+                                allowCreate={false}
                             />
                         </div>
                         <div>
@@ -317,7 +408,6 @@ function AddSellerModal({ slug, onClose }: { slug: string; onClose: () => void }
                                 value={cityFilter}
                                 onChange={(v) => setCityFilter({ ...v, cityCode: (v as any).cityCode, provinceCode: (v as any).provinceCode })}
                                 placeholder="همه شهرها..."
-                                className="h-9"
                             />
                         </div>
                     </div>
@@ -333,7 +423,7 @@ function AddSellerModal({ slug, onClose }: { slug: string; onClose: () => void }
                         <div className="text-center py-10">
                             <Search className="w-10 h-10 text-on-surface-variant/20 mx-auto mb-2" />
                             <p className="text-xs text-on-surface-variant">
-                                {qInput || industryFilter.title || cityFilter.title ? 'کاتالوگی پیدا نشد' : 'برای جستجو تایپ کنید'}
+                                {hasActiveFilters ? 'کاتالوگی با این فیلترها پیدا نشد' : 'برای جستجو تایپ کنید'}
                             </p>
                         </div>
                     ) : (
@@ -355,7 +445,7 @@ function AddSellerModal({ slug, onClose }: { slug: string; onClose: () => void }
                                         <div className="flex-1 min-w-0">
                                             <p className="text-xs font-bold text-on-surface truncate">{c.name}</p>
                                             <p className="text-[10px] text-on-surface-variant/70 truncate">
-                                                {[c.owner?.fullName, c.city, c.industryName].filter(Boolean).join(' · ')}
+                                                {[c.owner?.fullName, c.city, c.industryName || c.businessIndustry].filter(Boolean).join(' · ')}
                                             </p>
                                         </div>
                                         <button
