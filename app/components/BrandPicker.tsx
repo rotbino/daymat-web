@@ -4,7 +4,7 @@
 import React, { useState } from 'react';
 import EntityPicker, { EntityValue } from './EntityPicker';
 import { apiService } from '@/lib/api/apiService';
-import { Tag, Package } from 'lucide-react';
+import { Tag, Package, Check } from 'lucide-react';
 import { cn } from '@/lib/utils';
 
 export interface BrandValue extends EntityValue {
@@ -33,51 +33,77 @@ export default function BrandPicker({
     error,
     allowNoBrand = true,
 }: Props) {
-    const [hasBrand, setHasBrand] = useState<boolean>(!!value);
+    // ✅ null = هیچ‌کدوم انتخاب نشده، true = دارای برند، false = بدون برند
+    const [brandMode, setBrandMode] = useState<boolean | null>(!!value ? true : null);
 
-    const toggleHasBrand = (enabled: boolean) => {
-        setHasBrand(enabled);
-        if (!enabled) {
-            onChange(null);
-        }
+    const selectHasBrand = () => {
+        setBrandMode(true);
+    };
+
+    const selectNoBrand = () => {
+        setBrandMode(false);
+        onChange(null);
     };
 
     return (
         <div className="space-y-2">
+            {label && (
+                <label className="text-xs font-bold text-on-surface block flex items-center gap-1">
+                    <Tag className="w-3.5 h-3.5 text-on-surface-variant" />
+                    {label}
+                    {required && <span className="text-primary">*</span>}
+                </label>
+            )}
+
             {allowNoBrand && (
-                <div className="flex items-center gap-2">
+                <div className="grid grid-cols-2 gap-2">
+                    {/* دارای برند */}
                     <button
                         type="button"
-                        onClick={() => toggleHasBrand(!hasBrand)}
+                        onClick={selectHasBrand}
                         className={cn(
-                            'flex items-center gap-2 px-3 h-8 rounded-lg text-xs font-bold border transition-all',
-                            hasBrand
+                            'flex items-center justify-center gap-2 h-10 rounded-xl text-xs font-bold border transition-all',
+                            brandMode === true
                                 ? 'bg-primary/10 border-primary/40 text-primary'
-                                : 'bg-surface-container-lowest border-outline-variant/40 text-on-surface-variant',
+                                : 'bg-surface-container-lowest border-outline-variant/40 text-on-surface-variant hover:border-primary/30',
                         )}
                     >
                         <span className={cn(
-                            'w-4 h-4 rounded border-2 flex items-center justify-center transition-all',
-                            hasBrand ? 'bg-primary border-primary' : 'border-outline-variant',
+                            'w-4 h-4 rounded-full border-2 flex items-center justify-center transition-all',
+                            brandMode === true ? 'border-primary' : 'border-outline-variant',
                         )}>
-                            {hasBrand && <span className="text-white text-[10px]">✓</span>}
+                            {brandMode === true && <span className="w-2 h-2 rounded-full bg-primary" />}
                         </span>
-                        این کالا برند دارد
+                        دارای برند
                     </button>
-                    {!hasBrand && (
-                        <span className="text-[10px] text-on-surface-variant/70 flex items-center gap-1">
-                            <Package className="w-3 h-3" />
-                            کالای بدون برند (عمومی)
+
+                    {/* بدون برند */}
+                    <button
+                        type="button"
+                        onClick={selectNoBrand}
+                        className={cn(
+                            'flex items-center justify-center gap-2 h-10 rounded-xl text-xs font-bold border transition-all',
+                            brandMode === false
+                                ? 'bg-primary/10 border-primary/40 text-primary'
+                                : 'bg-surface-container-lowest border-outline-variant/40 text-on-surface-variant hover:border-primary/30',
+                        )}
+                    >
+                        <span className={cn(
+                            'w-4 h-4 rounded-full border-2 flex items-center justify-center transition-all',
+                            brandMode === false ? 'border-primary' : 'border-outline-variant',
+                        )}>
+                            {brandMode === false && <span className="w-2 h-2 rounded-full bg-primary" />}
                         </span>
-                    )}
+                        بدون برند
+                    </button>
                 </div>
             )}
 
-            {hasBrand && (
+            {/* ✅ فقط اگه «دارای برند» انتخاب شده */}
+            {brandMode === true && (
                 <EntityPicker
                     value={value}
                     onChange={onChange}
-                    label={!allowNoBrand ? label : undefined}
                     placeholder={placeholder}
                     required={required || allowNoBrand}
                     error={error}
@@ -86,11 +112,21 @@ export default function BrandPicker({
                         const res = await apiService.brand.search(params.q, category, params.page, params.limit);
                         return { items: res.items, hasMore: res.hasMore };
                     }}
-                    createFn={(title) => apiService.brand.create({ title, category })}
+                    // ✅ FIX: createFn حالا object دریافت می‌کنه
+                    createFn={async (data) => {
+                        return apiService.brand.create({
+                            title: data.title,
+                            category,
+                        });
+                    }}
                     queryKey={`brands-picker-${category || 'all'}`}
-                    createLabel="ایجاد برند جدید"
+                    createLabel="افزودن برند جدید"
                     minSearchChars={2}
                     pageSize={10}
+                    selectTitle="انتخاب برند"
+                    createTitle="افزودن برند جدید"
+                    duplicateMessage="این برند قبلاً اضافه شده. با جستجو آن را پیدا و انتخاب کنید."
+                    createHint="این برند در لیست وجود ندارد؟ یک بار آن را اضافه کنید تا همه جا قابل استفاده باشد"
                     renderValue={(v) => (
                         <>
                             {(v as BrandValue).logoUrl ? (
@@ -101,12 +137,7 @@ export default function BrandPicker({
                                 </span>
                             )}
                             <span className="flex-1 text-sm font-bold text-on-surface truncate">{v.title}</span>
-                            {v.isByUser && (
-                                <span className="text-[9px] font-bold px-1.5 py-0.5 rounded bg-amber-100 text-amber-700 dark:bg-amber-900/30 dark:text-amber-300 flex-shrink-0">
-                                    جدید
-                                </span>
-                            )}
-                            <span className="w-4 h-4 text-primary flex-shrink-0">✓</span>
+                            <Check className="w-4 h-4 text-primary flex-shrink-0" />
                         </>
                     )}
                     renderItem={(item) => (
@@ -119,16 +150,13 @@ export default function BrandPicker({
                                 </span>
                             )}
                             <span className="flex-1 text-sm font-medium text-on-surface truncate">{item.title}</span>
-                            {item.isByUser && (
-                                <span className="text-[9px] font-bold px-1.5 py-0.5 rounded bg-amber-100 text-amber-700 dark:bg-amber-900/30 dark:text-amber-300 flex-shrink-0">
-                                    جدید
-                                </span>
-                            )}
-                            {value?.id === item.id && <span className="w-4 h-4 text-primary flex-shrink-0">✓</span>}
+                            {value?.id === item.id && <Check className="w-4 h-4 text-primary flex-shrink-0" />}
                         </>
                     )}
                 />
             )}
+
+            {error && <p className="text-error text-[11px]">{error}</p>}
         </div>
     );
 }

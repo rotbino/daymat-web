@@ -67,6 +67,14 @@ interface Props {
     showMineOnly?: boolean;
     /** متن راهنمای toggle mine */
     mineLabel?: string;
+    /** پیام تکراری بودن */
+    duplicateMessage?: string;
+    /** پیام راهنمای دکمه ایجاد */
+    createHint?: string;
+    /** عنوان مدال در حالت انتخاب */
+    selectTitle?: string;
+    /** عنوان مدال در حالت ایجاد */
+    createTitle?: string;
 }
 
 export default function EntityPicker({
@@ -88,6 +96,10 @@ export default function EntityPicker({
     pageSize = 10,
     showMineOnly = false,
     mineLabel = 'فقط موارد اضافه‌شده توسط من',
+    duplicateMessage,
+    createHint = 'این مورد در مرکز وجود ندارد؟ یک بار آن را اضافه کنید تا همه جا قابل استفاده باشد',
+    selectTitle = 'انتخاب',
+    createTitle = 'افزودن به مرکز کالا',
 }: Props) {
     const [isOpen, setIsOpen] = useState(false);
 
@@ -157,6 +169,10 @@ export default function EntityPicker({
                     pageSize={pageSize}
                     showMineOnly={showMineOnly}
                     mineLabel={mineLabel}
+                    duplicateMessage={duplicateMessage}
+                    createHint={createHint}
+                    selectTitle={selectTitle}
+                    createTitle={createTitle}
                 />
             )}
         </div>
@@ -180,6 +196,10 @@ function EntityPickerModal({
     pageSize,
     showMineOnly,
     mineLabel,
+    duplicateMessage,
+    createHint,
+    selectTitle,
+    createTitle: createFormTitle,
 }: any) {
     const [search, setSearch] = useState('');
     const [debouncedSearch, setDebouncedSearch] = useState('');
@@ -319,7 +339,7 @@ function EntityPickerModal({
                 {/* هدر */}
                 <div className="flex-shrink-0 flex items-center justify-between px-4 py-3 border-b border-outline-variant/20">
                     <h3 className="text-sm font-extrabold text-on-surface">
-                        {showCreateForm ? 'افزودن به مرکز کالا' : 'انتخاب از مرکز کالا'}
+                        {showCreateForm ? createFormTitle : selectTitle}
                     </h3>
                     <button onClick={onClose} className="w-8 h-8 flex items-center justify-center rounded-full text-on-surface-variant hover:bg-surface-container-high transition-colors">
                         <X className="w-5 h-5" />
@@ -454,7 +474,9 @@ function EntityPickerModal({
                                 <div className="flex items-center gap-2 text-amber-800 dark:text-amber-200">
                                     <AlertCircle className="w-4 h-4 flex-shrink-0" />
                                     <p className="text-xs">
-                                        «{trimmedSearch}» از قبل در مرکز کالا وجود دارد. از لیست بالا انتخاب کنید.
+                                        {duplicateMessage
+                                            ? duplicateMessage.replace('{name}', trimmedSearch)
+                                            : `«${trimmedSearch}» از قبل وجود دارد. از لیست بالا انتخاب کنید.`}
                                     </p>
                                 </div>
                             </div>
@@ -474,7 +496,7 @@ function EntityPickerModal({
                                     </span>
                                 </button>
                                 <p className="text-[10px] text-center text-on-surface-variant/60 mt-1.5">
-                                    این کالا در مرکز وجود ندارد؟ یک بار آن را اضافه کنید تا همه جا قابل استفاده باشد
+                                    {createHint}
                                 </p>
                             </div>
                         )}

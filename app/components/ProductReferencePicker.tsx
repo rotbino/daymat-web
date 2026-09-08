@@ -59,6 +59,10 @@ export default function ProductReferencePicker({
             createLabel="افزودن کالای جدید به مرکز"
             minSearchChars={2}
             pageSize={10}
+            selectTitle="انتخاب از مرکز کالا"
+            createTitle="افزودن کالای جدید"
+            duplicateMessage="این کالا قبلاً در مرکز کالا اضافه شده. از لیست بالا انتخاب کنید."
+            createHint="این کالا در مرکز وجود ندارد؟ یک بار آن را اضافه کنید تا همه جا قابل استفاده باشد"
             showMineOnly={true}
             mineLabel="فقط کالاهای اضافه‌شده توسط من"
             renderCreateFields={({ title, setTitle, dataRef }) => (
