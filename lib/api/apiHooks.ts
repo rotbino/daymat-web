@@ -1017,12 +1017,12 @@ export const armMemberKeys = {
     prefix: (slug: string) => ['arm-admin', 'memberships', slug] as const,
     sellers: (slug: string, params: Record<string, unknown> = {}) =>
         ['arm-admin', 'memberships', slug, 'sellers', params] as const,
-    sellerCandidates: (slug: string, q = '', mine = false) =>
-        ['arm-admin', 'memberships', slug, 'seller-candidates', q, mine] as const,
+    sellerCandidates: (slug: string, q = '', mine = false, filters?: Record<string, unknown>) =>
+        ['arm-admin', 'memberships', slug, 'seller-candidates', q, mine, filters || {}] as const,
     buyers: (slug: string, params: Record<string, unknown> = {}) =>
         ['arm-admin', 'memberships', slug, 'buyers', params] as const,
-    buyerCandidates: (slug: string, q = '', mine = false) =>
-        ['arm-admin', 'memberships', slug, 'buyer-candidates', q, mine] as const,
+    buyerCandidates: (slug: string, q = '', mine = false, filters?: Record<string, unknown>) =>
+        ['arm-admin', 'memberships', slug, 'buyer-candidates', q, mine, filters || {}] as const,
     needs: (slug: string) => ['arm-admin', 'memberships', slug, 'needs'] as const,
 };
 

@@ -226,14 +226,15 @@ function FilterModalShell({
 }) {
     return createPortal(
         <div
-            className="fixed inset-0 z-[100] flex items-end sm:items-center justify-center bg-black/50 animate-in fade-in duration-200"
+            className="fixed inset-0 z-[110] flex items-end sm:items-center justify-center bg-black/50 animate-in fade-in duration-200"
             onClick={onClose}
         >
             <div
                 onClick={(e) => e.stopPropagation()}
                 className="bg-surface w-full sm:max-w-md rounded-t-3xl sm:rounded-2xl shadow-2xl
-                    max-h-[80dvh] flex flex-col overflow-hidden
-                    animate-in slide-in-from-bottom-4 sm:zoom-in-95 duration-300"
+                    max-h-[85dvh] flex flex-col overflow-hidden
+                    animate-in slide-in-from-bottom-4 sm:zoom-in-95 duration-300
+                    mb-[env(safe-area-inset-bottom)]"
             >
                 <div className="flex-shrink-0 flex items-center justify-between px-4 py-3 border-b border-outline-variant/20">
                     <h3 className="text-sm font-extrabold text-on-surface">{title}</h3>
@@ -290,7 +291,7 @@ function ProvinceModal({
                     />
                 </div>
             </div>
-            <div className="flex-1 min-h-0 overflow-y-auto scrollbar-slim">
+            <div className="flex-1 min-h-0 overflow-y-auto scrollbar-slim pb-4">
                 {isLoading ? (
                     <div className="p-6 text-center"><Loader2 className="w-5 h-5 animate-spin text-primary mx-auto" /></div>
                 ) : provinces.length === 0 ? (
@@ -371,7 +372,7 @@ function CityModal({
                     />
                 </div>
             </div>
-            <div className="flex-1 min-h-0 overflow-y-auto scrollbar-slim">
+            <div className="flex-1 min-h-0 overflow-y-auto scrollbar-slim pb-4">
                 {isLoading ? (
                     <div className="p-6 text-center"><Loader2 className="w-5 h-5 animate-spin text-primary mx-auto" /></div>
                 ) : cities.length === 0 ? (
@@ -407,7 +408,7 @@ function CityModal({
 }
 
 // ═══════════════════════════════════════════════════════════
-// مودال صنف — استفاده از autocomplete endpoint (تست‌شده)
+// مودال صنف — جستجو + ساخت صنف جدید
 // ═══════════════════════════════════════════════════════════
 function IndustryModal({
     selectedTitle,
@@ -420,6 +421,8 @@ function IndustryModal({
 }) {
     const [search, setSearch] = useState('');
     const [debouncedSearch, setDebouncedSearch] = useState('');
+    const [creatingNew, setCreatingNew] = useState(false);
+    const [newIndustryName, setNewIndustryName] = useState('');
 
     // debounce جستجو
     useEffect(() => {
@@ -432,7 +435,6 @@ function IndustryModal({
         queryKey: ['industries-modal', debouncedSearch],
         queryFn: async () => {
             if (!debouncedSearch || debouncedSearch.length < 2) {
-                // اگه جستجو خالی بود، همه رو بگیر از list endpoint
                 const res: any = await apiService.industry.list(false);
                 return res?.items || [];
             }
@@ -443,35 +445,57 @@ function IndustryModal({
     });
 
     const items = data || [];
+    const trimmedSearch = search.trim();
+    // ✅ اگه چیزی تایپ شده و دقیقاً با هیچ آیتمی match نیست → می‌تونه بسازه
+    const canCreateNew = trimmedSearch.length >= 2
+        && !items.some((i: any) => i.title === trimmedSearch)
+        && !creatingNew;
+
+    const handleConfirmCreate = () => {
+        const name = newIndustryName.trim() || trimmedSearch;
+        if (name.length < 2) return;
+        // ✅ id null می‌فرستیم چون صنف جدیده — بک‌اند خودش می‌سازه
+        onSelect(name, '');
+        onClose();
+    };
 
     return (
         <FilterModalShell title="انتخاب صنف" onClose={onClose}>
+            {/* جستجو */}
             <div className="flex-shrink-0 p-3 border-b border-outline-variant/20">
                 <div className="relative">
                     <Search className="absolute right-3 top-1/2 -translate-y-1/2 w-4 h-4 text-on-surface-variant/50" />
                     <input
                         value={search}
-                        onChange={(e) => setSearch(e.target.value)}
-                        placeholder="جستجوی صنف... (حداقل ۲ حرف)"
+                        onChange={(e) => {
+                            setSearch(e.target.value);
+                            setCreatingNew(false);
+                        }}
+                        placeholder="نام صنف را جستجو کنید..."
                         autoFocus
                         className="w-full h-10 pr-9 pl-3 rounded-xl bg-surface-container-lowest border border-outline-variant/40 text-sm outline-none focus:ring-2 focus:ring-primary/30 focus:border-primary transition-all"
                     />
                 </div>
             </div>
-            <div className="flex-1 min-h-0 overflow-y-auto scrollbar-slim">
+
+            {/* لیست اصناف */}
+            <div className="flex-1 min-h-0 overflow-y-auto scrollbar-slim pb-4">
                 {isFetching ? (
                     <div className="p-6 text-center"><Loader2 className="w-5 h-5 animate-spin text-primary mx-auto" /></div>
                 ) : items.length === 0 ? (
-                    <div className="p-6 text-center text-xs text-on-surface-variant">
-                        {debouncedSearch.length < 2
-                            ? 'هیچ صنفی موجود نیست'
-                            : 'صنف‌ای با این نام پیدا نشد'}
+                    <div className="p-6 text-center">
+                        <Building2 className="w-10 h-10 text-on-surface-variant/20 mx-auto mb-2" />
+                        <p className="text-xs text-on-surface-variant">
+                            {debouncedSearch.length < 2
+                                ? 'هیچ صنفی موجود نیست'
+                                : 'صنف‌ای با این نام پیدا نشد'}
+                        </p>
                     </div>
                 ) : (
                     items.map((item: any) => (
                         <button
                             key={item.id}
-                            onClick={() => onSelect(item.title, item.id)}
+                            onClick={() => { onSelect(item.title, item.id); onClose(); }}
                             className={cn(
                                 'w-full flex items-center justify-between px-4 py-3 text-right transition-colors',
                                 selectedTitle === item.title ? 'bg-primary/10' : 'hover:bg-surface-container-low',
@@ -483,10 +507,69 @@ function IndustryModal({
                     ))
                 )}
             </div>
-            {selectedTitle && (
+
+            {/* ✅ بخش ساخت صنف جدید */}
+            {canCreateNew && !creatingNew && (
+                <div className="flex-shrink-0 p-3 border-t border-outline-variant/20 bg-amber-50/50 dark:bg-amber-900/10">
+                    <button
+                        onClick={() => {
+                            setCreatingNew(true);
+                            setNewIndustryName(trimmedSearch);
+                        }}
+                        className="w-full flex items-center gap-2.5 p-2.5 rounded-xl border border-dashed border-amber-400/60 hover:border-amber-500 hover:bg-amber-50 dark:hover:bg-amber-900/20 transition-all text-right"
+                    >
+                        <span className="w-8 h-8 rounded-lg bg-amber-500/15 flex items-center justify-center flex-shrink-0">
+                            <span className="text-lg font-bold text-amber-600">+</span>
+                        </span>
+                        <div className="flex-1 min-w-0">
+                            <p className="text-xs font-bold text-amber-800 dark:text-amber-200">
+                                افزودن «{trimmedSearch}» به‌عنوان صنف جدید
+                            </p>
+                            <p className="text-[10px] text-amber-600/70 dark:text-amber-400/70 mt-0.5">
+                                این صنف تازه ثبت می‌شه و پس از تأیید ادمین فعال می‌شه
+                            </p>
+                        </div>
+                    </button>
+                </div>
+            )}
+
+            {/* ✅ فرم تأیید ساخت صنف جدید */}
+            {creatingNew && (
+                <div className="flex-shrink-0 p-3 border-t border-outline-variant/20 bg-amber-50/50 dark:bg-amber-900/10 space-y-2">
+                    <div className="flex items-center gap-2">
+                        <Building2 className="w-4 h-4 text-amber-600 flex-shrink-0" />
+                        <p className="text-xs font-bold text-amber-800 dark:text-amber-200">صنف جدید</p>
+                    </div>
+                    <input
+                        value={newIndustryName}
+                        onChange={(e) => setNewIndustryName(e.target.value)}
+                        placeholder="نام دقیق صنف..."
+                        autoFocus
+                        className="w-full h-10 px-3 rounded-xl bg-surface-container-lowest border border-amber-400/50 text-sm outline-none focus:ring-2 focus:ring-amber-400/30 focus:border-amber-500 transition-all"
+                    />
+                    <div className="flex gap-2">
+                        <button
+                            onClick={() => setCreatingNew(false)}
+                            className="flex-1 h-9 rounded-xl border border-outline-variant/60 text-xs font-bold text-on-surface-variant hover:bg-surface-container-high transition-colors"
+                        >
+                            انصراف
+                        </button>
+                        <button
+                            onClick={handleConfirmCreate}
+                            disabled={newIndustryName.trim().length < 2}
+                            className="flex-1 h-9 rounded-xl bg-amber-500 text-white text-xs font-bold hover:bg-amber-600 active:scale-95 transition-all disabled:opacity-50"
+                        >
+                            تأیید و انتخاب
+                        </button>
+                    </div>
+                </div>
+            )}
+
+            {/* دکمه حذف فیلتر */}
+            {selectedTitle && !creatingNew && !canCreateNew && (
                 <div className="flex-shrink-0 p-3 border-t border-outline-variant/20">
                     <button
-                        onClick={() => onSelect('', '')}
+                        onClick={() => { onSelect('', ''); onClose(); }}
                         className="w-full h-10 rounded-xl border border-outline-variant/60 text-xs font-bold text-on-surface-variant hover:bg-surface-container-high transition-colors"
                     >
                         حذف فیلتر صنف

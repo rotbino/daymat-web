@@ -1113,11 +1113,6 @@ function CatalogEditModal({ isOpen, onClose, catalog, salesTypeLocked, onSaved }
     const [cityLabel, setCityLabel] = useState<string>(biz?.city || '');
     const [address, setAddress] = useState<string>(biz?.address || '');
     const [description, setDescription] = useState<string>(biz?.description || catalog?.description || '');
-    const [businessStartYear, setBusinessStartYear] = useState<string>(
-        biz?.businessStartYear ? String(biz.businessStartYear) : ''
-    );
-    const [nationalId, setNationalId] = useState<string>(biz?.nationalId || '');
-    const [businessLicense, setBusinessLicense] = useState<string>(biz?.businessLicense || '');
 
     const [slugEditing, setSlugEditing] = useState(false);
     const [errors, setErrors] = useState<Record<string, string>>({});
@@ -1149,13 +1144,10 @@ function CatalogEditModal({ isOpen, onClose, catalog, salesTypeLocked, onSaved }
             provinceCode !== (biz?.provinceCode || '') ||
             cityCode !== (biz?.cityCode || '') ||
             address !== (biz?.address || '') ||
-            description !== (biz?.description || catalog?.description || '') ||
-            businessStartYear !== (biz?.businessStartYear ? String(biz.businessStartYear) : '') ||
-            nationalId !== (biz?.nationalId || '') ||
-            businessLicense !== (biz?.businessLicense || '')
+            description !== (biz?.description || catalog?.description || '')
         );
     }, [catalog, name, slug, industry, shortDescription, phone, website, pendingLogoFile, bizPhone, biz,
-        bizType, provinceCode, cityCode, address, description, businessStartYear, nationalId, businessLicense]);
+        bizType, provinceCode, cityCode, address, description]);
 
     const uploadLogo = async (): Promise<string | undefined> => {
         if (!pendingLogoFile) return undefined;
@@ -1210,9 +1202,6 @@ function CatalogEditModal({ isOpen, onClose, catalog, salesTypeLocked, onSaved }
                     address: address.trim() || undefined,
                     // ✅ سایر فیلدهای مهم
                     description: description.trim() || undefined,
-                    ...(businessStartYear ? { businessStartYear: parseInt(businessStartYear, 10) } : {}),
-                    nationalId: nationalId.trim() || undefined,
-                    businessLicense: businessLicense.trim() || undefined,
                 };
                 if (logoFileId) bizUpdate.logoUrl = logoUrl;
 
@@ -1386,7 +1375,7 @@ function CatalogEditModal({ isOpen, onClose, catalog, salesTypeLocked, onSaved }
                             }}
                         />
                         <div className="space-y-1.5">
-                            <label className="text-xs font-medium text-on-surface block">آدرس دقیق</label>
+                            <label className="text-xs font-medium text-on-surface block">آدرس کسب و کار (اختیاری)</label>
                             <textarea
                                 value={address}
                                 onChange={(e) => setAddress(e.target.value)}
@@ -1431,36 +1420,6 @@ function CatalogEditModal({ isOpen, onClose, catalog, salesTypeLocked, onSaved }
                             <label className="text-xs font-medium text-on-surface block">وب‌سایت (اختیاری)</label>
                             <input type="url" dir="ltr" value={website} onChange={(e) => setWebsite(e.target.value)}
                                    placeholder="example.com" className={cn(inputCls(), 'text-left')} />
-                        </div>
-                    </section>
-
-                    {/* ═══ اطلاعات تکمیلی ═══ */}
-                    <section className="rounded-2xl bg-surface-container-low/60 border border-outline-variant/30 p-4 space-y-3">
-                        <SectionTitle icon={Info} text="اطلاعات تکمیلی" />
-                        <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
-                            <div className="space-y-1.5">
-                                <label className="text-xs font-medium text-on-surface block">سال شروع فعالیت (شمسی)</label>
-                                <input type="number" inputMode="numeric"
-                                       value={businessStartYear}
-                                       onChange={(e) => setBusinessStartYear(e.target.value)}
-                                       placeholder="مثلاً: 1395"
-                                       className={cn(inputCls(), 'text-left')}
-                                       min="1300" max="1410" />
-                            </div>
-                            <div className="space-y-1.5">
-                                <label className="text-xs font-medium text-on-surface block">کد ملی شرکت (اختیاری)</label>
-                                <input type="text" dir="ltr" value={nationalId}
-                                       onChange={(e) => setNationalId(e.target.value)}
-                                       placeholder="1234567890" maxLength={10}
-                                       className={cn(inputCls(), 'text-left')} />
-                            </div>
-                        </div>
-                        <div className="space-y-1.5">
-                            <label className="text-xs font-medium text-on-surface block">شماره پروانه کسب (اختیاری)</label>
-                            <input type="text" value={businessLicense}
-                                   onChange={(e) => setBusinessLicense(e.target.value)}
-                                   placeholder="شماره پروانه کسب یا مجوز فعالیت"
-                                   className={inputCls()} />
                         </div>
                     </section>
 
