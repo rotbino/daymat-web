@@ -3,7 +3,7 @@
 
 import React, { useState, useEffect } from 'react';
 import { createPortal } from 'react-dom';
-import { useQuery, useMutation, useQueryClient, keepPreviousData } from '@tanstack/react-query';
+import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { Search, X, Plus, Check, Loader2, AlertCircle, Tag, Pencil } from 'lucide-react';
 import { cn } from '@/lib/utils';
 
@@ -269,14 +269,13 @@ function EntityPickerModal({
             mine: mineOnly,
         }),
         staleTime: 30_000,
-        placeholderData: keepPreviousData,  // ✅ حل مشکل flash
+        // ✅ بدون placeholderData — نتایج قدیمی نمایش داده نمی‌شن
+        // flash اولیه با isFirstRender هندل می‌شه
     });
 
     // accumulate items
-    // ✅ فقط وقتی isFetching=false باشه allItems رو آپدیت کن
-    // تا نتایج قدیمی (keepPreviousData) نشون داده نشن
     useEffect(() => {
-        if (data?.items && !isFetching) {
+        if (data?.items) {
             if (page === 1) {
                 setAllItems(data.items);
             } else {

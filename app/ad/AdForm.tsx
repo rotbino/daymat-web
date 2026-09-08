@@ -307,7 +307,8 @@ export function AdForm({ adId, onSuccess }: { adId?: string; onSuccess?: () => v
             }));
             // ✅ اگه عکس آگهی وجود نداره، عکس کالای مرجع رو بذار
             if (adImages.length === 0) {
-                const productImg = (existingAd as any).productRef?.thumbnailUrl || (existingAd as any).productRef?.imageUrl;
+                const productRef = (existingAd as any).productRef || (existingAd as any).product_ref;
+                const productImg = productRef?.thumbnailUrl || productRef?.imageUrl || productRef?.thumbnail_url || productRef?.image_url;
                 if (productImg) {
                     setImages([{ url: productImg, file: null, previewUrl: null, _fromProduct: true } as any]);
                 } else {
