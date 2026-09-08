@@ -4,7 +4,7 @@
 import React from 'react';
 import { DropSelector } from '@/components/common/DropSelector';
 import { useIndustriesList, useProvincesList, useCitiesList } from '@/lib/api/apiHooks';
-import { Loader2, MapPin, Building2, Filter, X } from 'lucide-react';
+import { Loader2, MapPin, Building2, X } from 'lucide-react';
 
 export interface FilterValue {
     provinceCode?: string;
@@ -48,19 +48,24 @@ export default function LocationIndustryFilter({
     const provincesQ = useProvincesList();
     const citiesQ = useCitiesList(value.provinceCode);
 
-    const industries = (industriesQ.data?.items || []).map((i) => ({
-        value: i.title,
-        label: i.title,
+    // ✅ Defensive: اگه data به‌صورت آرایه مستقیم اومد هم هندل کن
+    const industriesRaw = (industriesQ.data as any)?.items || (Array.isArray(industriesQ.data) ? industriesQ.data : []);
+    const provincesRaw = (provincesQ.data as any)?.items || (Array.isArray(provincesQ.data) ? provincesQ.data : []);
+    const citiesRaw = (citiesQ.data as any)?.items || (Array.isArray(citiesQ.data) ? citiesQ.data : []);
+
+    const industries = industriesRaw.map((i: any) => ({
+        value: i.title || i.industryName || '',
+        label: i.title || i.industryName || '',
         extra: { id: i.id },
     }));
-    const provinces = (provincesQ.data?.items || []).map((p) => ({
-        value: p.provinceCode,
-        label: p.title,
+    const provinces = provincesRaw.map((p: any) => ({
+        value: p.provinceCode || p.slug || '',
+        label: p.title || '',
         extra: { title: p.title },
     }));
-    const cities = (citiesQ.data?.items || []).map((c) => ({
-        value: c.cityCode,
-        label: c.title,
+    const cities = citiesRaw.map((c: any) => ({
+        value: c.cityCode || '',
+        label: c.title || '',
         extra: { title: c.title, provinceCode: c.provinceCode },
     }));
 
@@ -70,82 +75,83 @@ export default function LocationIndustryFilter({
         <div className="space-y-2">
             <div className="grid grid-cols-1 sm:grid-cols-3 gap-2">
                 {showProvince && (
-                    <div className="relative">
-                        <MapPin className="absolute right-2 top-3 w-3.5 h-3.5 text-on-surface-variant/40 pointer-events-none z-10" />
-                        <div className="pr-6">
-                            <DropSelector
-                                value={value.provinceCode || ''}
-                                options={provinces}
-                                placeholder="همه استان‌ها"
-                                disabled={provincesQ.isLoading}
-                                onChange={(val, opt) => {
-                                    if (!val) {
-                                        // پاک کردن استان → شهر هم پاک می‌شه
-                                        onChange({ ...value, provinceCode: undefined, provinceTitle: undefined, cityCode: undefined, cityTitle: undefined });
-                                    } else {
-                                        onChange({
-                                            ...value,
-                                            provinceCode: val,
-                                            provinceTitle: opt.extra?.title || opt.label,
-                                            cityCode: undefined,  // شهر قبلی پاک می‌شه
-                                            cityTitle: undefined,
-                                        });
-                                    }
-                                }}
-                            />
-                        </div>
+                    <div>
+                        <label className="text-[10px] font-bold text-on-surface-variant block mb-1 flex items-center gap-1">
+                            <MapPin className="w-3 h-3" />
+                            استان
+                        </label>
+                        <DropSelector
+                            value={value.provinceCode || ''}
+                            options={provinces}
+                            placeholder="همه استان‌ها"
+                            disabled={provincesQ.isLoading}
+                            onChange={(val, opt) => {
+                                if (!val) {
+                                    onChange({ ...value, provinceCode: undefined, provinceTitle: undefined, cityCode: undefined, cityTitle: undefined });
+                                } else {
+                                    onChange({
+                                        ...value,
+                                        provinceCode: val,
+                                        provinceTitle: opt.extra?.title || opt.label,
+                                        cityCode: undefined,
+                                        cityTitle: undefined,
+                                    });
+                                }
+                            }}
+                        />
                     </div>
                 )}
 
                 {showCity && (
-                    <div className="relative">
-                        <MapPin className="absolute right-2 top-3 w-3.5 h-3.5 text-on-surface-variant/40 pointer-events-none z-10" />
-                        <div className="pr-6">
-                            <DropSelector
-                                value={value.cityCode || ''}
-                                options={cities}
-                                placeholder={value.provinceCode ? 'همه شهرهای استان' : 'همه شهرها'}
-                                disabled={citiesQ.isLoading || !provinces.length}
-                                onChange={(val, opt) => {
-                                    if (!val) {
-                                        onChange({ ...value, cityCode: undefined, cityTitle: undefined });
-                                    } else {
-                                        onChange({
-                                            ...value,
-                                            cityCode: val,
-                                            cityTitle: opt.extra?.title || opt.label,
-                                            // اگه استان انتخاب نشده، از شهر انتخاب‌شده بگیر
-                                            provinceCode: value.provinceCode || opt.extra?.provinceCode,
-                                        });
-                                    }
-                                }}
-                            />
-                        </div>
+                    <div>
+                        <label className="text-[10px] font-bold text-on-surface-variant block mb-1 flex items-center gap-1">
+                            <MapPin className="w-3 h-3" />
+                            شهر
+                        </label>
+                        <DropSelector
+                            value={value.cityCode || ''}
+                            options={cities}
+                            placeholder={value.provinceCode ? 'همه شهرهای استان' : 'همه شهرها'}
+                            disabled={citiesQ.isLoading}
+                            onChange={(val, opt) => {
+                                if (!val) {
+                                    onChange({ ...value, cityCode: undefined, cityTitle: undefined });
+                                } else {
+                                    onChange({
+                                        ...value,
+                                        cityCode: val,
+                                        cityTitle: opt.extra?.title || opt.label,
+                                        provinceCode: value.provinceCode || opt.extra?.provinceCode,
+                                    });
+                                }
+                            }}
+                        />
                     </div>
                 )}
 
                 {showIndustry && (
-                    <div className="relative">
-                        <Building2 className="absolute right-2 top-3 w-3.5 h-3.5 text-on-surface-variant/40 pointer-events-none z-10" />
-                        <div className="pr-6">
-                            <DropSelector
-                                value={value.industry || ''}
-                                options={industries}
-                                placeholder="همه اصناف"
-                                disabled={industriesQ.isLoading}
-                                onChange={(val, opt) => {
-                                    if (!val) {
-                                        onChange({ ...value, industry: undefined, industryId: undefined });
-                                    } else {
-                                        onChange({
-                                            ...value,
-                                            industry: val,
-                                            industryId: opt.extra?.id,
-                                        });
-                                    }
-                                }}
-                            />
-                        </div>
+                    <div>
+                        <label className="text-[10px] font-bold text-on-surface-variant block mb-1 flex items-center gap-1">
+                            <Building2 className="w-3 h-3" />
+                            صنف
+                        </label>
+                        <DropSelector
+                            value={value.industry || ''}
+                            options={industries}
+                            placeholder="همه اصناف"
+                            disabled={industriesQ.isLoading}
+                            onChange={(val, opt) => {
+                                if (!val) {
+                                    onChange({ ...value, industry: undefined, industryId: undefined });
+                                } else {
+                                    onChange({
+                                        ...value,
+                                        industry: val,
+                                        industryId: opt.extra?.id,
+                                    });
+                                }
+                            }}
+                        />
                     </div>
                 )}
             </div>

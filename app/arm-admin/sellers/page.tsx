@@ -238,8 +238,13 @@ function SellersContent({ slug, armName }: { slug: string; armName: string }) {
                                             {/* استان/شهر */}
                                             <td className="px-3 py-2.5">
                                                 <div className="text-[11px] text-on-surface flex items-center gap-1">
-                                                    <MapPin className="w-3 h-3 text-on-surface-variant/40" />
-                                                    {s.catalog.city || '—'}
+                                                    <MapPin className="w-3 h-3 text-on-surface-variant/40 flex-shrink-0" />
+                                                    <div className="min-w-0">
+                                                        <div className="truncate font-medium">{s.catalog.province || '—'}</div>
+                                                        {s.catalog.city && (
+                                                            <div className="text-[9px] text-on-surface-variant/60 truncate">{s.catalog.city}</div>
+                                                        )}
+                                                    </div>
                                                 </div>
                                             </td>
                                             {/* کالا */}
@@ -369,7 +374,9 @@ function SellersContent({ slug, armName }: { slug: string; armName: string }) {
                                         </div>
                                         <div className="flex items-center gap-1.5 text-on-surface-variant">
                                             <MapPin className="w-3 h-3 flex-shrink-0" />
-                                            <span className="truncate">{s.catalog.city || '—'}</span>
+                                            <span className="truncate">
+                                                {[s.catalog.province, s.catalog.city].filter(Boolean).join('، ') || '—'}
+                                            </span>
                                         </div>
                                     </div>
 
@@ -526,7 +533,7 @@ function AddSellerModal({ slug, onClose }: { slug: string; onClose: () => void }
                                         <th className="px-3 py-2 text-right text-[10px] font-bold text-on-surface-variant uppercase">کاتالوگ</th>
                                         <th className="px-3 py-2 text-right text-[10px] font-bold text-on-surface-variant uppercase">صاحب</th>
                                         <th className="px-3 py-2 text-right text-[10px] font-bold text-on-surface-variant uppercase">صنف</th>
-                                        <th className="px-3 py-2 text-right text-[10px] font-bold text-on-surface-variant uppercase">شهر</th>
+                                        <th className="px-3 py-2 text-right text-[10px] font-bold text-on-surface-variant uppercase">استان/شهر</th>
                                         <th className="px-3 py-2 text-center text-[10px] font-bold text-on-surface-variant uppercase">عملیات</th>
                                     </tr>
                                 </thead>
@@ -566,10 +573,15 @@ function AddSellerModal({ slug, onClose }: { slug: string; onClose: () => void }
                                                     ) : <span className="text-[10px] text-on-surface-variant/40">—</span>}
                                                 </td>
                                                 <td className="px-3 py-2.5">
-                                                    <span className="text-[11px] text-on-surface flex items-center gap-1">
-                                                        <MapPin className="w-3 h-3 text-on-surface-variant/40" />
-                                                        {c.city || '—'}
-                                                    </span>
+                                                    <div className="text-[11px] text-on-surface flex items-center gap-1">
+                                                        <MapPin className="w-3 h-3 text-on-surface-variant/40 flex-shrink-0" />
+                                                        <div className="min-w-0">
+                                                            <div className="truncate font-medium">{c.province || '—'}</div>
+                                                            {c.city && (
+                                                                <div className="text-[9px] text-on-surface-variant/60 truncate">{c.city}</div>
+                                                            )}
+                                                        </div>
+                                                    </div>
                                                 </td>
                                                 <td className="px-3 py-2.5 text-center">
                                                     <button
@@ -610,7 +622,7 @@ function AddSellerModal({ slug, onClose }: { slug: string; onClose: () => void }
                                                     )}
                                                 </div>
                                                 <p className="text-[10px] text-on-surface-variant/70 truncate">
-                                                    {[c.owner?.fullName, c.city, c.industryName || c.businessIndustry].filter(Boolean).join(' · ')}
+                                                    {[c.owner?.fullName, c.province, c.city, c.industryName || c.businessIndustry].filter(Boolean).join(' · ')}
                                                 </p>
                                             </div>
                                             <button

@@ -241,8 +241,13 @@ function BuyersContent({ slug, armName }: { slug: string; armName: string }) {
                                             {/* استان/شهر */}
                                             <td className="px-3 py-2.5">
                                                 <div className="text-[11px] text-on-surface flex items-center gap-1">
-                                                    <MapPin className="w-3 h-3 text-on-surface-variant/40" />
-                                                    {b.business?.city || '—'}
+                                                    <MapPin className="w-3 h-3 text-on-surface-variant/40 flex-shrink-0" />
+                                                    <div className="min-w-0">
+                                                        <div className="truncate font-medium">{b.business?.province || '—'}</div>
+                                                        {b.business?.city && (
+                                                            <div className="text-[9px] text-on-surface-variant/60 truncate">{b.business.city}</div>
+                                                        )}
+                                                    </div>
                                                 </div>
                                             </td>
                                             {/* نوع */}
@@ -367,7 +372,9 @@ function BuyersContent({ slug, armName }: { slug: string; armName: string }) {
                                         </div>
                                         <div className="flex items-center gap-1.5 text-on-surface-variant">
                                             <MapPin className="w-3 h-3 flex-shrink-0" />
-                                            <span className="truncate">{b.business?.city || '—'}</span>
+                                            <span className="truncate">
+                                                {[b.business?.province, b.business?.city].filter(Boolean).join('، ') || '—'}
+                                            </span>
                                         </div>
                                     </div>
 
@@ -511,7 +518,7 @@ function AddBuyerModal({ slug, onClose }: { slug: string; onClose: () => void })
                                         <th className="px-3 py-2 text-right text-[10px] font-bold text-on-surface-variant uppercase">کسب‌وکار</th>
                                         <th className="px-3 py-2 text-right text-[10px] font-bold text-on-surface-variant uppercase">صاحب</th>
                                         <th className="px-3 py-2 text-right text-[10px] font-bold text-on-surface-variant uppercase">صنف</th>
-                                        <th className="px-3 py-2 text-right text-[10px] font-bold text-on-surface-variant uppercase">شهر</th>
+                                        <th className="px-3 py-2 text-right text-[10px] font-bold text-on-surface-variant uppercase">استان/شهر</th>
                                         <th className="px-3 py-2 text-center text-[10px] font-bold text-on-surface-variant uppercase">عملیات</th>
                                     </tr>
                                 </thead>
@@ -549,10 +556,15 @@ function AddBuyerModal({ slug, onClose }: { slug: string; onClose: () => void })
                                                     ) : <span className="text-[10px] text-on-surface-variant/40">—</span>}
                                                 </td>
                                                 <td className="px-3 py-2.5">
-                                                    <span className="text-[11px] text-on-surface flex items-center gap-1">
-                                                        <MapPin className="w-3 h-3 text-on-surface-variant/40" />
-                                                        {b.city || '—'}
-                                                    </span>
+                                                    <div className="text-[11px] text-on-surface flex items-center gap-1">
+                                                        <MapPin className="w-3 h-3 text-on-surface-variant/40 flex-shrink-0" />
+                                                        <div className="min-w-0">
+                                                            <div className="truncate font-medium">{b.province || '—'}</div>
+                                                            {b.city && (
+                                                                <div className="text-[9px] text-on-surface-variant/60 truncate">{b.city}</div>
+                                                            )}
+                                                        </div>
+                                                    </div>
                                                 </td>
                                                 <td className="px-3 py-2.5 text-center">
                                                     <button
@@ -586,7 +598,7 @@ function AddBuyerModal({ slug, onClose }: { slug: string; onClose: () => void })
                                             <div className="flex-1 min-w-0">
                                                 <p className="text-xs font-bold text-on-surface truncate">{b.name}</p>
                                                 <p className="text-[10px] text-on-surface-variant/70 truncate">
-                                                    {[b.owner?.fullName, b.industryName, b.city].filter(Boolean).join(' · ')}
+                                                    {[b.owner?.fullName, b.province, b.city, b.industryName].filter(Boolean).join(' · ')}
                                                 </p>
                                             </div>
                                             <button
