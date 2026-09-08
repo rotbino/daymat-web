@@ -213,21 +213,26 @@ function EntityPickerModal({
     const containerRef = React.useRef<HTMLDivElement>(null);
     const queryClient = useQueryClient();
 
-    // debounce search
+    // debounce search — فقط debouncedSearch و page رو آپدیت کن
+    // ✅ allItems رو اینجا پاک نکن — در effect بعدی هندل می‌شه
     useEffect(() => {
         const timer = setTimeout(() => {
             setDebouncedSearch(search.trim());
             setPage(1);
-            setAllItems([]);
         }, 300);
         return () => clearTimeout(timer);
     }, [search]);
 
-    // reset when mineOnly changes
+    // ✅ وقتی debouncedSearch یا mineOnly عوض شد، allItems رو پاک کن
+    // اما نه در mount اولیه — چون query همون لحظه اجرا می‌شه
+    const isFirstRender = React.useRef(true);
     useEffect(() => {
-        setPage(1);
+        if (isFirstRender.current) {
+            isFirstRender.current = false;
+            return;
+        }
         setAllItems([]);
-    }, [mineOnly]);
+    }, [debouncedSearch, mineOnly]);
 
     // fetch
     const { data, isFetching } = useQuery({
