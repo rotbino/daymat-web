@@ -329,18 +329,16 @@ export default function Autocomplete({
                                             : highlightMatch(item.title, query)
                                         }
                                     </span>
-
+                                    <span className="flex items-center gap-1 text-[9px] font-bold text-primary flex-shrink-0 opacity-60 group-hover:opacity-100 transition-opacity">
+                                            <CornerDownLeft className="w-3 h-3" />
+                                            انتخاب
+                                        </span>
                                     {/* ✅ راهنمای انتخاب */}
                                     {isSelectedItem ? (
                                         <span className="flex items-center gap-1 text-[9px] font-bold text-emerald-600 dark:text-emerald-400 flex-shrink-0">
                                             انتخاب‌شده
                                         </span>
-                                    ) : isExact ? (
-                                        <span className="flex items-center gap-1 text-[9px] font-bold text-primary flex-shrink-0 opacity-60 group-hover:opacity-100 transition-opacity">
-                                            <CornerDownLeft className="w-3 h-3" />
-                                            انتخاب
-                                        </span>
-                                    ) : (
+                                    ) : isExact ? null: (
                                         <ChevronLeft className="w-3.5 h-3.5 text-on-surface-variant/30 group-hover:text-primary/60 flex-shrink-0 transition-colors" />
                                     )}
                                 </button>
