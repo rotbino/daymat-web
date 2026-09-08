@@ -4,7 +4,7 @@
 import React, { useState } from 'react';
 import EntityPicker, { EntityValue } from './EntityPicker';
 import { apiService } from '@/lib/api/apiService';
-import { Tag, Package, Check } from 'lucide-react';
+import { Tag, Check } from 'lucide-react';
 import { cn } from '@/lib/utils';
 
 export interface BrandValue extends EntityValue {
@@ -20,30 +20,30 @@ interface Props {
     label?: string;
     required?: boolean;
     error?: string;
+    /** اگه true باشه، toggle «دارای برند / بدون برند» نشون داده می‌شه */
     allowNoBrand?: boolean;
 }
 
+/**
+ * BrandPicker — انتخابگر برند مستقل
+ *
+ * ✅ برند یه موجودیت مستقل از کالاست (استاندارد دیجیکالا/آمازون)
+ * ✅ دو حالت: «دارای برند» / «بدون برند» (هیچ‌کدوم پیش‌فرض انتخاب نشده)
+ * ✅ EntityPicker با pagination + create
+ * ✅ پیام تکراری و راهنمای create
+ */
 export default function BrandPicker({
     value,
     onChange,
     category,
-    placeholder = 'انتخاب برند...',
+    placeholder = 'مثلاً: مکنزی',
     label = 'برند',
     required = false,
     error,
     allowNoBrand = true,
 }: Props) {
-    // ✅ null = هیچ‌کدوم انتخاب نشده، true = دارای برند، false = بدون برند
+    // ✅ null = هیچ‌کدوم، true = دارای برند، false = بدون برند
     const [brandMode, setBrandMode] = useState<boolean | null>(!!value ? true : null);
-
-    const selectHasBrand = () => {
-        setBrandMode(true);
-    };
-
-    const selectNoBrand = () => {
-        setBrandMode(false);
-        onChange(null);
-    };
 
     return (
         <div className="space-y-2">
@@ -57,10 +57,9 @@ export default function BrandPicker({
 
             {allowNoBrand && (
                 <div className="grid grid-cols-2 gap-2">
-                    {/* دارای برند */}
                     <button
                         type="button"
-                        onClick={selectHasBrand}
+                        onClick={() => { setBrandMode(true); }}
                         className={cn(
                             'flex items-center justify-center gap-2 h-10 rounded-xl text-xs font-bold border transition-all',
                             brandMode === true
@@ -76,11 +75,9 @@ export default function BrandPicker({
                         </span>
                         دارای برند
                     </button>
-
-                    {/* بدون برند */}
                     <button
                         type="button"
-                        onClick={selectNoBrand}
+                        onClick={() => { setBrandMode(false); onChange(null); }}
                         className={cn(
                             'flex items-center justify-center gap-2 h-10 rounded-xl text-xs font-bold border transition-all',
                             brandMode === false
@@ -99,12 +96,11 @@ export default function BrandPicker({
                 </div>
             )}
 
-            {/* ✅ فقط اگه «دارای برند» انتخاب شده */}
             {brandMode === true && (
                 <EntityPicker
                     value={value}
                     onChange={onChange}
-                    placeholder="مثلاً: مکنزی"
+                    placeholder={placeholder}
                     required={required || allowNoBrand}
                     error={error}
                     icon={<Tag className="w-3.5 h-3.5 text-on-surface-variant" />}
@@ -112,12 +108,8 @@ export default function BrandPicker({
                         const res = await apiService.brand.search(params.q, category, params.page, params.limit);
                         return { items: res.items, hasMore: res.hasMore };
                     }}
-                    // ✅ FIX: createFn حالا object دریافت می‌کنه
                     createFn={async (data) => {
-                        return apiService.brand.create({
-                            title: data.title,
-                            category,
-                        });
+                        return apiService.brand.create({ title: data.title, category });
                     }}
                     queryKey={`brands-picker-${category || 'all'}`}
                     createLabel="افزودن برند جدید"
@@ -125,6 +117,7 @@ export default function BrandPicker({
                     pageSize={10}
                     selectTitle="انتخاب برند"
                     createTitle="افزودن برند جدید"
+                    editTitle="ویرایش برند"
                     duplicateMessage="این برند قبلاً اضافه شده. با جستجو آن را پیدا و انتخاب کنید."
                     createHint="این برند در لیست وجود ندارد؟ یک بار آن را اضافه کنید تا همه جا قابل استفاده باشد"
                     renderValue={(v) => (

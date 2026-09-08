@@ -16,6 +16,7 @@ import { NumberInput } from '@/components/common/NumberInput';
 import { DropSelector } from '@/components/common/DropSelector';
 import { IranLocationSelector } from '@/app/components/IranLocationSelector';
 import ProductReferencePicker, { ProductValue } from '@/app/components/ProductReferencePicker';
+import BrandPicker, { BrandValue } from '@/app/components/BrandPicker';
 import UnitSettingsModal from './components/UnitSettingsModal';
 import CategorySettingsModal from './components/CategorySettingsModal';
 import CategoryPicker from './components/CategoryPicker';
@@ -175,6 +176,8 @@ export function AdForm({ adId, onSuccess }: { adId?: string; onSuccess?: () => v
     });
     // ✅ state کالای انتخاب‌شده (برای نمایش در ProductReferencePicker)
     const [selectedProduct, setSelectedProduct] = useState<ProductValue | null>(null);
+    // ✅ state برند انتخاب‌شده (مستقل از کالا)
+    const [selectedBrand, setSelectedBrand] = useState<BrandValue | null>(null);
     const [images, setImages] = useState<ImageSlot[]>([]);
     const [submitting, setSubmitting] = useState(false);
     const [unitModalOpen, setUnitModalOpen] = useState(false);
@@ -371,6 +374,14 @@ export function AdForm({ adId, onSuccess }: { adId?: string; onSuccess?: () => v
                     thumbnailUrl: (existingAd as any).productRef?.thumbnailUrl,
                 });
             }
+            // ✅ برند مستقل
+            if ((existingAd as any).brandId) {
+                setSelectedBrand({
+                    id: (existingAd as any).brandId,
+                    title: (existingAd as any).brand?.title || '',
+                    logoUrl: (existingAd as any).brand?.logoUrl,
+                });
+            }
         }
     }, [isEditMode, existingAd]);
 
@@ -456,7 +467,7 @@ export function AdForm({ adId, onSuccess }: { adId?: string; onSuccess?: () => v
                         productType: selectedProduct?.title || formData.productType,
                         // ✅ کالای مرجع
                         productReferenceId: selectedProduct?.id || null,
-                        brandId: selectedProduct?.brandId || formData.brandId || null,
+                        brandId: selectedBrand?.id || null,
                         unitPrice: formData.unitPrice,
                         singleUnitPrice: formData.singleUnitPrice || null,
                         consumerPrice: formData.consumerPrice || null,
@@ -489,7 +500,7 @@ export function AdForm({ adId, onSuccess }: { adId?: string; onSuccess?: () => v
                     productType: selectedProduct?.title || formData.productType,
                     // ✅ کالای مرجع
                     productReferenceId: selectedProduct?.id || undefined,
-                    brandId: selectedProduct?.brandId || formData.brandId || undefined,
+                    brandId: selectedBrand?.id || undefined,
                     unitPrice: formData.unitPrice,
                     singleUnitPrice: formData.singleUnitPrice || null,
                     consumerPrice: formData.consumerPrice || null,
@@ -704,6 +715,18 @@ export function AdForm({ adId, onSuccess }: { adId?: string; onSuccess?: () => v
                                 )}
                             </div>
                         </section>
+
+                        {/* ✅ برند — مستقل از کالا، فقط اگه کالا انتخاب شده */}
+                        {selectedProduct && (
+                            <section className="rounded-2xl bg-surface-container-low/60 border border-outline-variant/30 p-4 space-y-3 animate-in fade-in duration-300">
+                                <BrandPicker
+                                    value={selectedBrand}
+                                    onChange={setSelectedBrand}
+                                    label="برند کالا"
+                                    placeholder="مثلاً: مکنزی"
+                                />
+                            </section>
+                        )}
 
                         {/* ✅ تصویر آگهی — زیر انتخاب کالا، فقط اگه کالا انتخاب شده */}
                         {selectedProduct && (

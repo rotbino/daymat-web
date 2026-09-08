@@ -379,10 +379,13 @@ function EntityPickerModal({
         }
     };
 
-    // click outside
+    // click outside — ✅ با data-entity-picker-overlay هندل می‌شه
+    // نه با containerRef — چون nested EntityPicker‌ها تداخل دارن
     useEffect(() => {
         const handler = (e: MouseEvent) => {
-            if (containerRef.current && !containerRef.current.contains(e.target as Node)) {
+            const target = e.target as HTMLElement;
+            // ✅ اگه روی overlay کلیک شد و این overlay خودشه (نه parent)
+            if (target.dataset.entityPickerOverlay === 'true') {
                 onClose();
             }
         };
@@ -404,8 +407,8 @@ function EntityPickerModal({
 
     return createPortal(
         <div
+            data-entity-picker-overlay="true"
             className="fixed inset-0 z-[110] flex items-end sm:items-center sm:justify-center bg-black/50 animate-in fade-in duration-200 sm:p-4"
-            onClick={onClose}
         >
             <div
                 ref={containerRef}

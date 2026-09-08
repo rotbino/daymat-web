@@ -26,6 +26,14 @@ interface Props {
     error?: string;
 }
 
+/**
+ * ProductReferencePicker — انتخابگر کالای مرجع
+ *
+ * ✅ کالا موجودیت مستقل از برند است (استاندارد دیجیکالا/آمازون)
+ * ✅ فرم create/edit: فقط عنوان + عکس (بدون برند)
+ * ✅ برند در فرم والد (AdForm) به‌صورت جداگانه انتخاب می‌شه
+ * ✅ EntityPicker با pagination + create + edit (برای isNew)
+ */
 export default function ProductReferencePicker({
     value,
     onChange,
@@ -57,20 +65,10 @@ export default function ProductReferencePicker({
             })}
             updateFn={(id, data) => apiService.product.update(id, data)}
             renderCreateFields={({ title, setTitle, dataRef }) => (
-                <CreateProductExtraFields
-                    title={title}
-                    setTitle={setTitle}
-                    category={category}
-                    dataRef={dataRef}
-                />
+                <CreateProductExtraFields dataRef={dataRef} />
             )}
             renderEditFields={({ title, setTitle, dataRef }) => (
-                <CreateProductExtraFields
-                    title={title}
-                    setTitle={setTitle}
-                    category={category}
-                    dataRef={dataRef}
-                />
+                <CreateProductExtraFields dataRef={dataRef} />
             )}
             queryKey={`products-picker-${category || 'all'}`}
             createLabel="افزودن کالای جدید به مرکز"
@@ -124,23 +122,17 @@ export default function ProductReferencePicker({
 }
 
 // ═══════════════════════════════════════════════════════════
-// فرم ایجاد/ویرایش کالا — فقط عکس (بدون برند)
-// ✅ برند موجودیت مستقل است — در فرم والد به‌صورت جداگانه انتخاب می‌شه
+// فرم create/edit کالا — فقط عکس
+// ✅ برند مستقل است، در فرم والد انتخاب می‌شه
 // ═══════════════════════════════════════════════════════════
 function CreateProductExtraFields({
-    title,
-    setTitle,
-    category,
     dataRef,
 }: {
-    title: string;
-    setTitle: (v: string) => void;
-    category?: string;
     dataRef: React.MutableRefObject<{ [key: string]: any }>;
 }) {
     const [imageUrl, setImageUrl] = useState<string>('');
     const [uploading, setUploading] = useState(false);
-    const [logoPreview, setLogoPreview] = useState<string | null>(null);
+    const [imagePreview, setImagePreview] = useState<string | null>(null);
     const uploadMut = useUploadFile();
 
     React.useEffect(() => {
@@ -152,8 +144,7 @@ function CreateProductExtraFields({
 
     const handleFileSelect = (file: File | null) => {
         if (!file) return;
-        const url = URL.createObjectURL(file);
-        setLogoPreview(url);
+        setImagePreview(URL.createObjectURL(file));
         uploadImage(file);
     };
 
@@ -166,8 +157,7 @@ function CreateProductExtraFields({
                 modelId: 'temp',
                 fieldKey: 'product-image',
             });
-            const path = result.path || result.thumbnailPath || '';
-            setImageUrl(path);
+            setImageUrl(result.path || result.thumbnailPath || '');
         } catch (err) {
             console.error('Upload error:', err);
         } finally {
@@ -176,38 +166,33 @@ function CreateProductExtraFields({
     };
 
     return (
-        <>
-            {/* عکس کالا */}
-            <div className="space-y-1.5">
-                <label className="text-xs font-bold text-on-surface block">تصویر کالا</label>
-                <div className="flex items-center gap-3">
-                    <label className="relative w-20 h-20 rounded-xl overflow-hidden flex-shrink-0
-                        border-2 border-dashed border-primary/30 hover:border-primary/60 hover:bg-primary/5
-                        transition-all cursor-pointer flex flex-col items-center justify-center gap-1">
-                        {uploading ? (
-                            <Loader2 className="w-6 h-6 text-primary animate-spin" />
-                        ) : logoPreview || imageUrl ? (
-                            <img src={logoPreview || imageUrl} alt="" className="w-full h-full object-cover absolute inset-0" />
-                        ) : (
-                            <>
-                                <Camera className="w-6 h-6 text-primary/60" />
-                                <span className="text-[9px] font-bold text-primary/60 text-center px-1">آپلود عکس</span>
-                            </>
-                        )}
-                        <input
-                            type="file"
-                            accept="image/*"
-                            className="hidden"
-                            onChange={(e) => handleFileSelect(e.target.files?.[0] ?? null)}
-                        />
-                    </label>
-                    <p className="text-[10px] text-on-surface-variant/70 leading-5">
-                        عکس کالا رو آپلود کن. این عکس برای همه‌ی آگهی‌های این کالا استفاده می‌شه.
-                    </p>
-                </div>
+        <div className="space-y-1.5">
+            <label className="text-xs font-bold text-on-surface block">تصویر کالا</label>
+            <div className="flex items-center gap-3">
+                <label className="relative w-20 h-20 rounded-xl overflow-hidden flex-shrink-0
+                    border-2 border-dashed border-primary/30 hover:border-primary/60 hover:bg-primary/5
+                    transition-all cursor-pointer flex flex-col items-center justify-center gap-1">
+                    {uploading ? (
+                        <Loader2 className="w-6 h-6 text-primary animate-spin" />
+                    ) : imagePreview || imageUrl ? (
+                        <img src={imagePreview || imageUrl} alt="" className="w-full h-full object-cover absolute inset-0" />
+                    ) : (
+                        <>
+                            <Camera className="w-6 h-6 text-primary/60" />
+                            <span className="text-[9px] font-bold text-primary/60 text-center px-1">آپلود عکس</span>
+                        </>
+                    )}
+                    <input
+                        type="file"
+                        accept="image/*"
+                        className="hidden"
+                        onChange={(e) => handleFileSelect(e.target.files?.[0] ?? null)}
+                    />
+                </label>
+                <p className="text-[10px] text-on-surface-variant/70 leading-5">
+                    عکس کالا رو آپلود کن. این عکس برای همه‌ی آگهی‌های این کالا استفاده می‌شه.
+                </p>
             </div>
-            {/* ✅ برند حذف شد — موجودیت مستقل است، در فرم والد انتخاب می‌شه */}
-        </>
+        </div>
     );
 }
-
