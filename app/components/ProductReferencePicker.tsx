@@ -67,8 +67,8 @@ export default function ProductReferencePicker({
             renderCreateFields={({ title, setTitle, dataRef }) => (
                 <CreateProductExtraFields dataRef={dataRef} />
             )}
-            renderEditFields={({ title, setTitle, dataRef }) => (
-                <CreateProductExtraFields dataRef={dataRef} />
+            renderEditFields={({ title, setTitle, dataRef, initialData }) => (
+                <CreateProductExtraFields dataRef={dataRef} initialData={initialData} />
             )}
             queryKey={`products-picker-${category || 'all'}`}
             createLabel="افزودن کالای جدید به مرکز"
@@ -127,10 +127,12 @@ export default function ProductReferencePicker({
 // ═══════════════════════════════════════════════════════════
 function CreateProductExtraFields({
     dataRef,
+    initialData,
 }: {
     dataRef: React.MutableRefObject<{ [key: string]: any }>;
+    initialData?: any;
 }) {
-    const [imageUrl, setImageUrl] = useState<string>('');
+    const [imageUrl, setImageUrl] = useState<string>(initialData?.imageUrl || initialData?.thumbnailUrl || '');
     const [uploading, setUploading] = useState(false);
     const [imagePreview, setImagePreview] = useState<string | null>(null);
     const uploadMut = useUploadFile();

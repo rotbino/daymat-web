@@ -35,6 +35,8 @@ interface CreateFormProps {
     extraFields?: React.ReactNode;
     /** ref برای ذخیره‌سازی داده‌های اضافی فرم create */
     dataRef: React.MutableRefObject<{ [key: string]: any }>;
+    /** ✅ داده‌های اولیه آیتم (برای حالت ویرایش) */
+    initialData?: any;
 }
 
 interface Props {
@@ -418,14 +420,30 @@ function EntityPickerModal({
                     min-h-[60dvh] max-h-[88dvh] flex flex-col overflow-hidden
                     animate-in slide-in-from-bottom-4 sm:zoom-in-95 duration-300"
             >
-                {/* هدر */}
+                {/* هدر — با دکمه «جدید» */}
                 <div className="flex-shrink-0 flex items-center justify-between px-4 py-3 border-b border-outline-variant/20">
                     <h3 className="text-sm font-extrabold text-on-surface">
                         {showCreateForm ? createFormTitle : editingItem ? editTitle : selectTitle}
                     </h3>
-                    <button onClick={onClose} className="w-8 h-8 flex items-center justify-center rounded-full text-on-surface-variant hover:bg-surface-container-high transition-colors">
-                        <X className="w-5 h-5" />
-                    </button>
+                    <div className="flex items-center gap-2">
+                        {/* ✅ دکمه «جدید» — همیشه در هدر، فقط در حالت انتخاب */}
+                        {!showCreateForm && !editingItem && (
+                            <button
+                                type="button"
+                                onClick={() => {
+                                    setCreateTitle(search.trim() || debouncedSearch);
+                                    setShowCreateForm(true);
+                                }}
+                                className="flex items-center gap-1 h-8 px-3 rounded-lg bg-primary/10 text-primary text-[11px] font-bold hover:bg-primary/20 transition-colors"
+                            >
+                                <Plus className="w-3.5 h-3.5" />
+                                جدید
+                            </button>
+                        )}
+                        <button onClick={onClose} className="w-8 h-8 flex items-center justify-center rounded-full text-on-surface-variant hover:bg-surface-container-high transition-colors">
+                            <X className="w-5 h-5" />
+                        </button>
+                    </div>
                 </div>
 
                 {showCreateForm ? (
@@ -485,6 +503,7 @@ function EntityPickerModal({
                                 title: editTitleValue,
                                 setTitle: setEditTitleValue,
                                 dataRef: editDataRef,
+                                initialData: editingItem,
                             })}
                             {editError && (
                                 <p className="text-error text-[11px]">{editError}</p>
@@ -541,33 +560,20 @@ function EntityPickerModal({
                             {isFetching && allItems.length === 0 ? (
                                 <div className="p-6 text-center"><Loader2 className="w-5 h-5 animate-spin text-primary mx-auto" /></div>
                             ) : allItems.length === 0 ? (
-                                // ✅ پیام واضح «پیدا نشد» + دکمه create وسط لیست
-                                <div className="p-6 space-y-4">
-                                    <div className="text-center">
-                                        <Tag className="w-10 h-10 text-on-surface-variant/20 mx-auto mb-2" />
-                                        <p className="text-xs text-on-surface-variant mb-1">
-                                            {!canSearch && search.length > 0
-                                                ? `حداقل ${minSearchChars} حرف تایپ کنید`
-                                                : canSearch && trimmedSearch
-                                                    ? 'موردی با این نام پیدا نشد.'
-                                                    : 'موردی موجود نیست.'}
+                                // ✅ پیام ساده «پیدا نشد» — دکمه create در هدر هست
+                                <div className="p-6 text-center">
+                                    <Tag className="w-10 h-10 text-on-surface-variant/20 mx-auto mb-2" />
+                                    <p className="text-xs text-on-surface-variant">
+                                        {!canSearch && search.length > 0
+                                            ? `حداقل ${minSearchChars} حرف تایپ کنید`
+                                            : canSearch && trimmedSearch
+                                                ? 'موردی با این نام پیدا نشد.'
+                                                : 'موردی موجود نیست.'}
+                                    </p>
+                                    {canSearch && trimmedSearch && (
+                                        <p className="text-[11px] text-on-surface-variant/70 leading-5 mt-1">
+                                            با دکمه «جدید» در بالا می‌توانید اضافه کنید.
                                         </p>
-                                        {canSearch && trimmedSearch && canCreate && (
-                                            <p className="text-[11px] text-on-surface-variant/70 leading-5">
-                                                می‌توانید مورد مورد نیاز خود را به لیست اضافه کنید.
-                                            </p>
-                                        )}
-                                    </div>
-                                    {/* ✅ دکمه create وسط لیست خالی */}
-                                    {canCreate && (
-                                        <button
-                                            type="button"
-                                            onClick={() => setShowCreateForm(true)}
-                                            className="w-full flex items-center justify-center gap-2 p-3 rounded-xl bg-primary text-on-primary hover:bg-primary/90 active:scale-95 transition-all shadow-sm"
-                                        >
-                                            <Plus className="w-4 h-4" />
-                                            <span className="text-xs font-bold">{createLabel}</span>
-                                        </button>
                                     )}
                                 </div>
                             ) : (
@@ -621,43 +627,19 @@ function EntityPickerModal({
                                             {isFetching ? <Loader2 className="w-4 h-4 animate-spin mx-auto" /> : 'نمایش بیشتر...'}
                                         </button>
                                     )}
-                                    {/* ✅ دکمه create در ته لیست وقتی سرچ نتیجه داره ولی exact match نیست */}
-                                    {canCreate && (
-                                        <div className="p-3 border-t border-outline-variant/20 mt-2">
-                                            <button
-                                                type="button"
-                                                onClick={() => setShowCreateForm(true)}
-                                                className="w-full flex items-center justify-center gap-2 p-2.5 rounded-xl border-2 border-dashed border-primary/40 text-primary hover:bg-primary/5 active:scale-95 transition-all"
-                                            >
-                                                <Plus className="w-4 h-4" />
-                                                <span className="text-xs font-bold">{createLabel}: «{trimmedSearch}»</span>
-                                            </button>
-                                        </div>
-                                    )}
                                 </>
                             )}
                         </div>
 
-                        {/* هشدار تکراری */}
+                        {/* هشدار تکراری — راهنمای ملایم */}
                         {exactMatch && trimmedSearch.length >= 2 && (
                             <div className="flex-shrink-0 p-3 border-t border-amber-200/40 bg-amber-50/50 dark:bg-amber-900/10">
                                 <div className="flex items-center gap-2 text-amber-800 dark:text-amber-200">
                                     <AlertCircle className="w-4 h-4 flex-shrink-0" />
                                     <p className="text-xs">
-                                        {duplicateMessage
-                                            ? duplicateMessage.replace('{name}', trimmedSearch)
-                                            : `«${trimmedSearch}» از قبل وجود دارد. از لیست بالا انتخاب کنید.`}
+                                        این مورد قبلاً با همین عنوان ثبت شده. از لیست بالا انتخاب کنید.
                                     </p>
                                 </div>
-                            </div>
-                        )}
-
-                        {/* ✅ دکمه create پایین مدال وقتی سرچ خالی است و هیچ نتیجه‌ای نیست */}
-                        {canCreate && allItems.length === 0 && (
-                            <div className="flex-shrink-0 p-3 border-t border-outline-variant/20">
-                                <p className="text-[10px] text-center text-on-surface-variant/60 mb-2">
-                                    {createHint}
-                                </p>
                             </div>
                         )}
                     </>
