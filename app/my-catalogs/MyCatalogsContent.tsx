@@ -21,7 +21,7 @@ import {
     Globe, ShieldCheck, Settings2, BadgeCheck, Hourglass, XCircle,
     Bookmark, User as UserIcon, X, Building2, PauseCircle, Wrench,
     Info, Phone, CheckCircle2, Camera, UserPlus, Check,
-    Ellipsis, ChevronDown, Sparkles, Unlink, CameraIcon,
+    Ellipsis, ChevronDown, Sparkles, Unlink, CameraIcon, MapPin,
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import Link from 'next/link';
@@ -65,6 +65,19 @@ const SALES_ICON: Record<string, any> = {
     retail: Package,
     service: Wrench,
 };
+
+// ✅ انواع کسب‌وکار — برای CatalogEditModal
+const BIZ_TYPES = [
+    { value: 'producer', label: 'تولیدی' },
+    { value: 'wholesaler', label: 'عمده‌فروش' },
+    { value: 'importer', label: 'واردکننده' },
+    { value: 'exporter', label: 'صادرکننده' },
+    { value: 'distributor', label: 'پخش‌کننده' },
+    { value: 'retailer', label: 'خرده‌فروش' },
+    { value: 'contractor', label: 'پیمانکار' },
+    { value: 'service_provider', label: 'خدمات' },
+    { value: 'other', label: 'سایر' },
+];
 
 function RowSkeleton({ h = 84 }: { h?: number }) {
     return <div style={{ height: h }} className="rounded-xl bg-surface-container-high/50 animate-pulse" />;
@@ -1091,6 +1104,21 @@ function CatalogEditModal({ isOpen, onClose, catalog, salesTypeLocked, onSaved }
     const [phone, setPhone] = useState(catalog?.phone || bizPhone);
     const [website, setWebsite] = useState(catalog?.website || '');
     const [logoUrl, setLogoUrl] = useState(biz?.logoUrl || catalog?.logoUrl || '');
+
+    // ✅ فیلدهای Business — برای ویرایش کامل
+    const [bizType, setBizType] = useState<string>(biz?.type || 'wholesaler');
+    const [provinceCode, setProvinceCode] = useState<string>(biz?.provinceCode || '');
+    const [provinceLabel, setProvinceLabel] = useState<string>(biz?.province || '');
+    const [cityCode, setCityCode] = useState<string>(biz?.cityCode || '');
+    const [cityLabel, setCityLabel] = useState<string>(biz?.city || '');
+    const [address, setAddress] = useState<string>(biz?.address || '');
+    const [description, setDescription] = useState<string>(biz?.description || catalog?.description || '');
+    const [businessStartYear, setBusinessStartYear] = useState<string>(
+        biz?.businessStartYear ? String(biz.businessStartYear) : ''
+    );
+    const [nationalId, setNationalId] = useState<string>(biz?.nationalId || '');
+    const [businessLicense, setBusinessLicense] = useState<string>(biz?.businessLicense || '');
+
     const [slugEditing, setSlugEditing] = useState(false);
     const [errors, setErrors] = useState<Record<string, string>>({});
     const [saving, setSaving] = useState(false);
@@ -1115,9 +1143,19 @@ function CatalogEditModal({ isOpen, onClose, catalog, salesTypeLocked, onSaved }
             shortDescription !== (catalog.shortDescription || '') ||
             phone !== (catalog.phone || bizPhone) ||
             website !== (catalog.website || '') ||
-            !!pendingLogoFile
+            !!pendingLogoFile ||
+            // ✅ فیلدهای business
+            bizType !== (biz?.type || 'wholesaler') ||
+            provinceCode !== (biz?.provinceCode || '') ||
+            cityCode !== (biz?.cityCode || '') ||
+            address !== (biz?.address || '') ||
+            description !== (biz?.description || catalog?.description || '') ||
+            businessStartYear !== (biz?.businessStartYear ? String(biz.businessStartYear) : '') ||
+            nationalId !== (biz?.nationalId || '') ||
+            businessLicense !== (biz?.businessLicense || '')
         );
-    }, [catalog, name, slug, industry, shortDescription, phone, website, pendingLogoFile, bizPhone, biz]);
+    }, [catalog, name, slug, industry, shortDescription, phone, website, pendingLogoFile, bizPhone, biz,
+        bizType, provinceCode, cityCode, address, description, businessStartYear, nationalId, businessLicense]);
 
     const uploadLogo = async (): Promise<string | undefined> => {
         if (!pendingLogoFile) return undefined;
@@ -1157,17 +1195,30 @@ function CatalogEditModal({ isOpen, onClose, catalog, salesTypeLocked, onSaved }
         try {
             const logoFileId = await uploadLogo();
 
-            // ✅ ۱. آپدیت Business (صنف + لوگو)
+            // ✅ ۱. آپدیت Business (صنف + لوگو + موقعیت + آدرس + سایر فیلدها)
             if (bizId) {
+                const bizUpdate: any = {
+                    industryName: industry.title.trim() || undefined,
+                    industryId: industry.id,
+                    type: bizType,
+                    phone: phone.trim() || undefined,
+                    // ✅ موقعیت
+                    province: provinceLabel || undefined,
+                    provinceCode: provinceCode || undefined,
+                    city: cityLabel || undefined,
+                    cityCode: cityCode || undefined,
+                    address: address.trim() || undefined,
+                    // ✅ سایر فیلدهای مهم
+                    description: description.trim() || undefined,
+                    ...(businessStartYear ? { businessStartYear: parseInt(businessStartYear, 10) } : {}),
+                    nationalId: nationalId.trim() || undefined,
+                    businessLicense: businessLicense.trim() || undefined,
+                };
+                if (logoFileId) bizUpdate.logoUrl = logoUrl;
+
                 await updateBusinessMutation.mutateAsync({
                     id: bizId,
-                    data: {
-                        industryName: industry.title.trim() || undefined,
-                        industryId: industry.id,
-                        ...(logoFileId ? { logoUrl } : {}),
-                        // ✅ phone هم در business ذخیره شه
-                        phone: phone.trim() || undefined,
-                    },
+                    data: bizUpdate,
                 });
             }
 
@@ -1301,13 +1352,71 @@ function CatalogEditModal({ isOpen, onClose, catalog, salesTypeLocked, onSaved }
                         />
                     </section>
 
-                    {/* ═══ معرفی کوتاه ═══ */}
-                    <section className="rounded-2xl bg-surface-container-low/60 border border-outline-variant/30 p-4 space-y-1.5">
-                        <SectionTitle icon={Settings2} text="معرفی کوتاه" />
-                        <input type="text" value={shortDescription} onChange={(e) => setShortDescription(e.target.value)}
-                               maxLength={120}
-                               placeholder={isService ? 'مثلاً: خدمات حسابداری و مشاوره مالیاتی' : 'مثلاً: تولید و پخش انواع بلوک سیمانی'}
-                               className={inputCls()} />
+                    {/* ═══ نوع فعالیت ═══ */}
+                    <section className="rounded-2xl bg-surface-container-low/60 border border-outline-variant/30 p-4 space-y-2">
+                        <SectionTitle icon={Layers} text="نوع کسب‌وکار" />
+                        <div className="flex flex-wrap gap-1.5">
+                            {BIZ_TYPES.map((t) => (
+                                <button key={t.value} type="button" onClick={() => setBizType(t.value)}
+                                        className={cn('h-8 px-3 rounded text-[11px] font-bold border transition-colors',
+                                            bizType === t.value
+                                                ? 'bg-primary/10 border-primary/40 text-primary'
+                                                : 'border-outline-variant/50 text-on-surface-variant hover:border-primary/30')}>
+                                    {t.label}
+                                </button>
+                            ))}
+                        </div>
+                    </section>
+
+                    {/* ═══ موقعیت (استان/شهر/آدرس) ═══ */}
+                    <section className="rounded-2xl bg-surface-container-low/60 border border-outline-variant/30 p-4 space-y-3">
+                        <SectionTitle icon={MapPin} text="موقعیت و آدرس" />
+                        <IranLocationSelector
+                            provinceCode={provinceCode}
+                            cityCode={cityCode}
+                            onProvinceChange={(code, label) => {
+                                setProvinceCode(code);
+                                setProvinceLabel(label);
+                                setCityCode('');
+                                setCityLabel('');
+                            }}
+                            onCityChange={(code, label) => {
+                                setCityCode(code);
+                                setCityLabel(label);
+                            }}
+                        />
+                        <div className="space-y-1.5">
+                            <label className="text-xs font-medium text-on-surface block">آدرس دقیق</label>
+                            <textarea
+                                value={address}
+                                onChange={(e) => setAddress(e.target.value)}
+                                rows={2}
+                                placeholder="خیابان، کوچه، پلاک..."
+                                className={cn(inputCls(), 'h-auto py-2 resize-none')}
+                            />
+                        </div>
+                    </section>
+
+                    {/* ═══ معرفی کامل ═══ */}
+                    <section className="rounded-2xl bg-surface-container-low/60 border border-outline-variant/30 p-4 space-y-3">
+                        <SectionTitle icon={Settings2} text="معرفی و توضیحات" />
+                        <div className="space-y-1.5">
+                            <label className="text-xs font-medium text-on-surface block">معرفی کوتاه</label>
+                            <input type="text" value={shortDescription} onChange={(e) => setShortDescription(e.target.value)}
+                                   maxLength={120}
+                                   placeholder={isService ? 'مثلاً: خدمات حسابداری و مشاوره مالیاتی' : 'مثلاً: تولید و پخش انواع بلوک سیمانی'}
+                                   className={inputCls()} />
+                        </div>
+                        <div className="space-y-1.5">
+                            <label className="text-xs font-medium text-on-surface block">توضیحات کامل</label>
+                            <textarea
+                                value={description}
+                                onChange={(e) => setDescription(e.target.value)}
+                                rows={3}
+                                placeholder="تاریخچه، خدمات، محصولات، توانمندی‌ها..."
+                                className={cn(inputCls(), 'h-auto py-2 resize-none')}
+                            />
+                        </div>
                     </section>
 
                     {/* ═══ تماس ═══ */}
@@ -1323,14 +1432,36 @@ function CatalogEditModal({ isOpen, onClose, catalog, salesTypeLocked, onSaved }
                             <input type="url" dir="ltr" value={website} onChange={(e) => setWebsite(e.target.value)}
                                    placeholder="example.com" className={cn(inputCls(), 'text-left')} />
                         </div>
-                        {/* ✅ اطلاعات کسب‌وکار به‌صورت فقط‌خواندنی */}
-                        {(biz.city || biz.industryName) && (
-                            <div className="rounded bg-surface-container-high/30 px-3 py-2 text-[10px] text-on-surface-variant/70">
-                                {biz.industryName && <span>صنف: {biz.industryName}</span>}
-                                {biz.city && <span> · {biz.province ? `${biz.province}، ` : ''}{biz.city}</span>}
-                                <span className="block mt-1 text-[9px]">برای تغییر صنف و موقعیت، کسب‌وکار را ویرایش کنید</span>
+                    </section>
+
+                    {/* ═══ اطلاعات تکمیلی ═══ */}
+                    <section className="rounded-2xl bg-surface-container-low/60 border border-outline-variant/30 p-4 space-y-3">
+                        <SectionTitle icon={Info} text="اطلاعات تکمیلی" />
+                        <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
+                            <div className="space-y-1.5">
+                                <label className="text-xs font-medium text-on-surface block">سال شروع فعالیت (شمسی)</label>
+                                <input type="number" inputMode="numeric"
+                                       value={businessStartYear}
+                                       onChange={(e) => setBusinessStartYear(e.target.value)}
+                                       placeholder="مثلاً: 1395"
+                                       className={cn(inputCls(), 'text-left')}
+                                       min="1300" max="1410" />
                             </div>
-                        )}
+                            <div className="space-y-1.5">
+                                <label className="text-xs font-medium text-on-surface block">کد ملی شرکت (اختیاری)</label>
+                                <input type="text" dir="ltr" value={nationalId}
+                                       onChange={(e) => setNationalId(e.target.value)}
+                                       placeholder="1234567890" maxLength={10}
+                                       className={cn(inputCls(), 'text-left')} />
+                            </div>
+                        </div>
+                        <div className="space-y-1.5">
+                            <label className="text-xs font-medium text-on-surface block">شماره پروانه کسب (اختیاری)</label>
+                            <input type="text" value={businessLicense}
+                                   onChange={(e) => setBusinessLicense(e.target.value)}
+                                   placeholder="شماره پروانه کسب یا مجوز فعالیت"
+                                   className={inputCls()} />
+                        </div>
                     </section>
 
                     {/* ═══ لینک کاتالوگ (آخر) ═══ */}

@@ -1,9 +1,9 @@
 // app/components/LocationIndustryFilter.tsx
 'use client';
 
-import React from 'react';
+import React, { useMemo } from 'react';
 import { DropSelector } from '@/components/common/DropSelector';
-import { useIndustriesList, useProvincesList, useCitiesList } from '@/lib/api/apiHooks';
+import { useLocationsTree, useIndustriesList } from '@/lib/api/apiHooks';
 import { Loader2, MapPin, Building2, X } from 'lucide-react';
 
 export interface FilterValue {
@@ -29,13 +29,13 @@ interface Props {
 /**
  * LocationIndustryFilter — کامپوننت فیلتر استان/شهر/صنف
  *
- * از DropSelector استفاده می‌کنه و جستجوی client-side انجام می‌ده.
- * لیست استان‌ها، شهرها و اصناف یک بار fetch می‌شه و بعد کش می‌شه.
+ * ✅ از useLocationsTree استفاده می‌کنه (مثل IranLocationSelector)
+ *    چون این هوک از قبل تست‌شده و کار می‌کنه.
+ * ✅ اصناف از useIndustriesList.
  *
  * رفتار:
  * - اگه استان انتخاب بشه، لیست شهرها به شهرهای اون استان محدود می‌شه
  * - اگه استان عوض بشه، شهر انتخاب‌شده پاک می‌شه
- * - هر DropSelector سرچ داخلی داره (وقتی >۱۰ آیتم باشه)
  */
 export default function LocationIndustryFilter({
     value,
@@ -44,29 +44,49 @@ export default function LocationIndustryFilter({
     showCity = true,
     showIndustry = true,
 }: Props) {
+    const { data: tree, isLoading: treeLoading } = useLocationsTree();
     const industriesQ = useIndustriesList(true);
-    const provincesQ = useProvincesList();
-    const citiesQ = useCitiesList(value.provinceCode);
 
-    // ✅ Defensive: اگه data به‌صورت آرایه مستقیم اومد هم هندل کن
+    // ✅ گره کشور ایران — مثل IranLocationSelector
+    const iranNode = useMemo(() => {
+        if (!tree) return null;
+        return (tree as any[]).find((node: any) => node.type === 'country' && node.title === 'ایران');
+    }, [tree]);
+
+    // ✅ استان‌های ایران با کد رسمی
+    const provinces = useMemo(() => {
+        if (!iranNode?.children) return [];
+        return iranNode.children
+            .filter((node: any) => node.type === 'province')
+            .map((node: any) => ({
+                value: node.provinceCode || node.id,
+                label: node.title,
+                children: node.children || [],
+            }));
+    }, [iranNode]);
+
+    // استان انتخاب‌شده بر اساس کد رسمی
+    const selectedProvince = useMemo(() => {
+        return provinces.find(p => p.value === value.provinceCode) || null;
+    }, [provinces, value.provinceCode]);
+
+    // ✅ شهرهای استان انتخاب‌شده
+    const cities = useMemo(() => {
+        if (!selectedProvince) return [];
+        return selectedProvince.children
+            .filter((node: any) => node.type === 'city')
+            .map((node: any) => ({
+                value: node.cityCode || node.id,
+                label: node.title,
+            }));
+    }, [selectedProvince]);
+
+    // ✅ اصناف — defensive parsing
     const industriesRaw = (industriesQ.data as any)?.items || (Array.isArray(industriesQ.data) ? industriesQ.data : []);
-    const provincesRaw = (provincesQ.data as any)?.items || (Array.isArray(provincesQ.data) ? provincesQ.data : []);
-    const citiesRaw = (citiesQ.data as any)?.items || (Array.isArray(citiesQ.data) ? citiesQ.data : []);
-
     const industries = industriesRaw.map((i: any) => ({
         value: i.title || i.industryName || '',
         label: i.title || i.industryName || '',
         extra: { id: i.id },
-    }));
-    const provinces = provincesRaw.map((p: any) => ({
-        value: p.provinceCode || p.slug || '',
-        label: p.title || '',
-        extra: { title: p.title },
-    }));
-    const cities = citiesRaw.map((c: any) => ({
-        value: c.cityCode || '',
-        label: c.title || '',
-        extra: { title: c.title, provinceCode: c.provinceCode },
     }));
 
     const hasActiveFilter = !!(value.provinceCode || value.cityCode || value.industry);
@@ -84,7 +104,7 @@ export default function LocationIndustryFilter({
                             value={value.provinceCode || ''}
                             options={provinces}
                             placeholder="همه استان‌ها"
-                            disabled={provincesQ.isLoading}
+                            disabled={treeLoading}
                             onChange={(val, opt) => {
                                 if (!val) {
                                     onChange({ ...value, provinceCode: undefined, provinceTitle: undefined, cityCode: undefined, cityTitle: undefined });
@@ -92,7 +112,7 @@ export default function LocationIndustryFilter({
                                     onChange({
                                         ...value,
                                         provinceCode: val,
-                                        provinceTitle: opt.extra?.title || opt.label,
+                                        provinceTitle: opt?.label || '',
                                         cityCode: undefined,
                                         cityTitle: undefined,
                                     });
@@ -112,7 +132,7 @@ export default function LocationIndustryFilter({
                             value={value.cityCode || ''}
                             options={cities}
                             placeholder={value.provinceCode ? 'همه شهرهای استان' : 'همه شهرها'}
-                            disabled={citiesQ.isLoading}
+                            disabled={treeLoading || !value.provinceCode}
                             onChange={(val, opt) => {
                                 if (!val) {
                                     onChange({ ...value, cityCode: undefined, cityTitle: undefined });
@@ -120,8 +140,7 @@ export default function LocationIndustryFilter({
                                     onChange({
                                         ...value,
                                         cityCode: val,
-                                        cityTitle: opt.extra?.title || opt.label,
-                                        provinceCode: value.provinceCode || opt.extra?.provinceCode,
+                                        cityTitle: opt?.label || '',
                                     });
                                 }
                             }}
@@ -147,7 +166,7 @@ export default function LocationIndustryFilter({
                                     onChange({
                                         ...value,
                                         industry: val,
-                                        industryId: opt.extra?.id,
+                                        industryId: opt?.extra?.id,
                                     });
                                 }
                             }}
