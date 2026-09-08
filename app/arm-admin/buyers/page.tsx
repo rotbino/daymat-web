@@ -80,7 +80,7 @@ function BuyersContent({ slug, armName }: { slug: string; armName: string }) {
                         خریداران {armName}
                     </h1>
                     <p className="text-xs text-on-surface-variant mt-1">
-                        کسب‌وکارهایی که حق دیدن قیمت‌های این بازار را دارند
+                        کسب‌وکارهایی که حق دیدن قیمت‌های بازار را دارند
                     </p>
                 </div>
                 <button
@@ -462,10 +462,7 @@ function AddBuyerModal({ slug, onClose }: { slug: string; onClose: () => void })
                         <span className="w-9 h-9 rounded-xl bg-primary/10 flex items-center justify-center">
                             <ShoppingCart className="w-4.5 h-4.5 text-primary" />
                         </span>
-                        <div>
-                            <h3 className="text-sm font-extrabold text-on-surface">افزودن خریدار</h3>
-                            <p className="text-[10px] text-on-surface-variant/70">کسب‌وکار مورد نظر را انتخاب کن</p>
-                        </div>
+                        <h3 className="text-sm font-extrabold text-on-surface">افزودن خریدار به بازار</h3>
                     </div>
                     <button onClick={onClose} className="w-9 h-9 flex items-center justify-center rounded-full text-on-surface-variant hover:bg-surface-container-high transition-colors">
                         <X className="w-5 h-5" />

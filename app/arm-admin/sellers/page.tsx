@@ -80,13 +80,11 @@ function SellersContent({ slug, armName }: { slug: string; armName: string }) {
                         <Store className="w-5 h-5 text-primary" />
                         فروشندگان {armName}
                     </h1>
-                    <p className="text-xs text-on-surface-variant mt-1">
-                        کاتالوگ‌هایی که روی تابلوی قیمت این بازار می‌فروشند
-                    </p>
+
                 </div>
                 <button
                     onClick={() => setShowAddModal(true)}
-                    className="h-10 px-4 rounded-xl bg-primary text-on-primary text-sm font-bold flex items-center gap-1.5 hover:bg-primary/90 active:scale-95 transition-all shadow-sm"
+                    className="h-10 px-2 rounded-xl bg-primary text-[14px] text-on-primary text-sm font-bold flex items-center gap-1.5 hover:bg-primary/90 active:scale-95 transition-all shadow-sm"
                 >
                     <Plus className="w-4 h-4" /> افزودن فروشنده
                 </button>
@@ -479,10 +477,7 @@ function AddSellerModal({ slug, onClose }: { slug: string; onClose: () => void }
                         <span className="w-9 h-9 rounded-xl bg-primary/10 flex items-center justify-center">
                             <Store className="w-4.5 h-4.5 text-primary" />
                         </span>
-                        <div>
-                            <h3 className="text-sm font-extrabold text-on-surface">افزودن فروشنده</h3>
-                            <p className="text-[10px] text-on-surface-variant/70">کاتالوگ مورد نظر را انتخاب کن</p>
-                        </div>
+                        <h3 className="text-sm font-extrabold text-on-surface">افزودن فروشنده به بازار</h3>
                     </div>
                     <button onClick={onClose} className="w-9 h-9 flex items-center justify-center rounded-full text-on-surface-variant hover:bg-surface-container-high transition-colors">
                         <X className="w-5 h-5" />
