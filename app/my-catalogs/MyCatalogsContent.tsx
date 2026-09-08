@@ -12,6 +12,7 @@ import { apiService } from '@/lib/api/apiService';
 import {
     useArms, useMyUncategorized, useSetOwnAdCategory,
     useCreditBalance, useMyBusinesses, useUploadFile, useUpdateCatalog,
+    useUpdateBusinessEntity,
 } from '@/lib/api/apiHooks';
 import { toast } from 'sonner';
 import {
@@ -24,6 +25,7 @@ import {
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import Link from 'next/link';
+import IndustryAutocomplete from '@/app/components/IndustryAutocomplete';
 import UnitSettingsModal from '@/app/ad/components/UnitSettingsModal';
 import CategorySettingsModal from '@/app/ad/components/CategorySettingsModal';
 import ShareKitModal from '@/app_/profile/components/ShareKitModal';
@@ -1067,21 +1069,28 @@ function CatalogEditModal({ isOpen, onClose, catalog, salesTypeLocked, onSaved }
     const queryClient = useQueryClient();
     const uploadMutation = useUploadFile();
     const updateCatalogMutation = useUpdateCatalog();
+    const updateBusinessMutation = useUpdateBusinessEntity();
     const { user } = useSelector((s: RootState) => s.auth);
 
     const isService = catalog?.salesType === 'service';
     const typeLabel = SALES_LABEL[catalog?.salesType] || 'فروش';
     const SalesIcon = SALES_ICON[catalog?.salesType] || Store;
 
-    // ✅ business data برای پیش‌فرض
+    // ✅ business data
     const biz = catalog?.business || {};
     const bizPhone = biz?.phone || user?.phone || '';
+    const bizId = biz?.id;
 
     const [name, setName] = useState(catalog?.name || '');
     const [slug, setSlug] = useState(catalog?.slug || '');
+    const [industry, setIndustry] = useState<{ id: string | null; title: string }>({
+        id: biz?.industryId || null,
+        title: biz?.industryName || '',
+    });
     const [shortDescription, setShortDescription] = useState(catalog?.shortDescription || '');
     const [phone, setPhone] = useState(catalog?.phone || bizPhone);
     const [website, setWebsite] = useState(catalog?.website || '');
+    const [logoUrl, setLogoUrl] = useState(biz?.logoUrl || catalog?.logoUrl || '');
     const [slugEditing, setSlugEditing] = useState(false);
     const [errors, setErrors] = useState<Record<string, string>>({});
     const [saving, setSaving] = useState(false);
@@ -1102,24 +1111,27 @@ function CatalogEditModal({ isOpen, onClose, catalog, salesTypeLocked, onSaved }
         return (
             name !== (catalog.name || '') ||
             slug !== (catalog.slug || '') ||
+            industry.title !== (biz?.industryName || '') ||
             shortDescription !== (catalog.shortDescription || '') ||
             phone !== (catalog.phone || bizPhone) ||
             website !== (catalog.website || '') ||
             !!pendingLogoFile
         );
-    }, [catalog, name, slug, shortDescription, phone, website, pendingLogoFile, bizPhone]);
+    }, [catalog, name, slug, industry, shortDescription, phone, website, pendingLogoFile, bizPhone, biz]);
 
     const uploadLogo = async (): Promise<string | undefined> => {
         if (!pendingLogoFile) return undefined;
         if (uploadedLogoRef.current) return uploadedLogoRef.current.id;
         try {
+            // ✅ لوگو رو روی Business آپلود کن
             const result = await uploadMutation.mutateAsync({
                 file: pendingLogoFile,
-                model: 'Catalog',
-                modelId: catalog.id,
+                model: 'Business',
+                modelId: bizId || catalog.id,
                 fieldKey: 'logo',
             });
             uploadedLogoRef.current = { id: result.id };
+            setLogoUrl(result.path || result.thumbnailPath || '');
             setPendingLogoFile(null);
             return result.id;
         } catch (err: any) {
@@ -1144,6 +1156,22 @@ function CatalogEditModal({ isOpen, onClose, catalog, salesTypeLocked, onSaved }
         setSaving(true);
         try {
             const logoFileId = await uploadLogo();
+
+            // ✅ ۱. آپدیت Business (صنف + لوگو)
+            if (bizId) {
+                await updateBusinessMutation.mutateAsync({
+                    id: bizId,
+                    data: {
+                        industryName: industry.title.trim() || undefined,
+                        industryId: industry.id,
+                        ...(logoFileId ? { logoUrl } : {}),
+                        // ✅ phone هم در business ذخیره شه
+                        phone: phone.trim() || undefined,
+                    },
+                });
+            }
+
+            // ✅ ۲. آپدیت Catalog (نام + slug + معرفی + تماس + وب)
             await updateCatalogMutation.mutateAsync({
                 id: catalog.id,
                 data: {
@@ -1152,12 +1180,14 @@ function CatalogEditModal({ isOpen, onClose, catalog, salesTypeLocked, onSaved }
                     shortDescription: shortDescription.trim() || undefined,
                     phone: phone.trim() || undefined,
                     website: website.trim() || undefined,
-                    ...(logoFileId ? { logoFileId } : {}),
+                    // ✅ لوگو رو هم در catalog کپی کن (برای نمایش سریع)
+                    ...(logoFileId ? { logoUrl } : {}),
                 },
             });
 
             queryClient.invalidateQueries({ queryKey: ['catalogs'] });
             queryClient.invalidateQueries({ queryKey: ['catalog', 'by-slug'] });
+            queryClient.invalidateQueries({ queryKey: ['businesses-entity'] });
             onSaved?.();
 
             setSavedTick(true);
@@ -1216,20 +1246,30 @@ function CatalogEditModal({ isOpen, onClose, catalog, salesTypeLocked, onSaved }
                     {/* ═══ لوگو + نام ═══ */}
                     <section className="rounded-2xl bg-surface-container-low/60 border border-outline-variant/30 p-4 space-y-3">
                         <div className="flex items-center gap-4">
-                            <label className="relative w-16 h-16 rounded overflow-hidden flex-shrink-0
-                                ring-2 ring-amber-500/20 hover:ring-amber-500/50 transition-all group cursor-pointer">
-                                {logoPreview || catalog.logoUrl ? (
-                                    <img src={(logoPreview || catalog.logoUrl) as string} alt="" className="w-full h-full object-cover" />
+                            {/* ✅ آپلود لوگو — با آیکون دوربین و واضح‌تر */}
+                            <label className="relative w-20 h-20 rounded-2xl overflow-hidden flex-shrink-0
+                                border-2 border-dashed border-primary/30
+                                hover:border-primary/60 hover:bg-primary/5 transition-all group cursor-pointer
+                                flex flex-col items-center justify-center gap-1">
+                                {logoPreview || logoUrl ? (
+                                    <img src={(logoPreview || logoUrl) as string} alt="لوگو" className="w-full h-full object-cover absolute inset-0" />
                                 ) : (
-                                    <span className="w-full h-full grid place-items-center bg-surface-container-high">
-                                        <BookOpen className="w-6 h-6 text-on-surface-variant/40" />
-                                    </span>
+                                    <>
+                                        <Camera className="w-7 h-7 text-primary/60 group-hover:text-primary transition-colors" />
+                                        <span className="text-[9px] font-bold text-primary/60 group-hover:text-primary transition-colors text-center px-1">
+                                            آپلود لوگو
+                                        </span>
+                                    </>
                                 )}
                                 <input type="file" accept="image/*" className="hidden"
                                        onChange={(e) => { setPendingLogoFile(e.target.files?.[0] ?? null); e.target.value = ''; }} />
-                                <span className="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 transition-opacity grid place-items-center">
-                                    <Pencil className="w-4 h-4 text-white" />
-                                </span>
+                                {/* overlay موقع hover */}
+                                {(logoPreview || logoUrl) && (
+                                    <span className="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 transition-opacity flex flex-col items-center justify-center gap-1">
+                                        <Camera className="w-5 h-5 text-white" />
+                                        <span className="text-[8px] font-bold text-white">تغییر لوگو</span>
+                                    </span>
+                                )}
                             </label>
                             <div className="flex-1 space-y-1.5">
                                 <label className="text-xs font-medium text-on-surface block">
@@ -1249,6 +1289,16 @@ function CatalogEditModal({ isOpen, onClose, catalog, salesTypeLocked, onSaved }
                                 <span className="text-[9px] text-on-surface-variant/60">قابل تغییر نیست</span>
                             )}
                         </div>
+                    </section>
+
+                    {/* ═══ صنف (با autocomplete) ═══ */}
+                    <section className="rounded-2xl bg-surface-container-low/60 border border-outline-variant/30 p-4 space-y-1.5">
+                        <SectionTitle icon={Building2} text="صنف / زمینه فعالیت" />
+                        <IndustryAutocomplete
+                            value={industry}
+                            onChange={setIndustry}
+                            placeholder="مثلا: پخش مواد غذایی، سوپرمارکت..."
+                        />
                     </section>
 
                     {/* ═══ معرفی کوتاه ═══ */}
