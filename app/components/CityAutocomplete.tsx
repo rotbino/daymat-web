@@ -26,6 +26,11 @@ const cityCache = new Map<string, CityValue>();
  *
  * کاربر فقط شهر رو سرچ می‌کنه — استان خودکار پیدا می‌شه.
  * نمایش در dropdown: «استان > شهر»
+ *
+ * ✅ Defensive parsing: هندل همه‌ی فرمت‌های ممکن بک‌اند
+ *   - { items: [...] }
+ *   - { data: [...], total }
+ *   - [...]
  */
 export default function CityAutocomplete({
     value,
@@ -45,9 +50,18 @@ export default function CityAutocomplete({
                     onChange(v);
                 }
             }}
-            fetchFn={async (q) => {
-                const res = await apiService.location.searchCities(q);
-                const items = (res.items || []).map((item) => {
+            fetchFn={async (q): Promise<AutocompleteItem[]> => {
+                const res: any = await apiService.location.searchCities(q);
+                // ✅ Defensive parsing — هندل همه‌ی فرمت‌های ممکن
+                let items: any[] = [];
+                if (Array.isArray(res)) {
+                    items = res;
+                } else if (Array.isArray(res?.items)) {
+                    items = res.items;
+                } else if (Array.isArray(res?.data)) {
+                    items = res.data;
+                }
+                return items.map((item: any) => {
                     const cityVal: CityValue = {
                         id: item.id,
                         title: item.title,
@@ -64,7 +78,6 @@ export default function CityAutocomplete({
                         provinceTitle: item.provinceTitle,
                     } as AutocompleteItem;
                 });
-                return items;
             }}
             queryKey="city-autocomplete"
             placeholder={placeholder}

@@ -144,7 +144,9 @@ export const apiService = {
     industry: {
         autocomplete: async (q: string): Promise<{ items: Array<{ id: string; title: string }> }> => {
             if (!q || q.trim().length < 2) return { items: [] };
-            return apiRequest(`/industries/autocomplete?q=${encodeURIComponent(q.trim())}`);
+            const res: any = await apiRequest(`/industries/autocomplete?q=${encodeURIComponent(q.trim())}`);
+            // ✅ defensive: بک‌اند باید { items } برگردونه، ولی اگه { data } برگردوند هم هندل شه
+            return { items: res?.items || res?.data || [] };
         },
     },
 

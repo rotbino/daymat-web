@@ -1,7 +1,7 @@
 // app/components/Autocomplete.tsx
 'use client';
 
-import React, { useState, useEffect, useRef, useCallback } from 'react';
+import React, { useState, useEffect, useRef, useCallback, useMemo } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import { Search, X, Loader2, Check } from 'lucide-react';
 import { cn } from '@/lib/utils';
@@ -24,8 +24,6 @@ interface Props {
     onChange: (value: AutocompleteValue) => void;
     /** تابع جستجو — باید لیست آیتم‌ها رو برگردونه */
     fetchFn: (q: string) => Promise<AutocompleteItem[]>;
-    /** تابع ساخت آیتم جدید (اگه کاربر چیزی تایپ کرد که وجود نداشت) */
-    createFn?: (title: string) => Promise<AutocompleteItem | null>;
     /** کلید cache برای React Query */
     queryKey: string;
     placeholder?: string;
@@ -46,18 +44,14 @@ interface Props {
  * ۴. اگه کاربر انتخاب کرد → { id, title } ست می‌شه
  * ۵. اگه چیزی پیدا نشد → مثل یه اینپوت متن عمل می‌کنه (id=null)
  *    موقع blur، اگه متن با یک آیتم موجود دقیقاً match بشه، خودکار انتخاب می‌شه
- * ۶. موقع ذخیره، بک‌اند خودش آیتم جدید می‌سازه
  *
- * نکات:
- * - کاملاً خاموش — هیچ پیام «پیدا نشد» یا «از قبل وجود داره» نمی‌ده
- * - auto-match: اگه کاربر تایپ کنه «پخش مواد غذایی» و این متن دقیقاً با یک آیتم match بشه،
- *   موقع blur خودکار id اون آیتم ست می‌شه
+ * ✅ FIX: input فقط روی mount و تغییر value.id سینک می‌شه (نه روی هر تغییر value.title)
+ *    این از feedback loop جلوگیری می‌کنه که باعث می‌شد dropdown سریع بسته بشه.
  */
 export default function Autocomplete({
     value,
     onChange,
     fetchFn,
-    createFn,
     queryKey,
     placeholder = 'جستجو...',
     className,
@@ -69,35 +63,27 @@ export default function Autocomplete({
     const [highlightedIndex, setHighlightedIndex] = useState(-1);
     const containerRef = useRef<HTMLDivElement>(null);
     const blurTimeoutRef = useRef<NodeJS.Timeout | null>(null);
+    const lastValueIdRef = useRef(value.id);
 
-    // sync از parent
+    // ✅ FIX: فقط وقتی value.id عوض شد (انتخاب از لیست یا پاک کردن)، input رو سینک کن
+    // این جلوی feedback loop رو می‌گیره: user types → parent re-renders → useEffect fires → setInput → re-render
     useEffect(() => {
-        setInput(value.title || '');
-    }, [value.title, value.id]);
+        if (value.id !== lastValueIdRef.current) {
+            lastValueIdRef.current = value.id;
+            setInput(value.title || '');
+        }
+    }, [value.id, value.title]);
 
-    // جستجو
+    // جستجو — ✅ FIX: enabled فقط به input.length وابسته‌ست، نه isOpen
     const { data: items = [], isFetching } = useQuery({
-        queryKey: [queryKey, input],
+        queryKey: [queryKey, input.trim()],
         queryFn: async () => {
             if (input.trim().length < minChars) return [];
             return fetchFn(input.trim());
         },
-        enabled: input.trim().length >= minChars && isOpen,
+        enabled: input.trim().length >= minChars,
         staleTime: 30_000,
     });
-
-    // بستن dropdown با کلیک خارج
-    useEffect(() => {
-        const handler = (e: MouseEvent) => {
-            if (containerRef.current && !containerRef.current.contains(e.target as Node)) {
-                setIsOpen(false);
-                // ✅ auto-match هنگام blur
-                handleBlur();
-            }
-        };
-        document.addEventListener('mousedown', handler);
-        return () => document.removeEventListener('mousedown', handler);
-    }, []);
 
     // ✅ auto-match: اگه متن کاربر دقیقاً با یک آیتم match بشه، خودکار انتخاب کن
     const handleBlur = useCallback(() => {
@@ -109,6 +95,18 @@ export default function Autocomplete({
             onChange({ id: exactMatch.id, title: exactMatch.title });
         }
     }, [input, items, value.id, onChange]);
+
+    // بستن dropdown با کلیک خارج
+    useEffect(() => {
+        const handler = (e: MouseEvent) => {
+            if (containerRef.current && !containerRef.current.contains(e.target as Node)) {
+                setIsOpen(false);
+                handleBlur();
+            }
+        };
+        document.addEventListener('mousedown', handler);
+        return () => document.removeEventListener('mousedown', handler);
+    }, [handleBlur]);
 
     const handleSelect = (item: AutocompleteItem) => {
         onChange({ id: item.id, title: item.title });
@@ -138,6 +136,9 @@ export default function Autocomplete({
         }
     };
 
+    // ✅ آیا باید dropdown نشون داده بشه؟
+    const shouldShowDropdown = isOpen && input.trim().length >= minChars;
+
     return (
         <div ref={containerRef} className="relative">
             <div className="relative">
@@ -147,12 +148,16 @@ export default function Autocomplete({
                     value={input}
                     onChange={(e) => {
                         setInput(e.target.value);
-                        // ✅ وقتی کاربر تایپ می‌کنه، id رو null کن
+                        // ✅ اطلاع به parent که متن عوض شد (id=null چون هنوز انتخاب نشده)
                         onChange({ id: null, title: e.target.value });
                         setIsOpen(true);
                         setHighlightedIndex(-1);
                     }}
-                    onFocus={() => input.trim().length >= minChars && setIsOpen(true)}
+                    onFocus={() => {
+                        if (input.trim().length >= minChars) {
+                            setIsOpen(true);
+                        }
+                    }}
                     onKeyDown={handleKeyDown}
                     onBlur={() => {
                         // delayed blur تا کلیک روی آیتم کار کنه
@@ -160,7 +165,7 @@ export default function Autocomplete({
                         blurTimeoutRef.current = setTimeout(() => {
                             setIsOpen(false);
                             handleBlur();
-                        }, 150);
+                        }, 200);
                     }}
                     placeholder={placeholder}
                     className={cn(
@@ -186,7 +191,7 @@ export default function Autocomplete({
             </div>
 
             {/* Dropdown */}
-            {isOpen && input.trim().length >= minChars && (
+            {shouldShowDropdown && (
                 <div className="absolute z-50 top-full mt-1 inset-x-0 bg-white dark:bg-gray-900 border border-outline-variant/30 rounded-xl shadow-lg max-h-60 overflow-y-auto scrollbar-slim">
                     {isFetching ? (
                         <div className="p-3 text-center">
