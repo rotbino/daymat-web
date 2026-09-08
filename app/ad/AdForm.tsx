@@ -15,6 +15,7 @@ import { cn } from '@/lib/utils';
 import { NumberInput } from '@/components/common/NumberInput';
 import { DropSelector } from '@/components/common/DropSelector';
 import { IranLocationSelector } from '@/app/components/IranLocationSelector';
+import ProductReferencePicker, { ProductValue } from '@/app/components/ProductReferencePicker';
 import UnitSettingsModal from './components/UnitSettingsModal';
 import CategorySettingsModal from './components/CategorySettingsModal';
 import CategoryPicker from './components/CategoryPicker';
@@ -168,7 +169,12 @@ export function AdForm({ adId, onSuccess }: { adId?: string; onSuccess?: () => v
         unitIsVariableQty: false, isEditingQty: false,
         giftPrice: 0,
         volumeTiers: [] as { minQty: number; price: number }[],
+        // ✅ کالای مرجع
+        productReferenceId: '' as string,
+        brandId: '' as string,
     });
+    // ✅ state کالای انتخاب‌شده (برای نمایش در ProductReferencePicker)
+    const [selectedProduct, setSelectedProduct] = useState<ProductValue | null>(null);
     const [images, setImages] = useState<ImageSlot[]>([]);
     const [submitting, setSubmitting] = useState(false);
     const [unitModalOpen, setUnitModalOpen] = useState(false);
@@ -351,7 +357,20 @@ export function AdForm({ adId, onSuccess }: { adId?: string; onSuccess?: () => v
                 unitIsVariableQty: existingAd.unitIsVariableQty ?? false, isEditingQty: false,
                 giftPrice: (existingAd as any).giftPrice || 0,
                 volumeTiers: (existingAd as any).volumeTiers || [],
+                productReferenceId: (existingAd as any).productReferenceId || '',
+                brandId: (existingAd as any).brandId || '',
             }));
+            // ✅ اگه آگهی کالای مرجع داره، اون رو نمایش بده
+            if ((existingAd as any).productReferenceId) {
+                setSelectedProduct({
+                    id: (existingAd as any).productReferenceId,
+                    title: (existingAd as any).productRef?.title || existingAd.productType || existingAd.title || '',
+                    brandId: (existingAd as any).brandId,
+                    brandTitle: (existingAd as any).brand?.title,
+                    imageUrl: (existingAd as any).productRef?.imageUrl,
+                    thumbnailUrl: (existingAd as any).productRef?.thumbnailUrl,
+                });
+            }
         }
     }, [isEditMode, existingAd]);
 
@@ -360,7 +379,8 @@ export function AdForm({ adId, onSuccess }: { adId?: string; onSuccess?: () => v
         const errs: string[] = [];
         if (step === 1) {
             if (uploadedCount === 0) errs.push('حداقل یک تصویر انتخاب کن.');
-            if (!formData.productType.trim()) errs.push('عنوان کالا را وارد کن.');
+            // ✅ اگه کالای مرجع انتخاب شده، productType الزامی نیست (از اون کپی می‌شه)
+            if (!selectedProduct && !formData.productType.trim()) errs.push('کالا را انتخاب کن یا عنوان وارد کن.');
             if (!formData.unitId) errs.push('واحد فروش را انتخاب کن.');
         } else if (step === 2) {
             if (isWholesale) {
@@ -407,8 +427,10 @@ export function AdForm({ adId, onSuccess }: { adId?: string; onSuccess?: () => v
     // ═══ عنوان ترکیبی ═══
     const composedTitle = useMemo(() => {
         const cat = selectedCategoryNode?.title || '';
-        return formData.productType ? `${cat ? cat + ' ' : ''}${formData.productType}`.trim() : formData.productType;
-    }, [formData.productType, selectedCategoryNode]);
+        // ✅ اگه کالای مرجع انتخاب شده، از عنوان اون استفاده کن
+        const baseTitle = selectedProduct?.title || formData.productType;
+        return baseTitle ? `${cat ? cat + ' ' : ''}${baseTitle}`.trim() : baseTitle;
+    }, [formData.productType, selectedCategoryNode, selectedProduct]);
 
     // ═══ submit ═══
     const handleSubmit = async () => {
@@ -428,7 +450,10 @@ export function AdForm({ adId, onSuccess }: { adId?: string; onSuccess?: () => v
                         categoryId: formData.categoryId || undefined,
                         unitId: formData.unitId,
                         title: composedTitle,
-                        productType: formData.productType,
+                        productType: selectedProduct?.title || formData.productType,
+                        // ✅ کالای مرجع
+                        productReferenceId: selectedProduct?.id || null,
+                        brandId: selectedProduct?.brandId || formData.brandId || null,
                         unitPrice: formData.unitPrice,
                         singleUnitPrice: formData.singleUnitPrice || null,
                         consumerPrice: formData.consumerPrice || null,
@@ -458,7 +483,10 @@ export function AdForm({ adId, onSuccess }: { adId?: string; onSuccess?: () => v
                     categoryId: formData.categoryId || undefined,
                     unitId: formData.unitId,
                     title: composedTitle,
-                    productType: formData.productType,
+                    productType: selectedProduct?.title || formData.productType,
+                    // ✅ کالای مرجع
+                    productReferenceId: selectedProduct?.id || undefined,
+                    brandId: selectedProduct?.brandId || formData.brandId || undefined,
                     unitPrice: formData.unitPrice,
                     singleUnitPrice: formData.singleUnitPrice || null,
                     consumerPrice: formData.consumerPrice || null,
@@ -644,12 +672,32 @@ export function AdForm({ adId, onSuccess }: { adId?: string; onSuccess?: () => v
                                 />
                             )}
                             <div className="space-y-1.5">
-                                <label className="text-xs font-medium text-on-surface block">
-                                    عنوان کالا <span className="text-primary">*</span>
-                                </label>
-                                <input type="text" maxLength={60} value={formData.productType}
-                                       onChange={(e) => setFormData((p) => ({ ...p, productType: e.target.value }))}
-                                       placeholder="مثال: ماکارونی فرمی ۵۰۰ گرمی" className={inputCls()} />
+                                {/* ✅ انتخاب کالای مرجع — جایگزین input عنوان */}
+                                <ProductReferencePicker
+                                    value={selectedProduct}
+                                    onChange={(product) => {
+                                        setSelectedProduct(product);
+                                        // ✅ productType رو هم ست کن برای backward-compat
+                                        if (product) {
+                                            setFormData((p) => ({ ...p, productType: product.title }));
+                                        }
+                                    }}
+                                    label="کالا"
+                                    required
+                                    placeholder="انتخاب کالا از مرجع کالا..."
+                                    error={!selectedProduct && !formData.productType.trim() ? 'کالا را انتخاب کن' : undefined}
+                                />
+                                {/* ✅ input عنوان (fallback) — اگه کاربر کالای مرجع انتخاب نکرد */}
+                                {!selectedProduct && (
+                                    <div className="space-y-1.5 pt-1">
+                                        <label className="text-[10px] text-on-surface-variant block">
+                                            یا عنوان را دستی وارد کن:
+                                        </label>
+                                        <input type="text" maxLength={60} value={formData.productType}
+                                               onChange={(e) => setFormData((p) => ({ ...p, productType: e.target.value }))}
+                                               placeholder="مثال: ماکارونی فرمی ۵۰۰ گرمی" className={inputCls()} />
+                                    </div>
+                                )}
                             </div>
                         </section>
 

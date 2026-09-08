@@ -1059,6 +1059,53 @@ export const useIndustriesList = (confirmedOnly = false) => {
     });
 };
 
+// ─── BRAND (برند) ───
+export const useBrandSearch = (q: string, category?: string, enabled = true) => {
+    return useQuery({
+        queryKey: ['brand-search', q, category],
+        queryFn: () => apiService.brand.search(q, category),
+        enabled: enabled && q.trim().length >= 1,
+        staleTime: 30_000,
+    });
+};
+
+export const useCreateBrand = () => {
+    const queryClient = useQueryClient();
+    return useMutation({
+        mutationFn: (data: { title: string; category?: string; keywords?: string[] }) =>
+            apiService.brand.create(data),
+        onSuccess: () => {
+            queryClient.invalidateQueries({ queryKey: ['brand-search'] });
+        },
+    });
+};
+
+// ─── PRODUCT REFERENCE (کالای مرجع) ───
+export const useProductSearch = (q: string, category?: string, enabled = true) => {
+    return useQuery({
+        queryKey: ['product-search', q, category],
+        queryFn: () => apiService.product.search(q, category),
+        enabled: enabled && q.trim().length >= 2,
+        staleTime: 30_000,
+    });
+};
+
+export const useCreateProduct = () => {
+    const queryClient = useQueryClient();
+    return useMutation({
+        mutationFn: (data: {
+            title: string;
+            brandId?: string;
+            category?: string;
+            keywords?: string[];
+            imageUrl?: string;
+        }) => apiService.product.create(data),
+        onSuccess: () => {
+            queryClient.invalidateQueries({ queryKey: ['product-search'] });
+        },
+    });
+};
+
 export const useProvincesList = () => {
     return useQuery({
         queryKey: ['provinces-list'],

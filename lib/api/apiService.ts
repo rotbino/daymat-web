@@ -186,6 +186,64 @@ export const apiService = {
     },
 
     // ============================================================
+    // BRAND (برند)
+    // ============================================================
+    brand: {
+        search: async (q: string, category?: string): Promise<{ items: Array<{
+            id: string;
+            title: string;
+            category?: string;
+            logoUrl?: string;
+            usageCount?: number;
+        }> }> => {
+            if (!q || q.trim().length < 1) return { items: [] };
+            const params = new URLSearchParams({ q: q.trim() });
+            if (category) params.set('category', category);
+            const res: any = await apiRequest(`/brands/search?${params.toString()}`);
+            return { items: res?.items || [] };
+        },
+        create: async (data: {
+            title: string;
+            category?: string;
+            keywords?: string[];
+            logoUrl?: string;
+        }): Promise<any> => {
+            return apiRequest('/brands', { method: 'POST', data });
+        },
+    },
+
+    // ============================================================
+    // PRODUCT REFERENCE (کالای مرجع)
+    // ============================================================
+    product: {
+        search: async (q: string, category?: string): Promise<{ items: Array<{
+            id: string;
+            title: string;
+            brandId?: string;
+            brand?: { id: string; title: string; logoUrl?: string };
+            category?: string;
+            imageUrl?: string;
+            thumbnailUrl?: string;
+            usageCount?: number;
+        }> }> => {
+            if (!q || q.trim().length < 2) return { items: [] };
+            const params = new URLSearchParams({ q: q.trim() });
+            if (category) params.set('category', category);
+            const res: any = await apiRequest(`/products/search?${params.toString()}`);
+            return { items: res?.items || [] };
+        },
+        create: async (data: {
+            title: string;
+            brandId?: string;
+            category?: string;
+            keywords?: string[];
+            imageUrl?: string;
+        }): Promise<any> => {
+            return apiRequest('/products', { method: 'POST', data });
+        },
+    },
+
+    // ============================================================
     // ARM
     // ============================================================
     arm: {

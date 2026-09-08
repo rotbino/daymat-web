@@ -57,11 +57,13 @@ export const BUSINESS_TYPE = [
     },
     {
         id: "distribution",
-        label: "توزیع و پخش",
+        label: "توزیع، پخش و واسطه‌گری",
         children: [
             { id: "wholesaler", label: "عمده‌فروش" },
-            { id: "distributor", label: "توزیع‌کننده رسمی" },
-            { id: "logistics", label: "لجستیک و حمل‌ونقل" },
+            { id: "distributor", label: "نماینده رسمی پخش" },
+            { id: "distributor2", label: "پخش محلی (غیر نمایندگی)" },
+            { id: "broker", label: "واسطه و دلال" },
+            { id: "logistics", label: "لجستیک و حمل‌ونقل بار" },
             { id: "warehouse", label: "انبارداری" },
         ],
     },
