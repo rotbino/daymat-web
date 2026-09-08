@@ -10,17 +10,24 @@ import {
 import { toast } from 'sonner';
 import {
     ShoppingCart, Search, X, PauseCircle, PlayCircle, Trash2, Loader2,
-    Plus, Building2, MapPin, ChevronLeft,
+    Plus, Building2, MapPin, ExternalLink, User, Phone, ArrowUpDown,
+    Package, ChevronLeft,
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
-import IndustryAutocomplete from '@/app/components/IndustryAutocomplete';
-import CityAutocomplete from '@/app/components/CityAutocomplete';
+import Link from 'next/link';
+import LocationIndustryFilter, { FilterValue } from '@/app/components/LocationIndustryFilter';
 
 const fmt = (n: number | undefined) => n?.toLocaleString('fa-IR') ?? '۰';
 
-function RowSkeleton() {
-    return <div className="h-20 rounded-xl bg-surface-container-high/50 animate-pulse" />;
-}
+// ═══ ستون‌های جدول دسکتاپ ═══
+const COLUMNS = [
+    { key: 'name', label: 'نام کسب‌وکار', sortable: true, minWidth: '180px' },
+    { key: 'owner', label: 'صاحب', sortable: false, minWidth: '140px' },
+    { key: 'industry', label: 'صنف', sortable: false, minWidth: '120px' },
+    { key: 'location', label: 'استان/شهر', sortable: false, minWidth: '120px' },
+    { key: 'type', label: 'نوع', sortable: false, minWidth: '80px' },
+    { key: 'actions', label: 'عملیات', sortable: false, minWidth: '120px', align: 'center' as const },
+];
 
 export default function BuyersPage() {
     const { currentSlug, currentArm } = useSelector((s: RootState) => s.arm);
@@ -36,26 +43,31 @@ function BuyersContent({ slug, armName }: { slug: string; armName: string }) {
     const [searchInput, setSearchInput] = useState('');
     const [showAddModal, setShowAddModal] = useState(false);
     const [confirmRemoveId, setConfirmRemoveId] = useState<string | null>(null);
-    const [industryFilter, setIndustryFilter] = useState<{ id: string | null; title: string }>({ id: null, title: '' });
-    const [cityFilter, setCityFilter] = useState<{ id: string | null; title: string; cityCode?: string; provinceCode?: string }>({ id: null, title: '' });
-
-    const hasActiveFilters = !!(searchInput || industryFilter.title || cityFilter.title);
+    const [filter, setFilter] = useState<FilterValue>({});
+    const [sortBy, setSortBy] = useState('joinedAt');
+    const [sortOrder, setSortOrder] = useState<'asc' | 'desc'>('desc');
 
     const buyersQ = useArmBuyers(slug, {
         search: searchInput || undefined,
-        industry: industryFilter.title || undefined,
-        cityCode: cityFilter.cityCode || undefined,
-        provinceCode: cityFilter.provinceCode || undefined,
+        industry: filter.industry || undefined,
+        cityCode: filter.cityCode || undefined,
+        provinceCode: filter.provinceCode || undefined,
+        sortBy,
+        sortOrder,
     });
     const pauseMut = useToggleBuyerPaused(slug);
     const removeMut = useRemoveBuyer(slug);
 
     const buyers: any[] = buyersQ.data?.items ?? [];
+    const hasActiveFilters = !!(searchInput || filter.provinceCode || filter.cityCode || filter.industry);
 
-    const clearAllFilters = () => {
-        setSearchInput('');
-        setIndustryFilter({ id: null, title: '' });
-        setCityFilter({ id: null, title: '' });
+    const toggleSort = (col: string) => {
+        if (sortBy === col) {
+            setSortOrder(prev => prev === 'asc' ? 'desc' : 'asc');
+        } else {
+            setSortBy(col);
+            setSortOrder('desc');
+        }
     };
 
     return (
@@ -79,9 +91,8 @@ function BuyersContent({ slug, armName }: { slug: string; armName: string }) {
                 </button>
             </div>
 
-            {/* ─── فیلترها ─── */}
+            {/* ─── جستجو + فیلترها ─── */}
             <div className="space-y-2">
-                {/* ردیف اول: جستجوی متنی */}
                 <div className="relative">
                     <Search className="absolute right-3 top-1/2 -translate-y-1/2 w-4 h-4 text-on-surface-variant/50" />
                     <input
@@ -99,39 +110,7 @@ function BuyersContent({ slug, armName }: { slug: string; armName: string }) {
                     )}
                 </div>
 
-                {/* ردیف دوم: فیلتر صنف + شهر */}
-                <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
-                    <div className="relative">
-                        <Building2 className="absolute right-2.5 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-on-surface-variant/40 pointer-events-none z-10" />
-                        <IndustryAutocomplete
-                            value={industryFilter}
-                            onChange={setIndustryFilter}
-                            placeholder="همه اصناف..."
-                            allowCreate={false}
-                            className="!h-10 !pr-8"
-                        />
-                    </div>
-                    <div className="relative">
-                        <MapPin className="absolute right-2.5 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-on-surface-variant/40 pointer-events-none z-10" />
-                        <CityAutocomplete
-                            value={cityFilter}
-                            onChange={setCityFilter}
-                            placeholder="همه شهرها..."
-                            className="!h-10 !pr-8"
-                        />
-                    </div>
-                </div>
-
-                {/* دکمه پاک کردن همه فیلترها */}
-                {hasActiveFilters && (
-                    <button
-                        onClick={clearAllFilters}
-                        className="flex items-center gap-1 text-[10px] font-bold text-error/70 hover:text-error transition-colors"
-                    >
-                        <X className="w-3 h-3" />
-                        پاک کردن همه فیلترها
-                    </button>
-                )}
+                <LocationIndustryFilter value={filter} onChange={setFilter} />
             </div>
 
             {/* ─── آمار ─── */}
@@ -153,7 +132,7 @@ function BuyersContent({ slug, armName }: { slug: string; armName: string }) {
             {/* ─── لیست خریداران ─── */}
             {buyersQ.isPending ? (
                 <div className="space-y-3">
-                    {[0, 1, 2].map(i => <RowSkeleton key={i} />)}
+                    {[0, 1, 2].map(i => <div key={i} className="h-16 rounded-xl bg-surface-container-high/50 animate-pulse" />)}
                 </div>
             ) : buyers.length === 0 ? (
                 <div className="rounded-2xl border border-dashed border-outline-variant/50 p-12 text-center">
@@ -164,118 +143,283 @@ function BuyersContent({ slug, armName }: { slug: string; armName: string }) {
                     <p className="text-xs text-on-surface-variant mt-1.5 max-w-sm mx-auto leading-6">
                         {hasActiveFilters
                             ? 'فیلترها را عوض کن یا پاک کن'
-                            : 'سوپرمارکت‌ها، فروشگاه‌ها و کسب‌وکارهای مرتبط را اضافه کن تا تابلوی تو را هر روز ببینند'}
+                            : 'سوپرمارکت‌ها، فروشگاه‌ها و کسب‌وکارهای مرتبط را اضافه کن'}
                     </p>
                 </div>
             ) : (
-                <div className="space-y-2.5">
-                    {buyers.map((b) => {
-                        const isPaused = b.businessStatus === 'paused';
-                        const busyPause = pauseMut.isPending && pauseMut.variables?.membershipId === b.membershipId;
-                        const busyRemove = removeMut.isPending && removeMut.variables === b.membershipId;
-                        const confirming = confirmRemoveId === b.membershipId;
-
-                        return (
-                            <div
-                                key={b.membershipId}
-                                className={cn(
-                                    'bg-white dark:bg-gray-900 rounded-2xl border p-4 transition-all',
-                                    isPaused
-                                        ? 'border-outline-variant/20 opacity-50 bg-surface-container-low/30'
-                                        : 'border-outline-variant/40 hover:shadow-md',
-                                )}
-                            >
-                                <div className="flex items-start gap-3.5">
-                                    {/* لوگو */}
-                                    <div className="w-12 h-12 rounded-xl bg-surface-container-high flex items-center justify-center overflow-hidden flex-shrink-0">
-                                        {b.business?.logoUrl ? (
-                                            <img src={b.business.logoUrl} alt="" className="w-full h-full object-cover" />
-                                        ) : (
-                                            <Building2 className="w-5 h-5 text-on-surface-variant/50" />
-                                        )}
-                                    </div>
-
-                                    {/* اطلاعات */}
-                                    <div className="flex-1 min-w-0">
-                                        <div className="flex items-center gap-2 flex-wrap">
-                                            <p className="text-sm font-extrabold text-on-surface truncate">
-                                                {b.business?.name || 'بدون کسب‌وکار'}
-                                            </p>
-                                            {b.business?.type && (
-                                                <span className="text-[9px] font-bold px-1.5 py-0.5 rounded bg-surface-container-high text-on-surface-variant">
-                                                    {b.business.type}
-                                                </span>
+                <>
+                    {/* ═══ جدول دسکتاپ ═══ */}
+                    <div className="hidden lg:block overflow-x-auto rounded-2xl border border-outline-variant/30 bg-white dark:bg-gray-900">
+                        <table className="w-full text-sm">
+                            <thead>
+                                <tr className="border-b border-outline-variant/30 bg-surface-container-low/40">
+                                    {COLUMNS.map((col) => (
+                                        <th
+                                            key={col.key}
+                                            className={cn(
+                                                'px-3 py-2.5 text-[10px] font-bold text-on-surface-variant uppercase tracking-wide whitespace-nowrap',
+                                                col.align === 'center' ? 'text-center' : 'text-right',
                                             )}
-                                            {b.business?.industryName && (
-                                                <span className="text-[9px] font-bold px-1.5 py-0.5 rounded bg-primary/10 text-primary">
-                                                    {b.business.industryName}
-                                                </span>
-                                            )}
-                                            {isPaused && (
-                                                <span className="text-[9px] font-bold px-1.5 py-0.5 rounded bg-amber-100 text-amber-700 dark:bg-amber-900/30 dark:text-amber-300">
-                                                    متوقف
-                                                </span>
-                                            )}
-                                        </div>
-                                        <div className="flex items-center gap-3 text-[10px] text-on-surface-variant/70 mt-1.5 flex-wrap">
-                                            {b.business?.city && (
-                                                <span className="flex items-center gap-0.5">
-                                                    <MapPin className="w-3 h-3" />{b.business.city}
-                                                </span>
-                                            )}
-                                            {b.user?.fullName && <span>{b.user.fullName}</span>}
-                                            {b.user?.phone && <span dir="ltr">{b.user.phone}</span>}
-                                        </div>
-                                    </div>
-
-                                    {/* اکشن‌ها */}
-                                    <div className="flex items-center gap-1.5 flex-shrink-0">
-                                        {confirming ? (
-                                            <>
+                                            style={{ minWidth: col.minWidth }}
+                                        >
+                                            {col.sortable ? (
                                                 <button
-                                                    onClick={() => removeMut.mutate(b.membershipId, { onSuccess: () => setConfirmRemoveId(null) })}
-                                                    disabled={busyRemove}
-                                                    className="h-8 px-3 rounded-lg bg-error text-white text-[10px] font-bold inline-flex items-center gap-1 disabled:opacity-50"
-                                                >
-                                                    {busyRemove ? <Loader2 className="w-3 h-3 animate-spin" /> : <Trash2 className="w-3 h-3" />}
-                                                    تایید حذف
-                                                </button>
-                                                <button onClick={() => setConfirmRemoveId(null)}
-                                                    className="h-8 w-8 rounded-lg border border-outline-variant/50 grid place-items-center text-on-surface-variant">
-                                                    <X className="w-3.5 h-3.5" />
-                                                </button>
-                                            </>
-                                        ) : (
-                                            <>
-                                                <button
-                                                    onClick={() => pauseMut.mutate({ membershipId: b.membershipId, paused: !isPaused })}
-                                                    disabled={busyPause}
-                                                    title={isPaused ? 'فعال‌سازی مجدد خریدار' : 'توقف موقت خریدار'}
+                                                    onClick={() => toggleSort(col.key)}
                                                     className={cn(
-                                                        'h-9 w-9 rounded-lg grid place-items-center transition-colors',
-                                                        isPaused
-                                                            ? 'text-emerald-600 hover:bg-emerald-500/10'
-                                                            : 'text-amber-600 hover:bg-amber-500/10',
+                                                        'inline-flex items-center gap-1 hover:text-primary transition-colors',
+                                                        sortBy === col.key && 'text-primary',
                                                     )}
                                                 >
-                                                    {busyPause ? <Loader2 className="w-4 h-4 animate-spin" /> :
-                                                        isPaused ? <PlayCircle className="w-4 h-4" /> : <PauseCircle className="w-4 h-4" />}
+                                                    {col.label}
+                                                    <ArrowUpDown className={cn('w-3 h-3', sortBy === col.key && sortOrder === 'asc' && 'rotate-180')} />
                                                 </button>
-                                                <button
-                                                    onClick={() => setConfirmRemoveId(b.membershipId)}
-                                                    title="حذف از خریداران"
-                                                    className="h-9 w-9 rounded-lg text-error/60 hover:text-error hover:bg-error/10 grid place-items-center transition-colors"
+                                            ) : col.label}
+                                        </th>
+                                    ))}
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {buyers.map((b) => {
+                                    const isPaused = b.businessStatus === 'paused';
+                                    const busyPause = pauseMut.isPending && pauseMut.variables?.membershipId === b.membershipId;
+                                    const busyRemove = removeMut.isPending && removeMut.variables === b.membershipId;
+                                    const confirming = confirmRemoveId === b.membershipId;
+
+                                    return (
+                                        <tr
+                                            key={b.membershipId}
+                                            className={cn(
+                                                'border-b border-outline-variant/15 transition-colors hover:bg-surface-container-low/30',
+                                                isPaused && 'opacity-50 bg-surface-container-low/20',
+                                            )}
+                                        >
+                                            {/* نام کسب‌وکار */}
+                                            <td className="px-3 py-2.5">
+                                                <div className="flex items-center gap-2">
+                                                    <div className="w-8 h-8 rounded-lg bg-surface-container-high flex items-center justify-center overflow-hidden flex-shrink-0">
+                                                        {b.business?.logoUrl ? (
+                                                            <img src={b.business.logoUrl} alt="" className="w-full h-full object-cover" />
+                                                        ) : (
+                                                            <Building2 className="w-4 h-4 text-on-surface-variant/50" />
+                                                        )}
+                                                    </div>
+                                                    <div className="min-w-0">
+                                                        <p className="text-xs font-bold text-on-surface truncate">
+                                                            {b.business?.name || 'بدون کسب‌وکار'}
+                                                        </p>
+                                                        {b.business?.hasCatalog && b.business?.catalogName && (
+                                                            <Link
+                                                                href={`/${b.business.catalogSlug || '#'}`}
+                                                                target="_blank"
+                                                                className="text-[9px] text-primary flex items-center gap-0.5 hover:underline"
+                                                            >
+                                                                {b.business.catalogName} <ExternalLink className="w-2.5 h-2.5" />
+                                                            </Link>
+                                                        )}
+                                                    </div>
+                                                </div>
+                                            </td>
+                                            {/* صاحب */}
+                                            <td className="px-3 py-2.5">
+                                                <div className="text-[11px] text-on-surface truncate">
+                                                    {b.user?.fullName || '—'}
+                                                </div>
+                                                {b.user?.phone && (
+                                                    <div className="text-[9px] text-on-surface-variant/60" dir="ltr">{b.user.phone}</div>
+                                                )}
+                                            </td>
+                                            {/* صنف */}
+                                            <td className="px-3 py-2.5">
+                                                {b.business?.industryName ? (
+                                                    <span className="text-[10px] font-bold px-2 py-0.5 rounded bg-primary/10 text-primary">
+                                                        {b.business.industryName}
+                                                    </span>
+                                                ) : (
+                                                    <span className="text-[10px] text-on-surface-variant/40">—</span>
+                                                )}
+                                            </td>
+                                            {/* استان/شهر */}
+                                            <td className="px-3 py-2.5">
+                                                <div className="text-[11px] text-on-surface flex items-center gap-1">
+                                                    <MapPin className="w-3 h-3 text-on-surface-variant/40" />
+                                                    {b.business?.city || '—'}
+                                                </div>
+                                            </td>
+                                            {/* نوع */}
+                                            <td className="px-3 py-2.5">
+                                                <span className="text-[10px] text-on-surface-variant">
+                                                    {b.business?.type || '—'}
+                                                </span>
+                                            </td>
+                                            {/* عملیات */}
+                                            <td className="px-3 py-2.5">
+                                                <div className="flex items-center justify-center gap-1.5">
+                                                    {confirming ? (
+                                                        <>
+                                                            <button
+                                                                onClick={() => removeMut.mutate(b.membershipId, { onSuccess: () => setConfirmRemoveId(null) })}
+                                                                disabled={busyRemove}
+                                                                className="h-7 px-2 rounded-lg bg-error text-white text-[9px] font-bold inline-flex items-center gap-1 disabled:opacity-50"
+                                                            >
+                                                                {busyRemove ? <Loader2 className="w-3 h-3 animate-spin" /> : <Trash2 className="w-3 h-3" />}
+                                                                تایید
+                                                            </button>
+                                                            <button onClick={() => setConfirmRemoveId(null)}
+                                                                className="h-7 w-7 rounded-lg border border-outline-variant/50 grid place-items-center text-on-surface-variant">
+                                                                <X className="w-3 h-3" />
+                                                            </button>
+                                                        </>
+                                                    ) : (
+                                                        <>
+                                                            <button
+                                                                onClick={() => pauseMut.mutate({ membershipId: b.membershipId, paused: !isPaused })}
+                                                                disabled={busyPause}
+                                                                title={isPaused ? 'فعال‌سازی' : 'توقف موقت'}
+                                                                className={cn(
+                                                                    'h-8 w-8 rounded-lg grid place-items-center transition-colors',
+                                                                    isPaused
+                                                                        ? 'text-emerald-600 hover:bg-emerald-500/10'
+                                                                        : 'text-amber-600 hover:bg-amber-500/10',
+                                                                )}
+                                                            >
+                                                                {busyPause ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> :
+                                                                    isPaused ? <PlayCircle className="w-3.5 h-3.5" /> : <PauseCircle className="w-3.5 h-3.5" />}
+                                                            </button>
+                                                            <button
+                                                                onClick={() => setConfirmRemoveId(b.membershipId)}
+                                                                title="حذف"
+                                                                className="h-8 w-8 rounded-lg text-error/60 hover:text-error hover:bg-error/10 grid place-items-center transition-colors"
+                                                            >
+                                                                <Trash2 className="w-3.5 h-3.5" />
+                                                            </button>
+                                                        </>
+                                                    )}
+                                                </div>
+                                            </td>
+                                        </tr>
+                                    );
+                                })}
+                            </tbody>
+                        </table>
+                    </div>
+
+                    {/* ═══ کارت موبایل ═══ */}
+                    <div className="lg:hidden space-y-2.5">
+                        {buyers.map((b) => {
+                            const isPaused = b.businessStatus === 'paused';
+                            const busyPause = pauseMut.isPending && pauseMut.variables?.membershipId === b.membershipId;
+                            const busyRemove = removeMut.isPending && removeMut.variables === b.membershipId;
+                            const confirming = confirmRemoveId === b.membershipId;
+
+                            return (
+                                <div
+                                    key={b.membershipId}
+                                    className={cn(
+                                        'bg-white dark:bg-gray-900 rounded-2xl border p-3.5 transition-all',
+                                        isPaused
+                                            ? 'border-outline-variant/20 opacity-60 bg-surface-container-low/30'
+                                            : 'border-outline-variant/40 hover:shadow-md',
+                                    )}
+                                >
+                                    <div className="flex items-start gap-3 mb-2.5">
+                                        <div className="w-11 h-11 rounded-xl bg-surface-container-high flex items-center justify-center overflow-hidden flex-shrink-0">
+                                            {b.business?.logoUrl ? (
+                                                <img src={b.business.logoUrl} alt="" className="w-full h-full object-cover" />
+                                            ) : (
+                                                <Building2 className="w-5 h-5 text-on-surface-variant/50" />
+                                            )}
+                                        </div>
+                                        <div className="flex-1 min-w-0">
+                                            <div className="flex items-center gap-1.5 flex-wrap">
+                                                <p className="text-sm font-extrabold text-on-surface truncate">
+                                                    {b.business?.name || 'بدون کسب‌وکار'}
+                                                </p>
+                                                {isPaused && (
+                                                    <span className="text-[9px] font-bold px-1.5 py-0.5 rounded bg-amber-100 text-amber-700 dark:bg-amber-900/30 dark:text-amber-300">
+                                                        متوقف
+                                                    </span>
+                                                )}
+                                            </div>
+                                            {b.business?.hasCatalog && b.business?.catalogName && (
+                                                <Link
+                                                    href={`/${b.business.catalogSlug || '#'}`}
+                                                    target="_blank"
+                                                    className="text-[10px] text-primary flex items-center gap-0.5 hover:underline mt-0.5"
                                                 >
-                                                    <Trash2 className="w-4 h-4" />
-                                                </button>
-                                            </>
-                                        )}
+                                                    {b.business.catalogName} <ExternalLink className="w-2.5 h-2.5" />
+                                                </Link>
+                                            )}
+                                        </div>
+                                    </div>
+
+                                    <div className="grid grid-cols-2 gap-2 text-[11px] mb-2.5">
+                                        <div className="flex items-center gap-1.5 text-on-surface-variant">
+                                            <User className="w-3 h-3 flex-shrink-0" />
+                                            <span className="truncate">{b.user?.fullName || '—'}</span>
+                                        </div>
+                                        <div className="flex items-center gap-1.5 text-on-surface-variant">
+                                            <Phone className="w-3 h-3 flex-shrink-0" />
+                                            <span dir="ltr" className="truncate">{b.user?.phone || '—'}</span>
+                                        </div>
+                                        <div className="flex items-center gap-1.5 text-on-surface-variant">
+                                            <Building2 className="w-3 h-3 flex-shrink-0" />
+                                            <span className="truncate">{b.business?.industryName || '—'}</span>
+                                        </div>
+                                        <div className="flex items-center gap-1.5 text-on-surface-variant">
+                                            <MapPin className="w-3 h-3 flex-shrink-0" />
+                                            <span className="truncate">{b.business?.city || '—'}</span>
+                                        </div>
+                                    </div>
+
+                                    <div className="flex items-center justify-end pt-2.5 border-t border-outline-variant/15">
+                                        <div className="flex items-center gap-1.5">
+                                            {confirming ? (
+                                                <>
+                                                    <button
+                                                        onClick={() => removeMut.mutate(b.membershipId, { onSuccess: () => setConfirmRemoveId(null) })}
+                                                        disabled={busyRemove}
+                                                        className="h-7 px-2 rounded-lg bg-error text-white text-[9px] font-bold inline-flex items-center gap-1 disabled:opacity-50"
+                                                    >
+                                                        {busyRemove ? <Loader2 className="w-3 h-3 animate-spin" /> : <Trash2 className="w-3 h-3" />}
+                                                        تایید
+                                                    </button>
+                                                    <button onClick={() => setConfirmRemoveId(null)}
+                                                        className="h-7 w-7 rounded-lg border border-outline-variant/50 grid place-items-center text-on-surface-variant">
+                                                        <X className="w-3 h-3" />
+                                                    </button>
+                                                </>
+                                            ) : (
+                                                <>
+                                                    <button
+                                                        onClick={() => pauseMut.mutate({ membershipId: b.membershipId, paused: !isPaused })}
+                                                        disabled={busyPause}
+                                                        title={isPaused ? 'فعال‌سازی' : 'توقف موقت'}
+                                                        className={cn(
+                                                            'h-8 w-8 rounded-lg grid place-items-center transition-colors',
+                                                            isPaused
+                                                                ? 'text-emerald-600 hover:bg-emerald-500/10'
+                                                                : 'text-amber-600 hover:bg-amber-500/10',
+                                                        )}
+                                                    >
+                                                        {busyPause ? <Loader2 className="w-4 h-4 animate-spin" /> :
+                                                            isPaused ? <PlayCircle className="w-4 h-4" /> : <PauseCircle className="w-4 h-4" />}
+                                                    </button>
+                                                    <button
+                                                        onClick={() => setConfirmRemoveId(b.membershipId)}
+                                                        title="حذف"
+                                                        className="h-8 w-8 rounded-lg text-error/60 hover:text-error hover:bg-error/10 grid place-items-center transition-colors"
+                                                    >
+                                                        <Trash2 className="w-4 h-4" />
+                                                    </button>
+                                                </>
+                                            )}
+                                        </div>
                                     </div>
                                 </div>
-                            </div>
-                        );
-                    })}
-                </div>
+                            );
+                        })}
+                    </div>
+                </>
             )}
 
             {/* ─── مدال افزودن خریدار ─── */}
@@ -286,22 +430,20 @@ function BuyersContent({ slug, armName }: { slug: string; armName: string }) {
     );
 }
 
-// ═══ مدال افزودن خریدار ═══
+// ═══ مدال افزودن خریدار — با جدول دسکتاپ و کارت موبایل ═══
 function AddBuyerModal({ slug, onClose }: { slug: string; onClose: () => void }) {
     const [qInput, setQInput] = useState('');
-    const [onlyMine, setOnlyMine] = useState(false);
-    const [industryFilter, setIndustryFilter] = useState<{ id: string | null; title: string }>({ id: null, title: '' });
-    const [cityFilter, setCityFilter] = useState<{ id: string | null; title: string; cityCode?: string; provinceCode?: string }>({ id: null, title: '' });
+    const [filter, setFilter] = useState<FilterValue>({});
 
-    const candidatesQ = useArmBuyerCandidates(slug, qInput.trim(), onlyMine, true, {
-        industry: industryFilter.title || undefined,
-        cityCode: cityFilter.cityCode || undefined,
-        provinceCode: cityFilter.provinceCode || undefined,
+    const candidatesQ = useArmBuyerCandidates(slug, qInput.trim(), false, true, {
+        industry: filter.industry || undefined,
+        cityCode: filter.cityCode || undefined,
+        provinceCode: filter.provinceCode || undefined,
     });
     const addMut = useAddBuyer(slug);
 
     const candidates: any[] = candidatesQ.data?.items ?? [];
-    const hasActiveFilters = !!(qInput || industryFilter.title || cityFilter.title);
+    const hasActiveFilters = !!(qInput || filter.provinceCode || filter.cityCode || filter.industry);
 
     return (
         <div
@@ -310,8 +452,8 @@ function AddBuyerModal({ slug, onClose }: { slug: string; onClose: () => void })
         >
             <div
                 onClick={(e) => e.stopPropagation()}
-                className="bg-surface w-full sm:max-w-2xl rounded-t-3xl sm:rounded-2xl shadow-2xl
-                    max-h-[90dvh] flex flex-col overflow-hidden
+                className="bg-surface w-full sm:max-w-3xl rounded-t-3xl sm:rounded-2xl shadow-2xl
+                    max-h-[92dvh] flex flex-col overflow-hidden
                     animate-in slide-in-from-bottom-4 sm:zoom-in-95 duration-300"
             >
                 {/* هدر */}
@@ -320,7 +462,10 @@ function AddBuyerModal({ slug, onClose }: { slug: string; onClose: () => void })
                         <span className="w-9 h-9 rounded-xl bg-primary/10 flex items-center justify-center">
                             <ShoppingCart className="w-4.5 h-4.5 text-primary" />
                         </span>
-                        <h3 className="text-sm font-extrabold text-on-surface">افزودن خریدار</h3>
+                        <div>
+                            <h3 className="text-sm font-extrabold text-on-surface">افزودن خریدار</h3>
+                            <p className="text-[10px] text-on-surface-variant/70">کسب‌وکار مورد نظر را انتخاب کن</p>
+                        </div>
                     </div>
                     <button onClick={onClose} className="w-9 h-9 flex items-center justify-center rounded-full text-on-surface-variant hover:bg-surface-container-high transition-colors">
                         <X className="w-5 h-5" />
@@ -335,7 +480,7 @@ function AddBuyerModal({ slug, onClose }: { slug: string; onClose: () => void })
                             value={qInput}
                             onChange={(e) => setQInput(e.target.value)}
                             placeholder="جستجوی نام، شماره، صاحب کسب‌وکار…"
-                            className="w-full h-11 pr-9 pl-8 rounded-xl bg-surface-container-lowest border border-outline-variant/40
+                            className="w-full h-10 pr-9 pl-8 rounded-xl bg-surface-container-lowest border border-outline-variant/40
                                 dark:border-gray-700 text-sm outline-none focus:ring-2 focus:ring-primary/30 focus:border-primary transition-all"
                         />
                         {qInput && (
@@ -344,74 +489,122 @@ function AddBuyerModal({ slug, onClose }: { slug: string; onClose: () => void })
                             </button>
                         )}
                     </div>
-                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
-                        <div>
-                            <label className="text-[10px] font-bold text-on-surface-variant block mb-1">صنف</label>
-                            <IndustryAutocomplete
-                                value={industryFilter}
-                                onChange={setIndustryFilter}
-                                placeholder="همه اصناف..."
-                                allowCreate={false}
-                            />
-                        </div>
-                        <div>
-                            <label className="text-[10px] font-bold text-on-surface-variant block mb-1">شهر</label>
-                            <CityAutocomplete
-                                value={cityFilter}
-                                onChange={(v) => setCityFilter({ ...v, cityCode: (v as any).cityCode, provinceCode: (v as any).provinceCode })}
-                                placeholder="همه شهرها..."
-                            />
-                        </div>
-                    </div>
+                    <LocationIndustryFilter value={filter} onChange={setFilter} />
                 </div>
 
                 {/* لیست کاندیداها */}
-                <div className="flex-1 min-h-0 overflow-y-auto scrollbar-slim px-4 py-3">
+                <div className="flex-1 min-h-0 overflow-y-auto scrollbar-slim">
                     {candidatesQ.isFetching ? (
-                        <div className="space-y-2">
-                            {[0, 1, 2].map(i => <div key={i} className="h-16 rounded-xl bg-surface-container-high/50 animate-pulse" />)}
+                        <div className="p-4 space-y-2">
+                            {[0, 1, 2, 3].map(i => <div key={i} className="h-14 rounded-xl bg-surface-container-high/50 animate-pulse" />)}
                         </div>
                     ) : candidates.length === 0 ? (
-                        <div className="text-center py-10">
+                        <div className="text-center py-12">
                             <Search className="w-10 h-10 text-on-surface-variant/20 mx-auto mb-2" />
                             <p className="text-xs text-on-surface-variant">
                                 {hasActiveFilters ? 'کسب‌وکاری با این فیلترها پیدا نشد' : 'برای جستجو تایپ کنید'}
                             </p>
                         </div>
                     ) : (
-                        <div className="space-y-2">
-                            {candidates.map((b) => {
-                                const busy = addMut.isPending && addMut.variables === b.id;
-                                return (
-                                    <div
-                                        key={b.id}
-                                        className="flex items-center gap-3 p-2.5 rounded-xl bg-surface-container-lowest/60 border border-outline-variant/30 hover:border-primary/30 transition-colors"
-                                    >
-                                        <div className="w-10 h-10 rounded-lg bg-surface-container-high flex items-center justify-center overflow-hidden flex-shrink-0">
-                                            {b.logoUrl ? (
-                                                <img src={b.logoUrl} alt="" className="w-full h-full object-cover" />
-                                            ) : (
-                                                <Building2 className="w-4 h-4 text-on-surface-variant/50" />
-                                            )}
+                        <>
+                            {/* جدول دسکتاپ */}
+                            <table className="hidden md:table w-full text-sm">
+                                <thead className="sticky top-0 bg-surface z-10">
+                                    <tr className="border-b border-outline-variant/30 bg-surface-container-low/40">
+                                        <th className="px-3 py-2 text-right text-[10px] font-bold text-on-surface-variant uppercase">کسب‌وکار</th>
+                                        <th className="px-3 py-2 text-right text-[10px] font-bold text-on-surface-variant uppercase">صاحب</th>
+                                        <th className="px-3 py-2 text-right text-[10px] font-bold text-on-surface-variant uppercase">صنف</th>
+                                        <th className="px-3 py-2 text-right text-[10px] font-bold text-on-surface-variant uppercase">شهر</th>
+                                        <th className="px-3 py-2 text-center text-[10px] font-bold text-on-surface-variant uppercase">عملیات</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    {candidates.map((b) => {
+                                        const busy = addMut.isPending && addMut.variables === b.id;
+                                        return (
+                                            <tr key={b.id} className="border-b border-outline-variant/15 hover:bg-surface-container-low/30 transition-colors">
+                                                <td className="px-3 py-2.5">
+                                                    <div className="flex items-center gap-2">
+                                                        <div className="w-8 h-8 rounded-lg bg-surface-container-high flex items-center justify-center overflow-hidden flex-shrink-0">
+                                                            {b.logoUrl ? (
+                                                                <img src={b.logoUrl} alt="" className="w-full h-full object-cover" />
+                                                            ) : (
+                                                                <Building2 className="w-4 h-4 text-on-surface-variant/50" />
+                                                            )}
+                                                        </div>
+                                                        <div className="min-w-0">
+                                                            <p className="text-xs font-bold text-on-surface truncate">{b.name}</p>
+                                                            {b.type && (
+                                                                <span className="text-[9px] text-on-surface-variant/60">{b.type}</span>
+                                                            )}
+                                                        </div>
+                                                    </div>
+                                                </td>
+                                                <td className="px-3 py-2.5">
+                                                    <div className="text-[11px] text-on-surface truncate">{b.owner?.fullName || '—'}</div>
+                                                    {b.owner?.phone && <div className="text-[9px] text-on-surface-variant/60" dir="ltr">{b.owner.phone}</div>}
+                                                </td>
+                                                <td className="px-3 py-2.5">
+                                                    {b.industryName ? (
+                                                        <span className="text-[10px] font-bold px-2 py-0.5 rounded bg-primary/10 text-primary">
+                                                            {b.industryName}
+                                                        </span>
+                                                    ) : <span className="text-[10px] text-on-surface-variant/40">—</span>}
+                                                </td>
+                                                <td className="px-3 py-2.5">
+                                                    <span className="text-[11px] text-on-surface flex items-center gap-1">
+                                                        <MapPin className="w-3 h-3 text-on-surface-variant/40" />
+                                                        {b.city || '—'}
+                                                    </span>
+                                                </td>
+                                                <td className="px-3 py-2.5 text-center">
+                                                    <button
+                                                        onClick={() => addMut.mutate(b.id, { onSuccess: () => { toast.success('خریدار اضافه شد'); onClose(); } })}
+                                                        disabled={busy}
+                                                        className="h-8 px-3 rounded-lg bg-primary text-on-primary text-[10px] font-bold inline-flex items-center gap-1 hover:bg-primary/90 active:scale-95 transition-all disabled:opacity-50"
+                                                    >
+                                                        {busy ? <Loader2 className="w-3 h-3 animate-spin" /> : <Plus className="w-3.5 h-3.5" />}
+                                                        افزودن
+                                                    </button>
+                                                </td>
+                                            </tr>
+                                        );
+                                    })}
+                                </tbody>
+                            </table>
+
+                            {/* کارت موبایل */}
+                            <div className="md:hidden p-3 space-y-2">
+                                {candidates.map((b) => {
+                                    const busy = addMut.isPending && addMut.variables === b.id;
+                                    return (
+                                        <div key={b.id} className="flex items-center gap-3 p-2.5 rounded-xl bg-surface-container-lowest/60 border border-outline-variant/30 hover:border-primary/30 transition-colors">
+                                            <div className="w-10 h-10 rounded-lg bg-surface-container-high flex items-center justify-center overflow-hidden flex-shrink-0">
+                                                {b.logoUrl ? (
+                                                    <img src={b.logoUrl} alt="" className="w-full h-full object-cover" />
+                                                ) : (
+                                                    <Building2 className="w-4 h-4 text-on-surface-variant/50" />
+                                                )}
+                                            </div>
+                                            <div className="flex-1 min-w-0">
+                                                <p className="text-xs font-bold text-on-surface truncate">{b.name}</p>
+                                                <p className="text-[10px] text-on-surface-variant/70 truncate">
+                                                    {[b.owner?.fullName, b.industryName, b.city].filter(Boolean).join(' · ')}
+                                                </p>
+                                            </div>
+                                            <button
+                                                onClick={() => addMut.mutate(b.id, { onSuccess: () => { toast.success('خریدار اضافه شد'); onClose(); } })}
+                                                disabled={busy}
+                                                className="h-8 px-3 rounded-lg bg-primary text-on-primary text-[10px] font-bold inline-flex items-center gap-1 hover:bg-primary/90 active:scale-95 transition-all disabled:opacity-50 flex-shrink-0"
+                                            >
+                                                {busy ? <Loader2 className="w-3 h-3 animate-spin" /> : <Plus className="w-3.5 h-3.5" />}
+                                                افزودن
+                                            </button>
                                         </div>
-                                        <div className="flex-1 min-w-0">
-                                            <p className="text-xs font-bold text-on-surface truncate">{b.name}</p>
-                                            <p className="text-[10px] text-on-surface-variant/70 truncate">
-                                                {[b.industryName, b.type, b.city, b.owner?.fullName].filter(Boolean).join(' · ')}
-                                            </p>
-                                        </div>
-                                        <button
-                                            onClick={() => addMut.mutate(b.id, { onSuccess: () => onClose() })}
-                                            disabled={busy}
-                                            className="h-8 px-3 rounded-lg bg-primary text-on-primary text-[10px] font-bold inline-flex items-center gap-1 hover:bg-primary/90 active:scale-95 transition-all disabled:opacity-50 flex-shrink-0"
-                                        >
-                                            {busy ? <Loader2 className="w-3 h-3 animate-spin" /> : <Plus className="w-3.5 h-3.5" />}
-                                            افزودن
-                                        </button>
-                                    </div>
-                                );
-                            })}
-                        </div>
+                                    );
+                                })}
+                            </div>
+                        </>
                     )}
                 </div>
             </div>

@@ -1050,6 +1050,31 @@ export const useArmSellers = (slug?: string, params?: Record<string, any>) => {
     });
 };
 
+// ─── لیست اصناف و موقعیت‌ها (برای DropSelector) ───
+export const useIndustriesList = (confirmedOnly = false) => {
+    return useQuery({
+        queryKey: ['industries-list', confirmedOnly],
+        queryFn: () => apiService.industry.list(confirmedOnly),
+        staleTime: 5 * 60 * 1000,  // ۵ دقیقه cache
+    });
+};
+
+export const useProvincesList = () => {
+    return useQuery({
+        queryKey: ['provinces-list'],
+        queryFn: () => apiService.location.getProvinces(),
+        staleTime: 60 * 60 * 1000,  // ۱ ساعت cache (استان‌ها کم تغییر می‌کنن)
+    });
+};
+
+export const useCitiesList = (provinceCode?: string) => {
+    return useQuery({
+        queryKey: ['cities-list', provinceCode || 'all'],
+        queryFn: () => apiService.location.getCities(provinceCode),
+        staleTime: 60 * 60 * 1000,  // ۱ ساعت cache
+    });
+};
+
 export const useArmSellerCandidates = (
     slug?: string,
     q = '',

@@ -148,6 +148,11 @@ export const apiService = {
             // ✅ defensive: بک‌اند باید { items } برگردونه، ولی اگه { data } برگردوند هم هندل شه
             return { items: res?.items || res?.data || [] };
         },
+        // ✅ لیست همه‌ی صنف‌ها — برای DropSelector (client-side search)
+        list: async (confirmedOnly = false): Promise<{ items: Array<{ id: string; title: string }> }> => {
+            const res: any = await apiRequest(`/industries/list${confirmedOnly ? '?confirmed=true' : ''}`);
+            return { items: res?.items || res?.data || [] };
+        },
     },
 
     // ============================================================
@@ -164,6 +169,19 @@ export const apiService = {
         }> }> => {
             if (!q || q.trim().length < 2) return { items: [] };
             return apiRequest(`/location/cities/search?q=${encodeURIComponent(q.trim())}`);
+        },
+        // ✅ لیست همه‌ی استان‌ها — برای DropSelector
+        getProvinces: async (): Promise<{ items: Array<{ id: string; title: string; provinceCode: string; slug?: string }> }> => {
+            const res: any = await apiRequest('/location/provinces');
+            return { items: res?.items || [] };
+        },
+        // ✅ لیست همه‌ی شهرها (یا شهرهای یک استان) — برای DropSelector
+        getCities: async (provinceCode?: string): Promise<{ items: Array<{ id: string; title: string; cityCode: string; provinceCode: string }> }> => {
+            const url = provinceCode
+                ? `/location/cities?provinceCode=${encodeURIComponent(provinceCode)}`
+                : '/location/cities';
+            const res: any = await apiRequest(url);
+            return { items: res?.items || [] };
         },
     },
 
