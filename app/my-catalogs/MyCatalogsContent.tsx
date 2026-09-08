@@ -36,7 +36,6 @@ import CategoryPicker from '@/app/ad/components/CategoryPicker';
 import {IranLocationSelector} from '@/app/components/IranLocationSelector';
 import SlugEditor from "./SlugEditor";
 import PublishToMarketModal from './PublishToMarketModal';
-import IndustryAutocomplete from '@/app/components/IndustryAutocomplete';
 
 // ═══ هلپرها ═══
 const isAdExpired = (ad: any) => ad.status === 'expired' || new Date(ad.expiresAt).getTime() < Date.now();
@@ -1080,7 +1079,6 @@ function CatalogEditModal({ isOpen, onClose, catalog, salesTypeLocked, onSaved }
 
     const [name, setName] = useState(catalog?.name || '');
     const [slug, setSlug] = useState(catalog?.slug || '');
-    const [industryName, setIndustryName] = useState(catalog?.industryName || '');
     const [shortDescription, setShortDescription] = useState(catalog?.shortDescription || '');
     const [phone, setPhone] = useState(catalog?.phone || bizPhone);
     const [website, setWebsite] = useState(catalog?.website || '');
@@ -1104,13 +1102,12 @@ function CatalogEditModal({ isOpen, onClose, catalog, salesTypeLocked, onSaved }
         return (
             name !== (catalog.name || '') ||
             slug !== (catalog.slug || '') ||
-            industryName !== (catalog.industryName || '') ||
             shortDescription !== (catalog.shortDescription || '') ||
             phone !== (catalog.phone || bizPhone) ||
             website !== (catalog.website || '') ||
             !!pendingLogoFile
         );
-    }, [catalog, name, slug, industryName, shortDescription, phone, website, pendingLogoFile, bizPhone]);
+    }, [catalog, name, slug, shortDescription, phone, website, pendingLogoFile, bizPhone]);
 
     const uploadLogo = async (): Promise<string | undefined> => {
         if (!pendingLogoFile) return undefined;
@@ -1152,7 +1149,6 @@ function CatalogEditModal({ isOpen, onClose, catalog, salesTypeLocked, onSaved }
                 data: {
                     name: name.trim(),
                     slug: slug || undefined,
-                    industryName: industryName.trim() || undefined,
                     shortDescription: shortDescription.trim() || undefined,
                     phone: phone.trim() || undefined,
                     website: website.trim() || undefined,
@@ -1262,16 +1258,6 @@ function CatalogEditModal({ isOpen, onClose, catalog, salesTypeLocked, onSaved }
                                maxLength={120}
                                placeholder={isService ? 'مثلاً: خدمات حسابداری و مشاوره مالیاتی' : 'مثلاً: تولید و پخش انواع بلوک سیمانی'}
                                className={inputCls()} />
-                    </section>
-
-                    {/* ═══ صنف (با autocomplete) ═══ */}
-                    <section className="rounded-2xl bg-surface-container-low/60 border border-outline-variant/30 p-4 space-y-1.5">
-                        <SectionTitle icon={Building2} text="صنف / زمینه فعالیت" />
-                        <IndustryAutocomplete
-                            value={industryName}
-                            onChange={setIndustryName}
-                            placeholder="مثلا: پخش مواد غذایی، سوپرمارکت..."
-                        />
                     </section>
 
                     {/* ═══ تماس ═══ */}

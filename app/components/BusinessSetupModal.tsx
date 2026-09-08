@@ -50,7 +50,7 @@ export default function BusinessSetupModal({ isOpen, onClose, business, onSaved 
 
     const [name, setName] = useState('');
     const [type, setType] = useState('wholesaler');
-    const [industryName, setIndustryName] = useState('');
+    const [industry, setIndustry] = useState<{ id: string | null; title: string }>({ id: null, title: '' });
     const [provinceCode, setProvinceCode] = useState('');
     const [provinceLabel, setProvinceLabel] = useState('');
     const [cityCode, setCityCode] = useState('');
@@ -61,7 +61,10 @@ export default function BusinessSetupModal({ isOpen, onClose, business, onSaved 
         if (!isOpen) return;
         setName(business?.name || '');
         setType(business?.type || 'wholesaler');
-        setIndustryName(business?.industryName || '');
+        setIndustry({
+            id: (business as any)?.industryId || null,
+            title: business?.industryName || '',
+        });
         setProvinceCode(business?.provinceCode || '');
         setProvinceLabel(business?.province || '');
         setCityCode(business?.cityCode || '');
@@ -74,7 +77,7 @@ export default function BusinessSetupModal({ isOpen, onClose, business, onSaved 
     const validate = () => {
         const e: Record<string, string> = {};
         if (!name.trim()) e.name = 'نام کسب‌وکار الزامی است';
-        if (!industryName.trim()) e.industryName = 'صنف الزامی است';
+        if (!industry.title.trim()) e.industryName = 'صنف الزامی است';
         if (!provinceCode) e.location = 'انتخاب موقعیت الزامی است';
         setErrors(e);
         return Object.keys(e).length === 0;
@@ -86,7 +89,8 @@ export default function BusinessSetupModal({ isOpen, onClose, business, onSaved 
             const payload = {
                 name: name.trim(),
                 type,
-                industryName: industryName.trim(),
+                industryName: industry.title.trim(),
+                industryId: industry.id,  // ✅ اگه از لیست انتخاب شده id داره، اگه نه null
                 province: provinceLabel,
                 provinceCode,
                 city: cityLabel,
@@ -160,8 +164,8 @@ export default function BusinessSetupModal({ isOpen, onClose, business, onSaved 
                             صنف / زمینه فعالیت <span className="text-primary">*</span>
                         </label>
                         <IndustryAutocomplete
-                            value={industryName}
-                            onChange={(v) => { setIndustryName(v); setErrors((p) => ({ ...p, industryName: '' })); }}
+                            value={industry}
+                            onChange={(v) => { setIndustry(v); setErrors((p) => ({ ...p, industryName: '' })); }}
                             placeholder="مثلا: پخش مواد غذایی، سوپرمارکت..."
                         />
                         {errors.industryName && <p className="text-error text-[11px]">{errors.industryName}</p>}

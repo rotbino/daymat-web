@@ -139,6 +139,16 @@ export const apiService = {
    
 
     // ============================================================
+    // INDUSTRY (صنف)
+    // ============================================================
+    industry: {
+        autocomplete: async (q: string): Promise<{ items: Array<{ id: string; title: string }> }> => {
+            if (!q || q.trim().length < 2) return { items: [] };
+            return apiRequest(`/industries/autocomplete?q=${encodeURIComponent(q.trim())}`);
+        },
+    },
+
+    // ============================================================
     // ARM
     // ============================================================
     arm: {

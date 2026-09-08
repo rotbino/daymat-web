@@ -2,27 +2,28 @@
 'use client';
 
 import React, { useState, useEffect, useRef } from 'react';
-import { useQuery } from '@tanstack/react-query';
-import { apiService } from '@/lib/api/apiService';
-import { Search, X, Loader2, Check, ChevronDown } from 'lucide-react';
+import { useQuery, useQueryClient } from '@tanstack/react-query';
+import { Search, X, Loader2, Check } from 'lucide-react';
 import { cn } from '@/lib/utils';
+import { apiService } from '@/lib/api/apiService';
 
 interface Props {
-    value: string;
-    onChange: (value: string) => void;
+    value: { id: string | null; title: string };
+    onChange: (value: { id: string | null; title: string }) => void;
     placeholder?: string;
     className?: string;
 }
 
 /**
- * IndustryAutocomplete — اینپوت جستجوی صنف با suggest
+ * IndustryAutocomplete — اینپوت جستجوی صنف با auto-create
  *
  * نحوه کار:
  * ۱. کاربر تایپ می‌کنه
  * ۲. بعد از ۲ حرف، سرچ می‌کنه در جدول Industry
  * ۳. نتایج زیر اینپوت نشون داده می‌شن
- * ۴. اگه کاربر انتخاب کرد → مقدار ست می‌شه
- * ۵. اگه چیزی پیدا نشد → مقدار تایپ‌شده به‌عنوان صنف جدید قبول می‌شه
+ * ۴. اگه کاربر انتخاب کرد → { id, title } ست می‌شه
+ * ۵. اگه چیزی پیدا نشد → متن تایپ‌شده با id=null ست می‌شه
+ *    موقع ذخیره، بک‌اند خودش Industry جدید می‌سازه و id رو ست می‌کنه
  */
 export default function IndustryAutocomplete({
     value,
@@ -30,20 +31,20 @@ export default function IndustryAutocomplete({
     placeholder = 'صنف خود را وارد کنید...',
     className,
 }: Props) {
-    const [input, setInput] = useState(value || '');
+    const [input, setInput] = useState(value.title || '');
     const [isOpen, setIsOpen] = useState(false);
     const [highlightedIndex, setHighlightedIndex] = useState(-1);
     const containerRef = useRef<HTMLDivElement>(null);
 
     // sync از parent
     useEffect(() => {
-        setInput(value || '');
-    }, [value]);
+        setInput(value.title || '');
+    }, [value.title, value.id]);
 
     // جستجوی صنف
     const { data, isFetching } = useQuery({
         queryKey: ['industry-autocomplete', input],
-        queryFn: () => apiRequest(`/industries/autocomplete?q=${encodeURIComponent(input)}`),
+        queryFn: () => apiService.industry.autocomplete(input),
         enabled: input.trim().length >= 2 && isOpen,
         staleTime: 30_000,
     });
@@ -62,7 +63,7 @@ export default function IndustryAutocomplete({
     }, []);
 
     const handleSelect = (item: any) => {
-        onChange(item.title);
+        onChange({ id: item.id, title: item.title });
         setInput(item.title);
         setIsOpen(false);
         setHighlightedIndex(-1);
@@ -98,7 +99,8 @@ export default function IndustryAutocomplete({
                     value={input}
                     onChange={(e) => {
                         setInput(e.target.value);
-                        onChange(e.target.value);
+                        // ✅ وقتی کاربر تایپ می‌کنه، id رو null کن (چون هنوز انتخاب نکرده)
+                        onChange({ id: null, title: e.target.value });
                         setIsOpen(true);
                         setHighlightedIndex(-1);
                     }}
@@ -117,7 +119,7 @@ export default function IndustryAutocomplete({
                         type="button"
                         onClick={() => {
                             setInput('');
-                            onChange('');
+                            onChange({ id: null, title: '' });
                             setIsOpen(false);
                         }}
                         className="absolute left-2.5 top-1/2 -translate-y-1/2 p-1 text-on-surface-variant/60 hover:text-on-surface"
@@ -157,7 +159,7 @@ export default function IndustryAutocomplete({
                                     <span className="flex-1 text-xs font-medium text-on-surface truncate">
                                         {item.title}
                                     </span>
-                                    {input === item.title && (
+                                    {value.id === item.id && (
                                         <Check className="w-3.5 h-3.5 text-primary flex-shrink-0" />
                                     )}
                                 </button>
@@ -176,15 +178,4 @@ export default function IndustryAutocomplete({
             )}
         </div>
     );
-}
-
-// helper for apiRequest
-async function apiRequest(url: string) {
-    const API_BASE = process.env.NEXT_PUBLIC_API_BASE_URL || 'http://localhost:3011/';
-    const base = API_BASE.endsWith('/') ? API_BASE.slice(0, -1) : API_BASE;
-    const res = await fetch(`${base}${url}`, {
-        headers: { 'Content-Type': 'application/json' },
-    });
-    if (!res.ok) return { items: [] };
-    return res.json();
 }
