@@ -633,42 +633,7 @@ export function AdForm({ adId, onSuccess }: { adId?: string; onSuccess?: () => v
                             </div>
                         </section>
 
-                        {/* ✅ تصویر آگهی — فقط اگه کالا انتخاب شده */}
-                        {selectedProduct && (
-                        <section className="rounded-2xl bg-surface-container-low/60 border border-outline-variant/30 p-4 space-y-3">
-                            <SectionTitle icon={Images} text="تصویر آگهی" />
-                            <div className="flex flex-wrap gap-2.5 items-start">
-                                {images.map((slot, idx) => (
-                                    <div key={idx} className="relative w-20 h-20 rounded-xl overflow-hidden border border-outline-variant/40 flex-shrink-0">
-                                        {slot.previewUrl ? (
-                                            // eslint-disable-next-line @next/next/no-img-element
-                                            <img src={slot.previewUrl} alt="" className="w-full h-full object-cover" />
-                                        ) : slot.url ? (
-                                            // eslint-disable-next-line @next/next/no-img-element
-                                            <img src={slot.url} alt="" className="w-full h-full object-cover" />
-                                        ) : null}
-                                        <button type="button" onClick={() => handleRemoveImageSlot(idx)}
-                                                className="absolute top-1 left-1 w-5 h-5 rounded-full bg-black/60 text-white grid place-items-center">
-                                            <X className="w-3 h-3" />
-                                        </button>
-                                    </div>
-                                ))}
-                                {images.length < MAX_IMAGES && (
-                                    <button type="button" onClick={() => imageInputRef.current?.click()}
-                                            className="w-20 h-20 rounded-xl border-2 border-dashed border-outline-variant/50
-                                                flex flex-col items-center justify-center gap-1 text-on-surface-variant/60
-                                                hover:border-amber-500/50 hover:text-amber-500 transition-colors">
-                                        <Camera className="w-5 h-5" />
-                                        <span className="text-[9px] font-bold">عکس</span>
-                                    </button>
-                                )}
-                                <input ref={imageInputRef} type="file" accept="image/*" className="hidden"
-                                       onChange={(e) => { handleImageSelected(e.target.files?.[0] ?? null); e.target.value = ''; }} />
-                            </div>
-                            <p className="text-[10px] text-on-surface-variant/60">عکس از مرکز کالا — می‌تونی عوض کنی یا بیشتر اضافه کنی. اولین عکس، عکس اصلی کارت می‌شود — تا {MAX_IMAGES} عکس</p>
-                        </section>
-                        )}
-
+                        {/* ✅ انتخاب کالا از مرکز کالا */}
                         <section className="rounded-2xl bg-surface-container-low/60 border border-outline-variant/30 p-4 space-y-3">
                             <SectionTitle icon={Tag} text="کالا" />
                             {hasCategoryTree && (
@@ -686,17 +651,23 @@ export function AdForm({ adId, onSuccess }: { adId?: string; onSuccess?: () => v
                                         setSelectedProduct(product);
                                         if (product) {
                                             setFormData((p) => ({ ...p, productType: product.title }));
+                                            // ✅ عکس کالای مرجع رو فقط اگه عکس موجود نباشه اضافه کن
                                             const imgUrl = product.thumbnailUrl || product.imageUrl;
                                             if (imgUrl) {
                                                 setImages((prev) => {
-                                                    const newSlot: any = { url: imgUrl, file: null, previewUrl: null, _fromProduct: true };
-                                                    if (prev.length === 0) return [newSlot];
+                                                    // اگه عکسی موجود نیست، عکس محصول رو بذار
+                                                    if (prev.length === 0) {
+                                                        return [{ url: imgUrl, file: null, previewUrl: null, _fromProduct: true } as any];
+                                                    }
+                                                    // ✅ در edit mode: اگه عکس‌های موجود داریم، عکس محصول رو اضافه نکن
+                                                    // فقط اگه اولین slot از محصول قبلی هست، عوضش کن
                                                     const first = prev[0] as any;
-                                                    if (first._fromProduct || (!first.url && !first.previewUrl)) {
+                                                    if (first._fromProduct) {
                                                         const updated = [...prev];
-                                                        updated[0] = newSlot;
+                                                        updated[0] = { url: imgUrl, file: null, previewUrl: null, _fromProduct: true } as any;
                                                         return updated;
                                                     }
+                                                    // وگرنه عکس‌های موجود رو نگه دار
                                                     return prev;
                                                 });
                                             }
@@ -733,6 +704,47 @@ export function AdForm({ adId, onSuccess }: { adId?: string; onSuccess?: () => v
                                 )}
                             </div>
                         </section>
+
+                        {/* ✅ تصویر آگهی — زیر انتخاب کالا، فقط اگه کالا انتخاب شده */}
+                        {selectedProduct && (
+                        <section className="rounded-2xl bg-surface-container-low/60 border border-outline-variant/30 p-4 space-y-3 animate-in fade-in duration-300">
+                            <SectionTitle icon={Images} text="تصویر آگهی" />
+                            <div className="flex flex-wrap gap-2.5 items-start">
+                                {images.map((slot, idx) => (
+                                    <div key={idx} className="relative w-20 h-20 rounded-xl overflow-hidden border border-outline-variant/40 flex-shrink-0">
+                                        {slot.previewUrl ? (
+                                            <img src={slot.previewUrl} alt="" className="w-full h-full object-cover" />
+                                        ) : slot.url ? (
+                                            <img src={slot.url} alt="" className="w-full h-full object-cover" />
+                                        ) : null}
+                                        <button type="button" onClick={() => handleRemoveImageSlot(idx)}
+                                                className="absolute top-1 left-1 w-5 h-5 rounded-full bg-black/60 text-white grid place-items-center">
+                                            <X className="w-3 h-3" />
+                                        </button>
+                                        {(slot as any)._fromProduct && (
+                                            <span className="absolute bottom-0 inset-x-0 bg-primary/80 text-white text-[8px] text-center py-0.5">
+                                                از مرکز کالا
+                                            </span>
+                                        )}
+                                    </div>
+                                ))}
+                                {images.length < MAX_IMAGES && (
+                                    <button type="button" onClick={() => imageInputRef.current?.click()}
+                                            className="w-20 h-20 rounded-xl border-2 border-dashed border-outline-variant/50
+                                                flex flex-col items-center justify-center gap-1 text-on-surface-variant/60
+                                                hover:border-amber-500/50 hover:text-amber-500 transition-colors">
+                                        <Camera className="w-5 h-5" />
+                                        <span className="text-[9px] font-bold">عکس</span>
+                                    </button>
+                                )}
+                                <input ref={imageInputRef} type="file" accept="image/*" className="hidden"
+                                       onChange={(e) => { handleImageSelected(e.target.files?.[0] ?? null); e.target.value = ''; }} />
+                            </div>
+                            <p className="text-[10px] text-on-surface-variant/60">
+                                {images.length > 0 ? 'عکس‌های موجود نمایش داده شده‌اند — می‌تونی عوض کنی یا بیشتر اضافه کنی.' : 'عکس از مرکز کالا یا خودت آپلود کن. اولین عکس، عکس اصلی کارت می‌شود.'}
+                            </p>
+                        </section>
+                        )}
 
                         {/* ✅ واحد فروش — فقط اگه کالا انتخاب شده */}
                         {selectedProduct && (
