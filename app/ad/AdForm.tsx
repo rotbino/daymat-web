@@ -378,10 +378,15 @@ export function AdForm({ adId, onSuccess }: { adId?: string; onSuccess?: () => v
     const validateStep = (step: number): boolean => {
         const errs: string[] = [];
         if (step === 1) {
-            if (uploadedCount === 0) errs.push('حداقل یک تصویر انتخاب کن.');
-            // ✅ اگه کالای مرجع انتخاب شده، productType الزامی نیست (از اون کپی می‌شه)
-            if (!selectedProduct && !formData.productType.trim()) errs.push('کالا را انتخاب کن یا عنوان وارد کن.');
-            if (!formData.unitId) errs.push('واحد فروش را انتخاب کن.');
+            // ✅ کالا باید انتخاب شده باشه (از مرکز کالا یا دستی)
+            if (!selectedProduct && !formData.productType.trim()) {
+                errs.push('کالا را انتخاب کن.');
+            }
+            // ✅ تصویر و واحد فقط اگه کالا انتخاب شده چک می‌شن
+            if (selectedProduct || formData.productType.trim()) {
+                if (uploadedCount === 0) errs.push('حداقل یک تصویر انتخاب کن.');
+                if (!formData.unitId) errs.push('واحد فروش را انتخاب کن.');
+            }
         } else if (step === 2) {
             if (isWholesale) {
                 if (formData.minQuantity <= 0) errs.push('حداقل حجم فروش را وارد کن.');
@@ -620,39 +625,7 @@ export function AdForm({ adId, onSuccess }: { adId?: string; onSuccess?: () => v
                 {/* ═══ مرحله ۱: کالا ═══ */}
                 {currentStep === 1 && (
                     <div className="space-y-4 animate-in fade-in duration-200">
-                        <section className="rounded-2xl bg-surface-container-low/60 border border-outline-variant/30 p-4 space-y-3">
-                            <SectionTitle icon={Images} text="تصویر کالا" />
-                            <div className="flex flex-wrap gap-2.5 items-start">
-                                {images.map((slot, idx) => (
-                                    <div key={idx} className="relative w-20 h-20 rounded-xl overflow-hidden border border-outline-variant/40 flex-shrink-0">
-                                        {slot.previewUrl ? (
-                                            // eslint-disable-next-line @next/next/no-img-element
-                                            <img src={slot.previewUrl} alt="" className="w-full h-full object-cover" />
-                                        ) : slot.url ? (
-                                            // eslint-disable-next-line @next/next/no-img-element
-                                            <img src={slot.url} alt="" className="w-full h-full object-cover" />
-                                        ) : null}
-                                        <button type="button" onClick={() => handleRemoveImageSlot(idx)}
-                                                className="absolute top-1 left-1 w-5 h-5 rounded-full bg-black/60 text-white grid place-items-center">
-                                            <X className="w-3 h-3" />
-                                        </button>
-                                    </div>
-                                ))}
-                                {images.length < MAX_IMAGES && (
-                                    <button type="button" onClick={() => imageInputRef.current?.click()}
-                                            className="w-20 h-20 rounded-xl border-2 border-dashed border-outline-variant/50
-                                                flex flex-col items-center justify-center gap-1 text-on-surface-variant/60
-                                                hover:border-amber-500/50 hover:text-amber-500 transition-colors">
-                                        <Camera className="w-5 h-5" />
-                                        <span className="text-[9px] font-bold">عکس</span>
-                                    </button>
-                                )}
-                                <input ref={imageInputRef} type="file" accept="image/*" className="hidden"
-                                       onChange={(e) => { handleImageSelected(e.target.files?.[0] ?? null); e.target.value = ''; }} />
-                            </div>
-                            <p className="text-[10px] text-on-surface-variant/60">اولین عکس، عکس اصلی کارت می‌شود — تا {MAX_IMAGES} عکس</p>
-                        </section>
-
+                        {/* ✅ کاتالوگ اول لیست */}
                         <section className="rounded-2xl bg-surface-container-low/60 border border-outline-variant/30 p-4 space-y-3">
                             <SectionTitle icon={Store} text="کاتالوگ" />
                             <div className="flex items-center gap-2.5 h-11 px-3.5 rounded-xl bg-amber-50/60 dark:bg-amber-900/10
@@ -662,6 +635,7 @@ export function AdForm({ adId, onSuccess }: { adId?: string; onSuccess?: () => v
                             </div>
                         </section>
 
+                        {/* ✅ انتخاب کالا از مرکز کالا */}
                         <section className="rounded-2xl bg-surface-container-low/60 border border-outline-variant/30 p-4 space-y-3">
                             <SectionTitle icon={Tag} text="کالا" />
                             {hasCategoryTree && (
@@ -672,26 +646,49 @@ export function AdForm({ adId, onSuccess }: { adId?: string; onSuccess?: () => v
                                 />
                             )}
                             <div className="space-y-1.5">
-                                {/* ✅ انتخاب کالای مرجع — جایگزین input عنوان */}
                                 <ProductReferencePicker
                                     value={selectedProduct}
                                     onChange={(product) => {
                                         setSelectedProduct(product);
                                         if (product) {
                                             setFormData((p) => ({ ...p, productType: product.title }));
+                                            // ✅ عکس کالای مرجع رو به اولین slot تصویر آگهی بشون
+                                            if (product.imageUrl || product.thumbnailUrl) {
+                                                const imgUrl = product.thumbnailUrl || product.imageUrl!;
+                                                setImages(prev => {
+                                                    // اگه slot ۰ خالیه یا از قبل عکس محصول داره، عوض کن
+                                                    if (prev.length === 0) {
+                                                        return [{ url: imgUrl, file: null, previewUrl: null }];
+                                                    }
+                                                    // اگه اولین slot از محصول قبلی هست، عوض کن
+                                                    const first = prev[0];
+                                                    if (first._fromProduct) {
+                                                        const updated = [...prev];
+                                                        updated[0] = { url: imgUrl, file: null, previewUrl: null, _fromProduct: true } as any;
+                                                        return updated;
+                                                    }
+                                                    // وگرنه، اگه اولین slot خالیه، پر کن
+                                                    if (!first.url && !first.previewUrl) {
+                                                        const updated = [...prev];
+                                                        updated[0] = { url: imgUrl, file: null, previewUrl: null, _fromProduct: true } as any;
+                                                        return updated;
+                                                    }
+                                                    return prev;
+                                                });
+                                            }
                                         }
                                     }}
                                     label="کالا"
                                     required
-                                    placeholder="انتخاب کالا از مرجع کالا..."
+                                    placeholder="انتخاب از مرکز کالا..."
                                     error={!selectedProduct && !formData.productType.trim() ? 'کالا را انتخاب کن' : undefined}
                                 />
-                                {/* ✅ عنوان قابل ویرایش — override عنوان کالای مرجع */}
+                                {/* ✅ عنوان آگهی قابل ویرایش — override */}
                                 {selectedProduct && (
                                     <div className="space-y-1.5">
                                         <label className="text-[10px] text-on-surface-variant block flex items-center gap-1">
                                             عنوان آگهی
-                                            <span className="text-[9px] text-primary/60">(قابل ویرایش — از عنوان کالا کپی شده)</span>
+                                            <span className="text-[9px] text-primary/60">(قابل ویرایش)</span>
                                         </label>
                                         <input type="text" maxLength={60} value={formData.productType}
                                                onChange={(e) => setFormData((p) => ({ ...p, productType: e.target.value }))}
@@ -699,7 +696,7 @@ export function AdForm({ adId, onSuccess }: { adId?: string; onSuccess?: () => v
                                                className={inputCls()} />
                                     </div>
                                 )}
-                                {/* ✅ fallback: input عنوان دستی — اگه کالای مرجع انتخاب نشد */}
+                                {/* ✅ fallback: input دستی */}
                                 {!selectedProduct && (
                                     <div className="space-y-1.5 pt-1">
                                         <label className="text-[10px] text-on-surface-variant block">
@@ -713,30 +710,73 @@ export function AdForm({ adId, onSuccess }: { adId?: string; onSuccess?: () => v
                             </div>
                         </section>
 
-                        <section className="rounded-2xl bg-surface-container-low/60 border border-outline-variant/30 p-4 space-y-3">
-                            <div className="flex items-center justify-between">
-                                <SectionTitle icon={Package} text="واحد فروش" />
-                                <button type="button" onClick={() => setUnitModalOpen(true)}
-                                        className="text-[10px] font-bold text-amber-600 dark:text-amber-400
-                                            flex items-center gap-1 hover:gap-1.5 transition-all">
-                                    <Plus className="w-3 h-3" /> واحدهای اختصاصی کاتالوگ
-                                </button>
-                            </div>
-
-                            {(localUnitSettings.length > 0 || suggestedUnitIds.length > 0) && (
-                                <div className="flex flex-wrap gap-1.5">
-                                    {localUnitSettings.map((s) => {
-                                        const u = allUnits.find((x: any) => x.id === s.unitId);
-                                        if (!u) return null;
-                                        const isSelected = formData.unitId === u.id;
-                                        return (
-                                            <button key={s.unitId} type="button" onClick={() => selectUnit(u.id, u.title)}
-                                                    className={cn('h-8 px-3 rounded-full text-[11px] font-bold border transition-colors flex items-center gap-1',
-                                                        isSelected ? 'bg-amber-500 border-amber-500 text-white' : 'border-outline-variant/50 text-on-surface-variant hover:border-amber-500/50')}>
-                                                {u.title}{s.containsQty ? ` (${s.containsQty} عددی)` : ''}
+                        {/* ✅ تصویر آگهی — فقط اگه کالا انتخاب شده */}
+                        {selectedProduct && (
+                            <section className="rounded-2xl bg-surface-container-low/60 border border-outline-variant/30 p-4 space-y-3 animate-in fade-in duration-300">
+                                <SectionTitle icon={Images} text="تصویر آگهی" />
+                                <div className="flex flex-wrap gap-2.5 items-start">
+                                    {images.map((slot, idx) => (
+                                        <div key={idx} className="relative w-20 h-20 rounded-xl overflow-hidden border border-outline-variant/40 flex-shrink-0">
+                                            {slot.previewUrl ? (
+                                                <img src={slot.previewUrl} alt="" className="w-full h-full object-cover" />
+                                            ) : slot.url ? (
+                                                <img src={slot.url} alt="" className="w-full h-full object-cover" />
+                                            ) : null}
+                                            <button type="button" onClick={() => handleRemoveImageSlot(idx)}
+                                                    className="absolute top-1 left-1 w-5 h-5 rounded-full bg-black/60 text-white grid place-items-center">
+                                                <X className="w-3 h-3" />
                                             </button>
-                                        );
-                                    })}
+                                            {(slot as any)._fromProduct && (
+                                                <span className="absolute bottom-0 inset-x-0 bg-primary/80 text-white text-[8px] text-center py-0.5">
+                                                    از مرکز کالا
+                                                </span>
+                                            )}
+                                        </div>
+                                    ))}
+                                    {images.length < MAX_IMAGES && (
+                                        <button type="button" onClick={() => imageInputRef.current?.click()}
+                                                className="w-20 h-20 rounded-xl border-2 border-dashed border-outline-variant/50
+                                                    flex flex-col items-center justify-center gap-1 text-on-surface-variant/60
+                                                    hover:border-amber-500/50 hover:text-amber-500 transition-colors">
+                                            <Camera className="w-5 h-5" />
+                                            <span className="text-[9px] font-bold">عکس</span>
+                                        </button>
+                                    )}
+                                    <input ref={imageInputRef} type="file" accept="image/*" className="hidden"
+                                           onChange={(e) => { handleImageSelected(e.target.files?.[0] ?? null); e.target.value = ''; }} />
+                                </div>
+                                <p className="text-[10px] text-on-surface-variant/60">
+                                    عکس از مرکز کالا آمد — می‌تونی عوض کنی یا عکس‌های بیشتری اضافه کنی. اولین عکس، عکس اصلی کارت می‌شود.
+                                </p>
+                            </section>
+                        )}
+
+                        {/* ✅ واحد فروش — فقط اگه کالا انتخاب شده */}
+                        {selectedProduct && (
+                            <section className="rounded-2xl bg-surface-container-low/60 border border-outline-variant/30 p-4 space-y-3 animate-in fade-in duration-300">
+                                <div className="flex items-center justify-between">
+                                    <SectionTitle icon={Package} text="واحد فروش" />
+                                    <button type="button" onClick={() => setUnitModalOpen(true)}
+                                            className="text-[10px] font-bold text-amber-600 dark:text-amber-400
+                                                flex items-center gap-1 hover:gap-1.5 transition-all">
+                                        <Plus className="w-3 h-3" /> واحدهای اختصاصی کاتالوگ
+                                    </button>
+                                </div>
+
+                                {(localUnitSettings.length > 0 || suggestedUnitIds.length > 0) && (
+                                    <div className="flex flex-wrap gap-1.5">
+                                        {localUnitSettings.map((s) => {
+                                            const u = allUnits.find((x: any) => x.id === s.unitId);
+                                            if (!u) return null;
+                                            const isSelected = formData.unitId === u.id;
+                                            return (
+                                                <button key={s.unitId} type="button" onClick={() => selectUnit(u.id, u.title)}
+                                                        className={cn('h-8 px-3 rounded-full text-[11px] font-bold border transition-colors flex items-center gap-1',
+                                                            isSelected ? 'bg-amber-500 border-amber-500 text-white' : 'border-outline-variant/50 text-on-surface-variant hover:border-amber-500/50')}>
+                                                    {u.title}{s.containsQty ? ` (${s.containsQty} عددی)` : ''}
+                                                </button>
+                                            );
+                                        })}
                                     {suggestedUnitIds.filter((uid) => !localUnitSettings.some((s) => s.unitId === uid)).map((uid) => {
                                         const u = allUnits.find((x: any) => x.id === uid);
                                         if (!u) return null;
@@ -1046,8 +1086,10 @@ export function AdForm({ adId, onSuccess }: { adId?: string; onSuccess?: () => v
                     ) : <div />}
                     {currentStep < TOTAL_STEPS ? (
                         <button type="button" onClick={nextStep}
+                                disabled={currentStep === 1 && !selectedProduct && !formData.productType.trim()}
                                 className="h-11 px-6 rounded-xl bg-amber-500 text-white text-sm font-bold flex items-center gap-2
-                                    hover:bg-amber-600 transition-all active:scale-95 shadow-md shadow-amber-200/50 dark:shadow-none">
+                                    hover:bg-amber-600 transition-all active:scale-95 shadow-md shadow-amber-200/50 dark:shadow-none
+                                    disabled:opacity-40 disabled:cursor-not-allowed disabled:active:scale-100">
                             بعدی <ArrowRight className="w-4 h-4" />
                         </button>
                     ) : (

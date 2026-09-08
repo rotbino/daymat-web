@@ -1,10 +1,10 @@
 // app/components/EntityPicker.tsx
 'use client';
 
-import React, { useState, useMemo, useEffect, useCallback } from 'react';
+import React, { useState, useEffect } from 'react';
 import { createPortal } from 'react-dom';
-import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import { Search, X, Plus, Check, Loader2, AlertCircle, ChevronDown, Tag } from 'lucide-react';
+import { useQuery, useMutation, useQueryClient, keepPreviousData } from '@tanstack/react-query';
+import { Search, X, Plus, Check, Loader2, AlertCircle, Tag } from 'lucide-react';
 import { cn } from '@/lib/utils';
 
 export interface EntityValue {
@@ -28,6 +28,15 @@ interface FetchResult {
     total?: number;
 }
 
+interface CreateFormProps {
+    title: string;
+    setTitle: (v: string) => void;
+    /** رندر فیلدهای اضافی فرم create (عکس، برند، ...) */
+    extraFields?: React.ReactNode;
+    /** ref برای ذخیره‌سازی داده‌های اضافی فرم create */
+    dataRef: React.MutableRefObject<{ [key: string]: any }>;
+}
+
 interface Props {
     value: EntityValue | null;
     onChange: (value: EntityValue | null) => void;
@@ -36,36 +45,30 @@ interface Props {
     required?: boolean;
     error?: string;
     icon?: React.ReactNode;
-    /** تابع fetch با pagination و search */
+    /** تابع fetch با pagination */
     fetchFn: (params: FetchParams) => Promise<FetchResult>;
-    /** تابع ایجاد آیتم جدید */
-    createFn: (title: string) => Promise<any>;
-    /** query key برای cache */
+    /** تابع ایجاد — data شامل title و فیلدهای اضافی */
+    createFn: (data: { title: string; [key: string]: any }) => Promise<any>;
+    /** query key */
     queryKey: string;
     /** رندر سفارشی هر آیتم */
     renderItem?: (item: any) => React.ReactNode;
     /** رندر سفارشی مقدار انتخاب‌شده */
     renderValue?: (value: EntityValue) => React.ReactNode;
+    /** رندر فیلدهای اضافی در فرم create (عکس، برند) */
+    renderCreateFields?: (props: CreateFormProps) => React.ReactNode;
     /** متن دکمه ایجاد */
     createLabel?: string;
-    /** حداقل حرف برای سرچ (پیش‌فرض ۲) */
+    /** حداقل حرف برای سرچ */
     minSearchChars?: number;
-    /** تعداد آیتم در هر صفحه (پیش‌فرض ۱۰) */
+    /** تعداد در هر صفحه */
     pageSize?: number;
-    /** آیا toggle «فقط آیتم‌های من» نشون داده بشه */
+    /** toggle «فقط آیتم‌های من» */
     showMineOnly?: boolean;
+    /** متن راهنمای toggle mine */
+    mineLabel?: string;
 }
 
-/**
- * EntityPicker — انتخابگر DropSelector-style با pagination
- *
- * ✅ pagination: ۱۰ آیتم در هر صفحه + دکمه «بیشتر»
- * ✅ جستجوی server-side با حداقل ۲ حرف
- * ✅ اگه چیزی پیدا نشد، دکمه «ایجاد جدید»
- * ✅ هشدار اگه تکراری باشه
- * ✅ toggle «فقط آیتم‌های من» (برای ProductReference)
- * ✅ badge «جدید» برای آیتم‌های isByUser
- */
 export default function EntityPicker({
     value,
     onChange,
@@ -79,10 +82,12 @@ export default function EntityPicker({
     queryKey,
     renderItem,
     renderValue,
-    createLabel = 'ایجاد به‌عنوان جدید',
+    renderCreateFields,
+    createLabel = 'افزودن به مرکز کالا',
     minSearchChars = 2,
     pageSize = 10,
     showMineOnly = false,
+    mineLabel = 'فقط موارد اضافه‌شده توسط من',
 }: Props) {
     const [isOpen, setIsOpen] = useState(false);
 
@@ -114,11 +119,6 @@ export default function EntityPicker({
                     {renderValue ? renderValue(value) : (
                         <>
                             <span className="flex-1 text-sm font-bold text-on-surface truncate">{value.title}</span>
-                            {value.isByUser && (
-                                <span className="text-[9px] font-bold px-1.5 py-0.5 rounded bg-amber-100 text-amber-700 dark:bg-amber-900/30 dark:text-amber-300 flex-shrink-0">
-                                    جدید
-                                </span>
-                            )}
                             <Check className="w-4 h-4 text-primary flex-shrink-0" />
                         </>
                     )}
@@ -151,10 +151,12 @@ export default function EntityPicker({
                     createFn={createFn}
                     queryKey={queryKey}
                     renderItem={renderItem}
+                    renderCreateFields={renderCreateFields}
                     createLabel={createLabel}
                     minSearchChars={minSearchChars}
                     pageSize={pageSize}
                     showMineOnly={showMineOnly}
+                    mineLabel={mineLabel}
                 />
             )}
         </div>
@@ -172,34 +174,26 @@ function EntityPickerModal({
     createFn,
     queryKey,
     renderItem,
+    renderCreateFields,
     createLabel,
     minSearchChars,
     pageSize,
     showMineOnly,
-}: {
-    value: EntityValue | null;
-    onChange: (v: EntityValue) => void;
-    onClose: () => void;
-    fetchFn: (params: FetchParams) => Promise<FetchResult>;
-    createFn: (title: string) => Promise<any>;
-    queryKey: string;
-    renderItem?: (item: any) => React.ReactNode;
-    createLabel: string;
-    minSearchChars: number;
-    pageSize: number;
-    showMineOnly: boolean;
-}) {
+    mineLabel,
+}: any) {
     const [search, setSearch] = useState('');
     const [debouncedSearch, setDebouncedSearch] = useState('');
     const [page, setPage] = useState(1);
     const [allItems, setAllItems] = useState<any[]>([]);
     const [mineOnly, setMineOnly] = useState(false);
-    const [creating, setCreating] = useState(false);
+    const [showCreateForm, setShowCreateForm] = useState(false);
+    const [createTitle, setCreateTitle] = useState('');
     const [createError, setCreateError] = useState<string | null>(null);
+    const createDataRef = React.useRef<{ [key: string]: any }>({});
     const containerRef = React.useRef<HTMLDivElement>(null);
     const queryClient = useQueryClient();
 
-    // debounce
+    // debounce search
     useEffect(() => {
         const timer = setTimeout(() => {
             setDebouncedSearch(search.trim());
@@ -225,6 +219,7 @@ function EntityPickerModal({
             mine: mineOnly,
         }),
         staleTime: 30_000,
+        placeholderData: keepPreviousData,  // ✅ حل مشکل flash
     });
 
     // accumulate items
@@ -233,7 +228,13 @@ function EntityPickerModal({
             if (page === 1) {
                 setAllItems(data.items);
             } else {
-                setAllItems(prev => [...prev, ...data.items]);
+                // ✅ فقط اگه آیتم‌ها جدید هستن اضافه کن (جلوگیری از duplicate)
+                setAllItems(prev => {
+                    const newItems = data.items.filter(
+                        (ni: any) => !prev.some((pi: any) => pi.id === ni.id)
+                    );
+                    return [...prev, ...newItems];
+                });
             }
         }
     }, [data, page]);
@@ -250,6 +251,7 @@ function EntityPickerModal({
                 title: created.title,
                 isByUser: created.isByUser ?? true,
                 isNew: created.isNew ?? true,
+                ...created,
             });
         },
         onError: (err: any) => {
@@ -258,17 +260,24 @@ function EntityPickerModal({
     });
 
     const trimmedSearch = debouncedSearch;
-    const canSearch = trimmedSearch.length >= minSearchChars;
-    const exactMatch = allItems.some((i: any) => i.title === trimmedSearch);
-    const canCreate = canSearch && trimmedSearch.length >= 2 && !exactMatch && !creating;
+    const canSearch = trimmedSearch.length >= minSearchChars || trimmedSearch.length === 0;
+    const exactMatch = allItems.some((i: any) =>
+        i.title?.toLowerCase() === trimmedSearch.toLowerCase()
+    );
+    const canCreate = trimmedSearch.length >= 2 && !exactMatch && !showCreateForm;
 
-    const handleCreate = async () => {
+    const handleCreate = async (e: React.FormEvent) => {
+        e.preventDefault();
+        if (createTitle.trim().length < 2) return;
         setCreateError(null);
-        setCreating(true);
         try {
-            await createMut.mutateAsync(trimmedSearch);
-        } finally {
-            setCreating(false);
+            // ✅ داده‌های اضافی از ref + title
+            await createMut.mutateAsync({
+                title: createTitle.trim(),
+                ...createDataRef.current,
+            });
+        } catch (err) {
+            // error handled in onError
         }
     };
 
@@ -288,6 +297,13 @@ function EntityPickerModal({
         };
     }, [onClose]);
 
+    // وقتی showCreateForm=true می‌شه، title رو از search پر کن
+    useEffect(() => {
+        if (showCreateForm && !createTitle) {
+            setCreateTitle(trimmedSearch);
+        }
+    }, [showCreateForm]);
+
     return createPortal(
         <div
             className="fixed inset-0 z-[110] flex items-end sm:items-center sm:justify-center bg-black/50 animate-in fade-in duration-200 sm:p-4"
@@ -302,132 +318,167 @@ function EntityPickerModal({
             >
                 {/* هدر */}
                 <div className="flex-shrink-0 flex items-center justify-between px-4 py-3 border-b border-outline-variant/20">
-                    <h3 className="text-sm font-extrabold text-on-surface">انتخاب</h3>
+                    <h3 className="text-sm font-extrabold text-on-surface">
+                        {showCreateForm ? 'افزودن به مرکز کالا' : 'انتخاب از مرکز کالا'}
+                    </h3>
                     <button onClick={onClose} className="w-8 h-8 flex items-center justify-center rounded-full text-on-surface-variant hover:bg-surface-container-high transition-colors">
                         <X className="w-5 h-5" />
                     </button>
                 </div>
 
-                {/* جستجو */}
-                <div className="flex-shrink-0 p-3 border-b border-outline-variant/20 space-y-2">
-                    <div className="relative">
-                        <Search className="absolute right-3 top-1/2 -translate-y-1/2 w-4 h-4 text-on-surface-variant/50" />
-                        <input
-                            value={search}
-                            onChange={(e) => setSearch(e.target.value)}
-                            placeholder={`جستجو... (حداقل ${minSearchChars} حرف)`}
-                            className="w-full h-10 pr-9 pl-3 rounded-xl bg-surface-container-lowest border border-outline-variant/40 text-sm outline-none focus:ring-2 focus:ring-primary/30 focus:border-primary transition-all"
-                        />
-                    </div>
-                    {showMineOnly && (
-                        <label className="flex items-center gap-2 cursor-pointer">
-                            <input
-                                type="checkbox"
-                                checked={mineOnly}
-                                onChange={(e) => setMineOnly(e.target.checked)}
-                                className="w-4 h-4 rounded accent-primary"
-                            />
-                            <span className="text-[11px] font-bold text-on-surface-variant">فقط کالاهای_added توسط من</span>
-                        </label>
-                    )}
-                </div>
-
-                {/* لیست */}
-                <div className="flex-1 min-h-0 overflow-y-auto scrollbar-slim pb-[calc(1rem+env(safe-area-inset-bottom))]">
-                    {isFetching && page === 1 ? (
-                        <div className="p-6 text-center"><Loader2 className="w-5 h-5 animate-spin text-primary mx-auto" /></div>
-                    ) : allItems.length === 0 ? (
-                        <div className="p-6 text-center">
-                            <Tag className="w-10 h-10 text-on-surface-variant/20 mx-auto mb-2" />
-                            <p className="text-xs text-on-surface-variant">
-                                {!canSearch && search.length > 0
-                                    ? `حداقل ${minSearchChars} حرف تایپ کنید`
-                                    : canSearch
-                                        ? 'موردی پیدا نشد'
-                                        : 'برای جستجو تایپ کنید'}
-                            </p>
-                        </div>
-                    ) : (
-                        <>
-                            {allItems.map((item: any) => (
-                                <button
-                                    key={item.id}
-                                    onClick={() => onChange({
-                                        id: item.id,
-                                        title: item.title,
-                                        isByUser: item.isByUser,
-                                        isNew: item.isNew,
-                                        ...item,
-                                    })}
-                                    className={cn(
-                                        'w-full flex items-center gap-3 px-4 py-2.5 text-right transition-colors',
-                                        value?.id === item.id ? 'bg-primary/10' : 'hover:bg-surface-container-low',
-                                    )}
-                                >
-                                    {renderItem ? renderItem(item) : (
-                                        <>
-                                            <span className="flex-1 text-sm font-medium text-on-surface truncate">
-                                                {item.title}
-                                            </span>
-                                            {item.isByUser && (
-                                                <span className="text-[9px] font-bold px-1.5 py-0.5 rounded bg-amber-100 text-amber-700 dark:bg-amber-900/30 dark:text-amber-300 flex-shrink-0">
-                                                    جدید
-                                                </span>
-                                            )}
-                                            {value?.id === item.id && <Check className="w-4 h-4 text-primary flex-shrink-0" />}
-                                        </>
-                                    )}
-                                </button>
-                            ))}
-                            {hasMore && (
-                                <button
-                                    onClick={() => setPage(p => p + 1)}
-                                    disabled={isFetching}
-                                    className="w-full py-3 text-center text-xs font-bold text-primary hover:bg-primary/5 transition-colors disabled:opacity-50"
-                                >
-                                    {isFetching ? <Loader2 className="w-4 h-4 animate-spin mx-auto" /> : 'نمایش بیشتر...'}
-                                </button>
+                {showCreateForm ? (
+                    // ═══ فرم ایجاد کالای جدید ═══
+                    <form onSubmit={handleCreate} className="flex-1 flex flex-col overflow-hidden">
+                        <div className="flex-1 min-h-0 overflow-y-auto scrollbar-slim p-4 space-y-3">
+                            <div className="space-y-1.5">
+                                <label className="text-xs font-bold text-on-surface block">عنوان کالا *</label>
+                                <input
+                                    value={createTitle}
+                                    onChange={(e) => setCreateTitle(e.target.value)}
+                                    placeholder="مثلاً: کنسرو ماهی مکنزی ۲۰۰ گرمی"
+                                    autoFocus
+                                    className="w-full h-11 px-3 rounded-xl bg-surface-container-lowest border border-outline-variant/40 text-sm outline-none focus:ring-2 focus:ring-primary/30 focus:border-primary transition-all"
+                                />
+                            </div>
+                            {renderCreateFields && renderCreateFields({
+                                title: createTitle,
+                                setTitle: setCreateTitle,
+                                dataRef: createDataRef,
+                            })}
+                            {createError && (
+                                <p className="text-error text-[11px]">{createError}</p>
                             )}
-                        </>
-                    )}
-                </div>
-
-                {/* هشدار تکراری */}
-                {exactMatch && trimmedSearch.length >= 2 && (
-                    <div className="flex-shrink-0 p-3 border-t border-amber-200/40 bg-amber-50/50 dark:bg-amber-900/10">
-                        <div className="flex items-center gap-2 text-amber-800 dark:text-amber-200">
-                            <AlertCircle className="w-4 h-4 flex-shrink-0" />
-                            <p className="text-xs">
-                                «{trimmedSearch}» از قبل وجود دارد. از لیست بالا انتخاب کنید.
-                            </p>
                         </div>
-                    </div>
-                )}
+                        <div className="flex-shrink-0 p-3 border-t border-outline-variant/20 flex gap-2">
+                            <button
+                                type="button"
+                                onClick={() => setShowCreateForm(false)}
+                                className="flex-1 h-10 rounded-xl border border-outline-variant/60 text-xs font-bold text-on-surface-variant hover:bg-surface-container-high transition-colors"
+                            >
+                                انصراف
+                            </button>
+                            <button
+                                type="submit"
+                                disabled={createTitle.trim().length < 2 || createMut.isPending}
+                                className="flex-1 h-10 rounded-xl bg-primary text-on-primary text-xs font-bold hover:bg-primary/90 active:scale-95 transition-all disabled:opacity-50"
+                            >
+                                {createMut.isPending ? <Loader2 className="w-4 h-4 animate-spin mx-auto" /> : 'افزودن و انتخاب'}
+                            </button>
+                        </div>
+                    </form>
+                ) : (
+                    // ═══ حالت انتخاب ═══
+                    <>
+                        {/* جستجو */}
+                        <div className="flex-shrink-0 p-3 border-b border-outline-variant/20 space-y-2">
+                            <div className="relative">
+                                <Search className="absolute right-3 top-1/2 -translate-y-1/2 w-4 h-4 text-on-surface-variant/50" />
+                                <input
+                                    value={search}
+                                    onChange={(e) => setSearch(e.target.value)}
+                                    placeholder={`جستجو... (حداقل ${minSearchChars} حرف)`}
+                                    className="w-full h-10 pr-9 pl-3 rounded-xl bg-surface-container-lowest border border-outline-variant/40 text-sm outline-none focus:ring-2 focus:ring-primary/30 focus:border-primary transition-all"
+                                />
+                            </div>
+                            {showMineOnly && (
+                                <label className="flex items-center gap-2 cursor-pointer">
+                                    <input
+                                        type="checkbox"
+                                        checked={mineOnly}
+                                        onChange={(e) => setMineOnly(e.target.checked)}
+                                        className="w-4 h-4 rounded accent-primary"
+                                    />
+                                    <span className="text-[11px] font-bold text-on-surface-variant">{mineLabel}</span>
+                                </label>
+                            )}
+                        </div>
 
-                {/* دکمه ایجاد جدید */}
-                {canCreate && (
-                    <div className="flex-shrink-0 p-3 border-t border-outline-variant/20 bg-amber-50/50 dark:bg-amber-900/10">
-                        <button
-                            onClick={handleCreate}
-                            disabled={createMut.isPending}
-                            className="w-full flex items-center gap-2.5 p-2.5 rounded-xl border border-dashed border-amber-400/60 hover:border-amber-500 hover:bg-amber-50 dark:hover:bg-amber-900/20 transition-all text-right disabled:opacity-50"
-                        >
-                            <span className="w-8 h-8 rounded-lg bg-amber-500/15 flex items-center justify-center flex-shrink-0">
-                                {createMut.isPending ? <Loader2 className="w-4 h-4 animate-spin text-amber-600" /> : <Plus className="w-4 h-4 text-amber-600" />}
-                            </span>
-                            <div className="flex-1 min-w-0">
-                                <p className="text-xs font-bold text-amber-800 dark:text-amber-200">
-                                    {createLabel}: «{trimmedSearch}»
-                                </p>
-                                <p className="text-[10px] text-amber-600/70 dark:text-amber-400/70 mt-0.5">
-                                    این مورد تازه ثبت می‌شه و پس از تأیید ادمین فعال می‌شه
+                        {/* لیست */}
+                        <div className="flex-1 min-h-0 overflow-y-auto scrollbar-slim pb-[calc(1rem+env(safe-area-inset-bottom))]">
+                            {isFetching && allItems.length === 0 ? (
+                                <div className="p-6 text-center"><Loader2 className="w-5 h-5 animate-spin text-primary mx-auto" /></div>
+                            ) : allItems.length === 0 ? (
+                                <div className="p-6 text-center">
+                                    <Tag className="w-10 h-10 text-on-surface-variant/20 mx-auto mb-2" />
+                                    <p className="text-xs text-on-surface-variant">
+                                        {!canSearch && search.length > 0
+                                            ? `حداقل ${minSearchChars} حرف تایپ کنید`
+                                            : canSearch && trimmedSearch
+                                                ? 'موردی پیدا نشد'
+                                                : 'برای جستجو تایپ کنید'}
+                                    </p>
+                                </div>
+                            ) : (
+                                <>
+                                    {allItems.map((item: any) => (
+                                        <button
+                                            key={item.id}
+                                            onClick={() => onChange({
+                                                id: item.id,
+                                                title: item.title,
+                                                isByUser: item.isByUser,
+                                                isNew: item.isNew,
+                                                ...item,
+                                            })}
+                                            className={cn(
+                                                'w-full flex items-center gap-3 px-4 py-2.5 text-right transition-colors',
+                                                value?.id === item.id ? 'bg-primary/10' : 'hover:bg-surface-container-low',
+                                            )}
+                                        >
+                                            {renderItem ? renderItem(item) : (
+                                                <>
+                                                    <span className="flex-1 text-sm font-medium text-on-surface truncate">
+                                                        {item.title}
+                                                    </span>
+                                                    {value?.id === item.id && <Check className="w-4 h-4 text-primary flex-shrink-0" />}
+                                                </>
+                                            )}
+                                        </button>
+                                    ))}
+                                    {hasMore && (
+                                        <button
+                                            onClick={() => setPage((p: number) => p + 1)}
+                                            disabled={isFetching}
+                                            className="w-full py-3 text-center text-xs font-bold text-primary hover:bg-primary/5 transition-colors disabled:opacity-50"
+                                        >
+                                            {isFetching ? <Loader2 className="w-4 h-4 animate-spin mx-auto" /> : 'نمایش بیشتر...'}
+                                        </button>
+                                    )}
+                                </>
+                            )}
+                        </div>
+
+                        {/* هشدار تکراری */}
+                        {exactMatch && trimmedSearch.length >= 2 && (
+                            <div className="flex-shrink-0 p-3 border-t border-amber-200/40 bg-amber-50/50 dark:bg-amber-900/10">
+                                <div className="flex items-center gap-2 text-amber-800 dark:text-amber-200">
+                                    <AlertCircle className="w-4 h-4 flex-shrink-0" />
+                                    <p className="text-xs">
+                                        «{trimmedSearch}» از قبل در مرکز کالا وجود دارد. از لیست بالا انتخاب کنید.
+                                    </p>
+                                </div>
+                            </div>
+                        )}
+
+                        {/* دکمه ایجاد کالای جدید — وسط، رنگ برند */}
+                        {canCreate && (
+                            <div className="flex-shrink-0 p-3 border-t border-outline-variant/20">
+                                <button
+                                    type="button"
+                                    onClick={() => setShowCreateForm(true)}
+                                    className="w-full flex items-center justify-center gap-2 p-3 rounded-xl bg-primary text-on-primary hover:bg-primary/90 active:scale-95 transition-all shadow-sm"
+                                >
+                                    <Plus className="w-4 h-4" />
+                                    <span className="text-xs font-bold">
+                                        {createLabel}
+                                    </span>
+                                </button>
+                                <p className="text-[10px] text-center text-on-surface-variant/60 mt-1.5">
+                                    این کالا در مرکز وجود ندارد؟ یک بار آن را اضافه کنید تا همه جا قابل استفاده باشد
                                 </p>
                             </div>
-                        </button>
-                        {createError && (
-                            <p className="text-[10px] text-error mt-2 px-2">{createError}</p>
                         )}
-                    </div>
+                    </>
                 )}
             </div>
         </div>,
