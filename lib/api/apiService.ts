@@ -149,6 +149,23 @@ export const apiService = {
     },
 
     // ============================================================
+    // LOCATION (موقعیت)
+    // ============================================================
+    location: {
+        searchCities: async (q: string): Promise<{ items: Array<{
+            id: string;
+            title: string;
+            cityCode: string;
+            provinceCode: string;
+            provinceTitle: string;
+            provinceId: string;
+        }> }> => {
+            if (!q || q.trim().length < 2) return { items: [] };
+            return apiRequest(`/location/cities/search?q=${encodeURIComponent(q.trim())}`);
+        },
+    },
+
+    // ============================================================
     // ARM
     // ============================================================
     arm: {

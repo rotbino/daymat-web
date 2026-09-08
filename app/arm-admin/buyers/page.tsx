@@ -14,6 +14,8 @@ import {
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { IranLocationSelector } from '@/app/components/IranLocationSelector';
+import IndustryAutocomplete from '@/app/components/IndustryAutocomplete';
+import CityAutocomplete from '@/app/components/CityAutocomplete';
 
 const fmt = (n: number | undefined) => n?.toLocaleString('fa-IR') ?? '۰';
 
@@ -231,14 +233,13 @@ function BuyersContent({ slug, armName }: { slug: string; armName: string }) {
 function AddBuyerModal({ slug, onClose }: { slug: string; onClose: () => void }) {
     const [qInput, setQInput] = useState('');
     const [onlyMine, setOnlyMine] = useState(false);
-    const [industryFilter, setIndustryFilter] = useState('');
-    const [provinceCode, setProvinceCode] = useState('');
-    const [cityCode, setCityCode] = useState('');
+    const [industryFilter, setIndustryFilter] = useState<{ id: string | null; title: string }>({ id: null, title: '' });
+    const [cityFilter, setCityFilter] = useState<{ id: string | null; title: string; cityCode?: string; provinceCode?: string }>({ id: null, title: '' });
 
     const candidatesQ = useArmBuyerCandidates(slug, qInput.trim(), onlyMine, true, {
-        industry: industryFilter || undefined,
-        cityCode: cityCode || undefined,
-        provinceCode: provinceCode || undefined,
+        industry: industryFilter.title || undefined,
+        cityCode: cityFilter.cityCode || undefined,
+        provinceCode: cityFilter.provinceCode || undefined,
     });
     const addMut = useAddBuyer(slug);
 
@@ -251,7 +252,7 @@ function AddBuyerModal({ slug, onClose }: { slug: string; onClose: () => void })
         >
             <div
                 onClick={(e) => e.stopPropagation()}
-                className="bg-surface w-full sm:max-w-lg rounded-t-3xl sm:rounded-2xl shadow-2xl
+                className="bg-surface w-full sm:max-w-2xl rounded-t-3xl sm:rounded-2xl shadow-2xl
                     max-h-[90dvh] flex flex-col overflow-hidden
                     animate-in slide-in-from-bottom-4 sm:zoom-in-95 duration-300"
             >
@@ -275,7 +276,7 @@ function AddBuyerModal({ slug, onClose }: { slug: string; onClose: () => void })
                         <input
                             value={qInput}
                             onChange={(e) => setQInput(e.target.value)}
-                            placeholder="جستجوی کسب‌وکار، صنف، شهر…"
+                            placeholder="جستجوی نام، شماره، صاحب کسب‌وکار…"
                             className="w-full h-11 pr-9 pl-8 rounded-xl bg-surface-container-lowest border border-outline-variant/40
                                 dark:border-gray-700 text-sm outline-none focus:ring-2 focus:ring-primary/30 focus:border-primary transition-all"
                         />
@@ -285,26 +286,31 @@ function AddBuyerModal({ slug, onClose }: { slug: string; onClose: () => void })
                             </button>
                         )}
                     </div>
-                    <div className="flex gap-2">
-                        <input
-                            value={industryFilter}
-                            onChange={(e) => setIndustryFilter(e.target.value)}
-                            placeholder="صنف..."
-                            className="flex-1 h-9 px-3 rounded-lg bg-surface-container-lowest border border-outline-variant/30 text-xs outline-none focus:ring-1 focus:ring-primary/20"
-                        />
-                        <IranLocationSelector
-                            provinceCode={provinceCode}
-                            cityCode={cityCode}
-                            onProvinceChange={(code) => setProvinceCode(code)}
-                            onCityChange={(code) => setCityCode(code)}
-                            compact
-                        />
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
+                        <div>
+                            <label className="text-[10px] font-bold text-on-surface-variant block mb-1">صنف</label>
+                            <IndustryAutocomplete
+                                value={industryFilter}
+                                onChange={setIndustryFilter}
+                                placeholder="همه اصناف..."
+                                className="h-9"
+                            />
+                        </div>
+                        <div>
+                            <label className="text-[10px] font-bold text-on-surface-variant block mb-1">شهر</label>
+                            <CityAutocomplete
+                                value={cityFilter}
+                                onChange={(v) => setCityFilter({ ...v, cityCode: (v as any).cityCode, provinceCode: (v as any).provinceCode })}
+                                placeholder="همه شهرها..."
+                                className="h-9"
+                            />
+                        </div>
                     </div>
                 </div>
 
                 {/* لیست کاندیداها */}
                 <div className="flex-1 min-h-0 overflow-y-auto scrollbar-slim px-4 py-3">
-                    {candidatesQ.isFetching && qInput ? (
+                    {candidatesQ.isFetching ? (
                         <div className="space-y-2">
                             {[0, 1, 2].map(i => <div key={i} className="h-16 rounded-xl bg-surface-container-high/50 animate-pulse" />)}
                         </div>
@@ -312,7 +318,7 @@ function AddBuyerModal({ slug, onClose }: { slug: string; onClose: () => void })
                         <div className="text-center py-10">
                             <Search className="w-10 h-10 text-on-surface-variant/20 mx-auto mb-2" />
                             <p className="text-xs text-on-surface-variant">
-                                {qInput || industryFilter || cityCode ? 'کسب‌وکاری پیدا نشد' : 'برای جستجو تایپ کنید'}
+                                {qInput || industryFilter.title || cityFilter.title ? 'کسب‌وکاری پیدا نشد' : 'برای جستجو تایپ کنید'}
                             </p>
                         </div>
                     ) : (
