@@ -15,17 +15,13 @@ interface Props {
 /**
  * IndustryAutocomplete — کامپوننت جستجوی صنف
  *
- * از Autocomplete generic استفاده می‌کنه.
- *
- * نکته: کاملاً خاموش — هیچ پیام «پیدا نشد» یا «از قبل وجود داره» نمی‌ده.
- * اگه کاربر چیزی تایپ کنه که match باشه، خودکار انتخاب می‌شه.
- * اگه نباشه، بک‌اند خودش می‌سازه.
- *
- * ✅ Defensive parsing: بک‌اند ممکنه هر کدوم از این فرمت‌ها رو برگردونه:
- *   - { items: [...] }         ← فرمت جدید (پس از fix)
- *   - { data: [...], total }   ← فرمت قدیمی (قبل از fix)
- *   - [...]                    ← آرایه مستقیم
- *   ما همه‌ی این موارد رو هندل می‌کنیم.
+ * ✅ Silent operation — هیچ پیام «پیدا نشد» نمی‌ده
+ * ✅ Auto-create — اگه کاربر چیزی تایپ کنه که نباشه، بک‌اند خودش می‌سازه
+ * ✅ Auto-select — اگه متن دقیقاً match باشه، خودکار انتخاب می‌شه
+ * ✅ Defensive parsing — هندل همه‌ی فرمت‌های ممکن بک‌اند:
+ *   - { items: [...] }
+ *   - { data: [...], total }
+ *   - [...]
  */
 export default function IndustryAutocomplete({
     value,
@@ -57,6 +53,8 @@ export default function IndustryAutocomplete({
             placeholder={placeholder}
             className={className}
             minChars={2}
+            allowCreate={true}
+            createLabel="صنف"
         />
     );
 }

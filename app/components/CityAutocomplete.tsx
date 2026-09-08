@@ -27,10 +27,8 @@ const cityCache = new Map<string, CityValue>();
  * کاربر فقط شهر رو سرچ می‌کنه — استان خودکار پیدا می‌شه.
  * نمایش در dropdown: «استان > شهر»
  *
- * ✅ Defensive parsing: هندل همه‌ی فرمت‌های ممکن بک‌اند
- *   - { items: [...] }
- *   - { data: [...], total }
- *   - [...]
+ * ✅ allowCreate={false} — شهر جدید توسط کاربر ساخته نمی‌شه (فقط از دیتابیس)
+ * ✅ Defensive parsing — هندل همه‌ی فرمت‌های ممکن بک‌اند
  */
 export default function CityAutocomplete({
     value,
@@ -74,7 +72,7 @@ export default function CityAutocomplete({
                     return {
                         id: item.id,
                         title: item.title,
-                        // ✅ نمایش «استان > شهر» در dropdown
+                        // ✅ برای نمایش «استان > شهر» در dropdown
                         provinceTitle: item.provinceTitle,
                     } as AutocompleteItem;
                 });
@@ -83,16 +81,39 @@ export default function CityAutocomplete({
             placeholder={placeholder}
             className={className}
             minChars={2}
-            renderOption={(item) => (
-                <span className="text-xs text-on-surface truncate">
+            allowCreate={false}
+            renderOption={(item, query) => (
+                <span className="text-xs text-on-surface truncate flex items-center gap-1.5">
                     {item.provinceTitle && (
-                        <span className="text-on-surface-variant/60">
-                            {item.provinceTitle} <span className="text-on-surface-variant/30">›</span>{' '}
+                        <span className="text-on-surface-variant/50 text-[10px] flex items-center gap-1">
+                            {item.provinceTitle}
+                            <span className="text-on-surface-variant/20">›</span>
                         </span>
                     )}
-                    <span className="font-medium">{item.title}</span>
+                    <span className="font-medium">
+                        {/* ✅ استفاده از مکانیزم هایلایت داخلی — اما چون renderOption داریم، خودمون هایلایت می‌کنیم */}
+                        {highlightText(item.title, query)}
+                    </span>
                 </span>
             )}
         />
+    );
+}
+
+// ✅ هایلایت متن matched
+function highlightText(text: string, query: string): React.ReactNode {
+    if (!query) return text;
+    const lowerText = text.toLowerCase();
+    const lowerQuery = query.toLowerCase();
+    const idx = lowerText.indexOf(lowerQuery);
+    if (idx === -1) return text;
+    return (
+        <>
+            {text.slice(0, idx)}
+            <mark className="bg-primary/20 text-primary px-0.5 rounded-sm font-bold">
+                {text.slice(idx, idx + query.length)}
+            </mark>
+            {text.slice(idx + query.length)}
+        </>
     );
 }
