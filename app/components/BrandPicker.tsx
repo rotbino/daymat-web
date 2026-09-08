@@ -15,32 +15,14 @@ export interface BrandValue extends EntityValue {
 interface Props {
     value: BrandValue | null;
     onChange: (brand: BrandValue | null) => void;
-    /** دسته برند برای فیلتر (مثلاً 'food') */
     category?: string;
     placeholder?: string;
     label?: string;
     required?: boolean;
     error?: string;
-    /** اگه true باشه، toggle «بدون برند» نشون داده می‌شه (پیش‌فرض true) */
     allowNoBrand?: boolean;
 }
 
-/**
- * BrandPicker — انتخابگر برند با DropSelector-style + toggle «بدون برند»
- *
- * ┌─────────────────────────────────────┐
- * │ ☑ این کالا برند دارد               │  ← toggle
- * └─────────────────────────────────────┘
- *       ↓ اگه toggle روشن باشه
- * ┌─────────────────────────────────────┐
- * │ [🏷️ انتخاب برند...]            ▼  │  ← EntityPicker
- * └─────────────────────────────────────┘
- *
- * ✅ کاربر اول مشخص می‌کنه که کالا برند داره یا نه
- * ✅ اگه برند داره، EntityPicker باز می‌شه
- * ✅ اگه برند جدید پیدا نشد، دکمه «ایجاد برند جدید» ظاهر می‌شه
- * ✅ هشدار اگه تکراری باشه
- */
 export default function BrandPicker({
     value,
     onChange,
@@ -56,13 +38,12 @@ export default function BrandPicker({
     const toggleHasBrand = (enabled: boolean) => {
         setHasBrand(enabled);
         if (!enabled) {
-            onChange(null);  // ✅ اگه بدون برند شد، value رو پاک کن
+            onChange(null);
         }
     };
 
     return (
         <div className="space-y-2">
-            {/* toggle: برند دارد / بدون برند */}
             {allowNoBrand && (
                 <div className="flex items-center gap-2">
                     <button
@@ -92,7 +73,6 @@ export default function BrandPicker({
                 </div>
             )}
 
-            {/* انتخابگر برند — فقط اگه hasBrand روشن باشه */}
             {hasBrand && (
                 <EntityPicker
                     value={value}
@@ -102,10 +82,15 @@ export default function BrandPicker({
                     required={required || allowNoBrand}
                     error={error}
                     icon={<Tag className="w-3.5 h-3.5 text-on-surface-variant" />}
-                    listFn={() => apiService.brand.list(category, false)}
+                    fetchFn={async (params) => {
+                        const res = await apiService.brand.search(params.q, category, params.page, params.limit);
+                        return { items: res.items, hasMore: res.hasMore };
+                    }}
                     createFn={(title) => apiService.brand.create({ title, category })}
-                    queryKey={`brands-list-picker-${category || 'all'}`}
+                    queryKey={`brands-picker-${category || 'all'}`}
                     createLabel="ایجاد برند جدید"
+                    minSearchChars={2}
+                    pageSize={10}
                     renderValue={(v) => (
                         <>
                             {(v as BrandValue).logoUrl ? (

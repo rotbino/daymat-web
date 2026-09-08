@@ -147,12 +147,20 @@ export const apiService = {
             const res: any = await apiRequest(`/industries/autocomplete?q=${encodeURIComponent(q.trim())}`);
             return { items: res?.items || res?.data || [] };
         },
-        // ✅ لیست همه‌ی صنف‌ها — برای DropSelector (client-side search)
+        // ✅ search با pagination
+        search: async (q?: string, limit?: number, offset?: number): Promise<{ items: any[]; total?: number }> => {
+            const params = new URLSearchParams();
+            if (q && q.trim().length >= 2) params.set('q', q.trim());
+            if (limit) params.set('limit', String(limit));
+            if (offset) params.set('offset', String(offset));
+            const qs = params.toString();
+            const res: any = await apiRequest(`/admin/industries/search${qs ? `?${qs}` : ''}`);
+            return { items: res?.data || res?.items || [], total: res?.total };
+        },
         list: async (confirmedOnly = false): Promise<{ items: Array<{ id: string; title: string; isByUser?: boolean }> }> => {
             const res: any = await apiRequest(`/industries/list${confirmedOnly ? '?confirmed=true' : ''}`);
             return { items: res?.items || res?.data || [] };
         },
-        // ✅ ایجاد صنف توسط کاربر — برای DropSelector-style
         createByUser: async (title: string): Promise<{ id: string; title: string; isByUser: boolean; _existed?: boolean }> => {
             return apiRequest('/industries/create-by-user', { method: 'POST', data: { title } });
         },
@@ -192,29 +200,14 @@ export const apiService = {
     // BRAND (برند)
     // ============================================================
     brand: {
-        search: async (q: string, category?: string): Promise<{ items: Array<{
-            id: string;
-            title: string;
-            category?: string;
-            logoUrl?: string;
-            usageCount?: number;
-            isByUser?: boolean;
-        }> }> => {
-            if (!q || q.trim().length < 1) return { items: [] };
-            const params = new URLSearchParams({ q: q.trim() });
-            if (category) params.set('category', category);
-            const res: any = await apiRequest(`/brands/search?${params.toString()}`);
-            return { items: res?.items || [] };
-        },
-        list: async (category?: string, confirmedOnly = false): Promise<{ items: Array<{
-            id: string; title: string; category?: string; logoUrl?: string; isByUser?: boolean;
-        }> }> => {
+        search: async (q?: string, category?: string, page = 1, limit = 10): Promise<{ items: any[]; total?: number; hasMore?: boolean }> => {
             const params = new URLSearchParams();
+            if (q && q.trim().length >= 2) params.set('q', q.trim());
             if (category) params.set('category', category);
-            if (confirmedOnly) params.set('confirmed', 'true');
-            const qs = params.toString();
-            const res: any = await apiRequest(`/brands/list${qs ? `?${qs}` : ''}`);
-            return { items: res?.items || [] };
+            params.set('page', String(page));
+            params.set('limit', String(limit));
+            const res: any = await apiRequest(`/brands/search?${params.toString()}`);
+            return { items: res?.items || [], total: res?.total, hasMore: res?.hasMore };
         },
         create: async (data: {
             title: string;
@@ -230,34 +223,15 @@ export const apiService = {
     // PRODUCT REFERENCE (کالای مرجع)
     // ============================================================
     product: {
-        search: async (q: string, category?: string): Promise<{ items: Array<{
-            id: string;
-            title: string;
-            brandId?: string;
-            brand?: { id: string; title: string; logoUrl?: string };
-            category?: string;
-            imageUrl?: string;
-            thumbnailUrl?: string;
-            usageCount?: number;
-            isByUser?: boolean;
-        }> }> => {
-            if (!q || q.trim().length < 2) return { items: [] };
-            const params = new URLSearchParams({ q: q.trim() });
-            if (category) params.set('category', category);
-            const res: any = await apiRequest(`/products/search?${params.toString()}`);
-            return { items: res?.items || [] };
-        },
-        list: async (category?: string, confirmedOnly = false): Promise<{ items: Array<{
-            id: string; title: string; brandId?: string;
-            brand?: { id: string; title: string };
-            category?: string; imageUrl?: string; thumbnailUrl?: string; isByUser?: boolean;
-        }> }> => {
+        search: async (q?: string, category?: string, page = 1, limit = 10, mine = false): Promise<{ items: any[]; total?: number; hasMore?: boolean }> => {
             const params = new URLSearchParams();
+            if (q && q.trim().length >= 2) params.set('q', q.trim());
             if (category) params.set('category', category);
-            if (confirmedOnly) params.set('confirmed', 'true');
-            const qs = params.toString();
-            const res: any = await apiRequest(`/products/list${qs ? `?${qs}` : ''}`);
-            return { items: res?.items || [] };
+            params.set('page', String(page));
+            params.set('limit', String(limit));
+            if (mine) params.set('mine', 'true');
+            const res: any = await apiRequest(`/products/search?${params.toString()}`);
+            return { items: res?.items || [], total: res?.total, hasMore: res?.hasMore };
         },
         create: async (data: {
             title: string;
@@ -267,6 +241,14 @@ export const apiService = {
             imageUrl?: string;
         }): Promise<any> => {
             return apiRequest('/products', { method: 'POST', data });
+        },
+        update: async (id: string, data: {
+            title?: string;
+            brandId?: string;
+            imageUrl?: string;
+            thumbnailUrl?: string;
+        }): Promise<any> => {
+            return apiRequest(`/products/${id}`, { method: 'PUT', data });
         },
     },
 

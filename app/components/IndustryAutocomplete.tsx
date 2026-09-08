@@ -17,19 +17,6 @@ interface Props {
     allowCreate?: boolean;
 }
 
-/**
- * IndustryAutocomplete — انتخابگر صنف با DropSelector-style
- *
- * ✅ بر اساس EntityPicker (قابل استفاده مجدد)
- * ✅ جستجوی client-side (لیست یکجا fetch و cache می‌شه)
- * ✅ اگه چیزی پیدا نشد، دکمه «ایجاد صنف جدید» ظاهر می‌شه
- * ✅ هشدار اگه تکراری باشه
- * ✅ isByUser badge برای صنف‌های کاربر-ساخته
- *
- * allowCreate:
- *   - true (پیش‌فرض): کاربر می‌تونه صنف جدید بسازه
- *   - false: فقط انتخاب از لیست (برای فیلتر)
- */
 export default function IndustryAutocomplete({
     value,
     onChange,
@@ -49,14 +36,21 @@ export default function IndustryAutocomplete({
             required={required}
             error={error}
             icon={<Building2 className="w-3.5 h-3.5 text-on-surface-variant" />}
-            listFn={() => apiService.industry.list(false)}
+            fetchFn={async (params) => {
+                const res: any = await apiService.industry.search(params.q, params.limit, (params.page - 1) * params.limit);
+                return {
+                    items: res?.items || res?.data || [],
+                    hasMore: (res?.items?.length || 0) >= params.limit,
+                };
+            }}
             createFn={allowCreate
                 ? (title) => apiService.industry.createByUser(title)
                 : async () => { throw new Error('ایجاد مجاز نیست'); }
             }
-            queryKey="industries-list-picker"
+            queryKey="industries-picker"
             createLabel="ایجاد صنف جدید"
-            className={className}
+            minSearchChars={2}
+            pageSize={10}
         />
     );
 }

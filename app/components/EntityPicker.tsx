@@ -1,72 +1,70 @@
 // app/components/EntityPicker.tsx
 'use client';
 
-import React, { useState, useMemo, useEffect } from 'react';
+import React, { useState, useMemo, useEffect, useCallback } from 'react';
 import { createPortal } from 'react-dom';
-import { Search, X, Plus, Check, Loader2, AlertCircle, Tag } from 'lucide-react';
-import { cn } from '@/lib/utils';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
+import { Search, X, Plus, Check, Loader2, AlertCircle, ChevronDown, Tag } from 'lucide-react';
+import { cn } from '@/lib/utils';
 
 export interface EntityValue {
     id: string;
     title: string;
     isByUser?: boolean;
+    isNew?: boolean;
     [key: string]: any;
 }
 
+interface FetchParams {
+    q?: string;
+    page: number;
+    limit: number;
+    mine?: boolean;
+}
+
+interface FetchResult {
+    items: any[];
+    hasMore?: boolean;
+    total?: number;
+}
+
 interface Props {
-    /** مقدار فعلی */
     value: EntityValue | null;
     onChange: (value: EntityValue | null) => void;
-    /** label فیلد */
     label?: string;
-    /** placeholder دکمه */
     placeholder?: string;
-    /** required */
     required?: boolean;
-    /** error */
     error?: string;
-    /** آیکون */
     icon?: React.ReactNode;
-    /** تابع fetch لیست همه‌ی آیتم‌ها (برای DropSelector) */
-    listFn: () => Promise<{ items: any[] }>;
+    /** تابع fetch با pagination و search */
+    fetchFn: (params: FetchParams) => Promise<FetchResult>;
     /** تابع ایجاد آیتم جدید */
     createFn: (title: string) => Promise<any>;
-    /** query key برای cache و invalidation */
+    /** query key برای cache */
     queryKey: string;
-    /** رندر سفارشی هر آیتم در dropdown */
+    /** رندر سفارشی هر آیتم */
     renderItem?: (item: any) => React.ReactNode;
-    /** رندر سفارشی مقدار انتخاب‌شده در دکمه */
+    /** رندر سفارشی مقدار انتخاب‌شده */
     renderValue?: (value: EntityValue) => React.ReactNode;
-    /** متن دکمه «ایجاد جدید» */
+    /** متن دکمه ایجاد */
     createLabel?: string;
-    /** حداقل طول برای جستجو در dropdown */
-    minChars?: number;
+    /** حداقل حرف برای سرچ (پیش‌فرض ۲) */
+    minSearchChars?: number;
+    /** تعداد آیتم در هر صفحه (پیش‌فرض ۱۰) */
+    pageSize?: number;
+    /** آیا toggle «فقط آیتم‌های من» نشون داده بشه */
+    showMineOnly?: boolean;
 }
 
 /**
- * EntityPicker — کامپوننت انتخابگر DropSelector-style با قابلیت create
+ * EntityPicker — انتخابگر DropSelector-style با pagination
  *
- * ┌─────────────────────────────────────┐
- * │ [آیکون] انتخاب کنید...        ▼    │  ← دکمه
- * └─────────────────────────────────────┘
- *
- * کلیک → dropdown باز می‌شه:
- * ┌─────────────────────────────────────┐
- * │ [🔍 جستجو...]                       │
- * ├─────────────────────────────────────┤
- * │ آیتم ۱                              │
- * │ آیتم ۲                              │
- * │ ...                                 │
- * ├─────────────────────────────────────┤
- * │ [+ ایجاد «متن جستجو» به‌عنوان جدید] │  ← اگه پیدا نشد
- * └─────────────────────────────────────┘
- *
- * ✅ DropSelector-style (نه autocomplete تایپی)
- * ✅ جستجوی client-side (لیست یکجا fetch و cache می‌شه)
- * ✅ اگه چیزی پیدا نشد، دکمه «ایجاد جدید» ظاهر می‌شه
+ * ✅ pagination: ۱۰ آیتم در هر صفحه + دکمه «بیشتر»
+ * ✅ جستجوی server-side با حداقل ۲ حرف
+ * ✅ اگه چیزی پیدا نشد، دکمه «ایجاد جدید»
  * ✅ هشدار اگه تکراری باشه
- * ✅ isByUser badge برای آیتم‌های کاربر-ساخته
+ * ✅ toggle «فقط آیتم‌های من» (برای ProductReference)
+ * ✅ badge «جدید» برای آیتم‌های isByUser
  */
 export default function EntityPicker({
     value,
@@ -76,13 +74,15 @@ export default function EntityPicker({
     required = false,
     error,
     icon,
-    listFn,
+    fetchFn,
     createFn,
     queryKey,
     renderItem,
     renderValue,
     createLabel = 'ایجاد به‌عنوان جدید',
-    minChars = 0,
+    minSearchChars = 2,
+    pageSize = 10,
+    showMineOnly = false,
 }: Props) {
     const [isOpen, setIsOpen] = useState(false);
 
@@ -105,7 +105,6 @@ export default function EntityPicker({
                 </label>
             )}
 
-            {/* دکمه انتخاب */}
             {value ? (
                 <button
                     type="button"
@@ -140,21 +139,22 @@ export default function EntityPicker({
 
             {error && <p className="text-error text-[11px]">{error}</p>}
 
-            {/* Dropdown */}
             {isOpen && (
-                <EntityPickerDropdown
+                <EntityPickerModal
                     value={value}
                     onChange={(v) => {
                         onChange(v);
                         setIsOpen(false);
                     }}
                     onClose={() => setIsOpen(false)}
-                    listFn={listFn}
+                    fetchFn={fetchFn}
                     createFn={createFn}
                     queryKey={queryKey}
                     renderItem={renderItem}
                     createLabel={createLabel}
-                    minChars={minChars}
+                    minSearchChars={minSearchChars}
+                    pageSize={pageSize}
+                    showMineOnly={showMineOnly}
                 />
             )}
         </div>
@@ -162,52 +162,94 @@ export default function EntityPicker({
 }
 
 // ═══════════════════════════════════════════════════════════
-// Dropdown — portal-based
+// Modal
 // ═══════════════════════════════════════════════════════════
-function EntityPickerDropdown({
+function EntityPickerModal({
     value,
     onChange,
     onClose,
-    listFn,
+    fetchFn,
     createFn,
     queryKey,
     renderItem,
     createLabel,
-    minChars,
+    minSearchChars,
+    pageSize,
+    showMineOnly,
 }: {
     value: EntityValue | null;
     onChange: (v: EntityValue) => void;
     onClose: () => void;
-    listFn: () => Promise<{ items: any[] }>;
+    fetchFn: (params: FetchParams) => Promise<FetchResult>;
     createFn: (title: string) => Promise<any>;
     queryKey: string;
     renderItem?: (item: any) => React.ReactNode;
     createLabel: string;
-    minChars: number;
+    minSearchChars: number;
+    pageSize: number;
+    showMineOnly: boolean;
 }) {
     const [search, setSearch] = useState('');
+    const [debouncedSearch, setDebouncedSearch] = useState('');
+    const [page, setPage] = useState(1);
+    const [allItems, setAllItems] = useState<any[]>([]);
+    const [mineOnly, setMineOnly] = useState(false);
     const [creating, setCreating] = useState(false);
     const [createError, setCreateError] = useState<string | null>(null);
     const containerRef = React.useRef<HTMLDivElement>(null);
     const queryClient = useQueryClient();
 
-    // fetch لیست
-    const { data, isLoading } = useQuery({
-        queryKey: [queryKey],
-        queryFn: listFn,
-        staleTime: 5 * 60 * 1000,
+    // debounce
+    useEffect(() => {
+        const timer = setTimeout(() => {
+            setDebouncedSearch(search.trim());
+            setPage(1);
+            setAllItems([]);
+        }, 300);
+        return () => clearTimeout(timer);
+    }, [search]);
+
+    // reset when mineOnly changes
+    useEffect(() => {
+        setPage(1);
+        setAllItems([]);
+    }, [mineOnly]);
+
+    // fetch
+    const { data, isFetching } = useQuery({
+        queryKey: [queryKey, debouncedSearch, page, mineOnly],
+        queryFn: () => fetchFn({
+            q: debouncedSearch || undefined,
+            page,
+            limit: pageSize,
+            mine: mineOnly,
+        }),
+        staleTime: 30_000,
     });
+
+    // accumulate items
+    useEffect(() => {
+        if (data?.items) {
+            if (page === 1) {
+                setAllItems(data.items);
+            } else {
+                setAllItems(prev => [...prev, ...data.items]);
+            }
+        }
+    }, [data, page]);
+
+    const hasMore = data?.hasMore ?? false;
 
     // mutation create
     const createMut = useMutation({
         mutationFn: createFn,
         onSuccess: (created: any) => {
-            // ✅ invalidate cache تا لیست تازه بشه
             queryClient.invalidateQueries({ queryKey: [queryKey] });
             onChange({
                 id: created.id,
                 title: created.title,
                 isByUser: created.isByUser ?? true,
+                isNew: created.isNew ?? true,
             });
         },
         onError: (err: any) => {
@@ -215,20 +257,10 @@ function EntityPickerDropdown({
         },
     });
 
-    // فیلتر client-side
-    const filtered = useMemo(() => {
-        const items = data?.items || [];
-        if (!search.trim()) return items;
-        const q = search.trim().toLowerCase();
-        return items.filter((item: any) =>
-            item.title?.toLowerCase().includes(q) ||
-            item.keywords?.some?.((k: string) => k.toLowerCase().includes(q))
-        );
-    }, [data, search]);
-
-    const trimmedSearch = search.trim();
-    const exactMatch = filtered.some((i: any) => i.title === trimmedSearch);
-    const canCreate = trimmedSearch.length >= 2 && !exactMatch && !creating;
+    const trimmedSearch = debouncedSearch;
+    const canSearch = trimmedSearch.length >= minSearchChars;
+    const exactMatch = allItems.some((i: any) => i.title === trimmedSearch);
+    const canCreate = canSearch && trimmedSearch.length >= 2 && !exactMatch && !creating;
 
     const handleCreate = async () => {
         setCreateError(null);
@@ -240,14 +272,13 @@ function EntityPickerDropdown({
         }
     };
 
-    // کلیک خارج → بستن
+    // click outside
     useEffect(() => {
         const handler = (e: MouseEvent) => {
             if (containerRef.current && !containerRef.current.contains(e.target as Node)) {
                 onClose();
             }
         };
-        // delay برای جلوگیری از بسته شدن فوری
         const timer = setTimeout(() => {
             document.addEventListener('mousedown', handler);
         }, 100);
@@ -278,59 +309,86 @@ function EntityPickerDropdown({
                 </div>
 
                 {/* جستجو */}
-                <div className="flex-shrink-0 p-3 border-b border-outline-variant/20">
+                <div className="flex-shrink-0 p-3 border-b border-outline-variant/20 space-y-2">
                     <div className="relative">
                         <Search className="absolute right-3 top-1/2 -translate-y-1/2 w-4 h-4 text-on-surface-variant/50" />
                         <input
                             value={search}
                             onChange={(e) => setSearch(e.target.value)}
-                            placeholder="جستجو..."
+                            placeholder={`جستجو... (حداقل ${minSearchChars} حرف)`}
                             className="w-full h-10 pr-9 pl-3 rounded-xl bg-surface-container-lowest border border-outline-variant/40 text-sm outline-none focus:ring-2 focus:ring-primary/30 focus:border-primary transition-all"
                         />
                     </div>
+                    {showMineOnly && (
+                        <label className="flex items-center gap-2 cursor-pointer">
+                            <input
+                                type="checkbox"
+                                checked={mineOnly}
+                                onChange={(e) => setMineOnly(e.target.checked)}
+                                className="w-4 h-4 rounded accent-primary"
+                            />
+                            <span className="text-[11px] font-bold text-on-surface-variant">فقط کالاهای_added توسط من</span>
+                        </label>
+                    )}
                 </div>
 
                 {/* لیست */}
                 <div className="flex-1 min-h-0 overflow-y-auto scrollbar-slim pb-[calc(1rem+env(safe-area-inset-bottom))]">
-                    {isLoading ? (
+                    {isFetching && page === 1 ? (
                         <div className="p-6 text-center"><Loader2 className="w-5 h-5 animate-spin text-primary mx-auto" /></div>
-                    ) : filtered.length === 0 ? (
+                    ) : allItems.length === 0 ? (
                         <div className="p-6 text-center">
                             <Tag className="w-10 h-10 text-on-surface-variant/20 mx-auto mb-2" />
                             <p className="text-xs text-on-surface-variant">
-                                {trimmedSearch ? 'موردی پیدا نشد' : 'لیست خالی است'}
+                                {!canSearch && search.length > 0
+                                    ? `حداقل ${minSearchChars} حرف تایپ کنید`
+                                    : canSearch
+                                        ? 'موردی پیدا نشد'
+                                        : 'برای جستجو تایپ کنید'}
                             </p>
                         </div>
                     ) : (
-                        filtered.map((item: any) => (
-                            <button
-                                key={item.id}
-                                onClick={() => onChange({
-                                    id: item.id,
-                                    title: item.title,
-                                    isByUser: item.isByUser,
-                                    ...item,
-                                })}
-                                className={cn(
-                                    'w-full flex items-center gap-3 px-4 py-2.5 text-right transition-colors',
-                                    value?.id === item.id ? 'bg-primary/10' : 'hover:bg-surface-container-low',
-                                )}
-                            >
-                                {renderItem ? renderItem(item) : (
-                                    <>
-                                        <span className="flex-1 text-sm font-medium text-on-surface truncate">
-                                            {item.title}
-                                        </span>
-                                        {item.isByUser && (
-                                            <span className="text-[9px] font-bold px-1.5 py-0.5 rounded bg-amber-100 text-amber-700 dark:bg-amber-900/30 dark:text-amber-300 flex-shrink-0">
-                                                جدید
+                        <>
+                            {allItems.map((item: any) => (
+                                <button
+                                    key={item.id}
+                                    onClick={() => onChange({
+                                        id: item.id,
+                                        title: item.title,
+                                        isByUser: item.isByUser,
+                                        isNew: item.isNew,
+                                        ...item,
+                                    })}
+                                    className={cn(
+                                        'w-full flex items-center gap-3 px-4 py-2.5 text-right transition-colors',
+                                        value?.id === item.id ? 'bg-primary/10' : 'hover:bg-surface-container-low',
+                                    )}
+                                >
+                                    {renderItem ? renderItem(item) : (
+                                        <>
+                                            <span className="flex-1 text-sm font-medium text-on-surface truncate">
+                                                {item.title}
                                             </span>
-                                        )}
-                                        {value?.id === item.id && <Check className="w-4 h-4 text-primary flex-shrink-0" />}
-                                    </>
-                                )}
-                            </button>
-                        ))
+                                            {item.isByUser && (
+                                                <span className="text-[9px] font-bold px-1.5 py-0.5 rounded bg-amber-100 text-amber-700 dark:bg-amber-900/30 dark:text-amber-300 flex-shrink-0">
+                                                    جدید
+                                                </span>
+                                            )}
+                                            {value?.id === item.id && <Check className="w-4 h-4 text-primary flex-shrink-0" />}
+                                        </>
+                                    )}
+                                </button>
+                            ))}
+                            {hasMore && (
+                                <button
+                                    onClick={() => setPage(p => p + 1)}
+                                    disabled={isFetching}
+                                    className="w-full py-3 text-center text-xs font-bold text-primary hover:bg-primary/5 transition-colors disabled:opacity-50"
+                                >
+                                    {isFetching ? <Loader2 className="w-4 h-4 animate-spin mx-auto" /> : 'نمایش بیشتر...'}
+                                </button>
+                            )}
+                        </>
                     )}
                 </div>
 

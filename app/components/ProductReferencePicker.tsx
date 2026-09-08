@@ -17,7 +17,6 @@ export interface ProductValue extends EntityValue {
 interface Props {
     value: ProductValue | null;
     onChange: (product: ProductValue | null) => void;
-    /** دسته کالا برای فیلتر */
     category?: string;
     placeholder?: string;
     label?: string;
@@ -25,17 +24,6 @@ interface Props {
     error?: string;
 }
 
-/**
- * ProductReferencePicker — انتخابگر کالای مرجع با DropSelector-style
- *
- * ✅ بر اساس EntityPicker
- * ✅ جستجوی client-side (لیست یکجا fetch و cache می‌شه)
- * ✅ سرچ روی title و keywords
- * ✅ اگه پیدا نشد، دکمه «ایجاد کالای جدید» ظاهر می‌شه
- * ✅ هشدار اگه تکراری باشه
- * ✅ isByUser badge
- * ✅ نمایش عکس و برند کالا
- */
 export default function ProductReferencePicker({
     value,
     onChange,
@@ -54,10 +42,16 @@ export default function ProductReferencePicker({
             required={required}
             error={error}
             icon={<Package className="w-3.5 h-3.5 text-on-surface-variant" />}
-            listFn={() => apiService.product.list(category, false)}
+            fetchFn={async (params) => {
+                const res = await apiService.product.search(params.q, category, params.page, params.limit, params.mine);
+                return { items: res.items, hasMore: res.hasMore };
+            }}
             createFn={(title) => apiService.product.create({ title, category })}
-            queryKey={`products-list-picker-${category || 'all'}`}
+            queryKey={`products-picker-${category || 'all'}`}
             createLabel="ایجاد کالای جدید"
+            minSearchChars={2}
+            pageSize={10}
+            showMineOnly={true}
             renderValue={(v) => (
                 <>
                     {(v as ProductValue).thumbnailUrl || (v as ProductValue).imageUrl ? (

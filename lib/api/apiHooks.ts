@@ -1071,20 +1071,12 @@ export const useCreateIndustry = () => {
 };
 
 // ─── BRAND (برند) ───
-export const useBrandSearch = (q: string, category?: string, enabled = true) => {
+export const useBrandSearch = (q: string, category?: string, page = 1, enabled = true) => {
     return useQuery({
-        queryKey: ['brand-search', q, category],
-        queryFn: () => apiService.brand.search(q, category),
-        enabled: enabled && q.trim().length >= 1,
+        queryKey: ['brand-search', q, category, page],
+        queryFn: () => apiService.brand.search(q, category, page, 10),
+        enabled,
         staleTime: 30_000,
-    });
-};
-
-export const useBrandsList = (category?: string, confirmedOnly = false) => {
-    return useQuery({
-        queryKey: ['brands-list', category, confirmedOnly],
-        queryFn: () => apiService.brand.list(category, confirmedOnly),
-        staleTime: 5 * 60 * 1000,
     });
 };
 
@@ -1095,26 +1087,17 @@ export const useCreateBrand = () => {
             apiService.brand.create(data),
         onSuccess: () => {
             queryClient.invalidateQueries({ queryKey: ['brand-search'] });
-            queryClient.invalidateQueries({ queryKey: ['brands-list'] });
         },
     });
 };
 
 // ─── PRODUCT REFERENCE (کالای مرجع) ───
-export const useProductSearch = (q: string, category?: string, enabled = true) => {
+export const useProductSearch = (q: string, category?: string, page = 1, mine = false, enabled = true) => {
     return useQuery({
-        queryKey: ['product-search', q, category],
-        queryFn: () => apiService.product.search(q, category),
-        enabled: enabled && q.trim().length >= 2,
+        queryKey: ['product-search', q, category, page, mine],
+        queryFn: () => apiService.product.search(q, category, page, 10, mine),
+        enabled,
         staleTime: 30_000,
-    });
-};
-
-export const useProductsList = (category?: string, confirmedOnly = false) => {
-    return useQuery({
-        queryKey: ['products-list', category, confirmedOnly],
-        queryFn: () => apiService.product.list(category, confirmedOnly),
-        staleTime: 5 * 60 * 1000,
     });
 };
 
@@ -1130,7 +1113,16 @@ export const useCreateProduct = () => {
         }) => apiService.product.create(data),
         onSuccess: () => {
             queryClient.invalidateQueries({ queryKey: ['product-search'] });
-            queryClient.invalidateQueries({ queryKey: ['products-list'] });
+        },
+    });
+};
+
+export const useUpdateProduct = () => {
+    const queryClient = useQueryClient();
+    return useMutation({
+        mutationFn: ({ id, data }: { id: string; data: any }) => apiService.product.update(id, data),
+        onSuccess: () => {
+            queryClient.invalidateQueries({ queryKey: ['product-search'] });
         },
     });
 };

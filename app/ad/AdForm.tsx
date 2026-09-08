@@ -677,7 +677,6 @@ export function AdForm({ adId, onSuccess }: { adId?: string; onSuccess?: () => v
                                     value={selectedProduct}
                                     onChange={(product) => {
                                         setSelectedProduct(product);
-                                        // ✅ productType رو هم ست کن برای backward-compat
                                         if (product) {
                                             setFormData((p) => ({ ...p, productType: product.title }));
                                         }
@@ -687,7 +686,20 @@ export function AdForm({ adId, onSuccess }: { adId?: string; onSuccess?: () => v
                                     placeholder="انتخاب کالا از مرجع کالا..."
                                     error={!selectedProduct && !formData.productType.trim() ? 'کالا را انتخاب کن' : undefined}
                                 />
-                                {/* ✅ input عنوان (fallback) — اگه کاربر کالای مرجع انتخاب نکرد */}
+                                {/* ✅ عنوان قابل ویرایش — override عنوان کالای مرجع */}
+                                {selectedProduct && (
+                                    <div className="space-y-1.5">
+                                        <label className="text-[10px] text-on-surface-variant block flex items-center gap-1">
+                                            عنوان آگهی
+                                            <span className="text-[9px] text-primary/60">(قابل ویرایش — از عنوان کالا کپی شده)</span>
+                                        </label>
+                                        <input type="text" maxLength={60} value={formData.productType}
+                                               onChange={(e) => setFormData((p) => ({ ...p, productType: e.target.value }))}
+                                               placeholder="عنوان آگهی..."
+                                               className={inputCls()} />
+                                    </div>
+                                )}
+                                {/* ✅ fallback: input عنوان دستی — اگه کالای مرجع انتخاب نشد */}
                                 {!selectedProduct && (
                                     <div className="space-y-1.5 pt-1">
                                         <label className="text-[10px] text-on-surface-variant block">
