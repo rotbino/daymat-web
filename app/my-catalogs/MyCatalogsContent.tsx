@@ -26,6 +26,7 @@ import {
 import { cn } from '@/lib/utils';
 import Link from 'next/link';
 import IndustryAutocomplete from '@/app/components/IndustryAutocomplete';
+import BusinessTypeSelector from '@/app/components/BusinessTypeSelector';
 import UnitSettingsModal from '@/app/ad/components/UnitSettingsModal';
 import CategorySettingsModal from '@/app/ad/components/CategorySettingsModal';
 import ShareKitModal from '@/app_/profile/components/ShareKitModal';
@@ -65,19 +66,6 @@ const SALES_ICON: Record<string, any> = {
     retail: Package,
     service: Wrench,
 };
-
-// ✅ انواع کسب‌وکار — برای CatalogEditModal
-const BIZ_TYPES = [
-    { value: 'producer', label: 'تولیدی' },
-    { value: 'wholesaler', label: 'عمده‌فروش' },
-    { value: 'importer', label: 'واردکننده' },
-    { value: 'exporter', label: 'صادرکننده' },
-    { value: 'distributor', label: 'پخش‌کننده' },
-    { value: 'retailer', label: 'خرده‌فروش' },
-    { value: 'contractor', label: 'پیمانکار' },
-    { value: 'service_provider', label: 'خدمات' },
-    { value: 'other', label: 'سایر' },
-];
 
 function RowSkeleton({ h = 84 }: { h?: number }) {
     return <div style={{ height: h }} className="rounded-xl bg-surface-container-high/50 animate-pulse" />;
@@ -1107,6 +1095,9 @@ function CatalogEditModal({ isOpen, onClose, catalog, salesTypeLocked, onSaved }
 
     // ✅ فیلدهای Business — برای ویرایش کامل
     const [bizType, setBizType] = useState<string>(biz?.type || 'wholesaler');
+    // ✅ businessRole + businessSector (دو سطحی)
+    const [businessSector, setBusinessSector] = useState<string>(biz?.businessSector || '');
+    const [businessRole, setBusinessRole] = useState<string>(biz?.businessRole || '');
     const [provinceCode, setProvinceCode] = useState<string>(biz?.provinceCode || '');
     const [provinceLabel, setProvinceLabel] = useState<string>(biz?.province || '');
     const [cityCode, setCityCode] = useState<string>(biz?.cityCode || '');
@@ -1141,13 +1132,15 @@ function CatalogEditModal({ isOpen, onClose, catalog, salesTypeLocked, onSaved }
             !!pendingLogoFile ||
             // ✅ فیلدهای business
             bizType !== (biz?.type || 'wholesaler') ||
+            businessSector !== (biz?.businessSector || '') ||
+            businessRole !== (biz?.businessRole || '') ||
             provinceCode !== (biz?.provinceCode || '') ||
             cityCode !== (biz?.cityCode || '') ||
             address !== (biz?.address || '') ||
             description !== (biz?.description || catalog?.description || '')
         );
     }, [catalog, name, slug, industry, shortDescription, phone, website, pendingLogoFile, bizPhone, biz,
-        bizType, provinceCode, cityCode, address, description]);
+        bizType, businessSector, businessRole, provinceCode, cityCode, address, description]);
 
     const uploadLogo = async (): Promise<string | undefined> => {
         if (!pendingLogoFile) return undefined;
@@ -1193,6 +1186,9 @@ function CatalogEditModal({ isOpen, onClose, catalog, salesTypeLocked, onSaved }
                     industryName: industry.title.trim() || undefined,
                     industryId: industry.id,
                     type: bizType,
+                    // ✅ فیلدهای جدید دو سطحی
+                    businessRole: businessRole || undefined,
+                    businessSector: businessSector || undefined,
                     phone: phone.trim() || undefined,
                     // ✅ موقعیت
                     province: provinceLabel || undefined,
@@ -1341,20 +1337,16 @@ function CatalogEditModal({ isOpen, onClose, catalog, salesTypeLocked, onSaved }
                         />
                     </section>
 
-                    {/* ═══ نوع فعالیت ═══ */}
+                    {/* ═══ نوع کسب‌وکار (دو سطحی) ═══ */}
                     <section className="rounded-2xl bg-surface-container-low/60 border border-outline-variant/30 p-4 space-y-2">
                         <SectionTitle icon={Layers} text="نوع کسب‌وکار" />
-                        <div className="flex flex-wrap gap-1.5">
-                            {BIZ_TYPES.map((t) => (
-                                <button key={t.value} type="button" onClick={() => setBizType(t.value)}
-                                        className={cn('h-8 px-3 rounded text-[11px] font-bold border transition-colors',
-                                            bizType === t.value
-                                                ? 'bg-primary/10 border-primary/40 text-primary'
-                                                : 'border-outline-variant/50 text-on-surface-variant hover:border-primary/30')}>
-                                    {t.label}
-                                </button>
-                            ))}
-                        </div>
+                        <BusinessTypeSelector
+                            sector={businessSector}
+                            role={businessRole}
+                            onSectorChange={setBusinessSector}
+                            onRoleChange={setBusinessRole}
+                            required
+                        />
                     </section>
 
                     {/* ═══ موقعیت (استان/شهر/آدرس) ═══ */}
