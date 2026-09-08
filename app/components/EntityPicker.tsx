@@ -273,8 +273,10 @@ function EntityPickerModal({
     });
 
     // accumulate items
+    // ✅ فقط وقتی isFetching=false باشه allItems رو آپدیت کن
+    // تا نتایج قدیمی (keepPreviousData) نشون داده نشن
     useEffect(() => {
-        if (data?.items) {
+        if (data?.items && !isFetching) {
             if (page === 1) {
                 setAllItems(data.items);
             } else {

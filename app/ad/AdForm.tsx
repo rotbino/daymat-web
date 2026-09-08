@@ -401,11 +401,11 @@ export function AdForm({ adId, onSuccess }: { adId?: string; onSuccess?: () => v
     const validateStep = (step: number): boolean => {
         const errs: string[] = [];
         if (step === 1) {
-            if (!selectedProduct && !formData.productType.trim()) {
-                errs.push('کالا را انتخاب کن.');
+            // ✅ انتخاب کالا از مرکز کالا اجباری است
+            if (!selectedProduct) {
+                errs.push('کالا را از مرکز کالا انتخاب کن.');
             }
-            if (selectedProduct || formData.productType.trim()) {
-                // ✅ عکس الزامی نیست — اگه عکس آگهی نباشه، عکس کالای مرجع استفاده می‌شه
+            if (selectedProduct) {
                 if (!formData.unitId) errs.push('واحد فروش را انتخاب کن.');
             }
         } else if (step === 2) {
@@ -714,17 +714,7 @@ export function AdForm({ adId, onSuccess }: { adId?: string; onSuccess?: () => v
                                                className={inputCls()} />
                                     </div>
                                 )}
-                                {/* ✅ input عنوان (fallback) — اگه کاربر کالای مرجع انتخاب نکرد */}
-                                {!selectedProduct && (
-                                    <div className="space-y-1.5 pt-1">
-                                        <label className="text-[10px] text-on-surface-variant block">
-                                            یا عنوان را دستی وارد کن:
-                                        </label>
-                                        <input type="text" maxLength={60} value={formData.productType}
-                                               onChange={(e) => setFormData((p) => ({ ...p, productType: e.target.value }))}
-                                               placeholder="مثال: ماکارونی فرمی ۵۰۰ گرمی" className={inputCls()} />
-                                    </div>
-                                )}
+                                {/* ✅ انتخاب کالا از مرکز کالا اجباری است — هیچ fallback دستی وجود ندارد */}
                             </div>
                         </section>
 
@@ -1117,7 +1107,7 @@ export function AdForm({ adId, onSuccess }: { adId?: string; onSuccess?: () => v
                     ) : <div></div>}
                     {currentStep < TOTAL_STEPS ? (
                         <button type="button" onClick={nextStep}
-                                disabled={currentStep === 1 && !selectedProduct && !formData.productType.trim()}
+                                disabled={currentStep === 1 && !selectedProduct}
                                 className="h-11 px-6 rounded-xl bg-amber-500 text-white text-sm font-bold flex items-center gap-2
                                     hover:bg-amber-600 transition-all active:scale-95 shadow-md shadow-amber-200/50 dark:shadow-none
                                     disabled:opacity-40 disabled:cursor-not-allowed disabled:active:scale-100">
