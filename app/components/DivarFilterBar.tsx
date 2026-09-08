@@ -226,13 +226,13 @@ function FilterModalShell({
 }) {
     return createPortal(
         <div
-            className="fixed inset-0 z-[110] flex items-end sm:items-center justify-center bg-black/50 animate-in fade-in duration-200 p-3 sm:p-4 pb-[80px] sm:pb-4"
+            className="fixed inset-0 z-[110] flex items-end sm:items-center sm:justify-center bg-black/50 animate-in fade-in duration-200 sm:p-4"
             onClick={onClose}
         >
             <div
                 onClick={(e) => e.stopPropagation()}
                 className="bg-surface w-full sm:max-w-md rounded-t-3xl sm:rounded-2xl shadow-2xl
-                    min-h-[60dvh] max-h-[80dvh] flex flex-col overflow-hidden
+                    min-h-[60dvh] max-h-[88dvh] flex flex-col overflow-hidden
                     animate-in slide-in-from-bottom-4 sm:zoom-in-95 duration-300"
             >
                 <div className="flex-shrink-0 flex items-center justify-between px-4 py-3 border-b border-outline-variant/20">
@@ -290,7 +290,7 @@ function ProvinceModal({
                     />
                 </div>
             </div>
-            <div className="flex-1 min-h-0 overflow-y-auto scrollbar-slim pb-4">
+            <div className="flex-1 min-h-0 overflow-y-auto scrollbar-slim pb-[calc(1rem+env(safe-area-inset-bottom))]">
                 {isLoading ? (
                     <div className="p-6 text-center"><Loader2 className="w-5 h-5 animate-spin text-primary mx-auto" /></div>
                 ) : provinces.length === 0 ? (
@@ -371,7 +371,7 @@ function CityModal({
                     />
                 </div>
             </div>
-            <div className="flex-1 min-h-0 overflow-y-auto scrollbar-slim pb-4">
+            <div className="flex-1 min-h-0 overflow-y-auto scrollbar-slim pb-[calc(1rem+env(safe-area-inset-bottom))]">
                 {isLoading ? (
                     <div className="p-6 text-center"><Loader2 className="w-5 h-5 animate-spin text-primary mx-auto" /></div>
                 ) : cities.length === 0 ? (
@@ -478,7 +478,7 @@ function IndustryModal({
             </div>
 
             {/* لیست اصناف */}
-            <div className="flex-1 min-h-0 overflow-y-auto scrollbar-slim pb-4">
+            <div className="flex-1 min-h-0 overflow-y-auto scrollbar-slim pb-[calc(1rem+env(safe-area-inset-bottom))]">
                 {isFetching ? (
                     <div className="p-6 text-center"><Loader2 className="w-5 h-5 animate-spin text-primary mx-auto" /></div>
                 ) : items.length === 0 ? (

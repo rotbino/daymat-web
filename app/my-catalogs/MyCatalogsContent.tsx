@@ -836,10 +836,10 @@ export default function MyCatalogsContent() {
 
             {/* ═══ مدال تعیین دستهٔ بازاری ═══ */}
             {catModalAd && (
-                <div className="fixed inset-0 z-[95] flex items-end sm:items-center justify-center bg-black/50 animate-in fade-in duration-200"
+                <div className="fixed inset-0 z-[95] flex items-end sm:items-center sm:justify-center bg-black/50 animate-in fade-in duration-200 sm:p-4"
                      onClick={() => setCatModalAd(null)}>
                     <div onClick={(e) => e.stopPropagation()}
-                         className="bg-surface w-full sm:max-w-md rounded-t-3xl sm:rounded-2xl shadow-2xl max-h-[90dvh] flex flex-col overflow-hidden animate-in slide-in-from-bottom-4 sm:zoom-in-95 duration-300">
+                         className="bg-surface w-full sm:max-w-md rounded-t-3xl sm:rounded-2xl shadow-2xl min-h-[60dvh] max-h-[90dvh] flex flex-col overflow-hidden animate-in slide-in-from-bottom-4 sm:zoom-in-95 duration-300">
                         <div className="flex-shrink-0 flex items-center justify-between px-4 py-3 border-b border-outline-variant/20">
                             <div className="flex items-center gap-2.5">
                                 <span className="w-9 h-9 rounded-xl bg-amber-100 dark:bg-amber-900/30 flex items-center justify-center">
@@ -855,7 +855,7 @@ export default function MyCatalogsContent() {
                                 <X className="w-5 h-5" />
                             </button>
                         </div>
-                        <div className="flex-1 min-h-0 overflow-y-auto scrollbar-slim px-4 py-4 space-y-4">
+                        <div className="flex-1 min-h-0 overflow-y-auto scrollbar-slim px-4 py-4 pb-[calc(1rem+env(safe-area-inset-bottom))] space-y-4">
                             <div className="rounded-xl bg-amber-50/70 dark:bg-amber-900/10 border border-amber-300/40 dark:border-amber-800/40 p-3">
                                 <p className="text-[11px] text-amber-800 dark:text-amber-300 leading-6">
                                     این دسته تعیین می‌کند کالای تو در کدام شاخهٔ <b>تابلوی قیمت {catModalArmName}</b> دیده شود —
@@ -1256,11 +1256,11 @@ function CatalogEditModal({ isOpen, onClose, catalog, salesTypeLocked, onSaved }
     const buttonState = uploadMutation.isPending ? 'uploading' : saving ? 'saving' : savedTick ? 'saved' : 'idle';
 
     return (
-        <div className="fixed inset-0 z-[95] flex items-end sm:items-center justify-center bg-black/50 animate-in fade-in duration-200"
+        <div className="fixed inset-0 z-[95] flex items-end sm:items-center sm:justify-center bg-black/50 animate-in fade-in duration-200 sm:p-4"
              onClick={() => !saving && onClose()}>
             <div onClick={(e) => e.stopPropagation()}
                  className="bg-surface w-full sm:max-w-lg rounded-t-3xl sm:rounded-2xl shadow-2xl
-                     max-h-[92dvh] flex flex-col overflow-hidden
+                     min-h-[60dvh] max-h-[92dvh] flex flex-col overflow-hidden
                      animate-in slide-in-from-bottom-4 sm:zoom-in-95 duration-300">
 
                 <div className="flex-shrink-0 flex items-center justify-between px-4 py-3 border-b border-outline-variant/20">
@@ -1281,7 +1281,7 @@ function CatalogEditModal({ isOpen, onClose, catalog, salesTypeLocked, onSaved }
                     </button>
                 </div>
 
-                <div className="flex-1 min-h-0 overflow-y-auto scrollbar-slim px-4 py-4 space-y-4">
+                <div className="flex-1 min-h-0 overflow-y-auto scrollbar-slim px-4 py-4 pb-[calc(1rem+env(safe-area-inset-bottom))] space-y-4">
 
                     {/* ═══ لوگو + نام ═══ */}
                     <section className="rounded-2xl bg-surface-container-low/60 border border-outline-variant/30 p-4 space-y-3">

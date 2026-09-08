@@ -454,13 +454,13 @@ function AddBuyerModal({ slug, onClose }: { slug: string; onClose: () => void })
 
     return (
         <div
-            className="fixed inset-0 z-[95] flex items-end sm:items-center justify-center bg-black/50 animate-in fade-in duration-200"
+            className="fixed inset-0 z-[95] flex items-end sm:items-center sm:justify-center bg-black/50 animate-in fade-in duration-200 sm:p-4"
             onClick={onClose}
         >
             <div
                 onClick={(e) => e.stopPropagation()}
                 className="bg-surface w-full sm:max-w-3xl rounded-t-3xl sm:rounded-2xl shadow-2xl
-                    max-h-[92dvh] flex flex-col overflow-hidden
+                    min-h-[60dvh] max-h-[92dvh] flex flex-col overflow-hidden
                     animate-in slide-in-from-bottom-4 sm:zoom-in-95 duration-300"
             >
                 {/* هدر */}
@@ -497,7 +497,7 @@ function AddBuyerModal({ slug, onClose }: { slug: string; onClose: () => void })
                 </div>
 
                 {/* لیست کاندیداها */}
-                <div className="flex-1 min-h-0 overflow-y-auto scrollbar-slim">
+                <div className="flex-1 min-h-0 overflow-y-auto scrollbar-slim pb-[calc(1rem+env(safe-area-inset-bottom))]">
                     {candidatesQ.isFetching ? (
                         <div className="p-4 space-y-2">
                             {[0, 1, 2, 3].map(i => <div key={i} className="h-14 rounded-xl bg-surface-container-high/50 animate-pulse" />)}
