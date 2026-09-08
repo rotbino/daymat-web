@@ -2,7 +2,7 @@
 'use client';
 
 import React from 'react';
-import Autocomplete, { AutocompleteValue } from './Autocomplete';
+import Autocomplete, { AutocompleteValue, AutocompleteItem } from './Autocomplete';
 import { apiService } from '@/lib/api/apiService';
 
 interface CityValue extends AutocompleteValue {
@@ -18,11 +18,14 @@ interface Props {
     className?: string;
 }
 
+// ✅ کش محلی برای حفظ اطلاعات استان وقتی کاربر از لیست انتخاب می‌کنه
+const cityCache = new Map<string, CityValue>();
+
 /**
  * CityAutocomplete — جستجوی شهر
  *
  * کاربر فقط شهر رو سرچ می‌کنه — استان خودکار پیدا می‌شه.
- * نتیجه: { id, title, cityCode, provinceCode, provinceTitle }
+ * نمایش در dropdown: «استان > شهر»
  */
 export default function CityAutocomplete({
     value,
@@ -34,31 +37,49 @@ export default function CityAutocomplete({
         <Autocomplete
             value={value}
             onChange={(v) => {
-                // اگه از لیست انتخاب شده، اطلاعات استان هم داریم
-                // Autocomplete فقط { id, title } برمی‌گردونه، پس باید از cache بگیریم
-                onChange(v);
+                // اگه از لیست انتخاب شده، اطلاعات کامل رو از cache بگیر
+                const cached = cityCache.get(v.id || '');
+                if (cached) {
+                    onChange(cached);
+                } else {
+                    onChange(v);
+                }
             }}
             fetchFn={async (q) => {
                 const res = await apiService.location.searchCities(q);
-                return (res.items || []).map((item) => ({
-                    id: item.id,
-                    title: item.title,
-                    // اطلاعات اضافه برای نمایش
-                    cityCode: item.cityCode,
-                    provinceCode: item.provinceCode,
-                    provinceTitle: item.provinceTitle,
-                }));
+                const items = (res.items || []).map((item) => {
+                    const cityVal: CityValue = {
+                        id: item.id,
+                        title: item.title,
+                        cityCode: item.cityCode,
+                        provinceCode: item.provinceCode,
+                        provinceTitle: item.provinceTitle,
+                    };
+                    // کش کن برای استفاده موقع انتخاب
+                    cityCache.set(item.id, cityVal);
+                    return {
+                        id: item.id,
+                        title: item.title,
+                        // ✅ نمایش «استان > شهر» در dropdown
+                        provinceTitle: item.provinceTitle,
+                    } as AutocompleteItem;
+                });
+                return items;
             }}
             queryKey="city-autocomplete"
             placeholder={placeholder}
             className={className}
             minChars={2}
+            renderOption={(item) => (
+                <span className="text-xs text-on-surface truncate">
+                    {item.provinceTitle && (
+                        <span className="text-on-surface-variant/60">
+                            {item.provinceTitle} <span className="text-on-surface-variant/30">›</span>{' '}
+                        </span>
+                    )}
+                    <span className="font-medium">{item.title}</span>
+                </span>
+            )}
         />
     );
-}
-
-// ✅ Hook برای استفاده در فرم‌ها — همراه با cache طولانی
-export function useCitySearch() {
-    // این فقط برای backward-compat هست
-    // Autocomplete خودش cache رو هندل می‌کنه
 }

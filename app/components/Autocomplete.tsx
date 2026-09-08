@@ -32,6 +32,8 @@ interface Props {
     className?: string;
     /** حداقل تعداد حرف برای شروع جستجو */
     minChars?: number;
+    /** رندر سفارشی برای هر آیتم در dropdown */
+    renderOption?: (item: AutocompleteItem) => React.ReactNode;
 }
 
 /**
@@ -60,6 +62,7 @@ export default function Autocomplete({
     placeholder = 'جستجو...',
     className,
     minChars = 2,
+    renderOption,
 }: Props) {
     const [input, setInput] = useState(value.title || '');
     const [isOpen, setIsOpen] = useState(false);
@@ -206,7 +209,7 @@ export default function Autocomplete({
                                 )}
                             >
                                 <span className="flex-1 text-xs font-medium text-on-surface truncate">
-                                    {item.title}
+                                    {renderOption ? renderOption(item) : item.title}
                                 </span>
                                 {value.id === item.id && (
                                     <Check className="w-3.5 h-3.5 text-primary flex-shrink-0" />
