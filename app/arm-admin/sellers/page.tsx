@@ -15,7 +15,7 @@ import {
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import Link from 'next/link';
-import LocationIndustryFilter, { FilterValue } from '@/app/components/LocationIndustryFilter';
+import DivarFilterBar, { FilterValue } from '@/app/components/DivarFilterBar';
 
 // ═══ هلپرها ═══
 const fmt = (n: number | undefined) => n?.toLocaleString('fa-IR') ?? '۰';
@@ -109,7 +109,7 @@ function SellersContent({ slug, armName }: { slug: string; armName: string }) {
                     )}
                 </div>
 
-                <LocationIndustryFilter value={filter} onChange={setFilter} />
+                <DivarFilterBar value={filter} onChange={setFilter} />
             </div>
 
             {/* ─── آمار ─── */}
@@ -508,7 +508,7 @@ function AddSellerModal({ slug, onClose }: { slug: string; onClose: () => void }
                             </button>
                         )}
                     </div>
-                    <LocationIndustryFilter value={filter} onChange={setFilter} />
+                    <DivarFilterBar value={filter} onChange={setFilter} />
                 </div>
 
                 {/* لیست کاندیداها */}
