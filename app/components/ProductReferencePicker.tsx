@@ -124,7 +124,8 @@ export default function ProductReferencePicker({
 }
 
 // ═══════════════════════════════════════════════════════════
-// فرم ایجاد/ویرایش کالا — عکس + برند (با EntityPicker)
+// فرم ایجاد/ویرایش کالا — فقط عکس (بدون برند)
+// ✅ برند موجودیت مستقل است — در فرم والد به‌صورت جداگانه انتخاب می‌شه
 // ═══════════════════════════════════════════════════════════
 function CreateProductExtraFields({
     title,
@@ -138,19 +139,16 @@ function CreateProductExtraFields({
     dataRef: React.MutableRefObject<{ [key: string]: any }>;
 }) {
     const [imageUrl, setImageUrl] = useState<string>('');
-    const [brandValue, setBrandValue] = useState<EntityValue | null>(null);
     const [uploading, setUploading] = useState(false);
     const [logoPreview, setLogoPreview] = useState<string | null>(null);
     const uploadMut = useUploadFile();
 
-    // ✅ dataRef رو آپدیت کن
     React.useEffect(() => {
         dataRef.current = {
             ...dataRef.current,
             imageUrl: imageUrl || undefined,
-            brandId: brandValue?.id || undefined,
         };
-    }, [imageUrl, brandValue, dataRef]);
+    }, [imageUrl, dataRef]);
 
     const handleFileSelect = (file: File | null) => {
         if (!file) return;
@@ -208,43 +206,7 @@ function CreateProductExtraFields({
                     </p>
                 </div>
             </div>
-
-            {/* برند — با EntityPicker کامل (سرچ + ایجاد) */}
-            <EntityPicker
-                value={brandValue}
-                onChange={setBrandValue}
-                label="برند (اختیاری)"
-                placeholder="مثلاً: مکنزی"
-                icon={<Tag className="w-3.5 h-3.5 text-on-surface-variant" />}
-                fetchFn={async (params) => {
-                    const res = await apiService.brand.search(params.q, category, params.page, params.limit);
-                    return { items: res.items, hasMore: res.hasMore };
-                }}
-                createFn={async (data) => {
-                    return apiService.brand.create({ title: data.title, category });
-                }}
-                queryKey={`brands-in-product-${category || 'all'}`}
-                createLabel="افزودن برند جدید"
-                minSearchChars={2}
-                pageSize={10}
-                selectTitle="انتخاب برند"
-                createTitle="افزودن برند جدید"
-                duplicateMessage="این برند قبلاً اضافه شده. با جستجو آن را پیدا و انتخاب کنید."
-                createHint="این برند در لیست وجود ندارد؟ یک بار آن را اضافه کنید تا همه جا قابل استفاده باشد"
-                renderItem={(item) => (
-                    <>
-                        {item.logoUrl ? (
-                            <img src={item.logoUrl} alt="" className="w-9 h-9 rounded-lg object-cover flex-shrink-0" />
-                        ) : (
-                            <span className="w-9 h-9 rounded-lg bg-surface-container-high flex items-center justify-center flex-shrink-0">
-                                <Tag className="w-4 h-4 text-on-surface-variant/50" />
-                            </span>
-                        )}
-                        <span className="flex-1 text-sm font-medium text-on-surface truncate">{item.title}</span>
-                        {brandValue?.id === item.id && <Check className="w-4 h-4 text-primary flex-shrink-0" />}
-                    </>
-                )}
-            />
+            {/* ✅ برند حذف شد — موجودیت مستقل است، در فرم والد انتخاب می‌شه */}
         </>
     );
 }
