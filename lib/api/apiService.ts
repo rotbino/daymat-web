@@ -145,13 +145,16 @@ export const apiService = {
         autocomplete: async (q: string): Promise<{ items: Array<{ id: string; title: string }> }> => {
             if (!q || q.trim().length < 2) return { items: [] };
             const res: any = await apiRequest(`/industries/autocomplete?q=${encodeURIComponent(q.trim())}`);
-            // ✅ defensive: بک‌اند باید { items } برگردونه، ولی اگه { data } برگردوند هم هندل شه
             return { items: res?.items || res?.data || [] };
         },
         // ✅ لیست همه‌ی صنف‌ها — برای DropSelector (client-side search)
-        list: async (confirmedOnly = false): Promise<{ items: Array<{ id: string; title: string }> }> => {
+        list: async (confirmedOnly = false): Promise<{ items: Array<{ id: string; title: string; isByUser?: boolean }> }> => {
             const res: any = await apiRequest(`/industries/list${confirmedOnly ? '?confirmed=true' : ''}`);
             return { items: res?.items || res?.data || [] };
+        },
+        // ✅ ایجاد صنف توسط کاربر — برای DropSelector-style
+        createByUser: async (title: string): Promise<{ id: string; title: string; isByUser: boolean; _existed?: boolean }> => {
+            return apiRequest('/industries/create-by-user', { method: 'POST', data: { title } });
         },
     },
 
@@ -195,11 +198,22 @@ export const apiService = {
             category?: string;
             logoUrl?: string;
             usageCount?: number;
+            isByUser?: boolean;
         }> }> => {
             if (!q || q.trim().length < 1) return { items: [] };
             const params = new URLSearchParams({ q: q.trim() });
             if (category) params.set('category', category);
             const res: any = await apiRequest(`/brands/search?${params.toString()}`);
+            return { items: res?.items || [] };
+        },
+        list: async (category?: string, confirmedOnly = false): Promise<{ items: Array<{
+            id: string; title: string; category?: string; logoUrl?: string; isByUser?: boolean;
+        }> }> => {
+            const params = new URLSearchParams();
+            if (category) params.set('category', category);
+            if (confirmedOnly) params.set('confirmed', 'true');
+            const qs = params.toString();
+            const res: any = await apiRequest(`/brands/list${qs ? `?${qs}` : ''}`);
             return { items: res?.items || [] };
         },
         create: async (data: {
@@ -225,11 +239,24 @@ export const apiService = {
             imageUrl?: string;
             thumbnailUrl?: string;
             usageCount?: number;
+            isByUser?: boolean;
         }> }> => {
             if (!q || q.trim().length < 2) return { items: [] };
             const params = new URLSearchParams({ q: q.trim() });
             if (category) params.set('category', category);
             const res: any = await apiRequest(`/products/search?${params.toString()}`);
+            return { items: res?.items || [] };
+        },
+        list: async (category?: string, confirmedOnly = false): Promise<{ items: Array<{
+            id: string; title: string; brandId?: string;
+            brand?: { id: string; title: string };
+            category?: string; imageUrl?: string; thumbnailUrl?: string; isByUser?: boolean;
+        }> }> => {
+            const params = new URLSearchParams();
+            if (category) params.set('category', category);
+            if (confirmedOnly) params.set('confirmed', 'true');
+            const qs = params.toString();
+            const res: any = await apiRequest(`/products/list${qs ? `?${qs}` : ''}`);
             return { items: res?.items || [] };
         },
         create: async (data: {

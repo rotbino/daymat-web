@@ -2,65 +2,61 @@
 'use client';
 
 import React from 'react';
-import Autocomplete, { AutocompleteValue, AutocompleteItem } from './Autocomplete';
+import EntityPicker, { EntityValue } from './EntityPicker';
 import { apiService } from '@/lib/api/apiService';
+import { Building2 } from 'lucide-react';
 
 interface Props {
-    value: AutocompleteValue;
-    onChange: (value: AutocompleteValue) => void;
+    value: EntityValue | null;
+    onChange: (value: EntityValue | null) => void;
     placeholder?: string;
     className?: string;
-    /**
-     * اگه true باشه (پیش‌فرض)، وقتی کاربر چیزی تایپ کنه که نباشه،
-     * راهنمای «صنف جدید ساخته می‌شه» نشون داده می‌شه و بک‌اند خودش می‌سازه.
-     *
-     * اگه false باشه (برای فیلتر/سرچ)، هیچ راهنمایی نشون داده نمی‌شه
-     * و فقط از نتایج موجود استفاده می‌شه.
-     */
+    label?: string;
+    required?: boolean;
+    error?: string;
     allowCreate?: boolean;
 }
 
 /**
- * IndustryAutocomplete — کامپوننت جستجوی صنف
+ * IndustryAutocomplete — انتخابگر صنف با DropSelector-style
  *
- * ✅ Silent operation — هیچ پیام «پیدا نشد» نمی‌ده
- * ✅ Auto-create — اگه allowCreate=true باشه و کاربر چیزی تایپ کنه که نباشه، بک‌اند خودش می‌سازه
- * ✅ Auto-select — اگه متن دقیقاً match باشه، خودکار انتخاب می‌شه
- * ✅ Defensive parsing — هندل همه‌ی فرمت‌های ممکن بک‌اند
+ * ✅ بر اساس EntityPicker (قابل استفاده مجدد)
+ * ✅ جستجوی client-side (لیست یکجا fetch و cache می‌شه)
+ * ✅ اگه چیزی پیدا نشد، دکمه «ایجاد صنف جدید» ظاهر می‌شه
+ * ✅ هشدار اگه تکراری باشه
+ * ✅ isByUser badge برای صنف‌های کاربر-ساخته
+ *
+ * allowCreate:
+ *   - true (پیش‌فرض): کاربر می‌تونه صنف جدید بسازه
+ *   - false: فقط انتخاب از لیست (برای فیلتر)
  */
 export default function IndustryAutocomplete({
     value,
     onChange,
-    placeholder = 'صنف خود را وارد کنید...',
+    placeholder = 'صنف خود را انتخاب کنید...',
     className,
+    label,
+    required,
+    error,
     allowCreate = true,
 }: Props) {
     return (
-        <Autocomplete
+        <EntityPicker
             value={value}
             onChange={onChange}
-            fetchFn={async (q): Promise<AutocompleteItem[]> => {
-                const res: any = await apiService.industry.autocomplete(q);
-                // ✅ Defensive parsing — هندل همه‌ی فرمت‌های ممکن
-                let items: any[] = [];
-                if (Array.isArray(res)) {
-                    items = res;
-                } else if (Array.isArray(res?.items)) {
-                    items = res.items;
-                } else if (Array.isArray(res?.data)) {
-                    items = res.data;
-                }
-                return items.map((item: any) => ({
-                    id: item.id,
-                    title: item.title,
-                }));
-            }}
-            queryKey="industry-autocomplete"
+            label={label}
             placeholder={placeholder}
+            required={required}
+            error={error}
+            icon={<Building2 className="w-3.5 h-3.5 text-on-surface-variant" />}
+            listFn={() => apiService.industry.list(false)}
+            createFn={allowCreate
+                ? (title) => apiService.industry.createByUser(title)
+                : async () => { throw new Error('ایجاد مجاز نیست'); }
+            }
+            queryKey="industries-list-picker"
+            createLabel="ایجاد صنف جدید"
             className={className}
-            minChars={2}
-            allowCreate={allowCreate}
-            createLabel="صنف"
         />
     );
 }

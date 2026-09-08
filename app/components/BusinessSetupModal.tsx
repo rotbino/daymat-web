@@ -50,7 +50,7 @@ export default function BusinessSetupModal({ isOpen, onClose, business, onSaved 
 
     const [name, setName] = useState('');
     const [type, setType] = useState('wholesaler');
-    const [industry, setIndustry] = useState<{ id: string | null; title: string }>({ id: null, title: '' });
+    const [industry, setIndustry] = useState<{ id: string | null; title: string; isByUser?: boolean } | null>(null);
     const [provinceCode, setProvinceCode] = useState('');
     const [provinceLabel, setProvinceLabel] = useState('');
     const [cityCode, setCityCode] = useState('');
@@ -61,10 +61,10 @@ export default function BusinessSetupModal({ isOpen, onClose, business, onSaved 
         if (!isOpen) return;
         setName(business?.name || '');
         setType(business?.type || 'wholesaler');
-        setIndustry({
-            id: (business as any)?.industryId || null,
+        setIndustry(business?.industryId ? {
+            id: business.industryId,
             title: business?.industryName || '',
-        });
+        } : null);
         setProvinceCode(business?.provinceCode || '');
         setProvinceLabel(business?.province || '');
         setCityCode(business?.cityCode || '');
@@ -77,7 +77,7 @@ export default function BusinessSetupModal({ isOpen, onClose, business, onSaved 
     const validate = () => {
         const e: Record<string, string> = {};
         if (!name.trim()) e.name = 'نام کسب‌وکار الزامی است';
-        if (!industry.title.trim()) e.industryName = 'صنف الزامی است';
+        if (!industry?.title?.trim()) e.industryName = 'صنف الزامی است';
         if (!provinceCode) e.location = 'انتخاب موقعیت الزامی است';
         setErrors(e);
         return Object.keys(e).length === 0;
@@ -89,8 +89,8 @@ export default function BusinessSetupModal({ isOpen, onClose, business, onSaved 
             const payload = {
                 name: name.trim(),
                 type,
-                industryName: industry.title.trim(),
-                industryId: industry.id,  // ✅ اگه از لیست انتخاب شده id داره، اگه نه null
+                industryName: industry?.title?.trim(),
+                industryId: industry?.id,  // ✅ اگه از لیست انتخاب شده id داره
                 province: provinceLabel,
                 provinceCode,
                 city: cityLabel,

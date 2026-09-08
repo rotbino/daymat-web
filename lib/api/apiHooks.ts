@@ -1059,6 +1059,17 @@ export const useIndustriesList = (confirmedOnly = false) => {
     });
 };
 
+export const useCreateIndustry = () => {
+    const queryClient = useQueryClient();
+    return useMutation({
+        mutationFn: (title: string) => apiService.industry.createByUser(title),
+        onSuccess: () => {
+            queryClient.invalidateQueries({ queryKey: ['industries-list'] });
+            queryClient.invalidateQueries({ queryKey: ['industries-modal'] });
+        },
+    });
+};
+
 // ─── BRAND (برند) ───
 export const useBrandSearch = (q: string, category?: string, enabled = true) => {
     return useQuery({
@@ -1069,6 +1080,14 @@ export const useBrandSearch = (q: string, category?: string, enabled = true) => 
     });
 };
 
+export const useBrandsList = (category?: string, confirmedOnly = false) => {
+    return useQuery({
+        queryKey: ['brands-list', category, confirmedOnly],
+        queryFn: () => apiService.brand.list(category, confirmedOnly),
+        staleTime: 5 * 60 * 1000,
+    });
+};
+
 export const useCreateBrand = () => {
     const queryClient = useQueryClient();
     return useMutation({
@@ -1076,6 +1095,7 @@ export const useCreateBrand = () => {
             apiService.brand.create(data),
         onSuccess: () => {
             queryClient.invalidateQueries({ queryKey: ['brand-search'] });
+            queryClient.invalidateQueries({ queryKey: ['brands-list'] });
         },
     });
 };
@@ -1087,6 +1107,14 @@ export const useProductSearch = (q: string, category?: string, enabled = true) =
         queryFn: () => apiService.product.search(q, category),
         enabled: enabled && q.trim().length >= 2,
         staleTime: 30_000,
+    });
+};
+
+export const useProductsList = (category?: string, confirmedOnly = false) => {
+    return useQuery({
+        queryKey: ['products-list', category, confirmedOnly],
+        queryFn: () => apiService.product.list(category, confirmedOnly),
+        staleTime: 5 * 60 * 1000,
     });
 };
 
@@ -1102,6 +1130,7 @@ export const useCreateProduct = () => {
         }) => apiService.product.create(data),
         onSuccess: () => {
             queryClient.invalidateQueries({ queryKey: ['product-search'] });
+            queryClient.invalidateQueries({ queryKey: ['products-list'] });
         },
     });
 };

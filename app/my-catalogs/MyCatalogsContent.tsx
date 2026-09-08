@@ -1084,10 +1084,9 @@ function CatalogEditModal({ isOpen, onClose, catalog, salesTypeLocked, onSaved }
 
     const [name, setName] = useState(catalog?.name || '');
     const [slug, setSlug] = useState(catalog?.slug || '');
-    const [industry, setIndustry] = useState<{ id: string | null; title: string }>({
-        id: biz?.industryId || null,
-        title: biz?.industryName || '',
-    });
+    const [industry, setIndustry] = useState<{ id: string | null; title: string; isByUser?: boolean } | null>(
+        biz?.industryId ? { id: biz.industryId, title: biz?.industryName || '' } : null
+    );
     const [shortDescription, setShortDescription] = useState(catalog?.shortDescription || '');
     const [phone, setPhone] = useState(catalog?.phone || bizPhone);
     const [website, setWebsite] = useState(catalog?.website || '');
@@ -1125,7 +1124,7 @@ function CatalogEditModal({ isOpen, onClose, catalog, salesTypeLocked, onSaved }
         return (
             name !== (catalog.name || '') ||
             slug !== (catalog.slug || '') ||
-            industry.title !== (biz?.industryName || '') ||
+            industry?.title !== (biz?.industryName || '') ||
             shortDescription !== (catalog.shortDescription || '') ||
             phone !== (catalog.phone || bizPhone) ||
             website !== (catalog.website || '') ||
@@ -1183,8 +1182,8 @@ function CatalogEditModal({ isOpen, onClose, catalog, salesTypeLocked, onSaved }
             // ✅ ۱. آپدیت Business (صنف + لوگو + موقعیت + آدرس + سایر فیلدها)
             if (bizId) {
                 const bizUpdate: any = {
-                    industryName: industry.title.trim() || undefined,
-                    industryId: industry.id,
+                    industryName: industry?.title?.trim() || undefined,
+                    industryId: industry?.id,
                     type: bizType,
                     // ✅ فیلدهای جدید دو سطحی
                     businessRole: businessRole || undefined,
