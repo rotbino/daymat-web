@@ -346,6 +346,11 @@ function EntityPickerModal({
             queryClient.invalidateQueries({ queryKey: [queryKey] });
             setAllItems(prev => prev.filter((i: any) => i.id !== deleteMut.variables));
         },
+        onError: (err: any) => {
+            // ✅ پیام خطا از بک‌اند رو به کاربر نشون بده
+            const msg = err?.data?.message || err?.message || 'خطا در حذف';
+            alert(msg);
+        },
     });
 
     const handleDelete = (item: any) => {
