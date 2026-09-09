@@ -155,7 +155,7 @@ export function AdForm({ adId, onSuccess }: { adId?: string; onSuccess?: () => v
 
     // ═══ state فرم ═══
     const [currentStep, setCurrentStep] = useState(1);
-    const TOTAL_STEPS = 3;  // ✅ حذف step 4 (اعتبار قیمت)
+    const TOTAL_STEPS = 4;  // ✅ بازگشت به ۴ مرحله
     const [formData, setFormData] = useState({
         categoryId: '', productType: '',
         singleUnitPrice: 0, unitPrice: 0,
@@ -175,6 +175,8 @@ export function AdForm({ adId, onSuccess }: { adId?: string; onSuccess?: () => v
     const [selectedProduct, setSelectedProduct] = useState<ProductValue | null>(null);
     // ✅ state برند انتخاب‌شده (مستقل از کالا)
     const [selectedBrand, setSelectedBrand] = useState<BrandValue | null>(null);
+    // ✅ null=انتخاب نشده، true=دارای برند، false=بدون برند
+    const [brandMode, setBrandMode] = useState<boolean | null>(null);
     const [images, setImages] = useState<ImageSlot[]>([]);
     const [submitting, setSubmitting] = useState(false);
     const [unitModalOpen, setUnitModalOpen] = useState(false);
@@ -397,6 +399,9 @@ export function AdForm({ adId, onSuccess }: { adId?: string; onSuccess?: () => v
                     title: (existingAd as any).brand?.title || '',
                     logoUrl: (existingAd as any).brand?.logoUrl,
                 });
+                setBrandMode(true);  // ✅ دارای برند
+            } else {
+                setBrandMode(null);  // ✅ انتخاب نشده
             }
         }
     }, [isEditMode, existingAd]);
@@ -411,6 +416,10 @@ export function AdForm({ adId, onSuccess }: { adId?: string; onSuccess?: () => v
             }
             if (selectedProduct) {
                 if (!formData.unitId) errs.push('واحد فروش را انتخاب کن.');
+                // ✅ اگه دارای برند انتخاب شده ولی برند انتخاب نشده
+                if (selectedBrand === null && brandMode === true) {
+                    errs.push('برند کالا را انتخاب کن یا روی «بدون برند» بگذار.');
+                }
             }
         } else if (step === 2) {
             if (isWholesale) {
@@ -731,6 +740,8 @@ export function AdForm({ adId, onSuccess }: { adId?: string; onSuccess?: () => v
                                     onChange={setSelectedBrand}
                                     label="برند کالا"
                                     placeholder="مثلاً: مکنزی"
+                                    mode={brandMode}
+                                    onModeChange={setBrandMode}
                                 />
                             </section>
                         )}
@@ -1029,23 +1040,70 @@ export function AdForm({ adId, onSuccess }: { adId?: string; onSuccess?: () => v
                     </div>
                 )}
 
+                {/* ═══ مرحله ۴: بررسی نهایی ═══ */}
+                {currentStep === 4 && (
+                    <div className="space-y-4 animate-in fade-in duration-200">
+                        <div className="rounded-2xl border border-emerald-500/20 bg-emerald-500/5 p-4 flex items-center gap-3">
+                            <span className="w-10 h-10 rounded-xl bg-emerald-500 grid place-items-center shadow-sm shadow-emerald-500/30">
+                                <Check className="w-5 h-5 text-white" />
+                            </span>
+                            <div>
+                                <h3 className="font-bold text-sm text-emerald-800 dark:text-emerald-300">بررسی نهایی</h3>
+                                <p className="text-[11px] text-emerald-700/70 dark:text-emerald-400/70">پس از تأیید، کالا روی کاتالوگت منتشر می‌شود.</p>
+                            </div>
+                        </div>
 
-                {/* ناوبری مراحل */}
+                        <div className="bg-white dark:bg-gray-900 rounded-2xl border border-outline-variant/40 shadow-sm overflow-hidden">
+                            <div className="px-4 pb-4 pt-4 space-y-1.5">
+                                <div className="flex justify-between text-xs"><span className="text-on-surface-variant">کاتالوگ</span><span className="font-medium text-on-surface">{selectedCatalog.name}</span></div>
+                                {selectedProduct && (
+                                    <div className="flex justify-between text-xs"><span className="text-on-surface-variant">کالا</span><span className="font-medium text-on-surface">{formData.productType || selectedProduct.title}</span></div>
+                                )}
+                                {selectedBrand && (
+                                    <div className="flex justify-between text-xs"><span className="text-on-surface-variant">برند</span><span className="font-medium text-on-surface">{selectedBrand.title}</span></div>
+                                )}
+                                <div className="flex justify-between text-xs"><span className="text-on-surface-variant">تصاویر</span><span className="font-medium text-on-surface">{uploadedCount} عدد</span></div>
+                                <div className="flex justify-between text-xs"><span className="text-on-surface-variant">واحد</span><span className="font-medium text-on-surface">{formData.unitTitle || unitName}{formData.unitQty ? ` (${formData.unitQty.toLocaleString('fa-IR')} ${baseUnitTitle})` : ''}</span></div>
+                                <div className="flex justify-between text-xs">
+                                    <span className="text-on-surface-variant">{isWholesale ? 'حداقل حجم' : 'موجودی'}</span>
+                                    <span className="font-medium text-on-surface">{(isWholesale ? formData.minQuantity : formData.availableQuantity).toLocaleString('fa-IR')} {unitName}</span>
+                                </div>
+                                <div className="flex justify-between text-xs">
+                                    <span className="text-on-surface-variant">{isWholesale ? 'قیمت عمده' : 'قیمت'}</span>
+                                    <span className="font-extrabold text-amber-600 dark:text-amber-400">{formData.unitPrice.toLocaleString('fa-IR')} {CURRENCY}</span>
+                                </div>
+                                {isWholesale && formData.volumeTiers.length > 0 && (
+                                    <div className="flex justify-between text-xs"><span className="text-on-surface-variant">تخفیف حجمی</span><span className="font-medium text-on-surface">{formData.volumeTiers.length.toLocaleString('fa-IR')} پله</span></div>
+                                )}
+                                {isWholesale && formData.giftPrice > 0 && (
+                                    <div className="flex justify-between text-xs"><span className="text-on-surface-variant">قیمت اشانتیون</span><span className="font-medium text-on-surface">{formData.giftPrice.toLocaleString('fa-IR')} {CURRENCY}</span></div>
+                                )}
+                                <div className="flex justify-between text-xs"><span className="text-on-surface-variant">محل</span><span className="font-medium text-on-surface">{formData.cityLabel || '—'}</span></div>
+                            </div>
+                        </div>
+
+                        <div className="grid grid-cols-3 gap-2">
+                            {[1, 2, 3].map((s) => (
+                                <button key={s} type="button" onClick={() => goToStep(s)}
+                                        className="h-9 rounded-xl border border-outline-variant/40 text-[11px] font-bold
+                                            text-on-surface-variant hover:text-amber-600 hover:border-amber-500/40 transition-colors">
+                                    ویرایش بخش {s}
+                                </button>
+                            ))}
+                        </div>
+                    </div>
+                )}
+
+                {/* ═══ ناوبری مراحل — RTL: بعدی در چپ، قبلی در راست ═══ */}
                 <div className="flex items-center justify-between pt-2">
-                    {currentStep > 1 ? (
-                        <button type="button" onClick={prevStep}
-                                className="h-11 px-5 rounded-xl border-2 border-outline-variant/40 bg-white dark:bg-gray-900
-                                    text-sm font-medium text-on-surface flex items-center gap-2 hover:bg-surface-container-lowest transition-all">
-                            <ArrowRight className="w-4 h-4" /> قبلی
-                        </button>
-                    ) : <div></div>}
+                    {/* سمت چپ = بعدی یا ثبت */}
                     {currentStep < TOTAL_STEPS ? (
                         <button type="button" onClick={nextStep}
-                                disabled={currentStep === 1 && !selectedProduct}
+                                disabled={currentStep === 1 && (!selectedProduct || (brandMode === true && !selectedBrand))}
                                 className="h-11 px-6 rounded-xl bg-amber-500 text-white text-sm font-bold flex items-center gap-2
                                     hover:bg-amber-600 transition-all active:scale-95 shadow-md shadow-amber-200/50 dark:shadow-none
                                     disabled:opacity-40 disabled:cursor-not-allowed disabled:active:scale-100">
-                            <ArrowLeft className="w-4 h-4" /> بعدی
+                            بعدی <ArrowLeft className="w-4 h-4" />
                         </button>
                     ) : (
                         <button type="button" onClick={handleSubmit} disabled={submitting}
@@ -1057,6 +1115,14 @@ export function AdForm({ adId, onSuccess }: { adId?: string; onSuccess?: () => v
                                 : <><Check className="w-4 h-4" /> {isEditMode ? 'ذخیره تغییرات' : 'ثبت نهایی'}</>}
                         </button>
                     )}
+                    {/* سمت راست = قبلی */}
+                    {currentStep > 1 ? (
+                        <button type="button" onClick={prevStep}
+                                className="h-11 px-5 rounded-xl border-2 border-outline-variant/40 bg-white dark:bg-gray-900
+                                    text-sm font-medium text-on-surface flex items-center gap-2 hover:bg-surface-container-lowest transition-all">
+                            <ArrowRight className="w-4 h-4" /> قبلی
+                        </button>
+                    ) : <div></div>}
                 </div>
             </main>
 

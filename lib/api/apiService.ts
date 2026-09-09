@@ -250,6 +250,9 @@ export const apiService = {
         }): Promise<any> => {
             return apiRequest(`/products/${id}`, { method: 'PUT', data });
         },
+        delete: async (id: string): Promise<any> => {
+            return apiRequest(`/products/${id}`, { method: 'DELETE' });
+        },
     },
 
     // ============================================================

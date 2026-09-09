@@ -22,6 +22,9 @@ interface Props {
     error?: string;
     /** اگه true باشه، toggle «دارای برند / بدون برند» نشون داده می‌شه */
     allowNoBrand?: boolean;
+    /** ✅ mode کنترل‌شده از parent: null=انتخاب نشده، true=دارای برند، false=بدون برند */
+    mode?: boolean | null;
+    onModeChange?: (mode: boolean | null) => void;
 }
 
 /**
@@ -41,9 +44,16 @@ export default function BrandPicker({
     required = false,
     error,
     allowNoBrand = true,
+    mode,
+    onModeChange,
 }: Props) {
-    // ✅ null = هیچ‌کدوم، true = دارای برند، false = بدون برند
-    const [brandMode, setBrandMode] = useState<boolean | null>(!!value ? true : null);
+    // ✅ controlled mode (از parent) یا uncontrolled (داخلی)
+    const [internalMode, setInternalMode] = useState<boolean | null>(!!value ? true : null);
+    const brandMode = mode !== undefined ? mode : internalMode;
+    const setBrandMode = (m: boolean | null) => {
+        if (onModeChange) onModeChange(m);
+        else setInternalMode(m);
+    };
 
     return (
         <div className="space-y-2">

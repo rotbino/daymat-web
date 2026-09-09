@@ -64,6 +64,7 @@ export default function ProductReferencePicker({
                 thumbnailUrl: data.imageUrl,
             })}
             updateFn={(id, data) => apiService.product.update(id, data)}
+            deleteFn={(id) => apiService.product.delete(id)}
             renderCreateFields={({ title, setTitle, dataRef }) => (
                 <CreateProductExtraFields dataRef={dataRef} />
             )}
