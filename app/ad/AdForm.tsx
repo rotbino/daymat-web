@@ -19,7 +19,6 @@ import { NumberInput } from '@/components/common/NumberInput';
 import { DropSelector } from '@/components/common/DropSelector';
 import { IranLocationSelector } from '@/app/components/IranLocationSelector';
 import ProductReferencePicker, { ProductValue } from '@/app/components/ProductReferencePicker';
-import BrandPicker, { BrandValue } from '@/app/components/BrandPicker';
 import UnitSettingsModal from './components/UnitSettingsModal';
 import CategorySettingsModal from './components/CategorySettingsModal';
 import CategoryPicker from './components/CategoryPicker';
@@ -173,10 +172,7 @@ export function AdForm({ adId, onSuccess }: { adId?: string; onSuccess?: () => v
     });
     // ✅ state کالای انتخاب‌شده (برای نمایش در ProductReferencePicker)
     const [selectedProduct, setSelectedProduct] = useState<ProductValue | null>(null);
-    // ✅ state برند انتخاب‌شده (مستقل از کالا)
-    const [selectedBrand, setSelectedBrand] = useState<BrandValue | null>(null);
-    // ✅ null=انتخاب نشده، true=دارای برند، false=بدون برند
-    const [brandMode, setBrandMode] = useState<boolean | null>(null);
+    // ✅ برند از کالای مرجع ارث می‌برد — دیگر مستقل نیست
     const [images, setImages] = useState<ImageSlot[]>([]);
     const [submitting, setSubmitting] = useState(false);
     const [unitModalOpen, setUnitModalOpen] = useState(false);
@@ -392,17 +388,7 @@ export function AdForm({ adId, onSuccess }: { adId?: string; onSuccess?: () => v
                     thumbnailUrl: (existingAd as any).productRef?.thumbnailUrl,
                 });
             }
-            // ✅ برند مستقل
-            if ((existingAd as any).brandId) {
-                setSelectedBrand({
-                    id: (existingAd as any).brandId,
-                    title: (existingAd as any).brand?.title || '',
-                    logoUrl: (existingAd as any).brand?.logoUrl,
-                });
-                setBrandMode(true);  // ✅ دارای برند
-            } else {
-                setBrandMode(null);  // ✅ انتخاب نشده
-            }
+            // ✅ برند از کالای مرجع ارث می‌بره — نیازی به state جداگانه نیست
         }
     }, [isEditMode, existingAd]);
 
@@ -416,10 +402,6 @@ export function AdForm({ adId, onSuccess }: { adId?: string; onSuccess?: () => v
             }
             if (selectedProduct) {
                 if (!formData.unitId) errs.push('واحد فروش را انتخاب کن.');
-                // ✅ اگه دارای برند انتخاب شده ولی برند انتخاب نشده
-                if (selectedBrand === null && brandMode === true) {
-                    errs.push('برند کالا را انتخاب کن یا روی «بدون برند» بگذار.');
-                }
             }
         } else if (step === 2) {
             if (isWholesale) {
@@ -492,7 +474,7 @@ export function AdForm({ adId, onSuccess }: { adId?: string; onSuccess?: () => v
                         productType: selectedProduct?.title || formData.productType,
                         // ✅ کالای مرجع
                         productReferenceId: selectedProduct?.id || null,
-                        brandId: selectedBrand?.id || null,
+                        brandId: selectedProduct?.brandId || null,
                         unitPrice: formData.unitPrice,
                         singleUnitPrice: formData.singleUnitPrice || null,
                         consumerPrice: formData.consumerPrice || null,
@@ -525,7 +507,7 @@ export function AdForm({ adId, onSuccess }: { adId?: string; onSuccess?: () => v
                     productType: selectedProduct?.title || formData.productType,
                     // ✅ کالای مرجع
                     productReferenceId: selectedProduct?.id || undefined,
-                    brandId: selectedBrand?.id || undefined,
+                    brandId: selectedProduct?.brandId || undefined,
                     unitPrice: formData.unitPrice,
                     singleUnitPrice: formData.singleUnitPrice || null,
                     consumerPrice: formData.consumerPrice || null,
@@ -733,17 +715,12 @@ export function AdForm({ adId, onSuccess }: { adId?: string; onSuccess?: () => v
                         </section>
 
                         {/* ✅ برند — مستقل از کالا، فقط اگه کالا انتخاب شده */}
-                        {selectedProduct && (
-                            <section className="rounded-2xl bg-surface-container-low/60 border border-outline-variant/30 p-4 space-y-3 animate-in fade-in duration-300">
-                                <BrandPicker
-                                    value={selectedBrand}
-                                    onChange={setSelectedBrand}
-                                    label="برند کالا"
-                                    placeholder="مثلاً: مکنزی"
-                                    mode={brandMode}
-                                    onModeChange={setBrandMode}
-                                />
-                            </section>
+                        {/* ✅ برند از کالای مرجع نمایش داده می‌شه (فقط‌خواندنی) */}
+                        {selectedProduct && selectedProduct.brandTitle && (
+                            <div className="rounded-xl bg-primary/5 border border-primary/20 px-3 py-2 flex items-center gap-2">
+                                <span className="text-[10px] font-bold text-on-surface-variant">برند:</span>
+                                <span className="text-xs font-bold text-primary">{selectedProduct.brandTitle}</span>
+                            </div>
                         )}
 
                         {/* ✅ تصویر آگهی — زیر انتخاب کالا، فقط اگه کالا انتخاب شده */}
@@ -1059,8 +1036,8 @@ export function AdForm({ adId, onSuccess }: { adId?: string; onSuccess?: () => v
                                 {selectedProduct && (
                                     <div className="flex justify-between text-xs"><span className="text-on-surface-variant">کالا</span><span className="font-medium text-on-surface">{formData.productType || selectedProduct.title}</span></div>
                                 )}
-                                {selectedBrand && (
-                                    <div className="flex justify-between text-xs"><span className="text-on-surface-variant">برند</span><span className="font-medium text-on-surface">{selectedBrand.title}</span></div>
+                                {selectedProduct?.brandTitle && (
+                                    <div className="flex justify-between text-xs"><span className="text-on-surface-variant">برند</span><span className="font-medium text-on-surface">{selectedProduct.brandTitle}</span></div>
                                 )}
                                 <div className="flex justify-between text-xs"><span className="text-on-surface-variant">تصاویر</span><span className="font-medium text-on-surface">{uploadedCount} عدد</span></div>
                                 <div className="flex justify-between text-xs"><span className="text-on-surface-variant">واحد</span><span className="font-medium text-on-surface">{formData.unitTitle || unitName}{formData.unitQty ? ` (${formData.unitQty.toLocaleString('fa-IR')} ${baseUnitTitle})` : ''}</span></div>
@@ -1099,7 +1076,7 @@ export function AdForm({ adId, onSuccess }: { adId?: string; onSuccess?: () => v
                     {/* سمت چپ = بعدی یا ثبت */}
                     {currentStep < TOTAL_STEPS ? (
                         <button type="button" onClick={nextStep}
-                                disabled={currentStep === 1 && (!selectedProduct || (brandMode === true && !selectedBrand))}
+                                disabled={currentStep === 1 && !selectedProduct}
                                 className="h-11 px-6 rounded-xl bg-amber-500 text-white text-sm font-bold flex items-center gap-2
                                     hover:bg-amber-600 transition-all active:scale-95 shadow-md shadow-amber-200/50 dark:shadow-none
                                     disabled:opacity-40 disabled:cursor-not-allowed disabled:active:scale-100">
