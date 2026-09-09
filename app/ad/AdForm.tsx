@@ -10,6 +10,7 @@ import { toast } from 'sonner';
 import {
     ArrowLeft,
     ArrowRight,
+    Camera,
     Check, Images,
     Loader2, MapPin, Package, Pencil, Plus, Search, Store, Tag, Wallet, X,
 } from 'lucide-react';
@@ -22,6 +23,10 @@ import BrandPicker, { BrandValue } from '@/app/components/BrandPicker';
 import UnitSettingsModal from './components/UnitSettingsModal';
 import CategorySettingsModal from './components/CategorySettingsModal';
 import CategoryPicker from './components/CategoryPicker';
+
+// ═══ ثابت‌ها ═══
+const MAX_IMAGES = 6;
+const CURRENCY = 'تومان';
 
 // ═══ ابزارهای درخت ═══
 function findNodeInTree(nodes: any[], id: string): any {
