@@ -19,6 +19,7 @@ import {
     Store,
     ShoppingCart,
     Package, BookOpen,
+    Tag,
 } from 'lucide-react';
 import { toast } from 'sonner';
 import { apiService } from '@/lib/api/apiService';
@@ -32,6 +33,7 @@ const menuItems = [
     { href: '/arm-admin/ads', label: 'آگهی‌ها', icon: Package },
     { href: '/arm-admin/sellers', label: 'فروشندگان', icon: Store },
     { href: '/arm-admin/buyers', label: 'خریداران', icon: ShoppingCart },
+    { href: '/arm-admin/references', label: 'کالا و برندها', icon: Tag },
     { href: '/arm-admin/financial', label: 'مالی', icon: CreditCard },
     { href: '/arm-admin/settings', label: 'تنظیمات', icon: Settings },
     { href: '/', label: 'سایت', icon: Home },

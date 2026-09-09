@@ -563,7 +563,7 @@ export function AdFormProvider({ adId, onSuccess, children }: { adId?: string; o
         setSubmitting(true);
         try {
             const newFiles = images.filter((s) => s.file).map((s) => s.file!);
-            let adResultId: string | null = null;
+            let adResultId: string = '';
 
             // ✅ شرایط پرداخت چکی — همان shape مدل قدیمی (سازگار با نمایش جزئیات آگهی)
             // installment قدیمی حفظ می‌شه تا داده‌های اقساطی آگهی‌های قبلی موقع ویرایش از بین نره

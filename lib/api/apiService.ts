@@ -194,6 +194,9 @@ export const apiService = {
             const res: any = await apiRequest(url);
             return { items: res?.items || [] };
         },
+        // ✅ درخت کامل جغرافیا — برای فیلترها
+        getFullTree: (): Promise<any[]> =>
+            apiRequest('/location/tree'),
     },
 
     // ============================================================
@@ -214,6 +217,9 @@ export const apiService = {
             category?: string;
             keywords?: string[];
             logoUrl?: string;
+            description?: string;
+            // ✅ اسلاگ بازار مبدأ — وقتی از داخل یک بازار ثبت می‌شود
+            armSlug?: string;
         }): Promise<any> => {
             return apiRequest('/brands', { method: 'POST', data });
         },
@@ -242,6 +248,12 @@ export const apiService = {
             category?: string;
             keywords?: string[];
             imageUrl?: string;
+            thumbnailUrl?: string;
+            description?: string;
+            unitHints?: string[];
+            specs?: Record<string, string>;
+            // ✅ اسلاگ بازار مبدأ — وقتی از داخل یک بازار ثبت می‌شود
+            armSlug?: string;
         }): Promise<any> => {
             return apiRequest('/products', { method: 'POST', data });
         },
@@ -625,12 +637,6 @@ export const apiService = {
             apiRequest('/feedback', { method: 'POST', data }),
     },
 
-    location: {
-        getFullTree: (): Promise<any[]> =>
-            apiRequest('/location/tree'),
-    },
-
-
     // ============================================================
     // ADMIN
     // ============================================================
@@ -693,6 +699,44 @@ export const apiService = {
                 apiRequest(`/admin/units/${id}`, { method: 'PUT', data }),
             delete: (id: string): Promise<any> =>
                 apiRequest(`/admin/units/${id}`, { method: 'DELETE' }),
+        },
+        // ✅ مدیریت کالاهای مرجع — فقط ادمین سیستم
+        products: {
+            getAll: (params?: {
+                q?: string; brandId?: string; category?: string; armId?: string;
+                isActive?: boolean | string; confirmed?: boolean | string; isByUser?: boolean | string;
+                hasAds?: boolean | string; page?: number; limit?: number;
+                sortBy?: string; sortOrder?: 'asc' | 'desc';
+            }): Promise<any> =>
+                apiRequest('/admin/products', { params }),
+            getOne: (id: string): Promise<any> =>
+                apiRequest(`/admin/products/${id}`),
+            getAds: (id: string, params?: { page?: number; limit?: number }): Promise<any> =>
+                apiRequest(`/admin/products/${id}/ads`, { params }),
+            update: (id: string, data: any): Promise<any> =>
+                apiRequest(`/admin/products/${id}`, { method: 'PUT', data }),
+            delete: (id: string): Promise<any> =>
+                apiRequest(`/admin/products/${id}`, { method: 'DELETE' }),
+        },
+        // ✅ مدیریت برندها — فقط ادمین سیستم
+        brands: {
+            getAll: (params?: {
+                q?: string; category?: string; armId?: string;
+                isActive?: boolean | string; confirmed?: boolean | string; isByUser?: boolean | string;
+                hasProducts?: boolean | string; page?: number; limit?: number;
+                sortBy?: string; sortOrder?: 'asc' | 'desc';
+            }): Promise<any> =>
+                apiRequest('/admin/brands', { params }),
+            getOne: (id: string): Promise<any> =>
+                apiRequest(`/admin/brands/${id}`),
+            getAds: (id: string, params?: { page?: number; limit?: number }): Promise<any> =>
+                apiRequest(`/admin/brands/${id}/ads`, { params }),
+            getProducts: (id: string, params?: { page?: number; limit?: number }): Promise<any> =>
+                apiRequest(`/admin/brands/${id}/products`, { params }),
+            update: (id: string, data: any): Promise<any> =>
+                apiRequest(`/admin/brands/${id}`, { method: 'PUT', data }),
+            delete: (id: string): Promise<any> =>
+                apiRequest(`/admin/brands/${id}`, { method: 'DELETE' }),
         },
         industries: {
             getAll: (): Promise<any[]> => apiRequest('/admin/industries'),
@@ -948,6 +992,42 @@ export const apiService = {
             // تعیین دستهٔ بازاری یک کالا
             setAdCategory: (slug: string, adId: string, categoryId: string): Promise<any> =>
                 apiRequest(`/arm-admin/${slug}/catalogs/ads/${adId}/category`, { method: 'PATCH', data: { categoryId } }),
+        },
+
+        // ============================================================
+        // ✅ مدیریت برندها و کالاهای مرجع بازار
+        // فقط داده‌های ثبت‌شده از طریق همین بازار/فروشندگانش
+        // ============================================================
+        references: {
+            getProducts: (slug: string, params?: {
+                q?: string; isActive?: boolean | string; confirmed?: boolean | string;
+                page?: number; limit?: number; sortBy?: string; sortOrder?: 'asc' | 'desc';
+            }): Promise<any> =>
+                apiRequest(`/arm-admin/${slug}/references/products`, { params }),
+            getProduct: (slug: string, id: string): Promise<any> =>
+                apiRequest(`/arm-admin/${slug}/references/products/${id}`),
+            getProductAds: (slug: string, id: string, params?: { page?: number; limit?: number }): Promise<any> =>
+                apiRequest(`/arm-admin/${slug}/references/products/${id}/ads`, { params }),
+            updateProduct: (slug: string, id: string, data: any): Promise<any> =>
+                apiRequest(`/arm-admin/${slug}/references/products/${id}`, { method: 'PUT', data }),
+            deleteProduct: (slug: string, id: string): Promise<any> =>
+                apiRequest(`/arm-admin/${slug}/references/products/${id}`, { method: 'DELETE' }),
+
+            getBrands: (slug: string, params?: {
+                q?: string; isActive?: boolean | string; confirmed?: boolean | string;
+                page?: number; limit?: number; sortBy?: string; sortOrder?: 'asc' | 'desc';
+            }): Promise<any> =>
+                apiRequest(`/arm-admin/${slug}/references/brands`, { params }),
+            getBrand: (slug: string, id: string): Promise<any> =>
+                apiRequest(`/arm-admin/${slug}/references/brands/${id}`),
+            getBrandAds: (slug: string, id: string, params?: { page?: number; limit?: number }): Promise<any> =>
+                apiRequest(`/arm-admin/${slug}/references/brands/${id}/ads`, { params }),
+            getBrandProducts: (slug: string, id: string, params?: { page?: number; limit?: number }): Promise<any> =>
+                apiRequest(`/arm-admin/${slug}/references/brands/${id}/products`, { params }),
+            updateBrand: (slug: string, id: string, data: any): Promise<any> =>
+                apiRequest(`/arm-admin/${slug}/references/brands/${id}`, { method: 'PUT', data }),
+            deleteBrand: (slug: string, id: string): Promise<any> =>
+                apiRequest(`/arm-admin/${slug}/references/brands/${id}`, { method: 'DELETE' }),
         },
 
 

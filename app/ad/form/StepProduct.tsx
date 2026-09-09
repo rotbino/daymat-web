@@ -5,8 +5,10 @@
 'use client';
 
 import React from 'react';
+import { useSelector } from 'react-redux';
 import { Camera, Images, Package, Pencil, Plus, Store, Tag, X } from 'lucide-react';
 import { cn } from '@/lib/utils';
+import { RootState } from '@/lib/store/store';
 import { NumberInput } from '@/components/common/NumberInput';
 import { DropSelector } from '@/components/common/DropSelector';
 import ProductReferencePicker from '@/app/components/ProductReferencePicker';
@@ -25,6 +27,9 @@ export function StepProduct() {
         images, openImagePicker, removeImage,
         setUnitModalOpen,
     } = useAdForm();
+
+    // ✅ اسلاگ بازار مبدأ — ثبت کالا/برند جدید به همین بازار منتسب می‌شود
+    const { currentSlug } = useSelector((s: RootState) => s.arm);
 
     return (
         <div className="space-y-4 animate-in fade-in duration-200">
@@ -57,6 +62,7 @@ export function StepProduct() {
                         required
                         placeholder="انتخاب از مرجع کالا..."
                         error={!selectedProduct && !formData.productType.trim() ? 'کالا را انتخاب کن' : undefined}
+                        armSlug={currentSlug || undefined}
                     />
                     {/* ✅ عنوان آگهی قابل ویرایش + برند زیرش — با فاصله از سلکتور */}
                     {selectedProduct && (

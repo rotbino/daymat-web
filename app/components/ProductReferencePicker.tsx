@@ -23,6 +23,8 @@ interface Props {
     label?: string;
     required?: boolean;
     error?: string;
+    /** ✅ اسلاگ بازار مبدأ — ثبت کالا به این بازار منتسب می‌شود (برای نظارت مالک بازار) */
+    armSlug?: string;
 }
 
 /** ✅ نرمال‌سازی مقدار انتخاب‌شده — برند از آبجکت brand استخراج می‌شه تا «بدون برند» کاذب نبینیم */
@@ -50,6 +52,7 @@ export default function ProductReferencePicker({
     label,
     required = false,
     error,
+    armSlug,
 }: Props) {
     return (
         <EntityPicker
@@ -71,14 +74,15 @@ export default function ProductReferencePicker({
                 imageUrl: data.imageUrl,
                 thumbnailUrl: data.imageUrl,
                 specs: data.specs,
+                armSlug,
             })}
             updateFn={(id, data) => apiService.product.update(id, data)}
             deleteFn={(id) => apiService.product.delete(id)}
             renderCreateFields={({ dataRef }) => (
-                <CreateProductExtraFields dataRef={dataRef} category={category} />
+                <CreateProductExtraFields dataRef={dataRef} category={category} armSlug={armSlug} />
             )}
             renderEditFields={({ dataRef, initialData }) => (
-                <CreateProductExtraFields dataRef={dataRef} initialData={initialData} category={category} />
+                <CreateProductExtraFields dataRef={dataRef} initialData={initialData} category={category} armSlug={armSlug} />
             )}
             queryKey={`products-picker-${category || 'all'}`}
             createLabel="افزودن کالای جدید به مرجع"
@@ -151,10 +155,12 @@ function CreateProductExtraFields({
     dataRef,
     initialData,
     category,
+    armSlug,
 }: {
     dataRef: React.MutableRefObject<{ [key: string]: any }>;
     initialData?: any;
     category?: string;
+    armSlug?: string;
 }) {
     const [imageUrl, setImageUrl] = useState<string>(initialData?.imageUrl || initialData?.thumbnailUrl || '');
     const [brandValue, setBrandValue] = useState<EntityValue | null>(
@@ -265,7 +271,7 @@ function CreateProductExtraFields({
                     return { items: res.items, hasMore: res.hasMore };
                 }}
                 createFn={async (data) => {
-                    return apiService.brand.create({ title: data.title, category });
+                    return apiService.brand.create({ title: data.title, category, armSlug });
                 }}
                 deleteFn={(id) => apiService.brand.delete(id)}
                 queryKey={`brands-in-product-${category || 'all'}`}

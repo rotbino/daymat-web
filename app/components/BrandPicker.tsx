@@ -25,6 +25,8 @@ interface Props {
     /** ✅ mode کنترل‌شده از parent: null=انتخاب نشده، true=دارای برند، false=بدون برند */
     mode?: boolean | null;
     onModeChange?: (mode: boolean | null) => void;
+    /** ✅ اسلاگ بازار مبدأ — ثبت برند به این بازار منتسب می‌شود (برای نظارت مالک بازار) */
+    armSlug?: string;
 }
 
 /**
@@ -46,6 +48,7 @@ export default function BrandPicker({
     allowNoBrand = true,
     mode,
     onModeChange,
+    armSlug,
 }: Props) {
     // ✅ controlled mode (از parent) یا uncontrolled (داخلی)
     const [internalMode, setInternalMode] = useState<boolean | null>(!!value ? true : null);
@@ -109,7 +112,7 @@ export default function BrandPicker({
                         return { items: res.items, hasMore: res.hasMore };
                     }}
                     createFn={async (data) => {
-                        return apiService.brand.create({ title: data.title, category });
+                        return apiService.brand.create({ title: data.title, category, armSlug });
                     }}
                     deleteFn={(id) => apiService.brand.delete(id)}
                     queryKey={`brands-picker-${category || 'all'}`}

@@ -108,6 +108,20 @@ export interface Catalog {
     };
 }
 
+// ==================== Credit ====================
+// ✅ هماهنگ با بک‌اند (credit) — اعتبار کاتالوگ/کاربر
+export interface Credit {
+    id: string;
+    catalogId?: string;
+    userId?: string;
+    balance: number;
+    totalPurchased?: number;
+    totalSpent?: number;
+    currency: string;
+    createdAt: string;
+    updatedAt: string;
+}
+
 export interface ArmMembership {
     id: string;
     armId: string;
@@ -254,6 +268,22 @@ export interface Ad {
     paymentMethods?: AdPaymentMethods | null;
     customFields?: AdCustomFields;
     priceHistory?: { price: number; updatedAt: string; note?: string }[];
+    // ✅ هماهنگ با CreateAdDto بک‌اند
+    armSlug?: string;
+    catalogId?: string;
+    productReferenceId?: string | null;
+    brandId?: string | null;
+    publishToMarket?: boolean;
+    singleUnitPrice?: number | null;
+    consumerPrice?: number | null;
+    giftPrice?: number | null;
+    volumeTiers?: { minQty: number; price: number }[] | null;
+    unitQty?: number;
+    unitIsVariableQty?: boolean;
+    validityHours?: number;
+    bumpDurationHours?: number;
+    status?: string;
+    specs?: Record<string, string> | null;
 }
 
 // ✅ شرایط پرداخت — سازگار با PaymentMethodsDto بک‌اند (ad.dto.ts)
@@ -281,12 +311,17 @@ export interface AdCustomFields {
 }
 
 export interface CreateAdDto {
-    armSlug: string;
+    armSlug?: string;
+    // ✅ هماهنگ با بک‌اند — کاتالوگ مالک آگهی (الزامی در جریان جدید)
+    catalogId: string;
     categoryId?: string;
     customCategoryId?: string;
     unitId?: string;
     title: string;
     productType?: string;
+    // ✅ null در ویرایش = جداکردن کالا/برند از آگهی
+    productReferenceId?: string | null;
+    brandId?: string | null;
     description?: string;
     unitPrice: number;
     minQuantity: number;
@@ -296,11 +331,13 @@ export interface CreateAdDto {
     provinceCode?: string;
     cityCode?: string;
     province?: string;
-    city: string;
+    city?: string;
     locationDetail?: string;
     validityHours?: number;
     isAnonymous?: boolean;
     isBumped?: boolean;
+    bumpDurationHours?: number;
+    publishToMarket?: boolean;
     consumerPrice?: number | null;
     singleUnitPrice?: number | null;
     giftPrice?: number | null;
@@ -513,6 +550,139 @@ export interface CreateBusinessEntityDto {
 
 
 
+
+// ==================== Brand (برند) ====================
+// ✅ هماهنگ با مدل Brand بک‌اند — دادهٔ پایهٔ مشترک
+export interface Brand {
+    id: string;
+    title: string;
+    slug?: string;
+    category?: string | null;
+    categoryPath?: string[];
+    logoUrl?: string | null;
+    description?: string | null;
+    keywords?: string[];
+    isActive: boolean;
+    usageCount: number;
+    confirmed: boolean;
+    isByUser: boolean;
+    armId?: string | null;
+    createdByUserId?: string | null;
+    // ✅ فقط در خروجی‌های مدیریتی وصل می‌شود (relation اسکیمایی ندارند)
+    creator?: { id: string; fullName?: string | null; phone: string } | null;
+    arm?: { id: string; name: string; slug: string } | null;
+    _count?: { ads: number; products: number };
+    createdAt: string;
+    updatedAt: string;
+}
+
+// ==================== ProductReference (کالای مرجع) ====================
+// ✅ هماهنگ با مدل ProductReference بک‌اند — کاتالوگ مرکزی کالاها
+export interface ProductReference {
+    id: string;
+    title: string;
+    slug?: string;
+    brandId?: string | null;
+    brand?: { id: string; title: string; logoUrl?: string | null } | null;
+    category?: string | null;
+    categoryPath?: string[];
+    imageUrl?: string | null;
+    thumbnailUrl?: string | null;
+    description?: string | null;
+    specs?: Record<string, string> | null;
+    keywords?: string[];
+    unitHints?: string[];
+    isActive: boolean;
+    usageCount: number;
+    confirmed: boolean;
+    isByUser: boolean;
+    isNew: boolean;
+    armId?: string | null;
+    createdByUserId?: string | null;
+    creator?: { id: string; fullName?: string | null; phone: string } | null;
+    arm?: { id: string; name: string; slug: string } | null;
+    _count?: { ads: number };
+    createdAt: string;
+    updatedAt: string;
+}
+
+// ✅ آگهی خلاصه‌شده در خروجی‌های مدیریتی (چه آگهی‌هایی به این کالا/برند وصل است)
+export interface AdRefItem {
+    id: string;
+    title: string;
+    unitPrice: number;
+    minQuantity?: number;
+    status?: string;
+    city?: string | null;
+    createdAt: string;
+    catalog?: { id: string; name: string } | null;
+    brand?: { id: string; title: string } | null;
+}
+
+// ✅ پاسخ استاندارد لیست‌های مدیریتی
+export interface AdminReferenceListResponse<T> {
+    items: T[];
+    total: number;
+    page: number;
+    hasMore: boolean;
+}
+
+// ✅ فیلترهای لیست کالاهای مرجع (ادمین سیستم / مالک بازار)
+export interface AdminProductQuery {
+    q?: string;
+    brandId?: string;
+    category?: string;
+    armId?: string;
+    isActive?: boolean;
+    confirmed?: boolean;
+    isByUser?: boolean;
+    hasAds?: boolean;
+    page?: number;
+    limit?: number;
+    sortBy?: 'createdAt' | 'usageCount' | 'title';
+    sortOrder?: 'asc' | 'desc';
+}
+
+// ✅ فیلترهای لیست برندها (ادمین سیستم / مالک بازار)
+export interface AdminBrandQuery {
+    q?: string;
+    category?: string;
+    armId?: string;
+    isActive?: boolean;
+    confirmed?: boolean;
+    isByUser?: boolean;
+    hasProducts?: boolean;
+    page?: number;
+    limit?: number;
+    sortBy?: 'createdAt' | 'usageCount' | 'title';
+    sortOrder?: 'asc' | 'desc';
+}
+
+// ✅ ویرایش مدیریتی کالای مرجع — همهٔ فیلدها + کنترل وضعیت
+export interface UpdateProductAdminDto {
+    title?: string;
+    brandId?: string;
+    category?: string;
+    keywords?: string[];
+    imageUrl?: string;
+    thumbnailUrl?: string;
+    description?: string;
+    unitHints?: string[];
+    specs?: Record<string, string>;
+    isActive?: boolean;
+    confirmed?: boolean;
+}
+
+// ✅ ویرایش مدیریتی برند
+export interface UpdateBrandAdminDto {
+    title?: string;
+    category?: string;
+    keywords?: string[];
+    logoUrl?: string;
+    description?: string;
+    isActive?: boolean;
+    confirmed?: boolean;
+}
 
 export const PERMISSION_LEVELS = {
     1: {  // سطح پایه - مالک بازار معمولی

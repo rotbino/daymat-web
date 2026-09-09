@@ -34,6 +34,7 @@ import {
     Home,
     ChevronDown,
     ArrowRight, MessageSquare,
+    Tag,
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { ThemeToggle } from '@/app_/components/ThemeToggle';
@@ -81,6 +82,8 @@ const menuGroups: MenuGroup[] = [
         items: [
             { href: '/admin/categories', label: 'گروه‌های کالا', icon: Layers },
             { href: '/admin/units', label: 'واحدهای اندازه‌گیری', icon: Ruler },
+            { href: '/admin/product-references', label: 'کالاهای مرجع', icon: Package },
+            { href: '/admin/brands', label: 'برندها', icon: Tag },
             { href: '/admin/industries', label: 'صنوف', icon: Building2 },
             { href: '/admin/activities', label: 'فعالیت‌ها', icon: Activity },
             { href: '/admin/locations', label: 'مناطق جغرافیایی', icon: MapPin },

@@ -1083,7 +1083,7 @@ export const useBrandSearch = (q: string, category?: string, page = 1, enabled =
 export const useCreateBrand = () => {
     const queryClient = useQueryClient();
     return useMutation({
-        mutationFn: (data: { title: string; category?: string; keywords?: string[] }) =>
+        mutationFn: (data: { title: string; category?: string; keywords?: string[]; logoUrl?: string; armSlug?: string }) =>
             apiService.brand.create(data),
         onSuccess: () => {
             queryClient.invalidateQueries({ queryKey: ['brand-search'] });
@@ -1110,6 +1110,11 @@ export const useCreateProduct = () => {
             category?: string;
             keywords?: string[];
             imageUrl?: string;
+            thumbnailUrl?: string;
+            description?: string;
+            unitHints?: string[];
+            specs?: Record<string, string>;
+            armSlug?: string;
         }) => apiService.product.create(data),
         onSuccess: () => {
             queryClient.invalidateQueries({ queryKey: ['product-search'] });
@@ -1124,6 +1129,171 @@ export const useUpdateProduct = () => {
         onSuccess: () => {
             queryClient.invalidateQueries({ queryKey: ['product-search'] });
         },
+    });
+};
+
+// ═══════════════════════════════════════════════
+// ✅ مدیریت داده‌های پایه — کالاهای مرجع و برندها
+// (پنل ادمین سیستم + پنل مالک بازار)
+// ═══════════════════════════════════════════════
+const adminRefKeys = {
+    products: (params: any) => ['admin-products', params ?? {}] as const,
+    product: (id?: string) => ['admin-product', id] as const,
+    brands: (params: any) => ['admin-brands', params ?? {}] as const,
+    brand: (id?: string) => ['admin-brand', id] as const,
+};
+
+// ─── ادمین سیستم: کالاهای مرجع ───
+export const useAdminProducts = (params?: Record<string, any>) => {
+    return useQuery({
+        queryKey: adminRefKeys.products(params),
+        queryFn: () => apiService.admin.products.getAll(params),
+        staleTime: 30_000,
+        placeholderData: keepPreviousData,
+    });
+};
+
+export const useAdminProduct = (id?: string) => {
+    return useQuery({
+        queryKey: adminRefKeys.product(id),
+        queryFn: () => apiService.admin.products.getOne(id!),
+        enabled: !!id,
+        staleTime: 30_000,
+    });
+};
+
+export const useUpdateAdminProduct = () => {
+    const queryClient = useQueryClient();
+    return useMutation({
+        mutationFn: ({ id, data }: { id: string; data: any }) => apiService.admin.products.update(id, data),
+        onSuccess: (_res, vars) => {
+            queryClient.invalidateQueries({ queryKey: ['admin-products'] });
+            queryClient.invalidateQueries({ queryKey: ['admin-product', vars.id] });
+            queryClient.invalidateQueries({ queryKey: ['product-search'] });
+        },
+    });
+};
+
+export const useDeleteAdminProduct = () => {
+    const queryClient = useQueryClient();
+    return useMutation({
+        mutationFn: (id: string) => apiService.admin.products.delete(id),
+        onSuccess: () => {
+            queryClient.invalidateQueries({ queryKey: ['admin-products'] });
+            queryClient.invalidateQueries({ queryKey: ['product-search'] });
+        },
+    });
+};
+
+// ─── ادمین سیستم: برندها ───
+export const useAdminBrands = (params?: Record<string, any>) => {
+    return useQuery({
+        queryKey: adminRefKeys.brands(params),
+        queryFn: () => apiService.admin.brands.getAll(params),
+        staleTime: 30_000,
+        placeholderData: keepPreviousData,
+    });
+};
+
+export const useAdminBrand = (id?: string) => {
+    return useQuery({
+        queryKey: adminRefKeys.brand(id),
+        queryFn: () => apiService.admin.brands.getOne(id!),
+        enabled: !!id,
+        staleTime: 30_000,
+    });
+};
+
+export const useUpdateAdminBrand = () => {
+    const queryClient = useQueryClient();
+    return useMutation({
+        mutationFn: ({ id, data }: { id: string; data: any }) => apiService.admin.brands.update(id, data),
+        onSuccess: (_res, vars) => {
+            queryClient.invalidateQueries({ queryKey: ['admin-brands'] });
+            queryClient.invalidateQueries({ queryKey: ['admin-brand', vars.id] });
+            queryClient.invalidateQueries({ queryKey: ['brand-search'] });
+        },
+    });
+};
+
+export const useDeleteAdminBrand = () => {
+    const queryClient = useQueryClient();
+    return useMutation({
+        mutationFn: (id: string) => apiService.admin.brands.delete(id),
+        onSuccess: () => {
+            queryClient.invalidateQueries({ queryKey: ['admin-brands'] });
+            queryClient.invalidateQueries({ queryKey: ['brand-search'] });
+        },
+    });
+};
+
+// ─── مالک بازار: کالاهای مرجع و برندهای بازار خودش ───
+const armRefKeys = {
+    products: (slug: string, params: any) => ['arm-ref-products', slug, params ?? {}] as const,
+    brands: (slug: string, params: any) => ['arm-ref-brands', slug, params ?? {}] as const,
+};
+
+export const useArmReferenceProducts = (slug?: string, params?: Record<string, any>) => {
+    return useQuery({
+        queryKey: armRefKeys.products(slug ?? '', params ?? {}),
+        queryFn: () => apiService.armAdmin.references.getProducts(slug!, params),
+        enabled: !!slug,
+        staleTime: 30_000,
+        placeholderData: keepPreviousData,
+    });
+};
+
+export const useArmReferenceBrands = (slug?: string, params?: Record<string, any>) => {
+    return useQuery({
+        queryKey: armRefKeys.brands(slug ?? '', params ?? {}),
+        queryFn: () => apiService.armAdmin.references.getBrands(slug!, params),
+        enabled: !!slug,
+        staleTime: 30_000,
+        placeholderData: keepPreviousData,
+    });
+};
+
+const useInvalidateArmRefs = () => {
+    const queryClient = useQueryClient();
+    return (slug: string) => {
+        queryClient.invalidateQueries({ queryKey: ['arm-ref-products', slug] });
+        queryClient.invalidateQueries({ queryKey: ['arm-ref-brands', slug] });
+        queryClient.invalidateQueries({ queryKey: ['product-search'] });
+        queryClient.invalidateQueries({ queryKey: ['brand-search'] });
+    };
+};
+
+export const useUpdateArmReferenceProduct = (slug?: string) => {
+    const invalidate = useInvalidateArmRefs();
+    return useMutation({
+        mutationFn: ({ id, data }: { id: string; data: any }) =>
+            apiService.armAdmin.references.updateProduct(slug!, id, data),
+        onSuccess: (_res, _vars) => slug && invalidate(slug),
+    });
+};
+
+export const useDeleteArmReferenceProduct = (slug?: string) => {
+    const invalidate = useInvalidateArmRefs();
+    return useMutation({
+        mutationFn: (id: string) => apiService.armAdmin.references.deleteProduct(slug!, id),
+        onSuccess: () => slug && invalidate(slug),
+    });
+};
+
+export const useUpdateArmReferenceBrand = (slug?: string) => {
+    const invalidate = useInvalidateArmRefs();
+    return useMutation({
+        mutationFn: ({ id, data }: { id: string; data: any }) =>
+            apiService.armAdmin.references.updateBrand(slug!, id, data),
+        onSuccess: () => slug && invalidate(slug),
+    });
+};
+
+export const useDeleteArmReferenceBrand = (slug?: string) => {
+    const invalidate = useInvalidateArmRefs();
+    return useMutation({
+        mutationFn: (id: string) => apiService.armAdmin.references.deleteBrand(slug!, id),
+        onSuccess: () => slug && invalidate(slug),
     });
 };
 
