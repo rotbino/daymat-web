@@ -8,6 +8,9 @@ import { apiService } from '@/lib/api/apiService';
 import { useCreateAd, useUpdateAd, useAd, useUploadFile, useDeleteFile } from '@/lib/api/apiHooks';
 import { toast } from 'sonner';
 import {
+    ArrowLeft,
+    ArrowRight,
+    Check, Images,
     Loader2, MapPin, Package, Pencil, Plus, Search, Store, Tag, Wallet, X,
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
@@ -654,7 +657,8 @@ export function AdForm({ adId, onSuccess }: { adId?: string; onSuccess?: () => v
 
                         {/* ✅ انتخاب کالا از مرکز کالا */}
                         <section className="rounded-2xl bg-surface-container-low/60 border border-outline-variant/30 p-4 space-y-3">
-                            <SectionTitle icon={Tag} text="کالا" />
+                            <SectionTitle icon={Tag}
+                                          text="انتخاب کالا" />
                             {hasCategoryTree && (
                                 <CategoryPicker
                                     value={formData.categoryId}
