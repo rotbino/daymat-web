@@ -1080,7 +1080,7 @@ export function AdForm({ adId, onSuccess }: { adId?: string; onSuccess?: () => v
                                 className="h-11 px-6 rounded-xl bg-amber-500 text-white text-sm font-bold flex items-center gap-2
                                     hover:bg-amber-600 transition-all active:scale-95 shadow-md shadow-amber-200/50 dark:shadow-none
                                     disabled:opacity-40 disabled:cursor-not-allowed disabled:active:scale-100">
-                            بعدی <ArrowLeft className="w-4 h-4" />
+                                 <ArrowRight className="w-4 h-4" />  بعدی
                         </button>
                     ) : (
                         <button type="button" onClick={handleSubmit} disabled={submitting}
@@ -1097,7 +1097,7 @@ export function AdForm({ adId, onSuccess }: { adId?: string; onSuccess?: () => v
                         <button type="button" onClick={prevStep}
                                 className="h-11 px-5 rounded-xl border-2 border-outline-variant/40 bg-white dark:bg-gray-900
                                     text-sm font-medium text-on-surface flex items-center gap-2 hover:bg-surface-container-lowest transition-all">
-                            <ArrowRight className="w-4 h-4" /> قبلی
+                            قبلی   <ArrowLeft className="w-4 h-4" />
                         </button>
                     ) : <div></div>}
                 </div>
