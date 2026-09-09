@@ -8,7 +8,6 @@ import { apiService } from '@/lib/api/apiService';
 import { useCreateAd, useUpdateAd, useAd, useUploadFile, useDeleteFile } from '@/lib/api/apiHooks';
 import { toast } from 'sonner';
 import {
-    ArrowLeft, ArrowRight, Camera, Check, ChevronDown, ClipboardCheck, Clock, Images,
     Loader2, MapPin, Package, Pencil, Plus, Search, Store, Tag, Wallet, X,
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
@@ -20,16 +19,6 @@ import BrandPicker, { BrandValue } from '@/app/components/BrandPicker';
 import UnitSettingsModal from './components/UnitSettingsModal';
 import CategorySettingsModal from './components/CategorySettingsModal';
 import CategoryPicker from './components/CategoryPicker';
-
-const VALIDITY_OPTIONS = [
-    { value: 24, label: '۱ روز' },
-    { value: 48, label: '۲ روز' },
-    { value: 72, label: '۳ روز' },
-    { value: 168, label: '۵ روز' },
-    { value: 240, label: '۱۰ روز' },
-];
-const MAX_IMAGES = 6;
-const CURRENCY = 'تومان';
 
 // ═══ ابزارهای درخت ═══
 function findNodeInTree(nodes: any[], id: string): any {
@@ -158,13 +147,13 @@ export function AdForm({ adId, onSuccess }: { adId?: string; onSuccess?: () => v
 
     // ═══ state فرم ═══
     const [currentStep, setCurrentStep] = useState(1);
-    const TOTAL_STEPS = 4;
+    const TOTAL_STEPS = 3;  // ✅ حذف step 4 (اعتبار قیمت)
     const [formData, setFormData] = useState({
         categoryId: '', productType: '',
         singleUnitPrice: 0, unitPrice: 0,
         minQuantity: 1, availableQuantity: 0,
         cityCode: '', cityLabel: '', provinceCode: '', provinceLabel: '',
-        validityHours: 24, description: '',
+        description: '',
         unitId: '', unitTitle: '',
         unitQty: null as number | null,
         unitIsVariableQty: false, isEditingQty: false,
@@ -340,14 +329,20 @@ export function AdForm({ adId, onSuccess }: { adId?: string; onSuccess?: () => v
         setImages((p) => [...p, { file, previewUrl: URL.createObjectURL(file) }]);
     };
 
-    // ═══ پیش‌فرض شهر ═══
+    // ═══ پیش‌فرض شهر — از کسب‌وکار ═══
     useEffect(() => {
         if (isEditMode || !selectedCatalog) return;
-        if (!formData.cityCode && selectedCatalog.cityCode) {
+        // ✅ اول از business بگیر، اگه نبود از catalog
+        const biz = (selectedCatalog as any).business || {};
+        const cityCode = biz.cityCode || selectedCatalog.cityCode;
+        const cityLabel = biz.city || selectedCatalog.city;
+        const provinceCode = biz.provinceCode || selectedCatalog.provinceCode;
+        const provinceLabel = biz.province || selectedCatalog.province;
+        if (!formData.cityCode && cityCode) {
             setFormData((p) => ({
                 ...p,
-                cityCode: selectedCatalog.cityCode || '', cityLabel: selectedCatalog.city || '',
-                provinceCode: selectedCatalog.provinceCode || '', provinceLabel: selectedCatalog.province || '',
+                cityCode: cityCode || '', cityLabel: cityLabel || '',
+                provinceCode: provinceCode || '', provinceLabel: provinceLabel || '',
             }));
         }
         // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -366,7 +361,7 @@ export function AdForm({ adId, onSuccess }: { adId?: string; onSuccess?: () => v
                 availableQuantity: existingAd.availableQuantity || 0,
                 cityCode: existingAd.cityCode || '', cityLabel: existingAd.city || '',
                 provinceCode: existingAd.provinceCode || '', provinceLabel: existingAd.province || '',
-                validityHours: existingAd.validityHours || 24,
+                
                 description: existingAd.description || '',
                 unitId: existingAd.unitId || '', unitTitle: existingAd.unit?.title || '',
                 unitQty: existingAd.unitQty ?? null,
@@ -488,7 +483,7 @@ export function AdForm({ adId, onSuccess }: { adId?: string; onSuccess?: () => v
                         availableQuantity: formData.availableQuantity,
                         city: formData.cityLabel, cityCode: formData.cityCode,
                         provinceCode: formData.provinceCode,
-                        validityHours: formData.validityHours,
+                        
                         description: formData.description,
                         unitQty: formData.unitQty,
                         unitIsVariableQty: formData.unitIsVariableQty,
@@ -521,7 +516,7 @@ export function AdForm({ adId, onSuccess }: { adId?: string; onSuccess?: () => v
                     availableQuantity: formData.availableQuantity || undefined,
                     city: formData.cityLabel, cityCode: formData.cityCode,
                     provinceCode: formData.provinceCode,
-                    validityHours: formData.validityHours,
+                    
                     description: formData.description,
                     unitQty: formData.unitQty,
                     unitIsVariableQty: formData.unitIsVariableQty,
@@ -1013,27 +1008,11 @@ export function AdForm({ adId, onSuccess }: { adId?: string; onSuccess?: () => v
                                 onCityChange={(code, label) => setFormData((p) => ({ ...p, cityCode: code, cityLabel: label }))}
                             />
                         </section>
-                        <section className="rounded-2xl bg-surface-container-low/60 border border-outline-variant/30 p-4 space-y-2.5">
-                            <SectionTitle icon={Clock} text="مدت اعتبار قیمت" />
-                            <div className="grid grid-cols-3 gap-2">
-                                {VALIDITY_OPTIONS.map((opt) => (
-                                    <button key={opt.value} type="button"
-                                            onClick={() => setFormData((p) => ({ ...p, validityHours: opt.value }))}
-                                            className={cn('h-12 rounded-xl text-sm font-medium border-2 transition-all',
-                                                formData.validityHours === opt.value
-                                                    ? 'border-amber-500 bg-amber-50 dark:bg-amber-900/10 text-amber-700 dark:text-amber-400 font-bold'
-                                                    : 'border-outline-variant/40 hover:border-amber-500/30')}>
-                                        {opt.label}
-                                    </button>
-                                ))}
-                            </div>
-                            <p className="text-xs text-on-surface-variant">این قیمت تا {formData.validityHours} ساعت روی کاتالوگت معتبر است.</p>
-                        </section>
                         <section className="rounded-2xl bg-surface-container-low/60 border border-outline-variant/30 p-4">
-                            <SectionTitle icon={Package} text="توضیحات (اختیاری)" />
+                            <SectionTitle icon={Package} text="نکات فروش (اختیاری)" />
                             <textarea value={formData.description}
                                       onChange={(e) => setFormData((p) => ({ ...p, description: e.target.value }))}
-                                      rows={3} placeholder="توضیحات تکمیلی"
+                                      rows={3} placeholder="مثلا: اصل هست، چک میدیم، حمل رایگان، تخفیف نقدی..."
                                       className="w-full min-h-[72px] py-2.5 px-3.5 text-sm text-right rounded-xl bg-surface-container-lowest
                                           border border-outline-variant/40 dark:border-gray-700 focus:ring-2 focus:ring-amber-500/30
                                           focus:border-amber-500 outline-none transition-all resize-none" />
@@ -1041,61 +1020,6 @@ export function AdForm({ adId, onSuccess }: { adId?: string; onSuccess?: () => v
                     </div>
                 )}
 
-                {/* ═══ مرحله ۴: بررسی ═══ */}
-                {currentStep === 4 && (
-                    <div className="space-y-4 animate-in fade-in duration-200">
-                        <div className="rounded-2xl border border-emerald-500/20 bg-emerald-500/5 p-4 flex items-center gap-3">
-                            <span className="w-10 h-10 rounded-xl bg-emerald-500 grid place-items-center shadow-sm shadow-emerald-500/30">
-                                <ClipboardCheck className="w-5 h-5 text-white" />
-                            </span>
-                            <div>
-                                <h3 className="font-bold text-sm text-emerald-800 dark:text-emerald-300">بررسی نهایی</h3>
-                                <p className="text-[11px] text-emerald-700/70 dark:text-emerald-400/70">پس از تأیید، کالا روی کاتالوگت منتشر می‌شود.</p>
-                            </div>
-                        </div>
-
-                        <div className="bg-white dark:bg-gray-900 rounded-2xl border border-outline-variant/40 shadow-sm overflow-hidden">
-                            <div className="px-4 pb-4 pt-4 space-y-1.5">
-                                <div className="flex justify-between text-xs"><span className="text-on-surface-variant">کاتالوگ</span><span className="font-medium text-on-surface">{selectedCatalog.name}</span></div>
-                                {formData.categoryId && selectedCategoryNode && (
-                                    <div className="flex justify-between text-xs"><span className="text-on-surface-variant">دسته</span><span className="font-medium text-on-surface">{selectedCategoryNode.title}</span></div>
-                                )}
-                                <div className="flex justify-between text-xs"><span className="text-on-surface-variant">کالا</span><span className="font-medium text-on-surface">{formData.productType || '—'}</span></div>
-                                <div className="flex justify-between text-xs"><span className="text-on-surface-variant">تصاویر</span><span className="font-medium text-on-surface">{uploadedCount} عدد</span></div>
-                                <div className="flex justify-between text-xs"><span className="text-on-surface-variant">واحد</span><span className="font-medium text-on-surface">{unitName}{formData.unitQty ? ` (${formData.unitQty.toLocaleString('fa-IR')} ${baseUnitTitle})` : ''}</span></div>
-                                <div className="flex justify-between text-xs">
-                                    <span className="text-on-surface-variant">{isWholesale ? 'حداقل حجم' : 'موجودی'}</span>
-                                    <span className="font-medium text-on-surface">{(isWholesale ? formData.minQuantity : formData.availableQuantity).toLocaleString('fa-IR')} {unitName}</span>
-                                </div>
-                                <div className="flex justify-between text-xs">
-                                    <span className="text-on-surface-variant">{isWholesale ? 'قیمت عمده' : 'قیمت'}</span>
-                                    <span className="font-extrabold text-amber-600 dark:text-amber-400">{formData.unitPrice.toLocaleString('fa-IR')} {CURRENCY}</span>
-                                </div>
-                                {isWholesale && formData.volumeTiers.length > 0 && (
-                                    <div className="flex justify-between text-xs"><span className="text-on-surface-variant">تخفیف حجمی</span><span className="font-medium text-on-surface">{formData.volumeTiers.length.toLocaleString('fa-IR')} پله</span></div>
-                                )}
-                                {isWholesale && formData.giftPrice > 0 && (
-                                    <div className="flex justify-between text-xs"><span className="text-on-surface-variant">قیمت اشانتیون</span><span className="font-medium text-on-surface">{formData.giftPrice.toLocaleString('fa-IR')} {CURRENCY}</span></div>
-                                )}
-                                {liveProfit !== null && liveProfit >= 0 && (
-                                    <div className="flex justify-between text-xs"><span className="text-on-surface-variant">سود خریدار عمده</span><span className="font-bold text-emerald-600">{liveProfit.toLocaleString('fa-IR')} {CURRENCY}</span></div>
-                                )}
-                                <div className="flex justify-between text-xs"><span className="text-on-surface-variant">محل</span><span className="font-medium text-on-surface">{formData.cityLabel || '—'}</span></div>
-                                <div className="flex justify-between text-xs"><span className="text-on-surface-variant">اعتبار</span><span className="font-medium text-on-surface">{formData.validityHours} ساعت</span></div>
-                            </div>
-                        </div>
-
-                        <div className="grid grid-cols-3 gap-2">
-                            {[1, 2, 3].map((s) => (
-                                <button key={s} type="button" onClick={() => goToStep(s)}
-                                        className="h-9 rounded-xl border border-outline-variant/40 text-[11px] font-bold
-                                            text-on-surface-variant hover:text-amber-600 hover:border-amber-500/40 transition-colors">
-                                    ویرایش بخش {s}
-                                </button>
-                            ))}
-                        </div>
-                    </div>
-                )}
 
                 {/* ناوبری مراحل */}
                 <div className="flex items-center justify-between pt-2">
@@ -1103,7 +1027,7 @@ export function AdForm({ adId, onSuccess }: { adId?: string; onSuccess?: () => v
                         <button type="button" onClick={prevStep}
                                 className="h-11 px-5 rounded-xl border-2 border-outline-variant/40 bg-white dark:bg-gray-900
                                     text-sm font-medium text-on-surface flex items-center gap-2 hover:bg-surface-container-lowest transition-all">
-                            قبلی <ArrowLeft className="w-4 h-4" />
+                            <ArrowRight className="w-4 h-4" /> قبلی
                         </button>
                     ) : <div></div>}
                     {currentStep < TOTAL_STEPS ? (
@@ -1112,7 +1036,7 @@ export function AdForm({ adId, onSuccess }: { adId?: string; onSuccess?: () => v
                                 className="h-11 px-6 rounded-xl bg-amber-500 text-white text-sm font-bold flex items-center gap-2
                                     hover:bg-amber-600 transition-all active:scale-95 shadow-md shadow-amber-200/50 dark:shadow-none
                                     disabled:opacity-40 disabled:cursor-not-allowed disabled:active:scale-100">
-                            بعدی <ArrowRight className="w-4 h-4" />
+                            <ArrowLeft className="w-4 h-4" /> بعدی
                         </button>
                     ) : (
                         <button type="button" onClick={handleSubmit} disabled={submitting}
