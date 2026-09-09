@@ -10,9 +10,10 @@ import { toast } from 'sonner';
 import {
     AlertTriangle, ArrowLeft,
     ArrowRight,
+    Banknote,
     Camera,
-    Check, Gift, Images, Info,
-    Loader2, MapPin, Package, Pencil, Plus, Search, Store, Tag, TrendingUp, Wallet, X,
+    Check, ChevronDown, Gift, Images, Info,
+    Loader2, MapPin, Package, Pencil, Plus, Search, Store, Tag, TrendingUp, Wallet, X, Zap,
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { NumberInput } from '@/components/common/NumberInput';
@@ -74,6 +75,14 @@ interface ImageSlot {
 }
 
 const STEP_TITLES = ['کالا', 'قیمت', 'موقعیت', 'بررسی'];
+
+// ✅ سررسیدهای استاندارد چک — روز = ماه × ۳۰ (سازگار با مدل قدیمی paymentMethods)
+const CHEQUE_TERMS = [
+    { days: 30, label: '۱ ماهه' },
+    { days: 60, label: '۲ ماهه' },
+    { days: 90, label: '۳ ماهه' },
+    { days: 180, label: '۶ ماهه' },
+];
 
 export function AdForm({ adId, onSuccess }: { adId?: string; onSuccess?: () => void }) {
     const router = useRouter();
@@ -178,6 +187,13 @@ export function AdForm({ adId, onSuccess }: { adId?: string; onSuccess?: () => v
     const [submitting, setSubmitting] = useState(false);
     const [unitModalOpen, setUnitModalOpen] = useState(false);
     const [catModalOpen, setCatModalOpen] = useState(false);
+    // ✅ شرایط پرداخت — چک (همان مدل قدیمی paymentMethods، ساده‌شده برای فرم)
+    // ✅ installment فقط برای حفظ داده‌های قدیمی آگهی‌های اقساطی هنگام ویرایش — فرم جدید دیگه اقساطی نمی‌سازه
+    const [payment, setPayment] = useState<{ chequeOn: boolean; terms: { days: number; price: number }[]; note: string; installment: any[]; installmentDescription: string }>(
+        { chequeOn: false, terms: [], note: '', installment: [], installmentDescription: '' },
+    );
+    // ✅ گزینه‌های پیشرفته قیمت (مصرف‌کننده/تخفیف حجمی/اشانتیون) — جمع‌شده در آکاردئون برای کوتاه نگه‌داشتن فرم
+    const [showAdvanced, setShowAdvanced] = useState(false);
 
     const selectedCategoryNode = useMemo(
         () => (formData.categoryId ? findNodeInTree(categoryTree, formData.categoryId) : null),
@@ -252,6 +268,18 @@ export function AdForm({ adId, onSuccess }: { adId?: string; onSuccess?: () => v
             return formData.consumerPrice - formData.singleUnitPrice;
         return null;
     }, [formData.consumerPrice, formData.singleUnitPrice]);
+
+    // ✅ تعداد گزینه‌های پیشرفته فعال — برای بج روی آکاردئون
+    const advancedActiveCount = (formData.consumerPrice > 0 ? 1 : 0) + formData.volumeTiers.length + (formData.giftPrice > 0 ? 1 : 0);
+
+    // ✅ انتخاب/حذف سررسید چک
+    const toggleChequeTerm = (days: number) => {
+        setPayment((p) => {
+            if (p.terms.some((t) => t.days === days))
+                return { ...p, terms: p.terms.filter((t) => t.days !== days) };
+            return { ...p, terms: [...p.terms, { days, price: 0 }].sort((a, b) => a.days - b.days) };
+        });
+    };
 
     // ═══ گزینه‌های DropSelector واحد ═══
     const unitOptions = useMemo(() => {
@@ -390,6 +418,25 @@ export function AdForm({ adId, onSuccess }: { adId?: string; onSuccess?: () => v
                     thumbnailUrl: (existingAd as any).productRef?.thumbnailUrl,
                 });
             }
+            // ✅ شرایط پرداخت چکی — از مدل قدیمی paymentMethods
+            const pmOld = (existingAd as any).paymentMethods;
+            if (pmOld?.cheque?.length > 0) {
+                setPayment({
+                    chequeOn: true,
+                    terms: (pmOld.cheque as any[])
+                        .map((c) => ({ days: c.days || 30, price: c.price || 0 }))
+                        .sort((a, b) => a.days - b.days),
+                    note: pmOld.chequeDescription || '',
+                    installment: pmOld.installment || [],
+                    installmentDescription: pmOld.installmentDescription || '',
+                });
+            } else {
+                setPayment({ chequeOn: false, terms: [], note: '', installment: pmOld?.installment || [], installmentDescription: pmOld?.installmentDescription || '' });
+            }
+            // ✅ اگه گزینه‌های پیشرفته پر شده، آکاردئون باز باشه
+            if ((existingAd as any).consumerPrice > 0 || (existingAd as any).volumeTiers?.length > 0 || (existingAd as any).giftPrice > 0) {
+                setShowAdvanced(true);
+            }
             // ✅ برند از کالای مرجع ارث می‌بره — نیازی به state جداگانه نیست
         }
     }, [isEditMode, existingAd]);
@@ -466,6 +513,22 @@ export function AdForm({ adId, onSuccess }: { adId?: string; onSuccess?: () => v
             const newFiles = images.filter((s) => s.file).map((s) => s.file!);
             let adResultId: string | null = null;
 
+            // ✅ شرایط پرداخت چکی — همان shape مدل قدیمی (سازگار با نمایش جزئیات آگهی)
+            // installment قدیمی حفظ می‌شه تا داده‌های اقساطی آگهی‌های قبلی موقع ویرایش از بین نره
+            const paymentData = payment.chequeOn && payment.terms.length > 0 ? {
+                description: '',
+                cheque: payment.terms.map((t) => ({ days: t.days, price: t.price > 0 ? t.price : formData.unitPrice })),
+                chequeDescription: payment.note.trim() || '',
+                installment: payment.installment || [],
+                installmentDescription: payment.installmentDescription || '',
+            } : (payment.installment?.length > 0 ? {
+                description: '',
+                cheque: [],
+                chequeDescription: '',
+                installment: payment.installment,
+                installmentDescription: payment.installmentDescription || '',
+            } : null);
+
             if (isEditMode) {
                 await updateAdMutation.mutateAsync({
                     id: adId,
@@ -490,6 +553,7 @@ export function AdForm({ adId, onSuccess }: { adId?: string; onSuccess?: () => v
                         unitIsVariableQty: formData.unitIsVariableQty,
                         giftPrice: formData.giftPrice || null,
                         volumeTiers: formData.volumeTiers.length > 0 ? formData.volumeTiers : null,
+                        paymentMethods: paymentData,
                     },
                 });
                 adResultId = adId;
@@ -523,6 +587,7 @@ export function AdForm({ adId, onSuccess }: { adId?: string; onSuccess?: () => v
                     unitIsVariableQty: formData.unitIsVariableQty,
                     giftPrice: formData.giftPrice || null,
                     volumeTiers: formData.volumeTiers.length > 0 ? formData.volumeTiers : null,
+                    paymentMethods: paymentData,
                 });
                 if (!created?.id) throw new Error('پاسخ سرور ناقص است — آگهی ساخته نشد');
                 adResultId = created.id;
@@ -947,9 +1012,89 @@ export function AdForm({ adId, onSuccess }: { adId?: string; onSuccess?: () => v
                                                  onChange={(val) => setFormData((p) => ({ ...p, availableQuantity: val || 0 }))}
                                                  unit={unitName} className="w-full h-12" />
                                 </section>
+
+                                {/* ✅ شرایط پرداخت — چک (اختیاری، جمع‌وجور) */}
+                                <section className="rounded-2xl bg-surface-container-low/60 border border-outline-variant/30 p-4 space-y-3">
+                                    <SectionTitle icon={Banknote} text="شرایط پرداخت" />
+                                    <div className="grid grid-cols-2 gap-1 p-1 rounded-xl bg-surface-container-high/60 border border-outline-variant/25">
+                                        <button type="button" onClick={() => setPayment({ chequeOn: false, terms: [], note: '', installment: [], installmentDescription: '' })}
+                                                className={cn('flex items-center justify-center gap-1.5 h-9 rounded-lg text-xs font-bold transition-all',
+                                                    !payment.chequeOn ? 'bg-surface-container-lowest text-primary shadow-sm ring-1 ring-primary/25' : 'text-on-surface-variant hover:text-on-surface')}>
+                                            <Zap className="w-3.5 h-3.5" /> فقط نقدی
+                                        </button>
+                                        <button type="button" onClick={() => setPayment((p) => (p.chequeOn ? p : { ...p, chequeOn: true }))}
+                                                className={cn('flex items-center justify-center gap-1.5 h-9 rounded-lg text-xs font-bold transition-all',
+                                                    payment.chequeOn ? 'bg-surface-container-lowest text-primary shadow-sm ring-1 ring-primary/25' : 'text-on-surface-variant hover:text-on-surface')}>
+                                            <Banknote className="w-3.5 h-3.5" /> چک هم قبول می‌کنم
+                                        </button>
+                                    </div>
+                                    {payment.chequeOn && (
+                                        <div className="space-y-2.5 animate-in fade-in duration-200">
+                                            <p className="text-[10px] text-on-surface-variant/70 leading-4">
+                                                سررسید چک‌هایی که قبول می‌کنی رو انتخاب کن — می‌تونی برای هر کدوم قیمت متفاوت بذاری.
+                                            </p>
+                                            <div className="flex flex-wrap gap-1.5">
+                                                {CHEQUE_TERMS.map((t) => {
+                                                    const on = payment.terms.some((x) => x.days === t.days);
+                                                    return (
+                                                        <button key={t.days} type="button" onClick={() => toggleChequeTerm(t.days)}
+                                                                className={cn('h-8 px-3 rounded-full text-[11px] font-bold border transition-colors',
+                                                                    on ? 'bg-primary border-primary text-on-primary shadow-sm shadow-primary/25' : 'border-outline-variant/50 text-on-surface-variant hover:border-primary/45 hover:text-primary')}>
+                                                            چک {t.label}
+                                                        </button>
+                                                    );
+                                                })}
+                                            </div>
+                                            {payment.terms.map((term) => (
+                                                <div key={term.days} className="flex items-center gap-2 rounded-xl bg-primary/[0.04] border border-primary/15 px-3 py-2">
+                                                    <span className="text-[11px] font-bold text-primary whitespace-nowrap flex-shrink-0">
+                                                        چک {CHEQUE_TERMS.find((c) => c.days === term.days)?.label || term.days + ' روزه'}
+                                                    </span>
+                                                    <NumberInput value={term.price || undefined}
+                                                                 onChange={(v) => setPayment((p) => ({
+                                                                     ...p,
+                                                                     terms: p.terms.map((x) => x.days === term.days ? { ...x, price: v || 0 } : x),
+                                                                 }))}
+                                                                 unit={`${CURRENCY}/${unitName}`}
+                                                                 placeholder={formData.unitPrice ? formData.unitPrice.toLocaleString('fa-IR') : undefined}
+                                                                 className="h-9 flex-1" />
+                                                </div>
+                                            ))}
+                                            {payment.terms.length > 0 && (
+                                                <p className="text-[9px] text-on-surface-variant/50 -mt-1">
+                                                    اگه قیمت چکی رو خالی بذاری، همون قیمت نقدی حساب می‌شه.
+                                                </p>
+                                            )}
+                                            <input type="text" value={payment.note}
+                                                   onChange={(e) => setPayment((p) => ({ ...p, note: e.target.value }))}
+                                                   maxLength={120} placeholder="توضیح (اختیاری): مثلاً چک‌ها به نام شرکت باشد"
+                                                   className="w-full h-10 px-3.5 text-xs text-right rounded-xl bg-surface-container-lowest border border-outline-variant/40 dark:border-gray-700 focus:ring-2 focus:ring-primary/25 focus:border-primary outline-none transition-all" />
+                                        </div>
+                                    )}
+                                </section>
+                                {/* ✅ گزینه‌های بیشتر — آکاردئون برای کوتاه نگه‌داشتن فرم */}
+                                <div className="rounded-2xl bg-surface-container-low/60 border border-outline-variant/30 overflow-hidden">
+                                    <button type="button" onClick={() => setShowAdvanced((v) => !v)}
+                                            className="w-full flex items-center justify-between px-4 py-3.5 hover:bg-surface-container-high/40 transition-colors">
+                                        <span className="text-xs font-bold text-on-surface flex items-center gap-1.5">
+                                            <Info className="w-3.5 h-3.5 text-primary" />
+                                            گزینه‌های بیشتر
+                                            <span className="text-[10px] font-medium text-on-surface-variant/60">(تخفیف حجمی، اشانتیون، قیمت مصرف‌کننده)</span>
+                                        </span>
+                                        <span className="flex items-center gap-2">
+                                            {advancedActiveCount > 0 && (
+                                                <span className="text-[9px] font-black text-primary bg-primary/10 rounded-full px-2 py-0.5 tabular-nums">
+                                                    {advancedActiveCount.toLocaleString('fa-IR')} فعال
+                                                </span>
+                                            )}
+                                            <ChevronDown className={cn('w-4 h-4 text-on-surface-variant transition-transform duration-200', showAdvanced && 'rotate-180')} />
+                                        </span>
+                                    </button>
+                                    {showAdvanced && (
+                                    <div className="px-3 pb-3 pt-1 space-y-3 border-t border-outline-variant/15 animate-in fade-in duration-200">
                                 <section className="rounded-2xl bg-surface-container-low/60 border border-outline-variant/30 p-4 space-y-2.5">
                                     <label className="text-xs font-bold text-on-surface flex items-center gap-1.5">
-                                        <StepBadge n={5} /> قیمت تکی مصرف‌کننده (اختیاری)
+                                        قیمت تکی مصرف‌کننده
                                     </label>
                                     <p className="text-[10px] text-on-surface-variant/60">سود خریدار عمده از این محاسبه می‌شود</p>
                                     <NumberInput value={formData.consumerPrice || undefined}
@@ -965,7 +1110,7 @@ export function AdForm({ adId, onSuccess }: { adId?: string; onSuccess?: () => v
                                 {/* ✅ تخفیف حجمی */}
                                 <section className="rounded-2xl bg-surface-container-low/60 border border-outline-variant/30 p-4 space-y-2.5">
                                     <div className="flex items-center justify-between">
-                                        <SectionTitle icon={Wallet} text="تخفیف حجمی (اختیاری)" />
+                                        <SectionTitle icon={Wallet} text="تخفیف حجمی" />
                                         <button type="button"
                                                 onClick={() => setFormData((p) => ({
                                                     ...p,
@@ -1008,12 +1153,15 @@ export function AdForm({ adId, onSuccess }: { adId?: string; onSuccess?: () => v
 
                                 {/* ✅ قیمت اشانتیون */}
                                 <section className="rounded-2xl bg-surface-container-low/60 border border-outline-variant/30 p-4 space-y-2.5">
-                                    <SectionTitle icon={Gift} text="قیمت اشانتیون (اختیاری)" />
+                                    <SectionTitle icon={Gift} text="قیمت اشانتیون" />
                                     <p className="text-[10px] text-on-surface-variant/60 -mt-1.5">برای کالاهایی که اشانتیون خرید دارند</p>
                                     <NumberInput value={formData.giftPrice || undefined}
                                                  onChange={(v) => setFormData((p) => ({ ...p, giftPrice: v }))}
                                                  unit={`${CURRENCY}/${baseUnitTitle}`} className="w-full h-12" />
                                 </section>
+                                    </div>
+                                    )}
+                                </div>
                             </>
                         ) : (
                             <>
@@ -1111,6 +1259,16 @@ export function AdForm({ adId, onSuccess }: { adId?: string; onSuccess?: () => v
                                     <span className="text-on-surface-variant">{isWholesale ? 'قیمت عمده' : 'قیمت'}</span>
                                     <span className="font-extrabold text-primary text-sm tabular-nums">{formData.unitPrice.toLocaleString('fa-IR')} {CURRENCY}</span>
                                 </div>
+                                {isWholesale && (
+                                    <div className="flex justify-between text-xs">
+                                        <span className="text-on-surface-variant">شرایط پرداخت</span>
+                                        <span className="font-medium text-on-surface">
+                                            {payment.chequeOn && payment.terms.length > 0
+                                                ? 'نقدی + چک ' + payment.terms.map((t) => CHEQUE_TERMS.find((c) => c.days === t.days)?.label || t.days + ' روزه').join('، ')
+                                                : 'نقدی'}
+                                        </span>
+                                    </div>
+                                )}
                                 {isWholesale && formData.volumeTiers.length > 0 && (
                                     <div className="flex justify-between text-xs"><span className="text-on-surface-variant">تخفیف حجمی</span><span className="font-medium text-on-surface">{formData.volumeTiers.length.toLocaleString('fa-IR')} پله</span></div>
                                 )}

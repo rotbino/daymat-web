@@ -251,25 +251,32 @@ export interface Ad {
     updatedAt: string;
     viewCount: number;
     callCount: number;
+    paymentMethods?: AdPaymentMethods | null;
     customFields?: AdCustomFields;
     priceHistory?: { price: number; updatedAt: string; note?: string }[];
+}
+
+// ✅ شرایط پرداخت — سازگار با PaymentMethodsDto بک‌اند (ad.dto.ts)
+export interface AdChequeOption {
+    price: number;   // قیمت هر واحد فروش با این چک
+    days: number;    // مدت چک (روز)
+}
+export interface AdInstallmentOption {
+    price: number;
+    months: number;
+    prepaymentPercent?: number;
+}
+export interface AdPaymentMethods {
+    description?: string;
+    cheque?: AdChequeOption[];
+    chequeDescription?: string;
+    installment?: AdInstallmentOption[];
+    installmentDescription?: string;
 }
 //برای انواع پرداخت چکی و قسطی
 export interface AdCustomFields {
     productType?: string;
-    paymentMethods?: {
-        cheque?: {
-            enabled: boolean;
-            price?: number;
-            maxDays?: number;
-        };
-        installment?: {
-            enabled: boolean;
-            price?: number;
-            months?: number;
-            prepaymentPercent?: number;
-        };
-    };
+    paymentMethods?: AdPaymentMethods;
     specs?: Record<string, string>;
 }
 
@@ -294,6 +301,11 @@ export interface CreateAdDto {
     validityHours?: number;
     isAnonymous?: boolean;
     isBumped?: boolean;
+    consumerPrice?: number | null;
+    singleUnitPrice?: number | null;
+    giftPrice?: number | null;
+    volumeTiers?: { minQty: number; price: number }[] | null;
+    paymentMethods?: AdPaymentMethods | null;
     customFields?: AdCustomFields;
     unitQty?: number;
     unitIsVariableQty?: boolean;
