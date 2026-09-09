@@ -20,10 +20,13 @@ export default function SavedAdsPage() {
     const { data: savedAds, isLoading, refetch } = useSavedAds();
     const [removingId, setRemovingId] = useState<string | null>(null);
 
-    // اگر کاربر وارد نشده، هدایت به لاگین
+    // ✅ اگه کاربر وارد نشده، پیام بده (نه redirect)
     React.useEffect(() => {
         if (!isAuthenticated) {
-            router.push('/login?redirect=/saved-ads');
+            const hasToken = typeof window !== 'undefined' && localStorage.getItem('accessToken');
+            if (!hasToken) {
+                router.push('/login?redirect=/saved-ads');
+            }
         }
     }, [isAuthenticated, router]);
 

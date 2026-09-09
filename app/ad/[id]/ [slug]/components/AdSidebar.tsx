@@ -44,7 +44,7 @@ export default function AdSidebar({ ad, isOwner, isSaved, onSaveToggle }: AdSide
 
     const handleContact = async () => {
         if (!isAuthenticated) {
-            router.push(`/login?redirect=/ad/${ad.id}`);
+            toast.info('برای مشاهده اطلاعات تماس، ابتدا وارد شوید.');
             return;
         }
         if (isCalling) return;
@@ -86,7 +86,7 @@ export default function AdSidebar({ ad, isOwner, isSaved, onSaveToggle }: AdSide
 
     const handleSave = async () => {
         if (!isAuthenticated) {
-            router.push(`/login?redirect=/ad/${ad.id}`);
+            toast.info('برای ذخیره آگهی، ابتدا وارد شوید.');
             return;
         }
         if (isSaving) return;

@@ -59,9 +59,17 @@ export default function ArmAdminLayout({ children }: { children: React.ReactNode
 
     useEffect(() => {
         const checkAuthorization = async () => {
+            // ✅ صبر کن تا redux-persist hydrate بشه
+            // اگه توکن هست ولی isAuthenticated=false، redirect نکن
+            const hasToken = typeof window !== 'undefined' && localStorage.getItem('accessToken');
             if (!isAuthenticated || !user) {
-                router.push(`/login?redirect=/arm-admin`);
-                setLoading(false);
+                if (!hasToken) {
+                    // ✅ واقعاً لاگین نکرده → redirect
+                    router.push(`/login?redirect=/arm-admin`);
+                    setLoading(false);
+                    return;
+                }
+                // ✅ توکن هست ولی هنوز hydrate نشده → صبر کن
                 return;
             }
 

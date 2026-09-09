@@ -175,7 +175,7 @@ export default function MarketContent({ search: searchProp }: { search?: string 
     const pageHref = useCallback((p: number) => buildFilterHref(pathname, searchParams, categoryTree, { page: String(p) }), [pathname, searchParams, categoryTree]);
 
     const handleContactClick = useCallback(async (adId: string) => {
-        if (!isAuthenticated) { router.push(`/login?redirect=${typeof window !== 'undefined' ? encodeURIComponent(window.location.pathname) : ''}`); return; }
+        if (!isAuthenticated) { toast.info('برای مشاهده اطلاعات تماس، ابتدا وارد شوید.'); return; }
         if (isCalling) return;
         setIsCalling(true);
         try {

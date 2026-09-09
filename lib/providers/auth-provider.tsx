@@ -1,7 +1,7 @@
-// lib/auth-provider.tsx
+// lib/providers/auth-provider.tsx
 'use client';
 
-import { useEffect } from 'react';
+import { useEffect, useState } from 'react';
 import { useSelector } from 'react-redux';
 import { useRouter, usePathname } from 'next/navigation';
 import { RootState } from '../store/store';
@@ -24,6 +24,12 @@ const protectedPrefixes = [
     '/catalog',
     '/ad/create',
     '/ad/edit',
+    '/my-catalogs',
+    '/notifications',
+    '/credit',
+    '/feedback',
+    '/saved-ads',
+    '/business',
 ];
 
 // ✅ مسیرهای ادمین (دسترسی خاص)
@@ -33,8 +39,20 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     const router = useRouter();
     const pathname = usePathname();
     const isAuthenticated = useSelector((state: RootState) => state.auth.isAuthenticated);
+    const sessionExpired = useSelector((state: RootState) => state.auth.sessionExpired);
+    
+    // ✅ منتظر بمون تا redux-persist hydrate بشه
+    // تا وقتی hydrate نشده، هیچ redirect ای نکن
+    const [isHydrated, setIsHydrated] = useState(false);
 
     useEffect(() => {
+        setIsHydrated(true);
+    }, []);
+
+    useEffect(() => {
+        // ✅ اگه هنوز hydrate نشده، کاری نکن
+        if (!isHydrated) return;
+
         // ✅ اگر در مسیر ادمین هستیم، کاری نکن (AdminLayout مدیریت می‌کند)
         if (adminPrefixes.some((prefix) => pathname.startsWith(prefix))) {
             return;
@@ -50,27 +68,24 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
             pathname?.startsWith(prefix)
         );
 
-        // ✅ اگر مسیر بازار است (مثلاً /tamino) - عمومی است
-        const isArmPath = pathname?.startsWith('/') &&
-            !pathname?.startsWith('/_next') &&
-            !pathname?.startsWith('/api') &&
-            !pathname?.startsWith('/admin') &&
-            !pathname?.startsWith('/arm-admin') &&  // ✅پنل مالک بازار
-            !pathname?.startsWith('/login') &&
-            !pathname?.startsWith('/register') &&
-            !pathname?.startsWith('/no-arm') &&
-            !pathname?.startsWith('/profile') &&
-            !pathname?.startsWith('/catalog') &&
-            !pathname?.startsWith('/dashboard') &&
-            !pathname?.startsWith('/ad') &&
-            pathname !== '/' &&
-            !pathname?.includes('.') && // فایل‌های استاتیک
-            pathname?.length > 1;
-
         // ✅ اگر کاربر لاگین نیست و در مسیر محافظت‌شده است → به لاگین بفرست
+        // اما فقط اگه sessionExpired=true باشه (یعنی واقعاً سشن خراب شده)
+        // یا اگه从来没有 توکن ذخیره نشده (یعنی کاربر هیچ‌وقت لاگین نکرده)
         if (!isAuthenticated && isProtected) {
-            router.push(`/login?redirect=${encodeURIComponent(pathname)}`);
-            return;
+            // ✅ اگه sessionExpired=true هست، یعنی سنسن خراب شده → redirect به لاگین
+            if (sessionExpired) {
+                router.push(`/login?redirect=${encodeURIComponent(pathname)}`);
+                return;
+            }
+            // ✅ اگه توکن در localStorage هست ولی هنوز hydrate نشده، صبر کن
+            const hasToken = typeof window !== 'undefined' && localStorage.getItem('accessToken');
+            if (!hasToken) {
+                // ✅ واقعاً لاگین نکرده → redirect
+                router.push(`/login?redirect=${encodeURIComponent(pathname)}`);
+                return;
+            }
+            // ✅ توکن هست ولی isAuthenticated=false → یه مشکل موقتیه، redirect نکن
+            // بذار API interceptor خودش هندل کنه
         }
 
         // ✅ اگر کاربر لاگین است و در لاگین/ثبت‌نام است → به صفحه اصلی بفرست
@@ -79,10 +94,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
             return;
         }
 
-        // ✅ مسیرهای عمومی (صفحه اصلی، بازارها، لاگین، ثبت‌نام، no-arm) مجاز هستند
-        // نیازی به هیچ اقدامی نیست
-
-    }, [isAuthenticated, pathname, router]);
+    }, [isAuthenticated, pathname, router, isHydrated, sessionExpired]);
 
     return <>{children}</>;
 }

@@ -55,7 +55,7 @@ export default function AdDetailClient({ adId, initialData }: Props) {
 
     const handleSaveToggle = useCallback(async () => {
         if (!user) {
-            router.push(`/login?redirect=/ad/${adId}`);
+            toast.info('برای ذخیره آگهی، ابتدا وارد شوید.');
             return;
         }
 
@@ -78,7 +78,7 @@ export default function AdDetailClient({ adId, initialData }: Props) {
 
     const handleContact = useCallback(async () => {
         if (!user) {
-            router.push(`/login?redirect=/ad/${adId}`);
+            toast.info('برای مشاهده اطلاعات تماس، ابتدا وارد شوید.');
             return;
         }
 
@@ -98,11 +98,12 @@ export default function AdDetailClient({ adId, initialData }: Props) {
                 navigator.clipboard.writeText(phone).catch(() => {});
             }
         } catch (error: any) {
-            // ✅ بررسی خطای احراز هویت (توکن منقضی یا نامعتبر)
+            // ✅ خطای احراز هویت — دیگه redirect به لاگین نمی‌کنیم
+            // API interceptor خودش token refresh رو امتحان می‌کنه
+            // اگه refresh هم fail بشه، setSessionExpired dispatch می‌شه
+            // و auth-provider اون رو هندل می‌کنه
             if (error?.status === 401 || error?.response?.status === 401 || error?.data?.errorCode === 'UNAUTHORIZED') {
-                // هدایت به صفحه لاگین با redirect به صفحه فعلی
-                router.push(`/login?redirect=/ad/${adId}`);
-                toast.error('نشست شما منقضی شده است. لطفاً مجدداً وارد شوید.');
+                toast.error('برای این عملیات باید وارد شوید.');
                 return;
             }
 
