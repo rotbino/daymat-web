@@ -12,7 +12,7 @@ export default function EditAdPage() {
     return (
         <Suspense fallback={
             <div className="min-h-screen flex items-center justify-center">
-                <div className="animate-spin rounded-full h-10 w-10 border-2 border-amber-500 border-t-transparent" />
+                <div className="animate-spin rounded-full h-10 w-10 border-2 border-primary border-t-transparent" />
             </div>
         }>
             <AdForm adId={adId} />

@@ -4,7 +4,7 @@
 import React, { useState } from 'react';
 import EntityPicker, { EntityValue } from './EntityPicker';
 import { apiService } from '@/lib/api/apiService';
-import { Tag, Check } from 'lucide-react';
+import { Tag, Check, CircleSlash } from 'lucide-react';
 import { cn } from '@/lib/utils';
 
 export interface BrandValue extends EntityValue {
@@ -66,41 +66,31 @@ export default function BrandPicker({
             )}
 
             {allowNoBrand && (
-                <div className="grid grid-cols-2 gap-2">
+                <div className="grid grid-cols-2 gap-1 p-1 rounded-xl bg-surface-container-high/60 border border-outline-variant/25">
                     <button
                         type="button"
                         onClick={() => { setBrandMode(true); }}
                         className={cn(
-                            'flex items-center justify-center gap-2 h-10 rounded-xl text-xs font-bold border transition-all',
+                            'flex items-center justify-center gap-1.5 h-9 rounded-lg text-xs font-bold transition-all',
                             brandMode === true
-                                ? 'bg-primary/10 border-primary/40 text-primary'
-                                : 'bg-surface-container-lowest border-outline-variant/40 text-on-surface-variant hover:border-primary/30',
+                                ? 'bg-surface-container-lowest text-primary shadow-sm ring-1 ring-primary/25'
+                                : 'text-on-surface-variant hover:text-on-surface',
                         )}
                     >
-                        <span className={cn(
-                            'w-4 h-4 rounded-full border-2 flex items-center justify-center transition-all',
-                            brandMode === true ? 'border-primary' : 'border-outline-variant',
-                        )}>
-                            {brandMode === true && <span className="w-2 h-2 rounded-full bg-primary" />}
-                        </span>
+                        <Tag className="w-3.5 h-3.5" />
                         دارای برند
                     </button>
                     <button
                         type="button"
                         onClick={() => { setBrandMode(false); onChange(null); }}
                         className={cn(
-                            'flex items-center justify-center gap-2 h-10 rounded-xl text-xs font-bold border transition-all',
+                            'flex items-center justify-center gap-1.5 h-9 rounded-lg text-xs font-bold transition-all',
                             brandMode === false
-                                ? 'bg-primary/10 border-primary/40 text-primary'
-                                : 'bg-surface-container-lowest border-outline-variant/40 text-on-surface-variant hover:border-primary/30',
+                                ? 'bg-surface-container-lowest text-primary shadow-sm ring-1 ring-primary/25'
+                                : 'text-on-surface-variant hover:text-on-surface',
                         )}
                     >
-                        <span className={cn(
-                            'w-4 h-4 rounded-full border-2 flex items-center justify-center transition-all',
-                            brandMode === false ? 'border-primary' : 'border-outline-variant',
-                        )}>
-                            {brandMode === false && <span className="w-2 h-2 rounded-full bg-primary" />}
-                        </span>
+                        <CircleSlash className="w-3.5 h-3.5" />
                         بدون برند
                     </button>
                 </div>
@@ -154,7 +144,11 @@ export default function BrandPicker({
                                 </span>
                             )}
                             <span className="flex-1 text-sm font-medium text-on-surface truncate">{item.title}</span>
-                            {value?.id === item.id && <Check className="w-4 h-4 text-primary flex-shrink-0" />}
+                            {value?.id === item.id && (
+                                <span className="w-5 h-5 rounded-full bg-primary grid place-items-center flex-shrink-0 shadow-sm">
+                                    <Check className="w-3 h-3 text-on-primary" />
+                                </span>
+                            )}
                         </>
                     )}
                 />

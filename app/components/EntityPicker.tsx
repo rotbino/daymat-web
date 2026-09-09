@@ -4,7 +4,7 @@
 import React, { useState, useEffect } from 'react';
 import { createPortal } from 'react-dom';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import { Search, X, Plus, Check, Loader2, AlertCircle, Tag, Pencil, Trash2 } from 'lucide-react';
+import { Search, X, Plus, Check, Loader2, AlertCircle, Tag, Pencil, Trash2, ChevronDown, Info } from 'lucide-react';
 import { cn } from '@/lib/utils';
 
 export interface EntityValue {
@@ -144,26 +144,33 @@ export default function EntityPicker({
                 <button
                     type="button"
                     onClick={() => setIsOpen(true)}
-                    className="w-full h-11 px-3 flex items-center gap-2 rounded-xl bg-primary/5 border border-primary/30 hover:border-primary/50 transition-all text-right"
+                    className="w-full min-h-[3.25rem] py-1 px-3 flex items-center gap-2 rounded-2xl bg-primary/[0.04] border border-primary/25 hover:border-primary/50 hover:bg-primary/[0.07] hover:shadow-sm transition-all text-right group"
                 >
-                    {renderValue ? renderValue(value) : (
-                        <>
-                            <span className="flex-1 text-sm font-bold text-on-surface truncate">{value.title}</span>
-                            <Check className="w-4 h-4 text-primary flex-shrink-0" />
-                        </>
-                    )}
+                    <div className="flex-1 min-w-0 flex items-center gap-2">
+                        {renderValue ? renderValue(value) : (
+                            <>
+                                <span className="flex-1 text-sm font-bold text-on-surface truncate">{value.title}</span>
+                                <Check className="w-4 h-4 text-primary flex-shrink-0" />
+                            </>
+                        )}
+                    </div>
+                    <span className="flex-shrink-0 flex items-center gap-1 text-[10px] font-bold text-primary/70 group-hover:text-primary transition-colors">
+                        تغییر
+                        <ChevronDown className="w-3.5 h-3.5" />
+                    </span>
                 </button>
             ) : (
                 <button
                     type="button"
                     onClick={() => setIsOpen(true)}
                     className={cn(
-                        'w-full h-11 px-3 flex items-center gap-2 rounded-xl bg-surface-container-lowest border transition-all text-right',
-                        error ? 'border-error' : 'border-outline-variant/40 hover:border-primary/40',
+                        'w-full h-11 px-3 flex items-center gap-2 rounded-2xl bg-surface-container-lowest border border-dashed transition-all text-right hover:bg-primary/[0.03]',
+                        error ? 'border-error/70' : 'border-outline-variant/60 hover:border-primary/45',
                     )}
                 >
                     {icon}
-                    <span className="flex-1 text-sm text-on-surface-variant">{placeholder}</span>
+                    <span className="flex-1 text-sm text-on-surface-variant/80">{placeholder}</span>
+                    <Plus className="w-4 h-4 text-on-surface-variant/40" />
                 </button>
             )}
 
@@ -196,6 +203,7 @@ export default function EntityPicker({
                     editTitle={editTitle}
                     mineToggleLabel={mineToggleLabel}
                     deleteFn={deleteFn}
+                    headerIcon={icon}
                 />
             )}
         </div>
@@ -228,6 +236,7 @@ function EntityPickerModal({
     editTitle = 'ویرایش',
     mineToggleLabel = 'فقط موارد من',
     deleteFn,
+    headerIcon,
 }: any) {
     const [search, setSearch] = useState('');
     const [debouncedSearch, setDebouncedSearch] = useState('');
@@ -441,17 +450,28 @@ function EntityPickerModal({
             <div
                 ref={containerRef}
                 onClick={(e) => e.stopPropagation()}
-                className="bg-surface w-full sm:max-w-md rounded-t-3xl sm:rounded-2xl shadow-2xl
+                className="bg-surface w-full sm:max-w-md rounded-t-3xl sm:rounded-3xl shadow-2xl
                     min-h-[60dvh] max-h-[88dvh] flex flex-col overflow-hidden
                     animate-in slide-in-from-bottom-4 sm:zoom-in-95 duration-300"
             >
                 {/* هدر — با دکمه «جدید» */}
-                <div className="flex-shrink-0 flex items-center justify-between px-4 py-3 border-b border-outline-variant/20">
-                    <h3 className="text-sm font-extrabold text-on-surface">
-                        {showCreateForm ? createFormTitle : editingItem ? editTitle : selectTitle}
-                    </h3>
+                <div className="flex-shrink-0 flex items-center justify-between px-4 py-3 border-b border-outline-variant/20 bg-surface-container-low/40">
+                    <div className="flex items-center gap-2.5 min-w-0">
+                        <span className="w-8 h-8 rounded-xl bg-primary/10 grid place-items-center flex-shrink-0">
+                            {headerIcon ?? <Tag className="w-4 h-4 text-primary" />}
+                        </span>
+                        <div className="min-w-0">
+                            <h3 className="text-sm font-extrabold text-on-surface truncate">
+                                {showCreateForm ? createFormTitle : editingItem ? editTitle : selectTitle}
+                            </h3>
+                            {!showCreateForm && !editingItem && allItems.length > 0 && (
+                                <p className="text-[10px] text-on-surface-variant/70">
+                                    {allItems.length.toLocaleString('fa-IR')} مورد
+                                </p>
+                            )}
+                        </div>
+                    </div>
                     <div className="flex items-center gap-2">
-                        {/* ✅ دکمه «جدید» — همیشه در هدر، فقط در حالت انتخاب */}
                         {!showCreateForm && !editingItem && (
                             <button
                                 type="button"
@@ -475,15 +495,26 @@ function EntityPickerModal({
                     // ═══ فرم ایجاد کالای جدید ═══
                     <form onSubmit={handleCreate} className="flex-1 flex flex-col overflow-hidden">
                         <div className="flex-1 min-h-0 overflow-y-auto scrollbar-slim p-4 space-y-3">
+                            {createHint && (
+                                <div className="flex items-start gap-2 rounded-xl bg-primary/[0.04] border border-primary/15 px-3 py-2.5">
+                                    <Info className="w-4 h-4 text-primary flex-shrink-0 mt-0.5" />
+                                    <p className="text-[11px] text-on-surface-variant leading-5">{createHint}</p>
+                                </div>
+                            )}
                             <div className="space-y-1.5">
                                 <label className="text-xs font-bold text-on-surface block">عنوان کالا *</label>
-                                <input
-                                    value={createTitle}
-                                    onChange={(e) => setCreateTitle(e.target.value)}
-                                    placeholder="مثلاً: کنسرو ماهی مکنزی ۲۰۰ گرمی"
-                                    autoFocus
-                                    className="w-full h-11 px-3 rounded-xl bg-surface-container-lowest border border-outline-variant/40 text-sm outline-none focus:ring-2 focus:ring-primary/30 focus:border-primary transition-all"
-                                />
+                                <div className="relative">
+                                    <input
+                                        value={createTitle}
+                                        onChange={(e) => setCreateTitle(e.target.value)}
+                                        placeholder="مثلاً: کنسرو ماهی مکنزی ۲۰۰ گرمی"
+                                        autoFocus
+                                        className="w-full h-11 px-3 pl-16 rounded-xl bg-surface-container-lowest border border-outline-variant/40 text-sm outline-none focus:ring-2 focus:ring-primary/30 focus:border-primary transition-all"
+                                    />
+                                    <span className="absolute left-3 top-1/2 -translate-y-1/2 text-[10px] font-bold tabular-nums text-on-surface-variant/40">
+                                        {createTitle.trim().length} حرف
+                                    </span>
+                                </div>
                             </div>
                             {renderCreateFields && renderCreateFields({
                                 title: createTitle,
@@ -494,7 +525,7 @@ function EntityPickerModal({
                                 <p className="text-error text-[11px]">{createError}</p>
                             )}
                         </div>
-                        <div className="flex-shrink-0 p-3 border-t border-outline-variant/20 flex gap-2">
+                        <div className="flex-shrink-0 p-3 border-t border-outline-variant/20 flex gap-2 bg-surface-container-low/40">
                             <button
                                 type="button"
                                 onClick={() => setShowCreateForm(false)}
@@ -505,9 +536,9 @@ function EntityPickerModal({
                             <button
                                 type="submit"
                                 disabled={createTitle.trim().length < 2 || createMut.isPending}
-                                className="flex-1 h-10 rounded-xl bg-primary text-on-primary text-xs font-bold hover:bg-primary/90 active:scale-95 transition-all disabled:opacity-50"
+                                className="flex-[1.4] h-10 rounded-xl bg-primary text-on-primary text-xs font-bold hover:bg-primary/90 active:scale-95 transition-all disabled:opacity-50 flex items-center justify-center gap-1.5"
                             >
-                                {createMut.isPending ? <Loader2 className="w-4 h-4 animate-spin mx-auto" /> : 'افزودن و انتخاب'}
+                                {createMut.isPending ? <Loader2 className="w-4 h-4 animate-spin" /> : <><Plus className="w-3.5 h-3.5" /> افزودن و انتخاب</>}
                             </button>
                         </div>
                     </form>
@@ -534,7 +565,7 @@ function EntityPickerModal({
                                 <p className="text-error text-[11px]">{editError}</p>
                             )}
                         </div>
-                        <div className="flex-shrink-0 p-3 border-t border-outline-variant/20 flex gap-2">
+                        <div className="flex-shrink-0 p-3 border-t border-outline-variant/20 flex gap-2 bg-surface-container-low/40">
                             <button
                                 type="button"
                                 onClick={() => setEditingItem(null)}
@@ -545,9 +576,9 @@ function EntityPickerModal({
                             <button
                                 type="submit"
                                 disabled={editTitleValue.trim().length < 2 || updateMut.isPending}
-                                className="flex-1 h-10 rounded-xl bg-primary text-on-primary text-xs font-bold hover:bg-primary/90 active:scale-95 transition-all disabled:opacity-50"
+                                className="flex-[1.4] h-10 rounded-xl bg-primary text-on-primary text-xs font-bold hover:bg-primary/90 active:scale-95 transition-all disabled:opacity-50 flex items-center justify-center gap-1.5"
                             >
-                                {updateMut.isPending ? <Loader2 className="w-4 h-4 animate-spin mx-auto" /> : 'ذخیره تغییرات'}
+                                {updateMut.isPending ? <Loader2 className="w-4 h-4 animate-spin" /> : <><Check className="w-3.5 h-3.5" /> ذخیره تغییرات</>}
                             </button>
                         </div>
                     </form>
@@ -562,121 +593,161 @@ function EntityPickerModal({
                                     <input
                                         value={search}
                                         onChange={(e) => setSearch(e.target.value)}
-                                        placeholder={`جستجو... (حداقل ${minSearchChars} حرف)`}
-                                        className="w-full h-10 pr-9 pl-3 rounded-xl bg-surface-container-lowest border border-outline-variant/40 text-sm outline-none focus:ring-2 focus:ring-primary/30 focus:border-primary transition-all"
+                                        placeholder={'جستجو... (حداقل ' + minSearchChars + ' حرف)'}
+                                        className="w-full h-10 pr-9 pl-9 rounded-xl bg-surface-container-lowest border border-outline-variant/40 text-sm outline-none focus:ring-2 focus:ring-primary/30 focus:border-primary transition-all"
                                     />
+                                    {search && (
+                                        <button
+                                            type="button"
+                                            onClick={() => setSearch('')}
+                                            className="absolute left-2 top-1/2 -translate-y-1/2 w-6 h-6 rounded-full grid place-items-center text-on-surface-variant/50 hover:text-on-surface hover:bg-surface-container-high transition-colors"
+                                            title="پاک کردن"
+                                        >
+                                            <X className="w-3.5 h-3.5" />
+                                        </button>
+                                    )}
                                 </div>
                                 {showMineOnly && (
-                                    <label className="flex items-center gap-1.5 cursor-pointer flex-shrink-0 px-2.5 h-10 rounded-xl border border-outline-variant/40 bg-surface-container-lowest hover:bg-surface-container-low transition-colors">
+                                    <label className={cn(
+                                        'flex items-center gap-1.5 cursor-pointer flex-shrink-0 px-2.5 h-10 rounded-xl border transition-colors',
+                                        mineOnly
+                                            ? 'bg-primary/[0.06] border-primary/30'
+                                            : 'border-outline-variant/40 bg-surface-container-lowest hover:bg-surface-container-low',
+                                    )}>
                                         <input
                                             type="checkbox"
                                             checked={mineOnly}
                                             onChange={(e) => setMineOnly(e.target.checked)}
                                             className="w-3.5 h-3.5 rounded accent-primary"
                                         />
-                                        <span className="text-[10px] font-bold text-on-surface-variant whitespace-nowrap">{mineToggleLabel}</span>
+                                        <span className={cn('text-[10px] font-bold whitespace-nowrap', mineOnly ? 'text-primary' : 'text-on-surface-variant')}>{mineToggleLabel}</span>
                                     </label>
                                 )}
                             </div>
                         </div>
 
-                        {/* لیست */}
-                        <div className="flex-1 min-h-0 overflow-y-auto scrollbar-slim pb-[calc(1rem+env(safe-area-inset-bottom))]">
+                        {/* لیست — کارت‌موردی */}
+                        <div className="flex-1 min-h-0 overflow-y-auto scrollbar-slim pb-[calc(0.75rem+env(safe-area-inset-bottom))]">
                             {isFetching && allItems.length === 0 ? (
-                                <div className="p-6 text-center"><Loader2 className="w-5 h-5 animate-spin text-primary mx-auto" /></div>
+                                <div className="p-8 text-center"><Loader2 className="w-5 h-5 animate-spin text-primary mx-auto" /></div>
                             ) : allItems.length === 0 ? (
-                                // ✅ پیام ساده «پیدا نشد» — دکمه create در هدر هست
-                                <div className="p-6 text-center">
-                                    <Tag className="w-10 h-10 text-on-surface-variant/20 mx-auto mb-2" />
-                                    <p className="text-xs text-on-surface-variant">
+                                <div className="p-8 text-center">
+                                    <span className="w-14 h-14 rounded-2xl bg-surface-container-high grid place-items-center mx-auto mb-3">
+                                        <Tag className="w-6 h-6 text-on-surface-variant/30" />
+                                    </span>
+                                    <p className="text-xs font-bold text-on-surface-variant">
                                         {!canSearch && search.length > 0
-                                            ? `حداقل ${minSearchChars} حرف تایپ کنید`
+                                            ? 'حداقل ' + minSearchChars + ' حرف تایپ کنید'
                                             : canSearch && trimmedSearch
                                                 ? 'موردی با این نام پیدا نشد.'
                                                 : 'موردی موجود نیست.'}
                                     </p>
-                                    {canSearch && trimmedSearch && (
-                                        <p className="text-[11px] text-on-surface-variant/70 leading-5 mt-1">
+                                    {canSearch && trimmedSearch ? (
+                                        <button
+                                            type="button"
+                                            onClick={() => {
+                                                setCreateTitle(search.trim() || debouncedSearch);
+                                                setShowCreateForm(true);
+                                            }}
+                                            className="mt-4 h-10 px-4 rounded-xl bg-primary text-on-primary text-xs font-bold inline-flex items-center gap-1.5 hover:bg-primary/90 active:scale-95 transition-all"
+                                        >
+                                            <Plus className="w-4 h-4" />
+                                            افزودن «{trimmedSearch}»
+                                        </button>
+                                    ) : (
+                                        <p className="text-[11px] text-on-surface-variant/60 leading-5 mt-1">
                                             با دکمه «جدید» در بالا می‌توانید اضافه کنید.
                                         </p>
                                     )}
                                 </div>
                             ) : (
                                 <>
-                                    {allItems.map((item: any) => (
-                                        <div
-                                            key={item.id}
-                                            className={cn(
-                                                'w-full flex items-center gap-3 px-4 py-2.5 text-right transition-colors',
-                                                value?.id === item.id ? 'bg-primary/10' : 'hover:bg-surface-container-low',
-                                            )}
-                                        >
-                                            <button
-                                                type="button"
-                                                onClick={() => onChange({
-                                                    id: item.id,
-                                                    title: item.title,
-                                                    isByUser: item.isByUser,
-                                                    isNew: item.isNew,
-                                                    ...item,
-                                                })}
-                                                className="flex items-center gap-3 flex-1 min-w-0 text-right"
-                                            >
-                                                {renderItem ? renderItem(item) : (
-                                                    <>
-                                                        <span className="flex-1 text-sm font-medium text-on-surface truncate">
-                                                            {item.title}
-                                                        </span>
-                                                        {value?.id === item.id && <Check className="w-4 h-4 text-primary flex-shrink-0" />}
-                                                    </>
+                                    <div className="p-2.5 space-y-1.5">
+                                        {allItems.map((item: any) => (
+                                            <div
+                                                key={item.id}
+                                                className={cn(
+                                                    'group flex items-center gap-1 p-1.5 pl-2 rounded-2xl border transition-all',
+                                                    value?.id === item.id
+                                                        ? 'bg-primary/[0.06] border-primary/40 shadow-sm'
+                                                        : 'bg-surface-container-lowest border-outline-variant/20 hover:border-primary/30 hover:bg-surface-container-low/50',
                                                 )}
-                                            </button>
-                                            {updateFn && item.isNew && (
+                                            >
                                                 <button
                                                     type="button"
-                                                    onClick={(e) => { e.stopPropagation(); handleStartEdit(item); }}
-                                                    className="flex-shrink-0 w-7 h-7 rounded-lg text-on-surface-variant/60 hover:text-primary hover:bg-primary/10 grid place-items-center transition-colors"
-                                                    title="ویرایش"
+                                                    onClick={() => onChange({
+                                                        id: item.id,
+                                                        title: item.title,
+                                                        isByUser: item.isByUser,
+                                                        isNew: item.isNew,
+                                                        ...item,
+                                                    })}
+                                                    className="flex items-center gap-2.5 flex-1 min-w-0 text-right pr-1"
                                                 >
-                                                    <Pencil className="w-3.5 h-3.5" />
+                                                    {renderItem ? renderItem(item) : (
+                                                        <>
+                                                            <span className="flex-1 text-sm font-medium text-on-surface truncate">
+                                                                {item.title}
+                                                            </span>
+                                                            {value?.id === item.id && <Check className="w-4 h-4 text-primary flex-shrink-0" />}
+                                                        </>
+                                                    )}
                                                 </button>
-                                            )}
-                                            {/* ✅ آیکون حذف — فقط برای isNew و اگه deleteFn وجود داشته باشه */}
-                                            {deleteFn && item.isNew && (
-                                                <button
-                                                    type="button"
-                                                    onClick={(e) => { e.stopPropagation(); handleDelete(item); }}
-                                                    disabled={deleteMut.isPending && deleteMut.variables === item.id}
-                                                    className="flex-shrink-0 w-7 h-7 rounded-lg text-on-surface-variant/60 hover:text-error hover:bg-error/10 grid place-items-center transition-colors disabled:opacity-50"
-                                                    title="حذف"
-                                                >
-                                                    {deleteMut.isPending && deleteMut.variables === item.id
-                                                        ? <Loader2 className="w-3.5 h-3.5 animate-spin" />
-                                                        : <Trash2 className="w-3.5 h-3.5" />}
-                                                </button>
-                                            )}
-                                        </div>
-                                    ))}
+                                                {item.isNew && (updateFn || deleteFn) && (
+                                                    <span className="flex-shrink-0 text-[8px] font-black text-primary bg-primary/10 rounded-full px-1.5 py-0.5 hidden sm:inline">
+                                                        جدید
+                                                    </span>
+                                                )}
+                                                {updateFn && item.isNew && (
+                                                    <button
+                                                        type="button"
+                                                        onClick={(e) => { e.stopPropagation(); handleStartEdit(item); }}
+                                                        className="flex-shrink-0 w-7 h-7 rounded-lg text-on-surface-variant/50 hover:text-primary hover:bg-primary/10 grid place-items-center transition-colors"
+                                                        title="ویرایش"
+                                                    >
+                                                        <Pencil className="w-3.5 h-3.5" />
+                                                    </button>
+                                                )}
+                                                {deleteFn && item.isNew && (
+                                                    <button
+                                                        type="button"
+                                                        onClick={(e) => { e.stopPropagation(); handleDelete(item); }}
+                                                        disabled={deleteMut.isPending && deleteMut.variables === item.id}
+                                                        className="flex-shrink-0 w-7 h-7 rounded-lg text-on-surface-variant/50 hover:text-error hover:bg-error/10 grid place-items-center transition-colors disabled:opacity-50"
+                                                        title="حذف"
+                                                    >
+                                                        {deleteMut.isPending && deleteMut.variables === item.id
+                                                            ? <Loader2 className="w-3.5 h-3.5 animate-spin" />
+                                                            : <Trash2 className="w-3.5 h-3.5" />}
+                                                    </button>
+                                                )}
+                                            </div>
+                                        ))}
+                                    </div>
                                     {hasMore && (
-                                        <button
-                                            onClick={() => setPage((p: number) => p + 1)}
-                                            disabled={isFetching}
-                                            className="w-full py-3 text-center text-xs font-bold text-primary hover:bg-primary/5 transition-colors disabled:opacity-50"
-                                        >
-                                            {isFetching ? <Loader2 className="w-4 h-4 animate-spin mx-auto" /> : 'نمایش بیشتر...'}
-                                        </button>
+                                        <div className="px-2.5 pb-2">
+                                            <button
+                                                onClick={() => setPage((p: number) => p + 1)}
+                                                disabled={isFetching}
+                                                className="w-full py-2.5 rounded-xl text-xs font-bold text-primary hover:bg-primary/5 transition-colors disabled:opacity-50 flex items-center justify-center gap-1"
+                                            >
+                                                {isFetching ? <Loader2 className="w-4 h-4 animate-spin" /> : <><ChevronDown className="w-3.5 h-3.5" /> نمایش بیشتر</>}
+                                            </button>
+                                        </div>
                                     )}
                                 </>
                             )}
                         </div>
 
-                        {/* هشدار تکراری — راهنمای ملایم */}
+                        {/* هشدار تکراری */}
                         {exactMatch && trimmedSearch.length >= 2 && (
-                            <div className="flex-shrink-0 p-3 border-t border-amber-200/40 bg-amber-50/50 dark:bg-amber-900/10">
-                                <div className="flex items-center gap-2 text-amber-800 dark:text-amber-200">
-                                    <AlertCircle className="w-4 h-4 flex-shrink-0" />
-                                    <p className="text-xs">
-                                        این مورد قبلاً با همین عنوان ثبت شده. از لیست بالا انتخاب کنید.
+                            <div className="flex-shrink-0 px-3 py-2.5 border-t border-amber-300/50 bg-amber-50 dark:bg-amber-900/15">
+                                <div className="flex items-center gap-2 text-amber-800 dark:text-amber-300">
+                                    <span className="w-6 h-6 rounded-lg bg-amber-100 dark:bg-amber-900/40 grid place-items-center flex-shrink-0">
+                                        <AlertCircle className="w-3.5 h-3.5" />
+                                    </span>
+                                    <p className="text-[11px] font-medium leading-5">
+                                        {duplicateMessage || 'این مورد قبلاً با همین عنوان ثبت شده. از لیست بالا انتخاب کنید.'}
                                     </p>
                                 </div>
                             </div>
@@ -686,5 +757,5 @@ function EntityPickerModal({
             </div>
         </div>,
         document.body,
-    );
+    )
 }

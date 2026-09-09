@@ -8,11 +8,11 @@ import { apiService } from '@/lib/api/apiService';
 import { useCreateAd, useUpdateAd, useAd, useUploadFile, useDeleteFile } from '@/lib/api/apiHooks';
 import { toast } from 'sonner';
 import {
-    ArrowLeft,
+    AlertTriangle, ArrowLeft,
     ArrowRight,
     Camera,
-    Check, Images,
-    Loader2, MapPin, Package, Pencil, Plus, Search, Store, Tag, Wallet, X,
+    Check, Gift, Images, Info,
+    Loader2, MapPin, Package, Pencil, Plus, Search, Store, Tag, TrendingUp, Wallet, X,
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { NumberInput } from '@/components/common/NumberInput';
@@ -158,6 +158,7 @@ export function AdForm({ adId, onSuccess }: { adId?: string; onSuccess?: () => v
     const [formData, setFormData] = useState({
         categoryId: '', productType: '',
         singleUnitPrice: 0, unitPrice: 0,
+        consumerPrice: 0,
         minQuantity: 1, availableQuantity: 0,
         cityCode: '', cityLabel: '', provinceCode: '', provinceLabel: '',
         description: '',
@@ -363,6 +364,7 @@ export function AdForm({ adId, onSuccess }: { adId?: string; onSuccess?: () => v
                 productType: existingAd.productType || existingAd.title || '',
                 singleUnitPrice: existingAd.singleUnitPrice || 0,
                 unitPrice: existingAd.unitPrice || 0,
+                consumerPrice: (existingAd as any).consumerPrice || 0,
                 minQuantity: existingAd.minQuantity || 1,
                 availableQuantity: existingAd.availableQuantity || 0,
                 cityCode: existingAd.cityCode || '', cityLabel: existingAd.city || '',
@@ -549,16 +551,19 @@ export function AdForm({ adId, onSuccess }: { adId?: string; onSuccess?: () => v
 
     const inputCls = (hasErr?: string) => cn(
         'w-full h-11 px-3.5 text-sm text-right rounded-xl bg-surface-container-lowest border',
-        'focus:ring-2 focus:ring-amber-500/30 focus:border-amber-500 outline-none transition-all',
+        'focus:ring-2 focus:ring-primary/25 focus:border-primary outline-none transition-all',
         hasErr ? 'border-error' : 'border-outline-variant/40 dark:border-gray-700',
     );
     const SectionTitle = ({ icon: Icon, text }: any) => (
         <p className="text-[11px] font-bold text-on-surface-variant flex items-center gap-1.5 mb-2">
-            <Icon className="w-3.5 h-3.5 text-amber-500" /> {text}
+            <span className="w-5 h-5 rounded-md bg-primary/10 grid place-items-center flex-shrink-0">
+                <Icon className="w-3 h-3 text-primary" />
+            </span>
+            {text}
         </p>
     );
     const StepBadge = ({ n }: any) => (
-        <span className="w-5 h-5 rounded-md bg-amber-100 text-amber-700 dark:bg-amber-900/40 dark:text-amber-400 flex items-center justify-center text-[10px] font-black">{n}</span>
+        <span className="w-5 h-5 rounded-md bg-primary/10 text-primary flex items-center justify-center text-[10px] font-black tabular-nums">{n.toLocaleString ? n.toLocaleString('fa-IR') : n}</span>
     );
 
     // ═══ گاردها — بعد از همهٔ هوک‌ها ═══
@@ -578,7 +583,7 @@ export function AdForm({ adId, onSuccess }: { adId?: string; onSuccess?: () => v
     if (catalogLoading || (isEditMode && !existingAd && adLoading)) {
         return (
             <div className="min-h-screen flex items-center justify-center">
-                <div className="animate-spin rounded-full h-10 w-10 border-2 border-amber-500 border-t-transparent" />
+                <div className="animate-spin rounded-full h-10 w-10 border-2 border-primary border-t-transparent" />
             </div>
         );
     }
@@ -597,7 +602,7 @@ export function AdForm({ adId, onSuccess }: { adId?: string; onSuccess?: () => v
 
     // ═══ رندر ═══
     return (
-        <div className="min-h-screen bg-gradient-to-b from-surface via-surface to-surface-container-low/40 dark:from-gray-950 dark:via-gray-950 dark:to-gray-900/40 pb-28">
+        <div className="min-h-screen bg-gradient-to-b from-surface via-surface to-surface-container-low/40 dark:from-gray-950 dark:via-gray-950 dark:to-gray-900/40 pb-36">
             {/* هدر */}
             <header className="sticky top-0 z-40 bg-white/85 dark:bg-gray-950/85 backdrop-blur border-b border-outline-variant/20">
                 <div className="max-w-lg mx-auto px-4 py-3 flex items-center gap-3">
@@ -605,10 +610,15 @@ export function AdForm({ adId, onSuccess }: { adId?: string; onSuccess?: () => v
                             className="p-2 -m-1 rounded-full hover:bg-surface-container-high text-on-surface-variant">
                         <X className="w-5 h-5" />
                     </button>
-                    <h1 className="flex-1 text-sm font-extrabold text-on-surface">
-                        {isEditMode ? 'ویرایش کالا' : 'افزودن محصول'}
-                    </h1>
-                    <span className="text-[10px] font-bold text-amber-600 dark:text-amber-400">
+                    <div className="flex-1 min-w-0">
+                        <h1 className="text-sm font-extrabold text-on-surface truncate leading-5">
+                            {isEditMode ? 'ویرایش کالا' : 'افزودن محصول'}
+                        </h1>
+                        <p className="text-[10px] text-on-surface-variant/70 tabular-nums">
+                            مرحله {currentStep.toLocaleString('fa-IR')} از {TOTAL_STEPS.toLocaleString('fa-IR')}
+                        </p>
+                    </div>
+                    <span className="text-[10px] font-bold text-primary bg-primary/10 rounded-full px-2.5 py-1 flex-shrink-0">
                         {isWholesale ? 'عمده‌فروشی' : 'تک‌فروشی'}
                     </span>
                 </div>
@@ -616,23 +626,34 @@ export function AdForm({ adId, onSuccess }: { adId?: string; onSuccess?: () => v
 
             <main className="max-w-lg mx-auto px-4 pt-5 space-y-4">
                 {/* نوار پیشرفت */}
-                <div className="flex items-center justify-between px-1">
+                <div className="flex items-center px-1">
                     {STEP_TITLES.map((t, i) => {
                         const n = i + 1;
                         const active = n === currentStep, done = n < currentStep;
                         return (
                             <React.Fragment key={t}>
-                                <div className={cn('flex flex-col items-center gap-1', !active && !done && 'opacity-40')}>
-                                    <span className={cn('w-8 h-8 rounded-full grid place-items-center text-xs font-black border-2 transition-all',
-                                        active && 'bg-amber-500 text-white border-amber-500 scale-110',
-                                        done && 'bg-emerald-500 text-white border-emerald-500',
-                                        !active && !done && 'bg-surface-container-high text-on-surface-variant border-outline-variant/40')}>
-                                        {done ? <Check className="w-4 h-4" /> : n}
+                                <button
+                                    type="button"
+                                    disabled={!done}
+                                    onClick={() => done && goToStep(n)}
+                                    className="flex flex-col items-center gap-1.5 flex-shrink-0 w-14 group"
+                                >
+                                    <span className={cn('w-9 h-9 rounded-full grid place-items-center text-xs font-black border-2 transition-all duration-300',
+                                        active && 'bg-primary text-on-primary border-primary scale-110 shadow-md shadow-primary/25',
+                                        done && 'bg-primary/10 text-primary border-primary/40 group-hover:bg-primary/20',
+                                        !active && !done && 'bg-surface-container-high text-on-surface-variant/50 border-outline-variant/30')}>
+                                        {done ? <Check className="w-4 h-4" /> : n.toLocaleString('fa-IR')}
                                     </span>
-                                    <span className={cn('text-[9px] font-bold',
-                                        active ? 'text-amber-600 dark:text-amber-400' : done ? 'text-emerald-600' : 'text-on-surface-variant/70')}>{t}</span>
-                                </div>
-                                {i < 3 && <div className={cn('flex-1 h-[3px] rounded-full -mt-4', done ? 'bg-emerald-500' : 'bg-outline-variant/30')} />}
+                                    <span className={cn('text-[10px] font-bold whitespace-nowrap transition-colors',
+                                        active ? 'text-primary' : done ? 'text-primary/70' : 'text-on-surface-variant/60')}>{t}</span>
+                                </button>
+                                {i < STEP_TITLES.length - 1 && (
+                                    <div className="flex-1 flex items-center -translate-y-2.5 mx-0.5">
+                                        <div className="h-1 flex-1 rounded-full overflow-hidden bg-outline-variant/25">
+                                            <div className={cn('h-full rounded-full bg-primary transition-all duration-500', done ? 'w-full' : 'w-0')} />
+                                        </div>
+                                    </div>
+                                )}
                             </React.Fragment>
                         );
                     })}
@@ -643,11 +664,15 @@ export function AdForm({ adId, onSuccess }: { adId?: string; onSuccess?: () => v
                     <div className="space-y-4 animate-in fade-in duration-200">
                         {/* ✅ کاتالوگ اول لیست */}
                         <section className="rounded-2xl bg-surface-container-low/60 border border-outline-variant/30 p-4 space-y-3">
-                            <SectionTitle icon={Store} text="کاتالوگ" />
-                            <div className="flex items-center gap-2.5 h-11 px-3.5 rounded-xl bg-amber-50/60 dark:bg-amber-900/10
-                                border border-amber-200/50 dark:border-amber-800/40">
-                                <Store className="w-4 h-4 text-amber-600 dark:text-amber-400 flex-shrink-0" />
-                                <span className="text-sm font-bold text-on-surface truncate flex-1">{selectedCatalog.name}</span>
+                            <SectionTitle icon={Store} text="کاتالوگ مقصد" />
+                            <div className="flex items-center gap-3 rounded-xl bg-primary/[0.04] border border-primary/15 px-3 py-2.5">
+                                <span className="w-9 h-9 rounded-xl bg-primary/10 grid place-items-center flex-shrink-0">
+                                    <Store className="w-4 h-4 text-primary" />
+                                </span>
+                                <div className="min-w-0 flex-1">
+                                    <p className="text-sm font-bold text-on-surface truncate">{selectedCatalog.name}</p>
+                                    <p className="text-[10px] text-on-surface-variant/80">{isWholesale ? 'عمده‌فروشی' : 'تک‌فروشی'}</p>
+                                </div>
                             </div>
                         </section>
 
@@ -704,16 +729,22 @@ export function AdForm({ adId, onSuccess }: { adId?: string; onSuccess?: () => v
                                             عنوان آگهی
                                             <span className="text-[9px] text-primary/60">(قابل ویرایش)</span>
                                         </label>
-                                        <input type="text" maxLength={60} value={formData.productType}
-                                               onChange={(e) => setFormData((p) => ({ ...p, productType: e.target.value }))}
-                                               placeholder="عنوان آگهی..."
-                                               className={inputCls()} />
+                                        <div className="relative">
+                                            <input type="text" maxLength={60} value={formData.productType}
+                                                   onChange={(e) => setFormData((p) => ({ ...p, productType: e.target.value }))}
+                                                   placeholder="عنوان آگهی..."
+                                                   className={cn(inputCls(), 'pl-14')} />
+                                            <span className="absolute left-3 top-1/2 -translate-y-1/2 text-[10px] font-bold tabular-nums text-on-surface-variant/40">
+                                                {(formData.productType || '').length}/۶۰
+                                            </span>
+                                        </div>
                                         {/* ✅ برند از کالای مرجع — زیر عنوان */}
                                         {selectedProduct.brandTitle && (
                                             <div className="flex items-center gap-1.5 pt-0.5">
-                                                <Tag className="w-3 h-3 text-primary/50" />
-                                                <span className="text-[11px] text-on-surface-variant">برند:</span>
-                                                <span className="text-[11px] font-bold text-primary">{selectedProduct.brandTitle}</span>
+                                                <span className="inline-flex items-center gap-1 rounded-full bg-primary/[0.07] border border-primary/15 px-2 py-0.5">
+                                                    <Tag className="w-2.5 h-2.5 text-primary" />
+                                                    <span className="text-[10px] font-bold text-primary">{selectedProduct.brandTitle}</span>
+                                                </span>
                                             </div>
                                         )}
                                     </div>
@@ -738,8 +769,13 @@ export function AdForm({ adId, onSuccess }: { adId?: string; onSuccess?: () => v
                                                 className="absolute top-1 left-1 w-5 h-5 rounded-full bg-black/60 text-white grid place-items-center">
                                             <X className="w-3 h-3" />
                                         </button>
+                                        {idx === 0 && !(slot as any)._fromProduct && (
+                                            <span className="absolute bottom-0 inset-x-0 bg-black/55 text-white text-[8px] text-center py-0.5 font-bold">
+                                                اصلی
+                                            </span>
+                                        )}
                                         {(slot as any)._fromProduct && (
-                                            <span className="absolute bottom-0 inset-x-0 bg-primary/80 text-white text-[8px] text-center py-0.5">
+                                            <span className="absolute bottom-0 inset-x-0 bg-primary/85 text-white text-[8px] text-center py-0.5 font-bold">
                                                 از مرجع کالا
                                             </span>
                                         )}
@@ -749,9 +785,9 @@ export function AdForm({ adId, onSuccess }: { adId?: string; onSuccess?: () => v
                                     <button type="button" onClick={() => imageInputRef.current?.click()}
                                             className="w-20 h-20 rounded-xl border-2 border-dashed border-outline-variant/50
                                                 flex flex-col items-center justify-center gap-1 text-on-surface-variant/60
-                                                hover:border-amber-500/50 hover:text-amber-500 transition-colors">
+                                                hover:border-primary/50 hover:text-primary hover:bg-primary/[0.03] transition-colors">
                                         <Camera className="w-5 h-5" />
-                                        <span className="text-[9px] font-bold">عکس</span>
+                                        <span className="text-[9px] font-bold tabular-nums">{images.length.toLocaleString('fa-IR')}/{MAX_IMAGES.toLocaleString('fa-IR')}</span>
                                     </button>
                                 )}
                                 <input ref={imageInputRef} type="file" accept="image/*" className="hidden"
@@ -769,7 +805,7 @@ export function AdForm({ adId, onSuccess }: { adId?: string; onSuccess?: () => v
                             <div className="flex items-center justify-between">
                                 <SectionTitle icon={Package} text="واحد فروش" />
                                 <button type="button" onClick={() => setUnitModalOpen(true)}
-                                        className="text-[10px] font-bold text-amber-600 dark:text-amber-400
+                                        className="text-[10px] font-bold text-primary
                                             flex items-center gap-1 hover:gap-1.5 transition-all">
                                     <Plus className="w-3 h-3" /> واحدهای اختصاصی کاتالوگ
                                 </button>
@@ -784,7 +820,7 @@ export function AdForm({ adId, onSuccess }: { adId?: string; onSuccess?: () => v
                                         return (
                                             <button key={s.unitId} type="button" onClick={() => selectUnit(u.id, u.title)}
                                                     className={cn('h-8 px-3 rounded-full text-[11px] font-bold border transition-colors flex items-center gap-1',
-                                                        isSelected ? 'bg-amber-500 border-amber-500 text-white' : 'border-outline-variant/50 text-on-surface-variant hover:border-amber-500/50')}>
+                                                        isSelected ? 'bg-primary border-primary text-on-primary shadow-sm shadow-primary/25' : 'border-outline-variant/50 text-on-surface-variant hover:border-primary/45 hover:text-primary')}>
                                                 {u.title}{s.containsQty ? ` (${s.containsQty} عددی)` : ''}
                                             </button>
                                         );
@@ -796,7 +832,7 @@ export function AdForm({ adId, onSuccess }: { adId?: string; onSuccess?: () => v
                                         return (
                                             <button key={uid} type="button" onClick={() => selectUnit(u.id, u.title)}
                                                     className={cn('h-8 px-3 rounded-full text-[11px] font-bold border transition-colors flex items-center gap-1',
-                                                        isSelected ? 'bg-amber-500 border-amber-500 text-white' : 'border-outline-variant/50 text-on-surface-variant hover:border-amber-500/50')}>
+                                                        isSelected ? 'bg-primary border-primary text-on-primary shadow-sm shadow-primary/25' : 'border-outline-variant/50 text-on-surface-variant hover:border-primary/45 hover:text-primary')}>
                                                 {u.title}
                                                 <span className="text-[8px] opacity-70">این دسته</span>
                                             </button>
@@ -815,12 +851,12 @@ export function AdForm({ adId, onSuccess }: { adId?: string; onSuccess?: () => v
                                     <span className="flex items-center gap-1.5 text-xs text-on-surface">
                                         {o.label}
                                         {o.extra?.catQty != null && (
-                                            <span className="text-[8px] px-1.5 py-0.5 rounded-full bg-amber-100 text-amber-700 dark:bg-amber-900/40 dark:text-amber-400">
+                                            <span className="text-[8px] px-1.5 py-0.5 rounded-full bg-primary/10 text-primary">
                                                 {o.extra.catQty} عددی
                                             </span>
                                         )}
                                         {o.extra?.suggested && o.extra?.catQty == null && (
-                                            <span className="text-[8px] px-1.5 py-0.5 rounded-full bg-amber-100 text-amber-700 dark:bg-amber-900/40 dark:text-amber-400">این دسته</span>
+                                            <span className="text-[8px] px-1.5 py-0.5 rounded-full bg-primary/10 text-primary">این دسته</span>
                                         )}
                                     </span>
                                 )}
@@ -829,7 +865,7 @@ export function AdForm({ adId, onSuccess }: { adId?: string; onSuccess?: () => v
                             {formData.unitQty != null && (
                                 <div className="space-y-1.5">
                                     <label className="text-[11px] font-bold text-on-surface-variant flex items-center gap-1.5">
-                                        <Pencil className="w-3 h-3 text-amber-500" />
+                                        <Pencil className="w-3 h-3 text-primary" />
                                         تعداد {baseUnitTitle} در هر {unitName}
                                         {!formData.unitIsVariableQty && <span className="text-[9px] text-on-surface-variant/50">(ثابت)</span>}
                                     </label>
@@ -838,7 +874,7 @@ export function AdForm({ adId, onSuccess }: { adId?: string; onSuccess?: () => v
                                                      onChange={(val) => handleUnitQtyChange(val || null)}
                                                      unit={baseUnitTitle} className="h-10" />
                                     ) : (
-                                        <p className="text-xs font-bold text-on-surface bg-surface-container-high/60 px-3 py-2 rounded-lg">
+                                        <p className="text-xs font-bold text-primary bg-primary/[0.05] border border-primary/15 px-3 py-2 rounded-lg w-fit">
                                             {formData.unitQty.toLocaleString('fa-IR')} {baseUnitTitle}
                                         </p>
                                     )}
@@ -852,11 +888,18 @@ export function AdForm({ adId, onSuccess }: { adId?: string; onSuccess?: () => v
                 {/* ═══ مرحله ۲: قیمت — دو شکلی ═══ */}
                 {currentStep === 2 && (
                     <div className="space-y-4 animate-in fade-in duration-200">
-                        <div className="rounded-2xl border border-amber-300/40 bg-amber-50 dark:border-amber-800/50 dark:bg-amber-900/10 p-4 flex items-center gap-2.5">
-                            <Package className="w-5 h-5 text-amber-600 dark:text-amber-400" />
-                            <h3 className="text-sm font-bold text-amber-800 dark:text-amber-300">
-                                {isWholesale ? 'تعیین قیمت عمده' : 'تعیین قیمت فروش'}
-                            </h3>
+                        <div className="rounded-2xl border border-primary/20 bg-primary/[0.04] p-4 flex items-center gap-3">
+                            <span className="w-9 h-9 rounded-xl bg-primary/10 grid place-items-center flex-shrink-0">
+                                <Wallet className="w-4 h-4 text-primary" />
+                            </span>
+                            <div>
+                                <h3 className="text-sm font-bold text-on-surface">
+                                    {isWholesale ? 'تعیین قیمت عمده' : 'تعیین قیمت فروش'}
+                                </h3>
+                                <p className="text-[10px] text-on-surface-variant/70">
+                                    {isWholesale ? 'قیمت‌ها به تومان — برای هر واحد فروش' : 'قیمت برای هر واحد فروش'}
+                                </p>
+                            </div>
                         </div>
 
                         {isWholesale ? (
@@ -880,7 +923,7 @@ export function AdForm({ adId, onSuccess }: { adId?: string; onSuccess?: () => v
                                                  onChange={handleSingleUnitPriceChange}
                                                  unit={`${CURRENCY}/${baseUnitTitle}`} className="w-full h-12" />
                                 </section>
-                                <section className="rounded-2xl bg-surface-container-low/60 border border-amber-500/30 p-4 space-y-2.5">
+                                <section className="rounded-2xl bg-surface-container-low/60 border border-primary/35 ring-1 ring-primary/10 p-4 space-y-2.5">
                                     <label className="text-xs font-bold text-on-surface flex items-center gap-1.5">
                                         <StepBadge n={3} /> قیمت هر {unitName} (واحد فروش عمده) <span className="text-error">*</span>
                                     </label>
@@ -888,9 +931,12 @@ export function AdForm({ adId, onSuccess }: { adId?: string; onSuccess?: () => v
                                                  onChange={handleUnitPriceChange}
                                                  unit={CURRENCY} className="w-full h-14 text-xl font-extrabold" />
                                     {formData.singleUnitPrice > 0 && formData.unitQty && (
-                                        <p className="text-[11px] text-amber-700 dark:text-amber-400 bg-amber-50 dark:bg-amber-900/10 rounded-lg px-3 py-2">
-                                            💡 {formData.singleUnitPrice.toLocaleString('fa-IR')} × {formData.unitQty.toLocaleString('fa-IR')} {baseUnitTitle} = {formData.unitPrice.toLocaleString('fa-IR')} {CURRENCY}
-                                        </p>
+                                        <div className="flex items-center gap-2 text-[11px] text-primary bg-primary/[0.05] border border-primary/15 rounded-lg px-3 py-2">
+                                            <Info className="w-3.5 h-3.5 flex-shrink-0" />
+                                            <span>
+                                                {formData.singleUnitPrice.toLocaleString('fa-IR')} × {formData.unitQty.toLocaleString('fa-IR')} {baseUnitTitle} = <b>{formData.unitPrice.toLocaleString('fa-IR')}</b> {CURRENCY}
+                                            </span>
+                                        </div>
                                     )}
                                 </section>
                                 <section className="rounded-2xl bg-surface-container-low/60 border border-outline-variant/30 p-4 space-y-2.5">
@@ -911,8 +957,8 @@ export function AdForm({ adId, onSuccess }: { adId?: string; onSuccess?: () => v
                                                  unit={`${CURRENCY}/${baseUnitTitle}`} className="w-full h-12" />
                                     {liveProfit !== null && (
                                         liveProfit < 0
-                                            ? <p className="text-[11px] text-red-600 bg-red-50 dark:bg-red-900/10 rounded-lg px-3 py-2">⚠️ قیمت مصرف‌کننده از قیمت عمده کمتر است!</p>
-                                            : <p className="text-[11px] text-emerald-600 bg-emerald-50 dark:bg-emerald-900/10 rounded-lg px-3 py-2">💰 سود خریدار عمده از هر {baseUnitTitle}: {liveProfit.toLocaleString('fa-IR')} {CURRENCY}</p>
+                                            ? <div className="flex items-center gap-2 text-[11px] font-medium text-error bg-error/[0.06] border border-error/15 rounded-lg px-3 py-2"><AlertTriangle className="w-3.5 h-3.5 flex-shrink-0" /><span>قیمت مصرف‌کننده از قیمت عمده کمتر است!</span></div>
+                                            : <div className="flex items-center gap-2 text-[11px] font-medium text-emerald-700 bg-emerald-50 dark:bg-emerald-900/10 border border-emerald-500/15 rounded-lg px-3 py-2"><TrendingUp className="w-3.5 h-3.5 flex-shrink-0" /><span>سود خریدار عمده از هر {baseUnitTitle}: <b>{liveProfit.toLocaleString('fa-IR')}</b> {CURRENCY}</span></div>
                                     )}
                                 </section>
 
@@ -925,14 +971,16 @@ export function AdForm({ adId, onSuccess }: { adId?: string; onSuccess?: () => v
                                                     ...p,
                                                     volumeTiers: [...p.volumeTiers, { minQty: (p.volumeTiers.at(-1)?.minQty ?? 0) + 5, price: 0 }],
                                                 }))}
-                                                className="h-7 px-2.5 rounded-lg border border-amber-500/40 text-amber-600 dark:text-amber-400
-                                                    text-[10px] font-bold flex items-center gap-1 hover:bg-amber-500/10">
+                                                className="h-7 px-2.5 rounded-lg border border-primary/40 text-primary
+                                                    text-[10px] font-bold flex items-center gap-1 hover:bg-primary/10 transition-colors">
                                             <Plus className="w-3 h-3" /> پلهٔ جدید
                                         </button>
                                     </div>
                                     {formData.volumeTiers.map((tier, i) => (
                                         <div key={i} className="flex items-center gap-2">
-                                            <span className="text-[10px] text-on-surface-variant/70 whitespace-nowrap">خرید {i + 2}+:</span>
+                                            <span className="w-6 h-6 rounded-lg bg-primary/10 text-primary text-[10px] font-black grid place-items-center flex-shrink-0 tabular-nums" title={'خرید ' + (i + 2) + '+'}>
+                                                {(i + 2).toLocaleString('fa-IR')}
+                                            </span>
                                             <NumberInput value={tier.minQty || undefined}
                                                          onChange={(v) => setFormData((p) => {
                                                              const u = [...p.volumeTiers]; u[i] = { ...u[i], minQty: v || 0 }; return { ...p, volumeTiers: u };
@@ -960,10 +1008,8 @@ export function AdForm({ adId, onSuccess }: { adId?: string; onSuccess?: () => v
 
                                 {/* ✅ قیمت اشانتیون */}
                                 <section className="rounded-2xl bg-surface-container-low/60 border border-outline-variant/30 p-4 space-y-2.5">
-                                    <label className="text-xs font-bold text-on-surface flex items-center gap-1.5">
-                                        <StepBadge n={7} /> قیمت اشانتیون (اختیاری)
-                                    </label>
-                                    <p className="text-[10px] text-on-surface-variant/60">برای کالاهایی که اشانتیون خرید دارند</p>
+                                    <SectionTitle icon={Gift} text="قیمت اشانتیون (اختیاری)" />
+                                    <p className="text-[10px] text-on-surface-variant/60 -mt-1.5">برای کالاهایی که اشانتیون خرید دارند</p>
                                     <NumberInput value={formData.giftPrice || undefined}
                                                  onChange={(v) => setFormData((p) => ({ ...p, giftPrice: v }))}
                                                  unit={`${CURRENCY}/${baseUnitTitle}`} className="w-full h-12" />
@@ -971,7 +1017,7 @@ export function AdForm({ adId, onSuccess }: { adId?: string; onSuccess?: () => v
                             </>
                         ) : (
                             <>
-                                <section className="rounded-2xl bg-surface-container-low/60 border border-amber-500/30 p-4 space-y-2.5">
+                                <section className="rounded-2xl bg-surface-container-low/60 border border-primary/35 ring-1 ring-primary/10 p-4 space-y-2.5">
                                     <label className="text-xs font-bold text-on-surface flex items-center gap-1.5">
                                         <StepBadge n={1} /> قیمت هر {unitName} <span className="text-error">*</span>
                                     </label>
@@ -1010,8 +1056,8 @@ export function AdForm({ adId, onSuccess }: { adId?: string; onSuccess?: () => v
                                       onChange={(e) => setFormData((p) => ({ ...p, description: e.target.value }))}
                                       rows={3} placeholder="مثلا: اصل هست، چک میدیم، حمل رایگان، تخفیف نقدی..."
                                       className="w-full min-h-[72px] py-2.5 px-3.5 text-sm text-right rounded-xl bg-surface-container-lowest
-                                          border border-outline-variant/40 dark:border-gray-700 focus:ring-2 focus:ring-amber-500/30
-                                          focus:border-amber-500 outline-none transition-all resize-none" />
+                                          border border-outline-variant/40 dark:border-gray-700 focus:ring-2 focus:ring-primary/25
+                                          focus:border-primary outline-none transition-all resize-none" />
                         </section>
                     </div>
                 )}
@@ -1030,23 +1076,40 @@ export function AdForm({ adId, onSuccess }: { adId?: string; onSuccess?: () => v
                         </div>
 
                         <div className="bg-white dark:bg-gray-900 rounded-2xl border border-outline-variant/40 shadow-sm overflow-hidden">
-                            <div className="px-4 pb-4 pt-4 space-y-1.5">
+                            {/* کارت کالا */}
+                            <div className="flex items-center gap-3 p-4 border-b border-outline-variant/20 bg-surface-container-low/40">
+                                {selectedProduct?.thumbnailUrl || selectedProduct?.imageUrl ? (
+                                    <img src={(selectedProduct.thumbnailUrl || selectedProduct.imageUrl) as string} alt="" className="w-14 h-14 rounded-xl object-cover ring-1 ring-outline-variant/40 flex-shrink-0" />
+                                ) : (
+                                    <span className="w-14 h-14 rounded-xl bg-primary/10 grid place-items-center flex-shrink-0">
+                                        <Package className="w-6 h-6 text-primary" />
+                                    </span>
+                                )}
+                                <div className="min-w-0 flex-1">
+                                    <p className="text-sm font-extrabold text-on-surface truncate">{formData.productType || selectedProduct?.title}</p>
+                                    <div className="flex items-center gap-1.5 mt-1.5 flex-wrap">
+                                        {selectedProduct?.brandTitle && (
+                                            <span className="inline-flex items-center gap-1 rounded-full bg-primary/[0.07] border border-primary/15 px-2 py-0.5">
+                                                <Tag className="w-2.5 h-2.5 text-primary" />
+                                                <span className="text-[9px] font-bold text-primary">{selectedProduct.brandTitle}</span>
+                                            </span>
+                                        )}
+                                        <span className="text-[9px] font-bold text-on-surface-variant bg-surface-container-high rounded-full px-2 py-0.5">
+                                            {formData.unitTitle || unitName}{formData.unitQty ? ' (' + formData.unitQty.toLocaleString('fa-IR') + ' ' + baseUnitTitle + ')' : ''}
+                                        </span>
+                                    </div>
+                                </div>
+                            </div>
+                            <div className="px-4 pb-4 pt-3 space-y-2.5">
                                 <div className="flex justify-between text-xs"><span className="text-on-surface-variant">کاتالوگ</span><span className="font-medium text-on-surface">{selectedCatalog.name}</span></div>
-                                {selectedProduct && (
-                                    <div className="flex justify-between text-xs"><span className="text-on-surface-variant">کالا</span><span className="font-medium text-on-surface">{formData.productType || selectedProduct.title}</span></div>
-                                )}
-                                {selectedProduct?.brandTitle && (
-                                    <div className="flex justify-between text-xs"><span className="text-on-surface-variant">برند</span><span className="font-medium text-on-surface">{selectedProduct.brandTitle}</span></div>
-                                )}
-                                <div className="flex justify-between text-xs"><span className="text-on-surface-variant">تصاویر</span><span className="font-medium text-on-surface">{uploadedCount} عدد</span></div>
-                                <div className="flex justify-between text-xs"><span className="text-on-surface-variant">واحد</span><span className="font-medium text-on-surface">{formData.unitTitle || unitName}{formData.unitQty ? ` (${formData.unitQty.toLocaleString('fa-IR')} ${baseUnitTitle})` : ''}</span></div>
+                                <div className="flex justify-between text-xs"><span className="text-on-surface-variant">تصاویر</span><span className="font-medium text-on-surface">{uploadedCount.toLocaleString('fa-IR')} عدد</span></div>
                                 <div className="flex justify-between text-xs">
                                     <span className="text-on-surface-variant">{isWholesale ? 'حداقل حجم' : 'موجودی'}</span>
                                     <span className="font-medium text-on-surface">{(isWholesale ? formData.minQuantity : formData.availableQuantity).toLocaleString('fa-IR')} {unitName}</span>
                                 </div>
-                                <div className="flex justify-between text-xs">
+                                <div className="flex justify-between text-xs items-center">
                                     <span className="text-on-surface-variant">{isWholesale ? 'قیمت عمده' : 'قیمت'}</span>
-                                    <span className="font-extrabold text-amber-600 dark:text-amber-400">{formData.unitPrice.toLocaleString('fa-IR')} {CURRENCY}</span>
+                                    <span className="font-extrabold text-primary text-sm tabular-nums">{formData.unitPrice.toLocaleString('fa-IR')} {CURRENCY}</span>
                                 </div>
                                 {isWholesale && formData.volumeTiers.length > 0 && (
                                     <div className="flex justify-between text-xs"><span className="text-on-surface-variant">تخفیف حجمی</span><span className="font-medium text-on-surface">{formData.volumeTiers.length.toLocaleString('fa-IR')} پله</span></div>
@@ -1062,7 +1125,7 @@ export function AdForm({ adId, onSuccess }: { adId?: string; onSuccess?: () => v
                             {[1, 2, 3].map((s) => (
                                 <button key={s} type="button" onClick={() => goToStep(s)}
                                         className="h-9 rounded-xl border border-outline-variant/40 text-[11px] font-bold
-                                            text-on-surface-variant hover:text-amber-600 hover:border-amber-500/40 transition-colors">
+                                            text-on-surface-variant hover:text-primary hover:border-primary/40 transition-colors">
                                     ویرایش بخش {s}
                                 </button>
                             ))}
@@ -1070,37 +1133,47 @@ export function AdForm({ adId, onSuccess }: { adId?: string; onSuccess?: () => v
                     </div>
                 )}
 
-                {/* ═══ ناوبری مراحل — RTL: بعدی در چپ، قبلی در راست ═══ */}
-                <div className="flex items-center justify-between pt-2">
-                    {/* سمت چپ = بعدی یا ثبت */}
-                    {currentStep < TOTAL_STEPS ? (
-                        <button type="button" onClick={nextStep}
-                                disabled={currentStep === 1 && !selectedProduct}
-                                className="h-11 px-6 rounded-xl bg-amber-500 text-white text-sm font-bold flex items-center gap-2
-                                    hover:bg-amber-600 transition-all active:scale-95 shadow-md shadow-amber-200/50 dark:shadow-none
-                                    disabled:opacity-40 disabled:cursor-not-allowed disabled:active:scale-100">
-                                 <ArrowRight className="w-4 h-4" />  بعدی
-                        </button>
-                    ) : (
-                        <button type="button" onClick={handleSubmit} disabled={submitting}
-                                className="h-11 px-6 rounded-xl bg-amber-500 text-white text-sm font-extrabold flex items-center gap-2
-                                    hover:bg-amber-600 transition-all active:scale-95 shadow-md shadow-amber-200/50 dark:shadow-none
-                                    disabled:opacity-50 disabled:cursor-not-allowed">
-                            {submitting
-                                ? <><Loader2 className="w-4 h-4 animate-spin" /> در حال ثبت…</>
-                                : <><Check className="w-4 h-4" /> {isEditMode ? 'ذخیره تغییرات' : 'ثبت نهایی'}</>}
-                        </button>
-                    )}
-                    {/* سمت راست = قبلی */}
-                    {currentStep > 1 ? (
-                        <button type="button" onClick={prevStep}
-                                className="h-11 px-5 rounded-xl border-2 border-outline-variant/40 bg-white dark:bg-gray-900
-                                    text-sm font-medium text-on-surface flex items-center gap-2 hover:bg-surface-container-lowest transition-all">
-                            قبلی   <ArrowLeft className="w-4 h-4" />
-                        </button>
-                    ) : <div></div>}
+                {/* ناوبری چسبان پایین */}
+            <div className="fixed bottom-0 inset-x-0 z-40">
+                {/* نوار پیشرفت */}
+                <div className="h-0.5 bg-outline-variant/20">
+                    <div className="h-full bg-primary transition-all duration-500"
+                         style={{ width: ((currentStep / TOTAL_STEPS) * 100) + '%' }} />
                 </div>
-            </main>
+                <div className="bg-white/90 dark:bg-gray-950/90 backdrop-blur-md border-t border-outline-variant/20">
+                    <div className="max-w-lg mx-auto px-4 py-3 pb-[max(0.75rem,env(safe-area-inset-bottom))] flex items-center gap-3">
+                        {/* سمت راست = قبلی */}
+                        {currentStep > 1 ? (
+                            <button type="button" onClick={prevStep}
+                                    className="h-11 px-5 rounded-xl border border-outline-variant/40 bg-white dark:bg-gray-900
+                                        text-sm font-bold text-on-surface flex items-center gap-1.5 hover:bg-surface-container-low transition-all flex-shrink-0">
+                                <ArrowLeft className="w-4 h-4" /> قبلی
+                            </button>
+                        ) : null}
+                        <div className="flex-1" />
+                        {/* سمت چپ = بعدی یا ثبت */}
+                        {currentStep < TOTAL_STEPS ? (
+                            <button type="button" onClick={nextStep}
+                                    disabled={currentStep === 1 && !selectedProduct}
+                                    className="h-11 px-7 rounded-xl bg-primary text-on-primary text-sm font-bold flex items-center gap-2
+                                        hover:bg-primary/90 transition-all active:scale-95 shadow-lg shadow-primary/25 dark:shadow-none
+                                        disabled:opacity-40 disabled:cursor-not-allowed disabled:active:scale-100">
+                                بعدی <ArrowRight className="w-4 h-4" />
+                            </button>
+                        ) : (
+                            <button type="button" onClick={handleSubmit} disabled={submitting}
+                                    className="h-11 px-7 rounded-xl bg-primary text-on-primary text-sm font-extrabold flex items-center gap-2
+                                        hover:bg-primary/90 transition-all active:scale-95 shadow-lg shadow-primary/25 dark:shadow-none
+                                        disabled:opacity-50 disabled:cursor-not-allowed">
+                                {submitting
+                                    ? <><Loader2 className="w-4 h-4 animate-spin" /> در حال ثبت…</>
+                                    : <><Check className="w-4 h-4" /> {isEditMode ? 'ذخیره تغییرات' : 'ثبت نهایی'}</>}
+                            </button>
+                        )}
+                    </div>
+                </div>
+            </div>
+        </main>
 
             {/* مودال‌ها */}
             <UnitSettingsModal

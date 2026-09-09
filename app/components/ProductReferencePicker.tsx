@@ -83,37 +83,47 @@ export default function ProductReferencePicker({
             renderValue={(v) => (
                 <>
                     {(v as ProductValue).thumbnailUrl || (v as ProductValue).imageUrl ? (
-                        <img src={(v as ProductValue).thumbnailUrl || (v as ProductValue).imageUrl} alt="" className="w-10 h-10 rounded-lg object-cover flex-shrink-0" />
+                        <img src={(v as ProductValue).thumbnailUrl || (v as ProductValue).imageUrl} alt="" className="w-11 h-11 rounded-xl object-cover flex-shrink-0 ring-1 ring-primary/20" />
                     ) : (
-                        <span className="w-10 h-10 rounded-lg bg-primary/10 flex items-center justify-center flex-shrink-0">
+                        <span className="w-11 h-11 rounded-xl bg-primary/10 grid place-items-center flex-shrink-0">
                             <Package className="w-5 h-5 text-primary" />
                         </span>
                     )}
                     <div className="flex-1 min-w-0">
                         <p className="text-sm font-bold text-on-surface truncate">{v.title}</p>
-                        {(v as ProductValue).brandTitle && (
-                            <p className="text-[10px] text-on-surface-variant truncate">برند: {(v as ProductValue).brandTitle}</p>
-                        )}
+                        <div className="mt-1">
+                            {(v as ProductValue).brandTitle ? (
+                                <span className="inline-flex items-center gap-1 rounded-full bg-primary/[0.07] border border-primary/15 px-1.5 py-0.5">
+                                    <Tag className="w-2.5 h-2.5 text-primary" />
+                                    <span className="text-[9px] font-bold text-primary">{(v as ProductValue).brandTitle}</span>
+                                </span>
+                            ) : (
+                                <span className="text-[9px] text-on-surface-variant/60">بدون برند</span>
+                            )}
+                        </div>
                     </div>
-                    <Check className="w-4 h-4 text-primary flex-shrink-0" />
                 </>
             )}
             renderItem={(item) => (
                 <>
                     {item.thumbnailUrl || item.imageUrl ? (
-                        <img src={item.thumbnailUrl || item.imageUrl} alt="" className="w-11 h-11 rounded-lg object-cover flex-shrink-0" />
+                        <img src={item.thumbnailUrl || item.imageUrl} alt="" className="w-11 h-11 rounded-xl object-cover flex-shrink-0" />
                     ) : (
-                        <span className="w-11 h-11 rounded-lg bg-surface-container-high flex items-center justify-center flex-shrink-0">
+                        <span className="w-11 h-11 rounded-xl bg-surface-container-high grid place-items-center flex-shrink-0">
                             <Package className="w-5 h-5 text-on-surface-variant/50" />
                         </span>
                     )}
                     <div className="flex-1 min-w-0">
                         <p className="text-sm font-bold text-on-surface truncate">{item.title}</p>
                         {item.brand?.title && (
-                            <p className="text-[10px] text-on-surface-variant truncate">برند: {item.brand.title}</p>
+                            <p className="text-[10px] text-on-surface-variant truncate mt-0.5">برند: {item.brand.title}</p>
                         )}
                     </div>
-                    {value?.id === item.id && <Check className="w-4 h-4 text-primary flex-shrink-0" />}
+                    {value?.id === item.id && (
+                        <span className="w-6 h-6 rounded-full bg-primary grid place-items-center flex-shrink-0 shadow-sm">
+                            <Check className="w-3.5 h-3.5 text-on-primary" />
+                        </span>
+                    )}
                 </>
             )}
         />
@@ -178,9 +188,9 @@ function CreateProductExtraFields({
             <div className="space-y-1.5">
                 <label className="text-xs font-bold text-on-surface block">تصویر کالا</label>
                 <div className="flex items-center gap-3">
-                    <label className="relative w-20 h-20 rounded-xl overflow-hidden flex-shrink-0
-                        border-2 border-dashed border-primary/30 hover:border-primary/60 hover:bg-primary/5
-                        transition-all cursor-pointer flex flex-col items-center justify-center gap-1">
+                    <label className="relative w-[4.5rem] h-[4.5rem] rounded-2xl overflow-hidden flex-shrink-0
+                        border-2 border-dashed border-primary/35 hover:border-primary/70 hover:bg-primary/[0.06] hover:scale-[1.03]
+                        transition-all cursor-pointer flex flex-col items-center justify-center gap-1 bg-primary/[0.02]">
                         {uploading ? (
                             <Loader2 className="w-6 h-6 text-primary animate-spin" />
                         ) : imagePreview || imageUrl ? (

@@ -14,7 +14,7 @@ const AdPaymentTab = dynamic(() => import('./AdPaymentTab'), {
     loading: () => <div className="h-32 bg-gray-100 rounded-2xl animate-pulse" />
 });
 
-const AdCatalogTab = dynamic(() => import('./AdCatalogTab'), {
+const AdCatalogTab = dynamic(() => import('./AdBusinessTab'), {
     loading: () => <div className="h-32 bg-gray-100 rounded-2xl animate-pulse" />
 });
 
