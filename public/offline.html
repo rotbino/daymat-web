@@ -1,0 +1,55 @@
+<!DOCTYPE html>
+<html lang="fa" dir="rtl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+    <title>آفلاین هستید | دیمت</title>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body {
+            font-family: Vazirmatn, "Segoe UI", Tahoma, sans-serif;
+            background: #0b1c30;
+            color: #fff;
+            min-height: 100vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            text-align: center;
+            padding: 24px;
+        }
+        .box { max-width: 420px; }
+        .icon {
+            width: 88px; height: 88px;
+            margin: 0 auto 24px;
+            border-radius: 24px;
+            background: linear-gradient(135deg, #082038 0%, #123456 100%);
+            display: flex; align-items: center; justify-content: center;
+            border: 1px solid rgba(255,255,255,.08);
+        }
+        .icon img { width: 56px; height: 56px; }
+        h1 { font-size: 22px; font-weight: 800; margin-bottom: 12px; }
+        p { font-size: 14px; line-height: 2; color: rgba(255,255,255,.65); margin-bottom: 28px; }
+        button {
+            font-family: inherit;
+            font-size: 15px; font-weight: 700;
+            background: linear-gradient(135deg, #f97316, #ea580c);
+            color: #fff;
+            border: 0; border-radius: 14px;
+            padding: 14px 44px;
+            cursor: pointer;
+            box-shadow: 0 10px 24px -8px rgba(249,115,22,.55);
+        }
+        button:active { transform: scale(.97); }
+    </style>
+</head>
+<body>
+    <div class="box">
+        <div class="icon">
+            <img src="/icons/icon-192.png" alt="دیمت" onerror="this.style.display='none'">
+        </div>
+        <h1>اتصال اینترنت قطع است</h1>
+        <p>نگران نباش؛ به‌محض وصل شدن دوباره، دیمت همون‌جایی که بودی منتظرته.</p>
+        <button onclick="location.reload()">تلاش مجدد</button>
+    </div>
+</body>
+</html>
