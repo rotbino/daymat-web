@@ -161,13 +161,14 @@ function CreateProductExtraFields({
         initialData?.brand ? { id: initialData.brand.id, title: initialData.brand.title } : null
     );
     // ✅ ویژگی‌های کالا — مال کالاست نه آگهی (JSON روی ProductReference)
-    const [specs, setSpecs] = useState<{ key: string; value: string }[]>(() => {
+    // ✅ unit: ویژگی‌های واحد‌دار مثل وزن — مقدار نهایی «۲۵۰ گرم» ذخیره می‌شه
+    const [specs, setSpecs] = useState<{ key: string; value: string; unitOn: boolean; unit: string }[]>(() => {
         const s = initialData?.specs;
         if (s && typeof s === 'object' && !Array.isArray(s)) {
-            const rows = Object.entries(s).map(([key, value]) => ({ key, value: String(value ?? '') }));
-            return rows.length > 0 ? rows : [{ key: '', value: '' }];
+            const rows = Object.entries(s).map(([key, value]) => ({ key, value: String(value ?? ''), unitOn: false, unit: '' }));
+            return rows.length > 0 ? rows : [{ key: '', value: '', unitOn: false, unit: '' }];
         }
-        return [{ key: '', value: '' }];
+        return [{ key: '', value: '', unitOn: false, unit: '' }];
     });
     const [uploading, setUploading] = useState(false);
     const [imagePreview, setImagePreview] = useState<string | null>(null);
@@ -182,12 +183,14 @@ function CreateProductExtraFields({
     }, [imageUrl, brandValue, dataRef]);
 
     // ✅ سینک specs به dataRef — فقط ردیف‌های کامل (کلید و مقدار هر دو پر)
+    // ✅ ویژگی واحد‌دار: مقدار + واحد در یک رشته (مثل «۲۵۰ گرم») — سازگار با بک‌اند Record<string,string>
     React.useEffect(() => {
         const obj: Record<string, string> = {};
         for (const row of specs) {
             const k = row.key.trim();
             const v = row.value.trim();
-            if (k && v) obj[k] = v;
+            const u = row.unitOn ? row.unit.trim() : '';
+            if (k && v) obj[k] = u ? `${v} ${u}` : v;
         }
         dataRef.current = {
             ...dataRef.current,
@@ -296,35 +299,82 @@ function CreateProductExtraFields({
                 <label className="text-xs font-bold text-on-surface block">ویژگی‌های کالا (اختیاری)</label>
                 <p className="text-[10px] text-on-surface-variant/60 -mt-1.5 leading-4">
                     مثلاً: وزن = ۲۵۰ گرم، کشور سازنده = ایران — این ویژگی‌ها مال خود کالاست و در همه آگهی‌هایش نمایش داده می‌شود.
+                    {` `}اگه ویژگی واحد داره (مثل وزن یا ابعاد)، دکمهٔ «واحد» رو بزن.
                 </p>
                 {specs.map((row, i) => (
-                    <div key={i} className="flex items-center gap-1.5">
-                        <input
-                            value={row.key}
-                            onChange={(e) => setSpecs((p) => p.map((r, j) => j === i ? { ...r, key: e.target.value } : r))}
-                            placeholder="نام ویژگی"
-                            className="flex-1 h-9 px-2.5 rounded-lg bg-surface-container-lowest border border-outline-variant/40 text-xs outline-none focus:ring-2 focus:ring-primary/25 focus:border-primary transition-all text-right"
-                        />
-                        <span className="text-[10px] text-on-surface-variant/40 flex-shrink-0">=</span>
-                        <input
-                            value={row.value}
-                            onChange={(e) => setSpecs((p) => p.map((r, j) => j === i ? { ...r, value: e.target.value } : r))}
-                            placeholder="مقدار"
-                            className="flex-[1.3] h-9 px-2.5 rounded-lg bg-surface-container-lowest border border-outline-variant/40 text-xs outline-none focus:ring-2 focus:ring-primary/25 focus:border-primary transition-all text-right"
-                        />
-                        <button
-                            type="button"
-                            onClick={() => setSpecs((p) => p.length > 1 ? p.filter((_, j) => j !== i) : [{ key: '', value: '' }])}
-                            className="flex-shrink-0 w-7 h-7 rounded-lg text-on-surface-variant/40 hover:text-error hover:bg-error/10 grid place-items-center transition-colors"
-                            title="حذف"
-                        >
-                            <X className="w-3.5 h-3.5" />
-                        </button>
+                    <div key={i} className="space-y-1">
+                        <div className="flex items-center gap-1.5">
+                            <input
+                                value={row.key}
+                                onChange={(e) => setSpecs((p) => p.map((r, j) => j === i ? { ...r, key: e.target.value } : r))}
+                                placeholder="نام ویژگی"
+                                className="flex-1 h-9 px-2.5 rounded-lg bg-surface-container-lowest border border-outline-variant/40 text-xs outline-none focus:ring-2 focus:ring-primary/25 focus:border-primary transition-all text-right"
+                            />
+                            <span className="text-[10px] text-on-surface-variant/40 flex-shrink-0">=</span>
+                            <input
+                                value={row.value}
+                                onChange={(e) => setSpecs((p) => p.map((r, j) => j === i ? { ...r, value: e.target.value } : r))}
+                                placeholder={row.unitOn ? 'مثلاً ۲۵۰' : 'مقدار'}
+                                className={row.unitOn
+                                    ? 'flex-1 h-9 px-2.5 rounded-lg bg-surface-container-lowest border border-outline-variant/40 text-xs outline-none focus:ring-2 focus:ring-primary/25 focus:border-primary transition-all text-right'
+                                    : 'flex-[1.3] h-9 px-2.5 rounded-lg bg-surface-container-lowest border border-outline-variant/40 text-xs outline-none focus:ring-2 focus:ring-primary/25 focus:border-primary transition-all text-right'}
+                            />
+                            {/* ✅ تیک واحد — برای ویژگی‌های واحد‌دار مثل وزن */}
+                            {row.unitOn ? (
+                                <div className="relative flex-shrink-0 w-[76px]">
+                                    <input
+                                        value={row.unit}
+                                        onChange={(e) => setSpecs((p) => p.map((r, j) => j === i ? { ...r, unit: e.target.value } : r))}
+                                        placeholder="کیلوگرم"
+                                        list="daymat-spec-units"
+                                        className="w-full h-9 pl-6 pr-2.5 rounded-lg bg-primary/[0.04] border border-primary/35 text-xs outline-none focus:ring-2 focus:ring-primary/25 focus:border-primary transition-all text-right"
+                                    />
+                                    <button
+                                        type="button"
+                                        onClick={() => setSpecs((p) => p.map((r, j) => j === i ? { ...r, unitOn: false, unit: '' } : r))}
+                                        className="absolute left-1 top-1/2 -translate-y-1/2 p-1 text-on-surface-variant/40 hover:text-error transition-colors"
+                                        title="حذف واحد"
+                                    >
+                                        <X className="w-3.5 h-3.5" />
+                                    </button>
+                                </div>
+                            ) : (
+                                <button
+                                    type="button"
+                                    onClick={() => setSpecs((p) => p.map((r, j) => j === i ? { ...r, unitOn: true } : r))}
+                                    className="flex-shrink-0 h-9 px-2 rounded-lg border border-outline-variant/40 text-[10px] font-bold text-on-surface-variant/70 hover:text-primary hover:border-primary/45 hover:bg-primary/[0.04] flex items-center gap-0.5 transition-colors"
+                                    title="این ویژگی واحد داره (مثل وزن)"
+                                >
+                                    <Plus className="w-3 h-3" /> واحد
+                                </button>
+                            )}
+                            <button
+                                type="button"
+                                onClick={() => setSpecs((p) => p.length > 1 ? p.filter((_, j) => j !== i) : [{ key: '', value: '', unitOn: false, unit: '' }])}
+                                className="flex-shrink-0 w-7 h-7 rounded-lg text-on-surface-variant/40 hover:text-error hover:bg-error/10 grid place-items-center transition-colors"
+                                title="حذف"
+                            >
+                                <X className="w-3.5 h-3.5" />
+                            </button>
+                        </div>
                     </div>
                 ))}
+                {/* ✅ واحدهای پرکاربرد — پیشنهاد سریع */}
+                <datalist id="daymat-spec-units">
+                    <option value="گرم" />
+                    <option value="کیلوگرم" />
+                    <option value="تن" />
+                    <option value="لیتر" />
+                    <option value="میلی‌لیتر" />
+                    <option value="متر" />
+                    <option value="سانتی‌متر" />
+                    <option value="عدد" />
+                    <option value="بسته" />
+                    <option value="کارتن" />
+                </datalist>
                 <button
                     type="button"
-                    onClick={() => setSpecs((p) => [...p, { key: '', value: '' }])}
+                    onClick={() => setSpecs((p) => [...p, { key: '', value: '', unitOn: false, unit: '' }])}
                     className="h-7 px-2.5 rounded-lg border border-primary/40 text-primary text-[10px] font-bold flex items-center gap-1 hover:bg-primary/10 transition-colors"
                 >
                     <Plus className="w-3 h-3" /> ویژگی جدید
