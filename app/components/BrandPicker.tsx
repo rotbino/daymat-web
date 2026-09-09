@@ -121,6 +121,7 @@ export default function BrandPicker({
                     createFn={async (data) => {
                         return apiService.brand.create({ title: data.title, category });
                     }}
+                    deleteFn={(id) => apiService.brand.delete(id)}
                     queryKey={`brands-picker-${category || 'all'}`}
                     createLabel="افزودن برند جدید"
                     minSearchChars={2}

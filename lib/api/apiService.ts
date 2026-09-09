@@ -217,6 +217,9 @@ export const apiService = {
         }): Promise<any> => {
             return apiRequest('/brands', { method: 'POST', data });
         },
+        delete: async (id: string): Promise<any> => {
+            return apiRequest(`/brands/${id}`, { method: 'DELETE' });
+        },
     },
 
     // ============================================================
