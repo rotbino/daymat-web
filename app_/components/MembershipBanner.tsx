@@ -34,7 +34,7 @@ export function MembershipBanner() {
 
     const handleJoinClick = async () => {
         if (!isAuthenticated) {
-            router.push(`/login?redirect=${currentSlug}`);
+            toast.info('برای پیوستن به بازار، ابتدا وارد شوید.');
             return;
         }
 

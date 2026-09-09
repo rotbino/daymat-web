@@ -4,7 +4,7 @@
 import React, { useState, useEffect } from 'react';
 import { createPortal } from 'react-dom';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import { Search, X, Plus, Check, Loader2, AlertCircle, Tag, Pencil } from 'lucide-react';
+import { Search, X, Plus, Check, Loader2, AlertCircle, Tag, Pencil, Trash2 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 
 export interface EntityValue {
@@ -85,6 +85,8 @@ interface Props {
     editTitle?: string;
     /** label کوتاه برای toggle mine */
     mineToggleLabel?: string;
+    /** تابع حذف آیتم (اختیاری) — اگه داده بشه، آیکون حذف برای isNew نمایش داده می‌شه */
+    deleteFn?: (id: string) => Promise<any>;
 }
 
 export default function EntityPicker({
@@ -101,7 +103,7 @@ export default function EntityPicker({
     renderItem,
     renderValue,
     renderCreateFields,
-    createLabel = 'افزودن به مرکز کالا',
+    createLabel = 'افزودن به مرجع کالا',
     minSearchChars = 2,
     pageSize = 10,
     showMineOnly = false,
@@ -109,12 +111,13 @@ export default function EntityPicker({
     duplicateMessage,
     createHint = 'این مورد در مرکز وجود ندارد؟ یک بار آن را اضافه کنید تا همه جا قابل استفاده باشد',
     selectTitle = 'انتخاب',
-    createTitle = 'افزودن به مرکز کالا',
+    createTitle = 'افزودن به مرجع کالا',
     editTitle = 'ویرایش',
     mineToggleLabel = 'فقط موارد من',
     // ✅ props اختیاری بدون default
     updateFn,
     renderEditFields,
+    deleteFn,
 }: Props) {
     const [isOpen, setIsOpen] = useState(false);
 
@@ -192,6 +195,7 @@ export default function EntityPicker({
                     renderEditFields={renderEditFields}
                     editTitle={editTitle}
                     mineToggleLabel={mineToggleLabel}
+                    deleteFn={deleteFn}
                 />
             )}
         </div>
@@ -223,6 +227,7 @@ function EntityPickerModal({
     renderEditFields,
     editTitle = 'ویرایش',
     mineToggleLabel = 'فقط موارد من',
+    deleteFn,
 }: any) {
     const [search, setSearch] = useState('');
     const [debouncedSearch, setDebouncedSearch] = useState('');
@@ -333,6 +338,26 @@ function EntityPickerModal({
             setEditError(err?.message || 'خطا در ویرایش');
         },
     });
+
+    // ✅ mutation delete
+    const deleteMut = useMutation({
+        mutationFn: (id: string) => deleteFn(id),
+        onSuccess: () => {
+            queryClient.invalidateQueries({ queryKey: [queryKey] });
+            setAllItems(prev => prev.filter((i: any) => i.id !== deleteMut.variables));
+        },
+        onError: (err: any) => {
+            // ✅ پیام خطا از بک‌اند رو به کاربر نشون بده
+            const msg = err?.data?.message || err?.message || 'خطا در حذف';
+            alert(msg);
+        },
+    });
+
+    const handleDelete = (item: any) => {
+        if (window.confirm(`«${item.title}» حذف شود؟`)) {
+            deleteMut.mutate(item.id);
+        }
+    };
 
     const trimmedSearch = debouncedSearch;
     const canSearch = trimmedSearch.length >= minSearchChars || trimmedSearch.length === 0;
@@ -614,6 +639,20 @@ function EntityPickerModal({
                                                     title="ویرایش"
                                                 >
                                                     <Pencil className="w-3.5 h-3.5" />
+                                                </button>
+                                            )}
+                                            {/* ✅ آیکون حذف — فقط برای isNew و اگه deleteFn وجود داشته باشه */}
+                                            {deleteFn && item.isNew && (
+                                                <button
+                                                    type="button"
+                                                    onClick={(e) => { e.stopPropagation(); handleDelete(item); }}
+                                                    disabled={deleteMut.isPending && deleteMut.variables === item.id}
+                                                    className="flex-shrink-0 w-7 h-7 rounded-lg text-on-surface-variant/60 hover:text-error hover:bg-error/10 grid place-items-center transition-colors disabled:opacity-50"
+                                                    title="حذف"
+                                                >
+                                                    {deleteMut.isPending && deleteMut.variables === item.id
+                                                        ? <Loader2 className="w-3.5 h-3.5 animate-spin" />
+                                                        : <Trash2 className="w-3.5 h-3.5" />}
                                                 </button>
                                             )}
                                         </div>

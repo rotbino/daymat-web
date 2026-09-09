@@ -217,6 +217,9 @@ export const apiService = {
         }): Promise<any> => {
             return apiRequest('/brands', { method: 'POST', data });
         },
+        delete: async (id: string): Promise<any> => {
+            return apiRequest(`/brands/${id}`, { method: 'DELETE' });
+        },
     },
 
     // ============================================================
@@ -249,6 +252,9 @@ export const apiService = {
             thumbnailUrl?: string;
         }): Promise<any> => {
             return apiRequest(`/products/${id}`, { method: 'PUT', data });
+        },
+        delete: async (id: string): Promise<any> => {
+            return apiRequest(`/products/${id}`, { method: 'DELETE' });
         },
     },
 

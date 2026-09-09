@@ -92,7 +92,7 @@ export function JoinMarketButton({ slug, className, label = 'پیوستن به �
     }, [state, restrictByLocation, locationSelections, firstBiz]);
 
     const handleLogin = () => {
-        router.push(`/login?redirect=${encodeURIComponent(typeof window !== 'undefined' ? window.location.pathname : '/')}`);
+        toast.info('برای پیوستن به بازار، ابتدا وارد شوید.');
     };
 
     const handleJoin = async () => {

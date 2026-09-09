@@ -8,26 +8,22 @@ import { apiService } from '@/lib/api/apiService';
 import { useCreateAd, useUpdateAd, useAd, useUploadFile, useDeleteFile } from '@/lib/api/apiHooks';
 import { toast } from 'sonner';
 import {
-    ArrowLeft, ArrowRight, Camera, Check, ChevronDown, ClipboardCheck, Clock, Images,
-    Loader2, MapPin, Package, Pencil, Plus, Search, Store, Tag, Wallet, TrendingUp, X,
+    ArrowLeft,
+    ArrowRight,
+    Camera,
+    Check, Images,
+    Loader2, MapPin, Package, Pencil, Plus, Search, Store, Tag, Wallet, X,
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { NumberInput } from '@/components/common/NumberInput';
 import { DropSelector } from '@/components/common/DropSelector';
 import { IranLocationSelector } from '@/app/components/IranLocationSelector';
 import ProductReferencePicker, { ProductValue } from '@/app/components/ProductReferencePicker';
-import BrandPicker, { BrandValue } from '@/app/components/BrandPicker';
 import UnitSettingsModal from './components/UnitSettingsModal';
 import CategorySettingsModal from './components/CategorySettingsModal';
 import CategoryPicker from './components/CategoryPicker';
 
-const VALIDITY_OPTIONS = [
-    { value: 24, label: '۱ روز' },
-    { value: 48, label: '۲ روز' },
-    { value: 72, label: '۳ روز' },
-    { value: 168, label: '۵ روز' },
-    { value: 240, label: '۱۰ روز' },
-];
+// ═══ ثابت‌ها ═══
 const MAX_IMAGES = 6;
 const CURRENCY = 'تومان';
 
@@ -158,31 +154,25 @@ export function AdForm({ adId, onSuccess }: { adId?: string; onSuccess?: () => v
 
     // ═══ state فرم ═══
     const [currentStep, setCurrentStep] = useState(1);
-    const TOTAL_STEPS = 4;
+    const TOTAL_STEPS = 4;  // ✅ بازگشت به ۴ مرحله
     const [formData, setFormData] = useState({
         categoryId: '', productType: '',
         singleUnitPrice: 0, unitPrice: 0,
         minQuantity: 1, availableQuantity: 0,
         cityCode: '', cityLabel: '', provinceCode: '', provinceLabel: '',
-        validityHours: 24, description: '',
+        description: '',
         unitId: '', unitTitle: '',
         unitQty: null as number | null,
         unitIsVariableQty: false, isEditingQty: false,
         giftPrice: 0,
         volumeTiers: [] as { minQty: number; price: number }[],
-        // ✅ فروش چکی (اختیاری)
-        hasCheque: false,
-        chequeMode: 'amount' as 'amount' | 'percent',
-        chequeItems: [] as { days: number; amount: number }[],
         // ✅ کالای مرجع
         productReferenceId: '' as string,
         brandId: '' as string,
-        // ✅ نردبان
-        isBumped: false,
-        bumpDurationHours: 24,
     });
     // ✅ state کالای انتخاب‌شده (برای نمایش در ProductReferencePicker)
     const [selectedProduct, setSelectedProduct] = useState<ProductValue | null>(null);
+    // ✅ برند از کالای مرجع ارث می‌برد — دیگر مستقل نیست
     const [images, setImages] = useState<ImageSlot[]>([]);
     const [submitting, setSubmitting] = useState(false);
     const [unitModalOpen, setUnitModalOpen] = useState(false);
@@ -345,14 +335,20 @@ export function AdForm({ adId, onSuccess }: { adId?: string; onSuccess?: () => v
         setImages((p) => [...p, { file, previewUrl: URL.createObjectURL(file) }]);
     };
 
-    // ═══ پیش‌فرض شهر ═══
+    // ═══ پیش‌فرض شهر — از کسب‌وکار ═══
     useEffect(() => {
         if (isEditMode || !selectedCatalog) return;
-        if (!formData.cityCode && selectedCatalog.cityCode) {
+        // ✅ اول از business بگیر، اگه نبود از catalog
+        const biz = (selectedCatalog as any).business || {};
+        const cityCode = biz.cityCode || selectedCatalog.cityCode;
+        const cityLabel = biz.city || selectedCatalog.city;
+        const provinceCode = biz.provinceCode || selectedCatalog.provinceCode;
+        const provinceLabel = biz.province || selectedCatalog.province;
+        if (!formData.cityCode && cityCode) {
             setFormData((p) => ({
                 ...p,
-                cityCode: selectedCatalog.cityCode || '', cityLabel: selectedCatalog.city || '',
-                provinceCode: selectedCatalog.provinceCode || '', provinceLabel: selectedCatalog.province || '',
+                cityCode: cityCode || '', cityLabel: cityLabel || '',
+                provinceCode: provinceCode || '', provinceLabel: provinceLabel || '',
             }));
         }
         // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -371,18 +367,13 @@ export function AdForm({ adId, onSuccess }: { adId?: string; onSuccess?: () => v
                 availableQuantity: existingAd.availableQuantity || 0,
                 cityCode: existingAd.cityCode || '', cityLabel: existingAd.city || '',
                 provinceCode: existingAd.provinceCode || '', provinceLabel: existingAd.province || '',
-                validityHours: existingAd.validityHours || 24,
+                
                 description: existingAd.description || '',
                 unitId: existingAd.unitId || '', unitTitle: existingAd.unit?.title || '',
                 unitQty: existingAd.unitQty ?? null,
                 unitIsVariableQty: existingAd.unitIsVariableQty ?? false, isEditingQty: false,
                 giftPrice: (existingAd as any).giftPrice || 0,
                 volumeTiers: (existingAd as any).volumeTiers || [],
-                hasCheque: !!(existingAd as any).paymentMethods?.cheque?.length,
-                chequeMode: (existingAd as any).paymentMethods?.chequeMode || 'amount',
-                chequeItems: (existingAd as any).paymentMethods?.cheque || [],
-                isBumped: (existingAd as any).isBumped || false,
-                bumpDurationHours: (existingAd as any).bumpDurationHours || 24,
                 productReferenceId: (existingAd as any).productReferenceId || '',
                 brandId: (existingAd as any).brandId || '',
             }));
@@ -397,14 +388,7 @@ export function AdForm({ adId, onSuccess }: { adId?: string; onSuccess?: () => v
                     thumbnailUrl: (existingAd as any).productRef?.thumbnailUrl,
                 });
             }
-            // ✅ برند مستقل
-            if ((existingAd as any).brandId) {
-                setSelectedBrand({
-                    id: (existingAd as any).brandId,
-                    title: (existingAd as any).brand?.title || '',
-                    logoUrl: (existingAd as any).brand?.logoUrl,
-                });
-            }
+            // ✅ برند از کالای مرجع ارث می‌بره — نیازی به state جداگانه نیست
         }
     }, [isEditMode, existingAd]);
 
@@ -412,9 +396,9 @@ export function AdForm({ adId, onSuccess }: { adId?: string; onSuccess?: () => v
     const validateStep = (step: number): boolean => {
         const errs: string[] = [];
         if (step === 1) {
-            // ✅ انتخاب کالا از مرکز کالا اجباری است
+            // ✅ انتخاب کالا از مرجع کالا اجباری است
             if (!selectedProduct) {
-                errs.push('کالا را از مرکز کالا انتخاب کن.');
+                errs.push('کالا را از مرجع کالا انتخاب کن.');
             }
             if (selectedProduct) {
                 if (!formData.unitId) errs.push('واحد فروش را انتخاب کن.');
@@ -490,7 +474,7 @@ export function AdForm({ adId, onSuccess }: { adId?: string; onSuccess?: () => v
                         productType: selectedProduct?.title || formData.productType,
                         // ✅ کالای مرجع
                         productReferenceId: selectedProduct?.id || null,
-                        brandId: selectedBrand?.id || null,
+                        brandId: selectedProduct?.brandId || null,
                         unitPrice: formData.unitPrice,
                         singleUnitPrice: formData.singleUnitPrice || null,
                         consumerPrice: formData.consumerPrice || null,
@@ -498,17 +482,12 @@ export function AdForm({ adId, onSuccess }: { adId?: string; onSuccess?: () => v
                         availableQuantity: formData.availableQuantity,
                         city: formData.cityLabel, cityCode: formData.cityCode,
                         provinceCode: formData.provinceCode,
-                        validityHours: formData.validityHours,
+                        
                         description: formData.description,
                         unitQty: formData.unitQty,
                         unitIsVariableQty: formData.unitIsVariableQty,
                         giftPrice: formData.giftPrice || null,
                         volumeTiers: formData.volumeTiers.length > 0 ? formData.volumeTiers : null,
-                        paymentMethods: formData.hasCheque && formData.chequeItems.length > 0
-                            ? { cheque: formData.chequeItems, chequeMode: formData.chequeMode }
-                            : null,
-                        isBumped: formData.isBumped || undefined,
-                        bumpDurationHours: formData.isBumped ? formData.bumpDurationHours : undefined,
                     },
                 });
                 adResultId = adId;
@@ -528,7 +507,7 @@ export function AdForm({ adId, onSuccess }: { adId?: string; onSuccess?: () => v
                     productType: selectedProduct?.title || formData.productType,
                     // ✅ کالای مرجع
                     productReferenceId: selectedProduct?.id || undefined,
-                    brandId: selectedBrand?.id || undefined,
+                    brandId: selectedProduct?.brandId || undefined,
                     unitPrice: formData.unitPrice,
                     singleUnitPrice: formData.singleUnitPrice || null,
                     consumerPrice: formData.consumerPrice || null,
@@ -536,17 +515,12 @@ export function AdForm({ adId, onSuccess }: { adId?: string; onSuccess?: () => v
                     availableQuantity: formData.availableQuantity || undefined,
                     city: formData.cityLabel, cityCode: formData.cityCode,
                     provinceCode: formData.provinceCode,
-                    validityHours: formData.validityHours,
+                    
                     description: formData.description,
                     unitQty: formData.unitQty,
                     unitIsVariableQty: formData.unitIsVariableQty,
                     giftPrice: formData.giftPrice || null,
                     volumeTiers: formData.volumeTiers.length > 0 ? formData.volumeTiers : null,
-                    paymentMethods: formData.hasCheque && formData.chequeItems.length > 0
-                        ? { cheque: formData.chequeItems, chequeMode: formData.chequeMode }
-                        : null,
-                    isBumped: formData.isBumped || undefined,
-                    bumpDurationHours: formData.isBumped ? formData.bumpDurationHours : undefined,
                 });
                 if (!created?.id) throw new Error('پاسخ سرور ناقص است — آگهی ساخته نشد');
                 adResultId = created.id;
@@ -677,9 +651,10 @@ export function AdForm({ adId, onSuccess }: { adId?: string; onSuccess?: () => v
                             </div>
                         </section>
 
-                        {/* ✅ انتخاب کالا از مرکز کالا */}
+                        {/* ✅ انتخاب کالا از مرجع کالا */}
                         <section className="rounded-2xl bg-surface-container-low/60 border border-outline-variant/30 p-4 space-y-3">
-                            <SectionTitle icon={Tag} text="کالا" />
+                            <SectionTitle icon={Tag}
+                                          text="انتخاب کالا" />
                             {hasCategoryTree && (
                                 <CategoryPicker
                                     value={formData.categoryId}
@@ -719,7 +694,7 @@ export function AdForm({ adId, onSuccess }: { adId?: string; onSuccess?: () => v
                                     }}
                                     label="کالا"
                                     required
-                                    placeholder="انتخاب از مرکز کالا..."
+                                    placeholder="انتخاب از مرجع کالا..."
                                     error={!selectedProduct && !formData.productType.trim() ? 'کالا را انتخاب کن' : undefined}
                                 />
                                 {/* ✅ عنوان آگهی قابل ویرایش */}
@@ -735,20 +710,17 @@ export function AdForm({ adId, onSuccess }: { adId?: string; onSuccess?: () => v
                                                className={inputCls()} />
                                     </div>
                                 )}
-                                {/* ✅ انتخاب کالا از مرکز کالا اجباری است — هیچ fallback دستی وجود ندارد */}
+                                {/* ✅ انتخاب کالا از مرجع کالا اجباری است — هیچ fallback دستی وجود ندارد */}
                             </div>
                         </section>
 
                         {/* ✅ برند — مستقل از کالا، فقط اگه کالا انتخاب شده */}
-                        {selectedProduct && (
-                            <section className="rounded-2xl bg-surface-container-low/60 border border-outline-variant/30 p-4 space-y-3 animate-in fade-in duration-300">
-                                <BrandPicker
-                                    value={selectedBrand}
-                                    onChange={setSelectedBrand}
-                                    label="برند کالا"
-                                    placeholder="مثلاً: مکنزی"
-                                />
-                            </section>
+                        {/* ✅ برند از کالای مرجع نمایش داده می‌شه (فقط‌خواندنی) */}
+                        {selectedProduct && selectedProduct.brandTitle && (
+                            <div className="rounded-xl bg-primary/5 border border-primary/20 px-3 py-2 flex items-center gap-2">
+                                <span className="text-[10px] font-bold text-on-surface-variant">برند:</span>
+                                <span className="text-xs font-bold text-primary">{selectedProduct.brandTitle}</span>
+                            </div>
                         )}
 
                         {/* ✅ تصویر آگهی — زیر انتخاب کالا، فقط اگه کالا انتخاب شده */}
@@ -769,7 +741,7 @@ export function AdForm({ adId, onSuccess }: { adId?: string; onSuccess?: () => v
                                         </button>
                                         {(slot as any)._fromProduct && (
                                             <span className="absolute bottom-0 inset-x-0 bg-primary/80 text-white text-[8px] text-center py-0.5">
-                                                از مرکز کالا
+                                                از مرجع کالا
                                             </span>
                                         )}
                                     </div>
@@ -787,7 +759,7 @@ export function AdForm({ adId, onSuccess }: { adId?: string; onSuccess?: () => v
                                        onChange={(e) => { handleImageSelected(e.target.files?.[0] ?? null); e.target.value = ''; }} />
                             </div>
                             <p className="text-[10px] text-on-surface-variant/60">
-                                {images.length > 0 ? 'عکس‌های موجود نمایش داده شده‌اند — می‌تونی عوض کنی یا بیشتر اضافه کنی.' : 'عکس از مرکز کالا یا خودت آپلود کن. اولین عکس، عکس اصلی کارت می‌شود.'}
+                                {images.length > 0 ? 'عکس‌های موجود نمایش داده شده‌اند — می‌تونی عوض کنی یا بیشتر اضافه کنی.' : 'عکس از مرجع کالا یا خودت آپلود کن. اولین عکس، عکس اصلی کارت می‌شود.'}
                             </p>
                         </section>
                         )}
@@ -1021,7 +993,7 @@ export function AdForm({ adId, onSuccess }: { adId?: string; onSuccess?: () => v
                     </div>
                 )}
 
-                {/* ═══ مرحله ۳: موقعیت، نکات فروش و فروش چکی ═══ */}
+                {/* ═══ مرحله ۳: موقعیت و اعتبار ═══ */}
                 {currentStep === 3 && (
                     <div className="space-y-4 animate-in fade-in duration-200">
                         <section className="rounded-2xl bg-surface-container-low/60 border border-outline-variant/30 p-4 space-y-2.5">
@@ -1042,121 +1014,15 @@ export function AdForm({ adId, onSuccess }: { adId?: string; onSuccess?: () => v
                                           border border-outline-variant/40 dark:border-gray-700 focus:ring-2 focus:ring-amber-500/30
                                           focus:border-amber-500 outline-none transition-all resize-none" />
                         </section>
-
-                        {/* ✅ فروش چکی (اختیاری) */}
-                        <section className="rounded-2xl bg-surface-container-low/60 border border-outline-variant/30 p-4 space-y-3">
-                            <label className="flex items-center gap-2 cursor-pointer">
-                                <input
-                                    type="checkbox"
-                                    checked={formData.hasCheque}
-                                    onChange={(e) => setFormData((p) => ({ ...p, hasCheque: e.target.checked }))}
-                                    className="w-4 h-4 rounded accent-amber-500"
-                                />
-                                <span className="text-xs font-bold text-on-surface flex items-center gap-1.5">
-                                    <Wallet className="w-3.5 h-3.5 text-amber-500" />
-                                    فروش چکی هم دارم
-                                </span>
-                            </label>
-
-                            {formData.hasCheque && (
-                                <div className="space-y-3 animate-in fade-in duration-200">
-                                    {/* سوییچ مبلغ/درصد */}
-                                    <div className="flex items-center gap-2 bg-surface-container-lowest rounded-lg p-1 border border-outline-variant/30">
-                                        <button
-                                            type="button"
-                                            onClick={() => setFormData((p) => ({ ...p, chequeMode: 'amount' }))}
-                                            className={cn('flex-1 h-8 rounded-md text-xs font-bold transition-all',
-                                                formData.chequeMode === 'amount'
-                                                    ? 'bg-amber-500 text-white shadow-sm'
-                                                    : 'text-on-surface-variant hover:bg-surface-container-high')}
-                                        >
-                                            مبلغ (تومان)
-                                        </button>
-                                        <button
-                                            type="button"
-                                            onClick={() => setFormData((p) => ({ ...p, chequeMode: 'percent' }))}
-                                            className={cn('flex-1 h-8 rounded-md text-xs font-bold transition-all',
-                                                formData.chequeMode === 'percent'
-                                                    ? 'bg-amber-500 text-white shadow-sm'
-                                                    : 'text-on-surface-variant hover:bg-surface-container-high')}
-                                        >
-                                            درصد افزایش
-                                        </button>
-                                    </div>
-                                    <p className="text-[10px] text-on-surface-variant/70 leading-5">
-                                        {formData.chequeMode === 'amount'
-                                            ? 'مبلغ چک رو به تومان وارد کن. مثلاً: ۳۰ روز، ۵۰۰٬۰۰۰ تومان'
-                                            : 'درصد افزایش قیمت نسبت به نقدی. مثلاً: ۳۰ روز، ۵٪ افزایش. حداکثر ۱۰۰٪'}
-                                    </p>
-
-                                    {/* لیست آیتم‌های چک */}
-                                    {formData.chequeItems.map((item, i) => (
-                                        <div key={i} className="flex items-center gap-2">
-                                            <div className="flex-1">
-                                                <NumberInput
-                                                    value={item.days || undefined}
-                                                    onChange={(v) => setFormData((p) => {
-                                                        const items = [...p.chequeItems];
-                                                        items[i] = { ...items[i], days: v || 0 };
-                                                        return { ...p, chequeItems: items };
-                                                    })}
-                                                    unit="روز"
-                                                    className="h-10"
-                                                />
-                                            </div>
-                                            <div className="flex-1">
-                                                <NumberInput
-                                                    value={item.amount || undefined}
-                                                    onChange={(v) => {
-                                                        const max = formData.chequeMode === 'percent' ? 100 : undefined;
-                                                        const val = max ? Math.min(v || 0, max) : (v || 0);
-                                                        setFormData((p) => {
-                                                            const items = [...p.chequeItems];
-                                                            items[i] = { ...items[i], amount: val };
-                                                            return { ...p, chequeItems: items };
-                                                        });
-                                                    }}
-                                                    unit={formData.chequeMode === 'percent' ? '٪' : CURRENCY}
-                                                    className="h-10"
-                                                />
-                                            </div>
-                                            <button
-                                                type="button"
-                                                onClick={() => setFormData((p) => ({
-                                                    ...p,
-                                                    chequeItems: p.chequeItems.filter((_, idx) => idx !== i),
-                                                }))}
-                                                className="w-8 h-8 rounded-lg text-error/60 hover:text-error hover:bg-error/10 grid place-items-center transition-colors flex-shrink-0"
-                                            >
-                                                <X className="w-4 h-4" />
-                                            </button>
-                                        </div>
-                                    ))}
-
-                                    {/* دکمه افزودن آیتم چک */}
-                                    <button
-                                        type="button"
-                                        onClick={() => setFormData((p) => ({
-                                            ...p,
-                                            chequeItems: [...p.chequeItems, { days: 30, amount: 0 }],
-                                        }))}
-                                        className="w-full h-9 rounded-xl border-2 border-dashed border-outline-variant/50 text-xs font-bold text-on-surface-variant hover:border-amber-500/40 hover:text-amber-600 transition-colors flex items-center justify-center gap-1.5"
-                                    >
-                                        <Plus className="w-3.5 h-3.5" />
-                                        افزودن چک
-                                    </button>
-                                </div>
-                            )}
-                        </section>
                     </div>
                 )}
 
-                {/* ═══ مرحله ۴: بررسی ═══ */}
+                {/* ═══ مرحله ۴: بررسی نهایی ═══ */}
                 {currentStep === 4 && (
                     <div className="space-y-4 animate-in fade-in duration-200">
                         <div className="rounded-2xl border border-emerald-500/20 bg-emerald-500/5 p-4 flex items-center gap-3">
                             <span className="w-10 h-10 rounded-xl bg-emerald-500 grid place-items-center shadow-sm shadow-emerald-500/30">
-                                <ClipboardCheck className="w-5 h-5 text-white" />
+                                <Check className="w-5 h-5 text-white" />
                             </span>
                             <div>
                                 <h3 className="font-bold text-sm text-emerald-800 dark:text-emerald-300">بررسی نهایی</h3>
@@ -1167,12 +1033,14 @@ export function AdForm({ adId, onSuccess }: { adId?: string; onSuccess?: () => v
                         <div className="bg-white dark:bg-gray-900 rounded-2xl border border-outline-variant/40 shadow-sm overflow-hidden">
                             <div className="px-4 pb-4 pt-4 space-y-1.5">
                                 <div className="flex justify-between text-xs"><span className="text-on-surface-variant">کاتالوگ</span><span className="font-medium text-on-surface">{selectedCatalog.name}</span></div>
-                                {formData.categoryId && selectedCategoryNode && (
-                                    <div className="flex justify-between text-xs"><span className="text-on-surface-variant">دسته</span><span className="font-medium text-on-surface">{selectedCategoryNode.title}</span></div>
+                                {selectedProduct && (
+                                    <div className="flex justify-between text-xs"><span className="text-on-surface-variant">کالا</span><span className="font-medium text-on-surface">{formData.productType || selectedProduct.title}</span></div>
                                 )}
-                                <div className="flex justify-between text-xs"><span className="text-on-surface-variant">کالا</span><span className="font-medium text-on-surface">{formData.productType || '—'}</span></div>
+                                {selectedProduct?.brandTitle && (
+                                    <div className="flex justify-between text-xs"><span className="text-on-surface-variant">برند</span><span className="font-medium text-on-surface">{selectedProduct.brandTitle}</span></div>
+                                )}
                                 <div className="flex justify-between text-xs"><span className="text-on-surface-variant">تصاویر</span><span className="font-medium text-on-surface">{uploadedCount} عدد</span></div>
-                                <div className="flex justify-between text-xs"><span className="text-on-surface-variant">واحد</span><span className="font-medium text-on-surface">{unitName}{formData.unitQty ? ` (${formData.unitQty.toLocaleString('fa-IR')} ${baseUnitTitle})` : ''}</span></div>
+                                <div className="flex justify-between text-xs"><span className="text-on-surface-variant">واحد</span><span className="font-medium text-on-surface">{formData.unitTitle || unitName}{formData.unitQty ? ` (${formData.unitQty.toLocaleString('fa-IR')} ${baseUnitTitle})` : ''}</span></div>
                                 <div className="flex justify-between text-xs">
                                     <span className="text-on-surface-variant">{isWholesale ? 'حداقل حجم' : 'موجودی'}</span>
                                     <span className="font-medium text-on-surface">{(isWholesale ? formData.minQuantity : formData.availableQuantity).toLocaleString('fa-IR')} {unitName}</span>
@@ -1187,45 +1055,9 @@ export function AdForm({ adId, onSuccess }: { adId?: string; onSuccess?: () => v
                                 {isWholesale && formData.giftPrice > 0 && (
                                     <div className="flex justify-between text-xs"><span className="text-on-surface-variant">قیمت اشانتیون</span><span className="font-medium text-on-surface">{formData.giftPrice.toLocaleString('fa-IR')} {CURRENCY}</span></div>
                                 )}
-                                {liveProfit !== null && liveProfit >= 0 && (
-                                    <div className="flex justify-between text-xs"><span className="text-on-surface-variant">سود خریدار عمده</span><span className="font-bold text-emerald-600">{liveProfit.toLocaleString('fa-IR')} {CURRENCY}</span></div>
-                                )}
                                 <div className="flex justify-between text-xs"><span className="text-on-surface-variant">محل</span><span className="font-medium text-on-surface">{formData.cityLabel || '—'}</span></div>
-                                {formData.hasCheque && formData.chequeItems.length > 0 && (
-                                    <div className="flex justify-between text-xs"><span className="text-on-surface-variant">فروش چکی</span><span className="font-medium text-on-surface">{formData.chequeItems.length} قسط</span></div>
-                                )}
                             </div>
                         </div>
-
-                        {/* ✅ نردبان (اختیاری) */}
-                        <section className="rounded-2xl bg-amber-50/50 dark:bg-amber-900/10 border border-amber-200/40 dark:border-amber-800/30 p-4 space-y-2">
-                            <label className="flex items-center gap-2 cursor-pointer">
-                                <input
-                                    type="checkbox"
-                                    checked={formData.isBumped}
-                                    onChange={(e) => setFormData((p) => ({ ...p, isBumped: e.target.checked }))}
-                                    className="w-4 h-4 rounded accent-amber-500"
-                                />
-                                <span className="text-xs font-bold text-amber-800 dark:text-amber-300 flex items-center gap-1.5">
-                                    نردبان کنم (نمایش برتر در تابلو)
-                                </span>
-                            </label>
-                            {formData.isBumped && (
-                                <div className="flex items-center gap-2 animate-in fade-in duration-200">
-                                    <span className="text-[11px] text-on-surface-variant">مدت:</span>
-                                    {[24, 48, 72].map((h) => (
-                                        <button key={h} type="button"
-                                                onClick={() => setFormData((p) => ({ ...p, bumpDurationHours: h }))}
-                                                className={cn('h-8 px-3 rounded-lg text-xs font-bold border transition-all',
-                                                    formData.bumpDurationHours === h
-                                                        ? 'bg-amber-500 text-white border-amber-500'
-                                                        : 'border-outline-variant/40 text-on-surface-variant hover:border-amber-500/40')}>
-                                            {h === 24 ? '۱ روز' : h === 48 ? '۲ روز' : '۳ روز'}
-                                        </button>
-                                    ))}
-                                </div>
-                            )}
-                        </section>
 
                         <div className="grid grid-cols-3 gap-2">
                             {[1, 2, 3].map((s) => (
@@ -1239,16 +1071,8 @@ export function AdForm({ adId, onSuccess }: { adId?: string; onSuccess?: () => v
                     </div>
                 )}
 
-                {/* ═══ ناوبری مراحل — RTL ═══ */}
+                {/* ═══ ناوبری مراحل — RTL: بعدی در چپ، قبلی در راست ═══ */}
                 <div className="flex items-center justify-between pt-2">
-                    {/* سمت راست = قبلی */}
-                    {currentStep > 1 ? (
-                        <button type="button" onClick={prevStep}
-                                className="h-11 px-5 rounded-xl border-2 border-outline-variant/40 bg-white dark:bg-gray-900
-                                    text-sm font-medium text-on-surface flex items-center gap-2 hover:bg-surface-container-lowest transition-all">
-                            <ArrowRight className="w-4 h-4" /> قبلی
-                        </button>
-                    ) : <div></div>}
                     {/* سمت چپ = بعدی یا ثبت */}
                     {currentStep < TOTAL_STEPS ? (
                         <button type="button" onClick={nextStep}
@@ -1268,6 +1092,14 @@ export function AdForm({ adId, onSuccess }: { adId?: string; onSuccess?: () => v
                                 : <><Check className="w-4 h-4" /> {isEditMode ? 'ذخیره تغییرات' : 'ثبت نهایی'}</>}
                         </button>
                     )}
+                    {/* سمت راست = قبلی */}
+                    {currentStep > 1 ? (
+                        <button type="button" onClick={prevStep}
+                                className="h-11 px-5 rounded-xl border-2 border-outline-variant/40 bg-white dark:bg-gray-900
+                                    text-sm font-medium text-on-surface flex items-center gap-2 hover:bg-surface-container-lowest transition-all">
+                            <ArrowRight className="w-4 h-4" /> قبلی
+                        </button>
+                    ) : <div></div>}
                 </div>
             </main>
 
