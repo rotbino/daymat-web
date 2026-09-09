@@ -697,7 +697,7 @@ export function AdForm({ adId, onSuccess }: { adId?: string; onSuccess?: () => v
                                     placeholder="انتخاب از مرجع کالا..."
                                     error={!selectedProduct && !formData.productType.trim() ? 'کالا را انتخاب کن' : undefined}
                                 />
-                                {/* ✅ عنوان آگهی قابل ویرایش */}
+                                {/* ✅ عنوان آگهی قابل ویرایش + برند زیرش */}
                                 {selectedProduct && (
                                     <div className="space-y-1.5">
                                         <label className="text-[10px] text-on-surface-variant block flex items-center gap-1">
@@ -708,20 +708,19 @@ export function AdForm({ adId, onSuccess }: { adId?: string; onSuccess?: () => v
                                                onChange={(e) => setFormData((p) => ({ ...p, productType: e.target.value }))}
                                                placeholder="عنوان آگهی..."
                                                className={inputCls()} />
+                                        {/* ✅ برند از کالای مرجع — زیر عنوان */}
+                                        {selectedProduct.brandTitle && (
+                                            <div className="flex items-center gap-1.5 pt-0.5">
+                                                <Tag className="w-3 h-3 text-primary/50" />
+                                                <span className="text-[11px] text-on-surface-variant">برند:</span>
+                                                <span className="text-[11px] font-bold text-primary">{selectedProduct.brandTitle}</span>
+                                            </div>
+                                        )}
                                     </div>
                                 )}
-                                {/* ✅ انتخاب کالا از مرجع کالا اجباری است — هیچ fallback دستی وجود ندارد */}
+                                {/* ✅ انتخاب کالا از مرجع کالا اجباری است */}
                             </div>
                         </section>
-
-                        {/* ✅ برند — مستقل از کالا، فقط اگه کالا انتخاب شده */}
-                        {/* ✅ برند از کالای مرجع نمایش داده می‌شه (فقط‌خواندنی) */}
-                        {selectedProduct && selectedProduct.brandTitle && (
-                            <div className="rounded-xl bg-primary/5 border border-primary/20 px-3 py-2 flex items-center gap-2">
-                                <span className="text-[10px] font-bold text-on-surface-variant">برند:</span>
-                                <span className="text-xs font-bold text-primary">{selectedProduct.brandTitle}</span>
-                            </div>
-                        )}
 
                         {/* ✅ تصویر آگهی — زیر انتخاب کالا، فقط اگه کالا انتخاب شده */}
                         {selectedProduct && (
