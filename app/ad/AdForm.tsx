@@ -410,9 +410,9 @@ export function AdForm({ adId, onSuccess }: { adId?: string; onSuccess?: () => v
     const validateStep = (step: number): boolean => {
         const errs: string[] = [];
         if (step === 1) {
-            // ✅ انتخاب کالا از مرکز کالا اجباری است
+            // ✅ انتخاب کالا از مرجع کالا اجباری است
             if (!selectedProduct) {
-                errs.push('کالا را از مرکز کالا انتخاب کن.');
+                errs.push('کالا را از مرجع کالا انتخاب کن.');
             }
             if (selectedProduct) {
                 if (!formData.unitId) errs.push('واحد فروش را انتخاب کن.');
@@ -669,7 +669,7 @@ export function AdForm({ adId, onSuccess }: { adId?: string; onSuccess?: () => v
                             </div>
                         </section>
 
-                        {/* ✅ انتخاب کالا از مرکز کالا */}
+                        {/* ✅ انتخاب کالا از مرجع کالا */}
                         <section className="rounded-2xl bg-surface-container-low/60 border border-outline-variant/30 p-4 space-y-3">
                             <SectionTitle icon={Tag}
                                           text="انتخاب کالا" />
@@ -712,7 +712,7 @@ export function AdForm({ adId, onSuccess }: { adId?: string; onSuccess?: () => v
                                     }}
                                     label="کالا"
                                     required
-                                    placeholder="انتخاب از مرکز کالا..."
+                                    placeholder="انتخاب از مرجع کالا..."
                                     error={!selectedProduct && !formData.productType.trim() ? 'کالا را انتخاب کن' : undefined}
                                 />
                                 {/* ✅ عنوان آگهی قابل ویرایش */}
@@ -728,7 +728,7 @@ export function AdForm({ adId, onSuccess }: { adId?: string; onSuccess?: () => v
                                                className={inputCls()} />
                                     </div>
                                 )}
-                                {/* ✅ انتخاب کالا از مرکز کالا اجباری است — هیچ fallback دستی وجود ندارد */}
+                                {/* ✅ انتخاب کالا از مرجع کالا اجباری است — هیچ fallback دستی وجود ندارد */}
                             </div>
                         </section>
 
@@ -764,7 +764,7 @@ export function AdForm({ adId, onSuccess }: { adId?: string; onSuccess?: () => v
                                         </button>
                                         {(slot as any)._fromProduct && (
                                             <span className="absolute bottom-0 inset-x-0 bg-primary/80 text-white text-[8px] text-center py-0.5">
-                                                از مرکز کالا
+                                                از مرجع کالا
                                             </span>
                                         )}
                                     </div>
@@ -782,7 +782,7 @@ export function AdForm({ adId, onSuccess }: { adId?: string; onSuccess?: () => v
                                        onChange={(e) => { handleImageSelected(e.target.files?.[0] ?? null); e.target.value = ''; }} />
                             </div>
                             <p className="text-[10px] text-on-surface-variant/60">
-                                {images.length > 0 ? 'عکس‌های موجود نمایش داده شده‌اند — می‌تونی عوض کنی یا بیشتر اضافه کنی.' : 'عکس از مرکز کالا یا خودت آپلود کن. اولین عکس، عکس اصلی کارت می‌شود.'}
+                                {images.length > 0 ? 'عکس‌های موجود نمایش داده شده‌اند — می‌تونی عوض کنی یا بیشتر اضافه کنی.' : 'عکس از مرجع کالا یا خودت آپلود کن. اولین عکس، عکس اصلی کارت می‌شود.'}
                             </p>
                         </section>
                         )}

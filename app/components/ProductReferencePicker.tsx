@@ -72,16 +72,16 @@ export default function ProductReferencePicker({
                 <CreateProductExtraFields dataRef={dataRef} initialData={initialData} />
             )}
             queryKey={`products-picker-${category || 'all'}`}
-            createLabel="افزودن کالای جدید به مرکز"
+            createLabel="افزودن کالای جدید به مرجع"
             minSearchChars={2}
             pageSize={10}
-            selectTitle="انتخاب از مرکز کالا"
+            selectTitle="انتخاب از مرجع کالا"
             createTitle="افزودن کالای جدید"
             editTitle="ویرایش کالا"
-            duplicateMessage="این کالا قبلاً در مرکز کالا اضافه شده. از لیست بالا انتخاب کنید."
-            createHint="این کالا در مرکز وجود ندارد؟ یک بار آن را اضافه کنید تا همه جا قابل استفاده باشد"
+            duplicateMessage="این کالا قبلاً در مرجع کالا اضافه شده. از لیست بالا انتخاب کنید."
+            createHint="این کالا در مرجع وجود ندارد؟ یک بار آن را اضافه کنید تا همه جا قابل استفاده باشد"
             showMineOnly={true}
-            mineToggleLabel="کالاهای من"
+            mineToggleLabel="مرجع من"
             renderValue={(v) => (
                 <>
                     {(v as ProductValue).thumbnailUrl || (v as ProductValue).imageUrl ? (

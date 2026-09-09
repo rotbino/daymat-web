@@ -103,7 +103,7 @@ export default function EntityPicker({
     renderItem,
     renderValue,
     renderCreateFields,
-    createLabel = 'افزودن به مرکز کالا',
+    createLabel = 'افزودن به مرجع کالا',
     minSearchChars = 2,
     pageSize = 10,
     showMineOnly = false,
@@ -111,7 +111,7 @@ export default function EntityPicker({
     duplicateMessage,
     createHint = 'این مورد در مرکز وجود ندارد؟ یک بار آن را اضافه کنید تا همه جا قابل استفاده باشد',
     selectTitle = 'انتخاب',
-    createTitle = 'افزودن به مرکز کالا',
+    createTitle = 'افزودن به مرجع کالا',
     editTitle = 'ویرایش',
     mineToggleLabel = 'فقط موارد من',
     // ✅ props اختیاری بدون default
