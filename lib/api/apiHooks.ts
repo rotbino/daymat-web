@@ -589,7 +589,7 @@ export const useUploadFile = () => {
                          fieldKey,
                      }: {
             file: File;
-            model: 'User' | 'Catalog' | 'Ad';
+            model: 'User' | 'Catalog' | 'Ad' | 'ProductReference' | 'Brand';
             modelId: string;
             fieldKey: string;
         }): Promise<UploadFileResponse> => {
