@@ -114,13 +114,15 @@ export default function BrandPicker({
                     deleteFn={(id) => apiService.brand.delete(id)}
                     queryKey={`brands-picker-${category || 'all'}`}
                     createLabel="افزودن برند جدید"
+                    addButtonLabel="ثبت برند جدید"
+                    emptyHint="اگر این برند در لیست برندها وجود ندارد؟ یک بار آن را اضافه کنید تا همه از آن استفاده کنن."
                     minSearchChars={2}
                     pageSize={10}
                     selectTitle="انتخاب برند"
                     createTitle="افزودن برند جدید"
                     editTitle="ویرایش برند"
                     duplicateMessage="این برند قبلاً اضافه شده. با جستجو آن را پیدا و انتخاب کنید."
-                    createHint="این برند در لیست وجود ندارد؟ یک بار آن را اضافه کنید تا همه جا قابل استفاده باشد"
+                    createHint="اگر این برند در لیست برندها وجود ندارد؟ یک بار آن را اضافه کنید تا همه از آن استفاده کنن."
                     renderValue={(v) => (
                         <>
                             {(v as BrandValue).logoUrl ? (

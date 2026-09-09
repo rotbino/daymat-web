@@ -45,6 +45,9 @@ export function CopyAdModal({ isOpen, onClose, ad, onSuccess }: CopyAdModalProps
                 unitId: ad.unitId,
                 title: ad.title,
                 productType: ad.productType,
+                // ✅ کالای مرجع کپی می‌شه — ویژگی‌ها (specs) مال کالاست و خودکار همراهش میاد
+                productReferenceId: (ad as any).productReferenceId || (ad as any).productRef?.id || undefined,
+                brandId: (ad as any).brandId || (ad as any).brand?.id || undefined,
                 unitPrice: unitPrice,
                 minQuantity: minQuantity,
                 availableQuantity: ad.availableQuantity,
@@ -56,7 +59,6 @@ export function CopyAdModal({ isOpen, onClose, ad, onSuccess }: CopyAdModalProps
                 isBumped: false,
                 description: ad.description,
                 paymentMethods: ad.paymentMethods,
-                specs: ad.specs,
             };
             await createAdMutation.mutateAsync(data);
             toast.success('آگهی با موفقیت کپی و ثبت شد');

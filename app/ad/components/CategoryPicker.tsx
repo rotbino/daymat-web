@@ -42,7 +42,7 @@ export default function CategoryPicker({ value, onChange, tree, disabled }: Prop
 
     return (
         <div className="relative">
-            <label className="text-xs font-medium text-on-surface block mb-1.5">دسته‌بندی</label>
+            {/* ✅ برچسب حذف شد — خود سلکتور با placeholder «انتخاب دسته…» گویاست */}
 
             <button type="button" onClick={() => setOpen((o) => !o)} disabled={disabled}
                     className={cn('w-full h-11 px-3.5 text-sm text-right rounded-xl bg-surface-container-lowest border',

@@ -87,6 +87,10 @@ interface Props {
     mineToggleLabel?: string;
     /** تابع حذف آیتم (اختیاری) — اگه داده بشه، آیکون حذف برای isNew نمایش داده می‌شه */
     deleteFn?: (id: string) => Promise<any>;
+    /** ✅ متن دکمه هدر مودال (مثلاً «کالای جدید» / «ثبت برند جدید») */
+    addButtonLabel?: string;
+    /** ✅ متن حالت خالی لیست — قبل از دکمه افزودن */
+    emptyHint?: string;
 }
 
 export default function EntityPicker({
@@ -118,6 +122,8 @@ export default function EntityPicker({
     updateFn,
     renderEditFields,
     deleteFn,
+    addButtonLabel = 'جدید',
+    emptyHint,
 }: Props) {
     const [isOpen, setIsOpen] = useState(false);
 
@@ -204,6 +210,8 @@ export default function EntityPicker({
                     mineToggleLabel={mineToggleLabel}
                     deleteFn={deleteFn}
                     headerIcon={icon}
+                    addButtonLabel={addButtonLabel}
+                    emptyHint={emptyHint}
                 />
             )}
         </div>
@@ -237,6 +245,8 @@ function EntityPickerModal({
     mineToggleLabel = 'فقط موارد من',
     deleteFn,
     headerIcon,
+    addButtonLabel = 'جدید',
+    emptyHint,
 }: any) {
     const [search, setSearch] = useState('');
     const [debouncedSearch, setDebouncedSearch] = useState('');
@@ -482,7 +492,7 @@ function EntityPickerModal({
                                 className="flex items-center gap-1 h-8 px-3 rounded-lg bg-primary/10 text-primary text-[11px] font-bold hover:bg-primary/20 transition-colors"
                             >
                                 <Plus className="w-3.5 h-3.5" />
-                                جدید
+                                {addButtonLabel}
                             </button>
                         )}
                         <button onClick={onClose} className="w-8 h-8 flex items-center justify-center rounded-full text-on-surface-variant hover:bg-surface-container-high transition-colors">
@@ -656,7 +666,7 @@ function EntityPickerModal({
                                         </button>
                                     ) : (
                                         <p className="text-[11px] text-on-surface-variant/60 leading-5 mt-1">
-                                            با دکمه «جدید» در بالا می‌توانید اضافه کنید.
+                                            {emptyHint || `با دکمه «${addButtonLabel}» در بالا می‌توانید اضافه کنید.`}
                                         </p>
                                     )}
                                 </div>

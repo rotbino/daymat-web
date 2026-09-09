@@ -32,7 +32,8 @@ interface Props {
 }
 
 export default function AdTabs({ ad, isOwner }: Props) {
-    const hasDescription = !!(ad.description?.trim() || Object.keys(ad.specs || {}).length > 0);
+    // ✅ ویژگی‌ها مال کالای مرجع‌ست (specs قدیمی آگهی هم fallback)
+    const hasDescription = !!(ad.description?.trim() || Object.keys(ad.productRef?.specs || ad.specs || {}).length > 0);
     const hasPayment = !!(ad.paymentMethods?.cheque?.length || ad.paymentMethods?.installment?.length);
 
     // ✅ تب اولیه: توضیحات اگر وجود داشت، وگرنه فروشنده

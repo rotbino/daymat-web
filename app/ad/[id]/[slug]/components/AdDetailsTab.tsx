@@ -8,7 +8,8 @@ interface Props {
 }
 
 export default function AdDetailsTab({ ad }: Props) {
-    const specs = ad.specs || {};
+    // ✅ ویژگی‌ها مال کالای مرجع‌ست — با fallback به specs قدیمی آگهی (داده‌های legacy)
+    const specs = ad.productRef?.specs || ad.specs || {};
 
     if (!ad.description?.trim() && Object.keys(specs).length === 0) return null;
 

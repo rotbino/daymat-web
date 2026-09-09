@@ -5,7 +5,7 @@ import React, { useState } from 'react';
 import EntityPicker, { EntityValue } from './EntityPicker';
 import { apiService } from '@/lib/api/apiService';
 import { useUploadFile } from '@/lib/api/apiHooks';
-import { Package, Camera, Tag, Loader2, Check } from 'lucide-react';
+import { Package, Camera, Tag, Loader2, Check, X, Plus } from 'lucide-react';
 
 export interface ProductValue extends EntityValue {
     brandId?: string;
@@ -25,6 +25,16 @@ interface Props {
     error?: string;
 }
 
+/** ✅ نرمال‌سازی مقدار انتخاب‌شده — برند از آبجکت brand استخراج می‌شه تا «بدون برند» کاذب نبینیم */
+function normalizeProductValue(v: any): ProductValue {
+    if (!v) return v;
+    return {
+        ...v,
+        brandId: v.brandId ?? v.brand?.id ?? undefined,
+        brandTitle: v.brandTitle ?? v.brand?.title ?? undefined,
+    };
+}
+
 /**
  * ProductReferencePicker — انتخابگر کالای مرجع
  *
@@ -37,14 +47,14 @@ export default function ProductReferencePicker({
     onChange,
     category,
     placeholder = 'مثلاً: تن ماهی ۲۵۰ گرمی مکنزی',
-    label = 'کالا',
+    label,
     required = false,
     error,
 }: Props) {
     return (
         <EntityPicker
             value={value}
-            onChange={onChange}
+            onChange={(v) => onChange(v ? normalizeProductValue(v) : null)}
             label={label}
             placeholder={placeholder}
             required={required}
@@ -60,6 +70,7 @@ export default function ProductReferencePicker({
                 category,
                 imageUrl: data.imageUrl,
                 thumbnailUrl: data.imageUrl,
+                specs: data.specs,
             })}
             updateFn={(id, data) => apiService.product.update(id, data)}
             deleteFn={(id) => apiService.product.delete(id)}
@@ -71,6 +82,8 @@ export default function ProductReferencePicker({
             )}
             queryKey={`products-picker-${category || 'all'}`}
             createLabel="افزودن کالای جدید به مرجع"
+            addButtonLabel="کالای جدید"
+            emptyHint="اگر این کالا در مرجع وجود ندارد؟ یک بار آن را اضافه کنید تا هم شما و هم بقیه از آن استفاده کنند."
             minSearchChars={2}
             pageSize={10}
             selectTitle="انتخاب از مرجع کالا"
@@ -147,6 +160,15 @@ function CreateProductExtraFields({
     const [brandValue, setBrandValue] = useState<EntityValue | null>(
         initialData?.brand ? { id: initialData.brand.id, title: initialData.brand.title } : null
     );
+    // ✅ ویژگی‌های کالا — مال کالاست نه آگهی (JSON روی ProductReference)
+    const [specs, setSpecs] = useState<{ key: string; value: string }[]>(() => {
+        const s = initialData?.specs;
+        if (s && typeof s === 'object' && !Array.isArray(s)) {
+            const rows = Object.entries(s).map(([key, value]) => ({ key, value: String(value ?? '') }));
+            return rows.length > 0 ? rows : [{ key: '', value: '' }];
+        }
+        return [{ key: '', value: '' }];
+    });
     const [uploading, setUploading] = useState(false);
     const [imagePreview, setImagePreview] = useState<string | null>(null);
     const uploadMut = useUploadFile();
@@ -158,6 +180,20 @@ function CreateProductExtraFields({
             brandId: brandValue?.id || undefined,
         };
     }, [imageUrl, brandValue, dataRef]);
+
+    // ✅ سینک specs به dataRef — فقط ردیف‌های کامل (کلید و مقدار هر دو پر)
+    React.useEffect(() => {
+        const obj: Record<string, string> = {};
+        for (const row of specs) {
+            const k = row.key.trim();
+            const v = row.value.trim();
+            if (k && v) obj[k] = v;
+        }
+        dataRef.current = {
+            ...dataRef.current,
+            specs: Object.keys(obj).length > 0 ? obj : undefined,
+        };
+    }, [specs, dataRef]);
 
     const handleFileSelect = (file: File | null) => {
         if (!file) return;
@@ -231,13 +267,15 @@ function CreateProductExtraFields({
                 deleteFn={(id) => apiService.brand.delete(id)}
                 queryKey={`brands-in-product-${category || 'all'}`}
                 createLabel="افزودن برند جدید"
+                addButtonLabel="ثبت برند جدید"
+                emptyHint="اگر این برند در لیست برندها وجود ندارد؟ یک بار آن را اضافه کنید تا همه از آن استفاده کنن."
                 minSearchChars={2}
                 pageSize={10}
                 selectTitle="انتخاب برند"
                 createTitle="افزودن برند جدید"
                 editTitle="ویرایش برند"
                 duplicateMessage="این برند قبلاً اضافه شده. با جستجو آن را پیدا و انتخاب کنید."
-                createHint="این برند در لیست وجود ندارد؟ یک بار آن را اضافه کنید"
+                createHint="اگر این برند در لیست برندها وجود ندارد؟ یک بار آن را اضافه کنید تا همه از آن استفاده کنن."
                 renderItem={(item) => (
                     <>
                         {item.logoUrl ? (
@@ -252,6 +290,46 @@ function CreateProductExtraFields({
                     </>
                 )}
             />
+
+            {/* ✅ ویژگی‌های کالا — مال کالاست و همه‌جا استفاده می‌شه */}
+            <div className="space-y-2">
+                <label className="text-xs font-bold text-on-surface block">ویژگی‌های کالا (اختیاری)</label>
+                <p className="text-[10px] text-on-surface-variant/60 -mt-1.5 leading-4">
+                    مثلاً: وزن = ۲۵۰ گرم، کشور سازنده = ایران — این ویژگی‌ها مال خود کالاست و در همه آگهی‌هایش نمایش داده می‌شود.
+                </p>
+                {specs.map((row, i) => (
+                    <div key={i} className="flex items-center gap-1.5">
+                        <input
+                            value={row.key}
+                            onChange={(e) => setSpecs((p) => p.map((r, j) => j === i ? { ...r, key: e.target.value } : r))}
+                            placeholder="نام ویژگی"
+                            className="flex-1 h-9 px-2.5 rounded-lg bg-surface-container-lowest border border-outline-variant/40 text-xs outline-none focus:ring-2 focus:ring-primary/25 focus:border-primary transition-all text-right"
+                        />
+                        <span className="text-[10px] text-on-surface-variant/40 flex-shrink-0">=</span>
+                        <input
+                            value={row.value}
+                            onChange={(e) => setSpecs((p) => p.map((r, j) => j === i ? { ...r, value: e.target.value } : r))}
+                            placeholder="مقدار"
+                            className="flex-[1.3] h-9 px-2.5 rounded-lg bg-surface-container-lowest border border-outline-variant/40 text-xs outline-none focus:ring-2 focus:ring-primary/25 focus:border-primary transition-all text-right"
+                        />
+                        <button
+                            type="button"
+                            onClick={() => setSpecs((p) => p.length > 1 ? p.filter((_, j) => j !== i) : [{ key: '', value: '' }])}
+                            className="flex-shrink-0 w-7 h-7 rounded-lg text-on-surface-variant/40 hover:text-error hover:bg-error/10 grid place-items-center transition-colors"
+                            title="حذف"
+                        >
+                            <X className="w-3.5 h-3.5" />
+                        </button>
+                    </div>
+                ))}
+                <button
+                    type="button"
+                    onClick={() => setSpecs((p) => [...p, { key: '', value: '' }])}
+                    className="h-7 px-2.5 rounded-lg border border-primary/40 text-primary text-[10px] font-bold flex items-center gap-1 hover:bg-primary/10 transition-colors"
+                >
+                    <Plus className="w-3 h-3" /> ویژگی جدید
+                </button>
+            </div>
         </>
     );
 }
