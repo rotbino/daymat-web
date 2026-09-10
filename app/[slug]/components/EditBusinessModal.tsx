@@ -10,24 +10,13 @@ import {
 import { toast } from 'sonner';
 import { cn } from '@/lib/utils';
 import { apiService } from '@/lib/api/apiService';
-import { useUploadFile } from '@/lib/api/apiHooks';
-import { USER_POSITIONS } from '@/lib/api/data-types';
+import { useUploadFile, useUpdateBusinessEntity } from '@/lib/api/apiHooks';
+import { USER_POSITIONS, getLegacyTypeFromRole } from '@/lib/api/data-types';
 import { IranLocationSelector } from '@/app/components/IranLocationSelector';
+import BusinessTypeSelector from '@/app/components/BusinessTypeSelector';
 import SlugEditor from '../../my-catalogs/SlugEditor';
 import { normalizeSlug } from '@/lib/utils/slug';
 import Image from 'next/image';
-
-const BIZ_TYPES: { value: string; label: string }[] = [
-    { value: 'producer', label: 'تولیدی' },
-    { value: 'wholesaler', label: 'عمده‌فروش' },
-    { value: 'importer', label: 'واردکننده' },
-    { value: 'exporter', label: 'صادرکننده' },
-    { value: 'distributor', label: 'توزیع‌کننده' },
-    { value: 'retailer', label: 'خرده‌فروش' },
-    { value: 'contractor', label: 'پیمانکار' },
-    { value: 'service_provider', label: 'خدمات' },
-    { value: 'other', label: 'سایر' },
-];
 
 interface Props {
     isOpen: boolean;
@@ -39,13 +28,15 @@ interface Props {
 export default function EditBusinessModal({ isOpen, onClose, catalog, onSaved }: Props) {
     const queryClient = useQueryClient();
     const uploadMutation = useUploadFile();
+    const updateBusinessMut = useUpdateBusinessEntity();
     const logoInputRef = useRef<HTMLInputElement>(null);
 
     // ─── فرم ───
     const [name, setName] = useState('');
     const [slug, setSlug] = useState('');
     const [industryName, setIndustryName] = useState('');
-    const [type, setType] = useState('wholesaler');
+    const [businessSector, setBusinessSector] = useState('');
+    const [businessRole, setBusinessRole] = useState('');
     const [salesType, setSalesType] = useState('wholesale');
     const [position, setPosition] = useState('');
     const [shortDescription, setShortDescription] = useState('');
@@ -74,7 +65,8 @@ export default function EditBusinessModal({ isOpen, onClose, catalog, onSaved }:
         setName(catalog.name || '');
         setSlug(catalog.slug || '');
         setIndustryName(catalog.industryName || '');
-        setType(catalog.type || 'wholesaler');
+        setBusinessSector(catalog.business?.businessSector || '');
+        setBusinessRole(catalog.business?.businessRole || '');
         setSalesType(catalog.salesType || 'wholesale');
         setPosition(catalog.owner?.position || '');
         setShortDescription(catalog.shortDescription || '');
@@ -121,7 +113,6 @@ export default function EditBusinessModal({ isOpen, onClose, catalog, onSaved }:
             name !== (catalog.name || '') ||
             normalizeSlug(slug) !== normalizeSlug(catalog.slug || '') ||
             industryName !== (catalog.industryName || '') ||
-            type !== (catalog.type || '') ||
             salesType !== (catalog.salesType || 'wholesale') ||
             position !== (catalog.owner?.position || '') ||
             shortDescription !== (catalog.shortDescription || '') ||
@@ -131,9 +122,11 @@ export default function EditBusinessModal({ isOpen, onClose, catalog, onSaved }:
             address !== (catalog.address || '') ||
             provinceCode !== (catalog.provinceCode || '') ||
             cityCode !== (catalog.cityCode || '') ||
+            businessSector !== (catalog.business?.businessSector || '') ||
+            businessRole !== (catalog.business?.businessRole || '') ||
             !!pendingLogoFile
         );
-    }, [catalog, name, slug, industryName, type, salesType, position, shortDescription, description, phone, website, address, provinceCode, cityCode, pendingLogoFile]);
+    }, [catalog, name, slug, industryName, businessSector, businessRole, salesType, position, shortDescription, description, phone, website, address, provinceCode, cityCode, pendingLogoFile]);
 
     const validate = (): boolean => {
         const e: Record<string, string> = {};
@@ -180,12 +173,26 @@ export default function EditBusinessModal({ isOpen, onClose, catalog, onSaved }:
             // ۱) لوگو (اگر جدید است)
             const logoFileId = await uploadLogo();
 
+            // ۱٫۵) ✅ نوع کسب‌وکار (درخت دو سطحی) روی Business ثبت می‌شود — همسان با CatalogEditModal
+            if (catalog.business?.id) {
+                await updateBusinessMut.mutateAsync({
+                    id: catalog.business.id,
+                    data: {
+                        businessSector: businessSector || undefined,
+                        businessRole: businessRole || undefined,
+                        // پل سازگاری: نمایش‌هایی که هنوز type قدیمی را می‌خوانند
+                        type: getLegacyTypeFromRole(businessRole) || catalog.business?.type || catalog.type,
+                    },
+                });
+            }
+
             // ۲) آپدیت — ✅ salesType این بار واقعاً ارسال می‌شود
             await apiService.catalog.update(catalog.id, {
                 name: name.trim(),
                 slug: normalizeSlug(slug) || undefined,
                 industryName: industryName.trim() || undefined,
-                type,
+                // پل سازگاری: catalog.type هنوز توسط هدر/فوتر خوانده می‌شود
+                type: businessRole ? (getLegacyTypeFromRole(businessRole) || catalog.type) : catalog.type,
                 salesType,
                 position: position.trim() || undefined,
                 shortDescription: shortDescription.trim() || undefined,
@@ -359,20 +366,13 @@ export default function EditBusinessModal({ isOpen, onClose, catalog, onSaved }:
                             <input type="text" value={industryName} onChange={(e) => setIndustryName(e.target.value)}
                                    placeholder="مثلاً پخش مواد غذایی" className={inputCls()} />
                         </div>
-                        <div className="space-y-1.5">
-                            <label className="text-xs font-medium text-on-surface block">نوع کسب‌وکار</label>
-                            <div className="flex flex-wrap gap-1.5">
-                                {BIZ_TYPES.map((t) => (
-                                    <button key={t.value} type="button" onClick={() => setType(t.value)}
-                                            className={cn('h-8 px-3 rounded-full text-[11px] font-bold border transition-colors',
-                                                type === t.value
-                                                    ? 'bg-amber-500/10 border-amber-500/40 text-amber-700 dark:text-amber-400'
-                                                    : 'border-outline-variant/50 text-on-surface-variant hover:border-amber-500/30')}>
-                                        {t.label}
-                                    </button>
-                                ))}
-                            </div>
-                        </div>
+                        <BusinessTypeSelector
+                            sector={businessSector}
+                            role={businessRole}
+                            onSectorChange={setBusinessSector}
+                            onRoleChange={setBusinessRole}
+                            required
+                        />
                         <div className="space-y-1.5">
                             <label className="text-xs font-medium text-on-surface block flex items-center gap-1.5">
                                 <IdCard className="w-3.5 h-3.5 text-primary/60" /> نقش من در این کاتالوگ

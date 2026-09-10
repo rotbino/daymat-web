@@ -2,18 +2,23 @@
 'use client';
 
 import React, { useEffect, useState } from 'react';
-import { Building2, Loader2, X, Check } from 'lucide-react';
+import { Building2, Loader2, X, Check, Layers } from 'lucide-react';
 import { createPortal } from 'react-dom';
 import { toast } from 'sonner';
 import { cn } from '@/lib/utils';
 import { useCreateBusinessEntity, useUpdateBusinessEntity } from '@/lib/api/apiHooks';
+import { getLegacyTypeFromRole } from '@/lib/api/data-types';
 import { IranLocationSelector } from '@/app/components/IranLocationSelector';
 import IndustryAutocomplete from '@/app/components/IndustryAutocomplete';
+import BusinessTypeSelector from '@/app/components/BusinessTypeSelector';
 
 interface BusinessEntityLite {
     id?: string;
     name?: string;
     type?: string;
+    businessSector?: string | null;
+    businessRole?: string | null;
+    industryId?: string | null;
     industryName?: string | null;
     shortDescription?: string | null;
     province?: string | null;
@@ -31,25 +36,14 @@ interface Props {
     onSaved?: (biz: any) => void;
 }
 
-const BIZ_TYPES = [
-    { value: 'producer', label: 'تولیدی' },
-    { value: 'wholesaler', label: 'عمده‌فروش' },
-    { value: 'importer', label: 'واردکننده' },
-    { value: 'exporter', label: 'صادرکننده' },
-    { value: 'distributor', label: 'پخش‌کننده' },
-    { value: 'retailer', label: 'خرده‌فروش' },
-    { value: 'contractor', label: 'پیمانکار' },
-    { value: 'service_provider', label: 'خدمات' },
-    { value: 'other', label: 'سایر' },
-];
-
 export default function BusinessSetupModal({ isOpen, onClose, business, onSaved }: Props) {
     const isEdit = !!business?.id;
     const createMut = useCreateBusinessEntity();
     const updateMut = useUpdateBusinessEntity();
 
     const [name, setName] = useState('');
-    const [type, setType] = useState('wholesaler');
+    const [businessSector, setBusinessSector] = useState('');
+    const [businessRole, setBusinessRole] = useState('');
     const [industry, setIndustry] = useState<{ id: string | null; title: string; isByUser?: boolean } | null>(null);
     const [provinceCode, setProvinceCode] = useState('');
     const [provinceLabel, setProvinceLabel] = useState('');
@@ -60,7 +54,8 @@ export default function BusinessSetupModal({ isOpen, onClose, business, onSaved 
     useEffect(() => {
         if (!isOpen) return;
         setName(business?.name || '');
-        setType(business?.type || 'wholesaler');
+        setBusinessSector(business?.businessSector || '');
+        setBusinessRole(business?.businessRole || '');
         setIndustry(business?.industryId ? {
             id: business.industryId,
             title: business?.industryName || '',
@@ -78,6 +73,8 @@ export default function BusinessSetupModal({ isOpen, onClose, business, onSaved 
         const e: Record<string, string> = {};
         if (!name.trim()) e.name = 'نام کسب‌وکار الزامی است';
         if (!industry?.title?.trim()) e.industryName = 'صنف الزامی است';
+        if (!businessSector) e.bizType = 'دسته‌بندی کسب‌وکار را انتخاب کن';
+        else if (!businessRole) e.bizType = 'نوع فعالیت را انتخاب کن';
         if (!provinceCode) e.location = 'انتخاب موقعیت الزامی است';
         setErrors(e);
         return Object.keys(e).length === 0;
@@ -88,7 +85,11 @@ export default function BusinessSetupModal({ isOpen, onClose, business, onSaved 
         try {
             const payload = {
                 name: name.trim(),
-                type,
+                // ✅ فیلدهای اصلی جدید — درخت دو سطحی BUSINESS_TYPE (همسان با فرم ویرایش کاتالوگ)
+                businessSector: businessSector || undefined,
+                businessRole: businessRole || undefined,
+                // پل سازگاری: نمایش‌هایی که هنوز type قدیمی را می‌خوانند
+                type: getLegacyTypeFromRole(businessRole) || (isEdit ? business?.type : undefined),
                 industryName: industry?.title?.trim(),
                 industryId: industry?.id,  // ✅ اگه از لیست انتخاب شده id داره
                 province: provinceLabel,
@@ -118,6 +119,13 @@ export default function BusinessSetupModal({ isOpen, onClose, business, onSaved 
         'w-full h-11 px-3.5 text-sm text-right rounded-xl bg-surface-container-lowest border',
         'focus:ring-2 focus:ring-primary/20 focus:border-primary outline-none transition-all',
         err ? 'border-error' : 'border-outline-variant/40 dark:border-gray-700',
+    );
+
+    // عنوان بخش — همسان با فرم ویرایش کاتالوگ
+    const SectionTitle = ({ icon: Icon, text }: any) => (
+        <p className="text-[11px] font-bold text-on-surface-variant flex items-center gap-1.5">
+            <Icon className="w-3.5 h-3.5 text-primary/70" /> {text}
+        </p>
     );
 
     return createPortal(
@@ -175,21 +183,18 @@ export default function BusinessSetupModal({ isOpen, onClose, business, onSaved 
                         {errors.industryName && <p className="text-error text-[11px]">{errors.industryName}</p>}
                     </div>
 
-                    {/* نوع فعالیت */}
-                    <div className="space-y-2">
-                        <label className="text-xs font-medium text-on-surface block">نوع فعالیت</label>
-                        <div className="flex flex-wrap gap-1.5">
-                            {BIZ_TYPES.map((t) => (
-                                <button key={t.value} type="button" onClick={() => setType(t.value)}
-                                        className={cn('h-8 px-3 rounded text-[11px] font-bold border transition-colors',
-                                            type === t.value
-                                                ? 'bg-primary/10 border-primary/40 text-primary'
-                                                : 'border-outline-variant/50 text-on-surface-variant hover:border-primary/30')}>
-                                    {t.label}
-                                </button>
-                            ))}
-                        </div>
-                    </div>
+                    {/* نوع کسب‌وکار — درخت دو سطحی (همسان با فرم ویرایش) — چیپ‌های قدیمی حذف شد */}
+                    <section className="rounded-2xl bg-surface-container-low/60 border border-outline-variant/30 p-4 space-y-2">
+                        <SectionTitle icon={Layers} text="نوع کسب‌وکار" />
+                        <BusinessTypeSelector
+                            sector={businessSector}
+                            role={businessRole}
+                            onSectorChange={(v) => { setBusinessSector(v); setErrors((p) => ({ ...p, bizType: '' })); }}
+                            onRoleChange={(v) => { setBusinessRole(v); setErrors((p) => ({ ...p, bizType: '' })); }}
+                            label=""
+                        />
+                        {errors.bizType && <p className="text-error text-[11px]">{errors.bizType}</p>}
+                    </section>
 
                     {/* موقعیت */}
                     <div className="space-y-2">

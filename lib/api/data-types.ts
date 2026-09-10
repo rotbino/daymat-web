@@ -161,3 +161,28 @@ export const CATALOG_TYPES = [
     { label: 'خدمات', value: 'service_provider' },
     { label: 'سایر', value: 'other' },
 ];
+
+/**
+ * ⚠️ پل سازگاری (deprecated) — role جدید (سطح ۲ درخت) → type قدیمی
+ * نمایش‌هایی که هنوز business.type / catalog.type را می‌خوانند تا مهاجرت کامل
+ * به businessRole/businessSector کار کنند. بعد از مهاجرت نمایش‌ها حذف می‌شود.
+ */
+export function getLegacyTypeFromRole(roleId: string | undefined | null): string | undefined {
+    if (!roleId) return undefined;
+    const map: Record<string, string> = {
+        // تولید و صنعت
+        raw_material: 'producer', parts: 'producer', final_product: 'producer', packaging: 'producer',
+        // بازرگانی و تجارت
+        importer: 'importer', exporter: 'exporter', importer_exporter: 'importer',
+        trading_house: 'distributor', agent: 'distributor',
+        // توزیع، پخش و واسطه‌گری
+        wholesaler: 'wholesaler', distributor: 'distributor', distributor2: 'distributor',
+        broker: 'distributor', logistics: 'distributor', warehouse: 'distributor',
+        // خرده‌فروشی و فروش مستقیم
+        store: 'retailer', ecommerce: 'retailer', chain_store: 'retailer', direct_sales: 'retailer',
+        // خدمات
+        consulting: 'service_provider', contracting: 'contractor', maintenance: 'service_provider',
+        digital: 'service_provider', training: 'service_provider', other_services: 'service_provider',
+    };
+    return map[roleId];
+}
