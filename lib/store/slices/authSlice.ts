@@ -3,6 +3,7 @@ import { createSlice, PayloadAction, createAsyncThunk } from '@reduxjs/toolkit';
 import { User } from '@/lib/api/apiTypes';
 import { apiService } from '@/lib/api/apiService';
 import { queryClient } from '@/lib/api/queryClient';
+import { clearCurrentCatalog } from './catalogSlice';
 
 // ─── کلیدهای storage سشن — تک‌منبع حقیقت نام کلیدها ───
 const AUTH_STORAGE_KEYS = ['accessToken', 'refreshToken'] as const;
@@ -21,6 +22,7 @@ export const clearUserSession = createAsyncThunk(
         AUTH_STORAGE_KEYS.forEach((k) => localStorage.removeItem(k)); // آینهٔ توکن برای fetch های دستی
         localStorage.removeItem(PERSIST_AUTH_KEY);            // snapshot قدیمی redux-persist
         dispatch(logout());                                   // ریست state (خالص) → پرشیست state خالی را می‌نویسد
+        dispatch(clearCurrentCatalog());                      // کاتالوگ کاربر قبلی به کاربر بعدی نچسبد
     }
 );
 

@@ -11,6 +11,7 @@ import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { useDispatch, useSelector } from 'react-redux';
 import { RootState } from '@/lib/store/store';
 import { setUser } from '@/lib/store/slices/authSlice';
+import { setCurrentCatalog } from '@/lib/store/slices/catalogSlice';
 import { apiService } from '@/lib/api/apiService';
 import {
     useArms, useMyUncategorized, useSetOwnAdCategory,
@@ -46,6 +47,8 @@ export default function MyCatalogsContent() {
     const queryClient = useQueryClient();
     const dispatch = useDispatch();
     const { user } = useSelector((s: RootState) => s.auth);
+    // «کاتالوگ کارنت» پرسیست — همان الگوی بازار کارنت (فقط id اشتراک می‌شود تا snapshot نبود re-render اضافه بسازد)
+    const persistedCatalogId = useSelector((s: RootState) => s.catalog.currentCatalogId);
 
     // ─── UI state ───
     const [tab, setTab] = useState<Tab>('products');
@@ -65,7 +68,7 @@ export default function MyCatalogsContent() {
     const hasTemporaryPassword = user?.temporaryPassword === true;
 
     // ─── داده ───
-    const { data: catalogsRaw, isLoading } = useQuery({
+    const { data: catalogsRaw, isLoading, isFetching } = useQuery({
         queryKey: ['catalogs'],
         queryFn: () => apiService.catalog.getAll(),
         staleTime: 60_000,
@@ -76,17 +79,53 @@ export default function MyCatalogsContent() {
     );
 
     const [currentId, setCurrentId] = useState<string | null>(null);
+    // ── انتخاب اولیه با اولویت: ۱) لینک عمیق ?catalog= (مثلاً بعد از ساخت کاتالوگ جدید)
+    // ۲) کاتالوگ کارنت پرسیست  ۳) اولین کاتالوگ
+    // نکته: کش ممکن است کهنه باشد و کاتالوگ جدید هنوز در آن نباشد → قبل از fallback
+    // صبر می‌کنیم رفetch تازه برسد (همان باگی که کاربر گزارش کرد)
     useEffect(() => {
-        if (currentId || catalogs.length === 0) return;
+        if (currentId && catalogs.some((c) => c.id === currentId)) return; // انتخاب معتبر — کاری نکن
         const fromUrl = new URLSearchParams(window.location.search).get('catalog');
-        const initial = fromUrl && catalogs.some((c) => c.id === fromUrl) ? fromUrl : catalogs[0].id;
-        setCurrentId(initial);
-    }, [catalogs, currentId]);
+
+        // ۱) لینک عمیق صریح — ارادهٔ کاربر/مسیرِ فرستنده
+        if (fromUrl && catalogs.some((c) => c.id === fromUrl)) {
+            setCurrentId(fromUrl);
+            // انتخاب ماندگار شد (پرسیست پایین‌تر می‌نویسد) → پارامتر تمیز شود
+            // تا رفرش بعدی، انتخابِ دستیِ آیندهٔ کاربر را بازنویسی نکند
+            window.history.replaceState({}, '', '/my-catalogs');
+            return;
+        }
+        // ۲) کاتالوگ کارنت پرسیست — ادامهٔ کارِ قبلی
+        if (!fromUrl && persistedCatalogId && catalogs.some((c) => c.id === persistedCatalogId)) {
+            setCurrentId(persistedCatalogId);
+            return;
+        }
+        // هنوز درخواست در جریان است (کش کهنه + رفetch) → قبل از تصمیم، دادهٔ تازه را ببین
+        if (isFetching) return;
+        // ۳) fallback نهایی: اولین کاتالوگ
+        if (catalogs.length > 0) setCurrentId(catalogs[0].id);
+    }, [catalogs, currentId, persistedCatalogId, isFetching]);
 
     const currentCatalog = useMemo(
         () => catalogs.find((c) => c.id === currentId) ?? null,
         [catalogs, currentId],
     );
+
+    // ── نگه‌داری snapshot «کاتالوگ کارنت» همیشه تازه — برای مصرف در جای دیگر برنامه ──
+    useEffect(() => {
+        if (!currentCatalog) return;
+        const cc = currentCatalog as any;
+        dispatch(setCurrentCatalog({
+            id: currentCatalog.id,
+            name: currentCatalog.name,
+            slug: cc.slug,
+            businessId: typeof cc.businessId === 'string' ? cc.businessId : cc.businessId?.id,
+            logoUrl: cc.logoUrl ?? cc.logoFile?.path ?? null,
+            salesType: cc.salesType,
+        }));
+        // فقط روی تغییر فیلدهای کلیدی — تا dispatch حلقهٔ re-render نسازد
+        // eslint-disable-next-line react-hooks/exhaustive-deps
+    }, [currentCatalog?.id, currentCatalog?.name, (currentCatalog as any)?.slug, dispatch]);
 
     const { data: userArms } = useArms();
     const uncatQ = useMyUncategorized(!!currentId);

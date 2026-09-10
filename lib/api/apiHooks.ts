@@ -197,6 +197,7 @@ export const useCreateCatalog = () => {
         onSuccess: () => {
             queryClient.invalidateQueries({ queryKey: ['cataloges'] });
             queryClient.invalidateQueries({ queryKey: ['catalog', 'active'] });
+            queryClient.invalidateQueries({ queryKey: ['catalogs'] }); // کش صفحهٔ «مدیریت کاتالوگ»
         },
         onError: (error: ApiError) => {
             if (error.data?.errorCode === 'DUPLICATE_CATALOG_NAME') {

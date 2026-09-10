@@ -5,6 +5,7 @@ import storage from 'redux-persist/lib/storage';
 import authReducer from './slices/authSlice';
 import armReducer from './slices/armSlice';
 import themeReducer from './slices/themeSlice';
+import catalogReducer from './slices/catalogSlice';
 import { injectStore } from '@/lib/api/apiRequest'; // ✅ اضافه شد
 
 const authPersistConfig = {
@@ -19,13 +20,22 @@ const armPersistConfig = {
     whitelist: ['currentSlug', 'currentArm'],
 };
 
+// «کاتالوگ کارنت» — پرسیست مثل بازار کارنت (درخواست کاربر)
+const catalogPersistConfig = {
+    key: 'catalog',
+    storage,
+    whitelist: ['currentCatalogId', 'currentCatalog'],
+};
+
 const persistedAuthReducer = persistReducer(authPersistConfig, authReducer);
 const persistedArmReducer = persistReducer(armPersistConfig, armReducer);
+const persistedCatalogReducer = persistReducer(catalogPersistConfig, catalogReducer);
 
 export const store = configureStore({
     reducer: {
         auth: persistedAuthReducer,
         arm: persistedArmReducer,
+        catalog: persistedCatalogReducer,
         theme: themeReducer,
     },
     middleware: (getDefaultMiddleware) =>

@@ -4,7 +4,7 @@
 import React, { useEffect, useMemo, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import Image from 'next/image';
-import { useSelector } from 'react-redux';
+import { useSelector, useDispatch } from 'react-redux';
 import { toast } from 'sonner';
 import {
     LibraryBig, Building2, Plus, Loader2, Check, ArrowRight, MapPin,
@@ -12,6 +12,7 @@ import {
 } from 'lucide-react';
 import { useCreateCatalog, useMyBusinesses, useCataloges } from '@/lib/api/apiHooks';
 import { RootState } from '@/lib/store/store';
+import { setCurrentCatalog } from '@/lib/store/slices/catalogSlice';
 import { clearStoredRef, readStoredRef } from '@/app/components/RefCapture';
 import BusinessSetupModal from '@/app/components/BusinessSetupModal';
 import SlugPicker from '@/app/business/register/SlugPicker';
@@ -61,6 +62,7 @@ function SectionTitle({ n, title }: { n: number; title: string }) {
 
 export default function RegisterCatalogPage() {
     const router = useRouter();
+    const dispatch = useDispatch();
     const { currentSlug: armSlug } = useSelector((state: RootState) => state.arm);
 
     const bizQ = useMyBusinesses(true);
@@ -211,6 +213,17 @@ export default function RegisterCatalogPage() {
                 duration: 6000,
             });
             clearStoredRef();
+            // ✅ کاتالوگ کارنت پرسیست — برگشت به «مدیریت کاتالوگ» همین کاتالوگ تازه را باز می‌کند
+            // تا کاربر مستقیم بتواند کالاهایش را اضافه کند (الگوی بازار کارنت)
+            if (created?.id) {
+                dispatch(setCurrentCatalog({
+                    id: created.id,
+                    name: catalogName.trim(),
+                    slug: (created as any)?.slug || slug,
+                    businessId: bizId,
+                    salesType,
+                }));
+            }
             router.replace(`/my-catalogs?catalog=${created?.id ?? ''}`);
         } catch (error: any) {
             if (error?.data?.errorCode === 'SLUG_TAKEN') {
