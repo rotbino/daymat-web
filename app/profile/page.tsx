@@ -6,7 +6,8 @@ import { useRouter } from 'next/navigation';
 import Image from 'next/image';
 import { useQuery } from '@tanstack/react-query';
 import { useDispatch, useSelector } from 'react-redux';
-import { RootState } from '@/lib/store/store';
+import { RootState, AppDispatch } from '@/lib/store/store';
+import { performLogout } from '@/lib/store/slices/authSlice';
 import { apiService } from '@/lib/api/apiService';
 import { toast } from 'sonner';
 import {
@@ -21,12 +22,13 @@ import { ChangePasswordModal } from '@/app_/register/ChangePasswordModal';
 
 export default function ProfilePage() {
     const router = useRouter();
-    const dispatch = useDispatch();
+    const dispatch = useDispatch<AppDispatch>();
     const { user } = useSelector((s: RootState) => s.auth);
     const [isDark, setIsDark] = useState(false);
     const [editOpen, setEditOpen] = useState(false);
     const [passOpen, setPassOpen] = useState(false);
     const [copied, setCopied] = useState<'code' | 'link' | null>(null);
+    const [loggingOut, setLoggingOut] = useState(false);
 
     const { data: credit } = useQuery({
         queryKey: ['credit-balance'],
@@ -64,9 +66,18 @@ export default function ProfilePage() {
         }
     };
 
-    const handleLogout = () => {
-        localStorage.removeItem('accessToken');
-        window.location.href = '/';
+    // ─── خروج کامل: باطل‌سازی توکن در سرور + پاک‌سازی کلاینت + پرش به خانه ───
+    const handleLogout = async () => {
+        if (loggingOut) return; // جلوگیری از دوبارکلیک
+        setLoggingOut(true);
+        try {
+            await dispatch(performLogout()).unwrap();
+        } catch {
+            // حتی با خطا، پاک‌سازی محلی کامل انجام شده است
+        }
+        // رفرش کامل: اپ از صفر بوت می‌شود — انگار اولین بازدید است
+        // replace تا دکمهٔ برگشت مرورگر به پروفایل برنگردد
+        window.location.replace('/');
     };
 
     const Row = ({ icon: Icon, label, onClick, danger }: any) => (
@@ -200,7 +211,7 @@ export default function ProfilePage() {
                     <Row icon={Info} label="درباره دیمت" onClick={() => router.push('/docs/about')} />
                     <Row icon={FileText} label="قوانین" onClick={() => router.push('/docs/terms')} />
                     <Row icon={Lightbulb} label="پیشنهادات و انتقادات" onClick={() => router.push('/feedback')} />
-                    <Row icon={LogOut} label="خروج از حساب" danger onClick={handleLogout} />
+                    <Row icon={LogOut} label={loggingOut ? 'در حال خروج…' : 'خروج از حساب'} danger onClick={handleLogout} />
                 </section>
             </main>
 

@@ -10,7 +10,7 @@ import { injectStore } from '@/lib/api/apiRequest'; // ✅ اضافه شد
 const authPersistConfig = {
     key: 'auth',
     storage,
-    whitelist: ['user', 'isAuthenticated', 'accessToken', 'refreshToken'],
+    whitelist: ['user', 'isAuthenticated', 'accessToken'],
 };
 
 const armPersistConfig = {
@@ -31,7 +31,14 @@ export const store = configureStore({
     middleware: (getDefaultMiddleware) =>
         getDefaultMiddleware({
             serializableCheck: {
-                ignoredActions: ['persist/PERSIST', 'persist/REHYDRATE'],
+                ignoredActions: [
+                    'persist/PERSIST',
+                    'persist/REHYDRATE',
+                    'persist/PAUSE',
+                    'persist/FLUSH',
+                    'persist/PURGE',
+                    'persist/REGISTER',
+                ],
             },
         }),
 });

@@ -4,32 +4,38 @@ import { User } from '@/lib/api/apiTypes';
 import { apiService } from '@/lib/api/apiService';
 import { queryClient } from '@/lib/api/queryClient';
 
+// ─── کلیدهای storage سشن — تک‌منبع حقیقت نام کلیدها ───
+const AUTH_STORAGE_KEYS = ['accessToken', 'refreshToken'] as const;
+const PERSIST_AUTH_KEY = 'persist:auth'; // snapshot ریدوسر auth در redux-persist
+
 // ============================================================
-// پاک‌سازی کامل داده‌های کاربر (بدون دست زدن به currentArm)
+// پاک‌سازی کامل کلاینت (بدون تماس با سرور)
+// — قبل از لاگین مجدد، بعد از پاس 401 سرور، و داخل performLogout
+// ⚠️ reducer هیچ side-effect ای ندارد؛ همهٔ پاک‌سازی storage اینجاست
 // ============================================================
 export const clearUserSession = createAsyncThunk(
     'auth/clearUserSession',
     async (_, { dispatch }) => {
-        queryClient.clear();
-        localStorage.removeItem('persist:auth');
-        localStorage.removeItem('accessToken');
-        localStorage.removeItem('refreshToken');
+        queryClient.clear();                                  // کش React Query (پروفایل، آگهی‌ها، ...)
         sessionStorage.clear();
-        dispatch(logout());
+        AUTH_STORAGE_KEYS.forEach((k) => localStorage.removeItem(k)); // آینهٔ توکن برای fetch های دستی
+        localStorage.removeItem(PERSIST_AUTH_KEY);            // snapshot قدیمی redux-persist
+        dispatch(logout());                                   // ریست state (خالص) → پرشیست state خالی را می‌نویسد
     }
 );
 
 // ============================================================
-// خروج کامل از سیستم (لاگ‌اوت)
+// خروج کامل از سیستم:
+//  ۱) بک: tokenVersion++ → همهٔ توکن‌های صادرشده فوراً باطل (SESSION_REVOKED)
+//  ۲) فرانت: پاک‌سازی کامل کش و storage — انگار اولین بازدید است
 // ============================================================
 export const performLogout = createAsyncThunk(
-    'auth/logout',
+    'auth/performLogout',
     async (_, { dispatch }) => {
         try {
-            // ✅ درخواست به سرور برای خروج (در صورت وجود endpoint)
             await apiService.auth.logout();
-        } catch (e) {
-            // حتی اگر خطا داد، کلاینت را پاک می‌کنیم
+        } catch {
+            // حتی اگر سرور قطع بود یا توکن منقضی، خروجِ محلی کامل انجام می‌شود
         }
         await dispatch(clearUserSession());
     }
@@ -40,7 +46,6 @@ interface AuthState {
     isAuthenticated: boolean;
     isLoading: boolean;
     accessToken: string | null;
-    refreshToken: string | null;
     sessionExpired: boolean;
     isArmOwner: boolean;
     isSystemAdmin: boolean;
@@ -51,11 +56,13 @@ const initialState: AuthState = {
     isAuthenticated: false,
     isLoading: false,
     accessToken: null,
-    refreshToken: null,
     sessionExpired: false,
     isArmOwner: false,
     isSystemAdmin: false,
 };
+
+/** ریست کامل state — تنها منبع حقیقتِ «خروج» در ریدوسر */
+const resetAuthState = () => initialState;
 
 const authSlice = createSlice({
     name: 'auth',
@@ -65,16 +72,16 @@ const authSlice = createSlice({
             state.user = action.payload;
             state.isAuthenticated = true;
             state.isLoading = false;
+            state.sessionExpired = false; // ورود جدید ← هر ردِ «سشن منقضی» پاک می‌شود
             state.isArmOwner = action.payload.isArmOwner ?? false;
             state.isSystemAdmin = action.payload.role === 'system_admin';
         },
+        // آینهٔ localStorage برای fetch/preview های خارج از context — نگهداری در یک نقطه
         setAccessToken: (state, action: PayloadAction<string | null>) => {
             state.accessToken = action.payload;
-            if (action.payload) localStorage.setItem('accessToken', action.payload);
-        },
-        setRefreshToken: (state, action: PayloadAction<string | null>) => {
-            state.refreshToken = action.payload;
-            if (action.payload) localStorage.setItem('refreshToken', action.payload);
+            if (action.payload && typeof window !== 'undefined') {
+                localStorage.setItem('accessToken', action.payload);
+            }
         },
         setLoading: (state, action: PayloadAction<boolean>) => {
             state.isLoading = action.payload;
@@ -82,38 +89,19 @@ const authSlice = createSlice({
         setSessionExpired: (state, action: PayloadAction<boolean>) => {
             state.sessionExpired = action.payload;
         },
-        logout: (state) => {
-            state.user = null;
-            state.isAuthenticated = false;
-            state.accessToken = null;
-            state.refreshToken = null;
-            state.sessionExpired = false;
-            state.isArmOwner = false;
-            state.isSystemAdmin = false;
-            localStorage.removeItem('accessToken');
-            localStorage.removeItem('refreshToken');
-        },
+        /** ⚠️ خالص — فقط state؛ پاک‌سازی storage فقط در clearUserSession */
+        logout: resetAuthState,
     },
     extraReducers: (builder) => {
-        builder.addCase(clearUserSession.fulfilled, (state) => {
-            // state همان مقادیر initialState است
-        });
-        builder.addCase(performLogout.fulfilled, (state) => {
-            state.user = null;
-            state.isAuthenticated = false;
-            state.accessToken = null;
-            state.refreshToken = null;
-            state.sessionExpired = false;
-            state.isArmOwner = false;
-            state.isSystemAdmin = false;
-        });
+        // تورِ امن: هر مسیری که به این thunks ختم شود، state صفر می‌شود
+        builder.addCase(clearUserSession.fulfilled, resetAuthState);
+        builder.addCase(performLogout.fulfilled, resetAuthState);
     },
 });
 
 export const {
     setUser,
     setAccessToken,
-    setRefreshToken,
     setLoading,
     setSessionExpired,
     logout,
