@@ -2,15 +2,17 @@
 // کیت اشتراک‌گذاری کاتالوگ — لینک + پیام آماده + سه خروجی تصویری:
 //   ۱) «دانلود برای چاپ» — پوستر ویترین: متن راهنما + QR بزرگ + لوگو و نام کسب‌وکار
 //   ۲) «فقط تصویر QR» — خود QR با حاشیهٔ ساکت
-//   ۳) «تولید کارت ویزیت» — کارت ویزیت حرفه‌ای ۹×۵: تم رنگی + عکس پس‌زمینهٔ قابل تعویض
-//      (نمونه‌های آماده + عکس خود کاربر) + شعار قابل ویرایش + لوگو/تماس/QR/اسلاگ + دانلود PNG
+//   ۳) «تولید کارت ویزیت» — کارت ویزیت ۹×۵ ترند روز با ویرایش کامل:
+//      تم‌های آماده + کالر‌سلکتور آزاد + عکس پس‌زمینه (نمونه/آپلود) + اسلایدر تاریکی
+//      + ویرایش لوگو/عنوان/شعار/تماس/متن زیر QR + دانلود PNG
+// 🔧 لوگوی کسب‌وکار از مبدأ بدون CORS (آروان) با /api/img-proxy هم‌مبدأ می‌شود تا کانواس بکشد
 // ⚠️ قانون: حالت تاریک همیشه چک شده
 'use client';
 import React, { useState, useEffect, useRef, useCallback } from 'react';
 import { createPortal } from 'react-dom';
 import {
     X, Copy, MessageCircle, Send, Share2, QrCode, Check, Download, Loader2,
-    Printer, IdCard, RefreshCw, ImageUp, XCircle,
+    Printer, IdCard, RefreshCw, ImageUp, XCircle, RotateCcw,
 } from 'lucide-react';
 import { QRCodeCanvas } from 'qrcode.react';
 import { toast } from 'sonner';
@@ -23,27 +25,28 @@ interface Props {
     slug?: string;
     /** لوگوی کاتالوگ برای پوستر و کارت ویزیت — اختیاری؛ نبودش حرف اول نام می‌نشیند */
     logoUrl?: string;
-    /** شمارهٔ تماس کسب‌وکار — روی کارت ویزیت */
+    /** شمارهٔ تماس کسب‌وکار — پیش‌فرض کارت ویزیت */
     phone?: string;
     /** معرفی کوتاه کاتالوگ — پیش‌فرض شعار کارت ویزیت */
     description?: string;
 }
 
-const CANVAS_FONT = 'Vazirmatn, "Noto Sans Arabic", Tahoma, sans-serif';
+const CANVAS_FONT = '"Vazirmatn", "Noto Sans Arabic", Tahoma, sans-serif';
+const DEFAULT_CAPTION = 'برای دیدن کاتالوگ ما اسکن کنید';
 
 /* ارقام فارسی برای خوانایی کارت */
 const faDigits = (s: string) => s.replace(/[0-9]/g, (d) => '۰۱۲۳۴۵۶۷۸۹'[+d]);
 
 /* ─── تم‌های رنگی کارت ویزیت ─── */
 const CARD_THEMES = [
-    { key: 'night',   name: 'شب',      bg1: '#0b1220', bg2: '#27354f', text: '#ffffff', muted: 'rgba(255,255,255,0.72)', accent: '#f59e0b', tint: 'rgba(2,6,23,0.5)' },
-    { key: 'amber',   name: 'کهربایی', bg1: '#7c2d12', bg2: '#d97706', text: '#ffffff', muted: 'rgba(255,255,255,0.8)',  accent: '#fde68a', tint: 'rgba(124,45,18,0.46)' },
-    { key: 'emerald', name: 'زمردی',   bg1: '#064e3b', bg2: '#0d9488', text: '#ffffff', muted: 'rgba(255,255,255,0.76)', accent: '#a7f3d0', tint: 'rgba(6,78,59,0.46)' },
-    { key: 'navy',    name: 'سرمه‌ای', bg1: '#1e3a8a', bg2: '#3b82f6', text: '#ffffff', muted: 'rgba(255,255,255,0.78)', accent: '#bfdbfe', tint: 'rgba(30,58,138,0.44)' },
-    { key: 'classic', name: 'کلاسیک',  bg1: '#ffffff', bg2: '#e7ebf0', text: '#1a1c1e', muted: '#5b6472',                accent: '#f59e0b', tint: 'rgba(255,255,255,0.86)' },
+    { key: 'night',   name: 'شب',      bg1: '#0b1220', bg2: '#27354f', text: '#ffffff', muted: 'rgba(255,255,255,0.72)', accent: '#f59e0b', accentText: '#ffffff' },
+    { key: 'amber',   name: 'کهربایی', bg1: '#7c2d12', bg2: '#d97706', text: '#ffffff', muted: 'rgba(255,255,255,0.8)',  accent: '#fde68a', accentText: '#1a1c1e' },
+    { key: 'emerald', name: 'زمردی',   bg1: '#064e3b', bg2: '#0d9488', text: '#ffffff', muted: 'rgba(255,255,255,0.76)', accent: '#a7f3d0', accentText: '#1a1c1e' },
+    { key: 'navy',    name: 'سرمه‌ای', bg1: '#1e3a8a', bg2: '#3b82f6', text: '#ffffff', muted: 'rgba(255,255,255,0.78)', accent: '#bfdbfe', accentText: '#1a1c1e' },
+    { key: 'classic', name: 'کلاسیک',  bg1: '#ffffff', bg2: '#e7ebf0', text: '#1a1c1e', muted: '#5b6472',                accent: '#f59e0b', accentText: '#1a1c1e' },
 ] as const;
 
-/* ─── پس‌زمینه‌های آماده (Unsplash — CORS باز برای رسم کانواس) ─── */
+/* ─── پس‌زمینه‌های آماده (Unsplash — از پروکسی خودی سرو می‌شود) ─── */
 const CARD_BACKGROUNDS = [
     'https://images.unsplash.com/photo-1497366754035-f200968a6e72?w=1600&q=85&auto=format&fit=crop', // دفتر مدرن
     'https://images.unsplash.com/photo-1550684848-fac1c5b4e853?w=1600&q=85&auto=format&fit=crop',   // گرادیان شب
@@ -52,6 +55,43 @@ const CARD_BACKGROUNDS = [
     'https://images.unsplash.com/photo-1519751138087-5bf79df62d5b?w=1600&q=85&auto=format&fit=crop', // گرم و روشن
     'https://images.unsplash.com/photo-1604076913837-52ab5629fba9?w=1600&q=85&auto=format&fit=crop', // انتزاعی ملایم
 ];
+
+/* ─── ابزار رنگ برای تم دلخواه ─── */
+type Rgb = [number, number, number];
+const hexToRgb = (h: string): Rgb => {
+    const s = h.replace('#', '');
+    const v = s.length === 3 ? s.split('').map((c) => c + c).join('') : s;
+    return [parseInt(v.slice(0, 2), 16) || 0, parseInt(v.slice(2, 4), 16) || 0, parseInt(v.slice(4, 6), 16) || 0];
+};
+const mixRgb = (a: Rgb, b: Rgb, f: number): Rgb =>
+    [Math.round(a[0] + (b[0] - a[0]) * f), Math.round(a[1] + (b[1] - a[1]) * f), Math.round(a[2] + (b[2] - a[2]) * f)];
+const rgbStr = (c: Rgb, alpha = 1) => `rgba(${c[0]},${c[1]},${c[2]},${alpha})`;
+const luminance = (c: Rgb) => (0.299 * c[0] + 0.587 * c[1] + 0.114 * c[2]) / 255;
+
+/** تم دلخواه از یک رنگ: تیره‌ها گرادیان رنگی + متن سفید، روشن‌ها تم روشن + متن تیره */
+const buildCustomTheme = (hex: string) => {
+    const rgb = hexToRgb(hex);
+    const light = luminance(rgb) > 0.7;
+    const black: Rgb = [16, 18, 22];
+    const white: Rgb = [255, 255, 255];
+    return {
+        key: 'custom',
+        name: 'دلخواه',
+        bg1: light ? '#ffffff' : rgbStr(mixRgb(rgb, black, 0.45)),
+        bg2: light ? rgbStr(mixRgb(rgb, white, 0.55)) : rgbStr(rgb),
+        text: light ? '#1a1c1e' : '#ffffff',
+        muted: light ? '#5b6472' : 'rgba(255,255,255,0.78)',
+        accent: light ? hex : rgbStr(mixRgb(rgb, white, 0.4)),
+        accentText: light ? '#1a1c1e' : '#1a1c1e',
+    };
+};
+type CardTheme = ReturnType<typeof buildCustomTheme> | (typeof CARD_THEMES)[number];
+
+/* شعار پیش‌فرض از معرفی کوتاه کاتالوگ */
+const deriveSlogan = (desc?: string) => {
+    const first = (desc || '').trim().split('\n')[0].trim();
+    return first ? first.slice(0, 80) : 'تازه‌ترین قیمت محصولات ما را آنلاین ببینید';
+};
 
 /* ─── ابزارهای تصویر (مشترک بین پوستر و کارت) ─── */
 const triggerDownload = (dataUrl: string, filename: string) => {
@@ -66,6 +106,13 @@ const triggerDownload = (dataUrl: string, filename: string) => {
 const getQrCanvas = (): HTMLCanvasElement | null =>
     document.getElementById('dm-print-qr') as HTMLCanvasElement | null;
 
+/** مبدأهای خارجی → پروکسی هم‌مبدأ (رفع باگ CORS لوگو)؛ data: و مسیرهای داخلی دست‌نخورده */
+const toProxied = (src: string) => {
+    if (typeof window === 'undefined') return src;
+    if (src.startsWith('data:') || src.startsWith('/') || src.startsWith(window.location.origin)) return src;
+    return `/api/img-proxy?url=${encodeURIComponent(src)}`;
+};
+
 const loadImage = (src: string): Promise<HTMLImageElement | null> =>
     new Promise((resolve) => {
         const img = new Image();
@@ -75,11 +122,11 @@ const loadImage = (src: string): Promise<HTMLImageElement | null> =>
         img.src = src;
     });
 
-/* کش تصاویر — تا هر تغییر تم/پس‌زمینه دوباره دانلود نکند */
+/* کش تصاویر — تا هر تغییر تم/پس‌زمینه دوباره دانلود نشود (کلید = آدرس اصلی) */
 const imgCache = new Map<string, HTMLImageElement | null>();
 const loadImageCached = (src: string): Promise<HTMLImageElement | null> => {
     if (imgCache.has(src)) return Promise.resolve(imgCache.get(src)!);
-    return loadImage(src).then((img) => {
+    return loadImage(toProxied(src)).then((img) => {
         imgCache.set(src, img);
         return img;
     });
@@ -120,25 +167,44 @@ export default function ShareKitModal({ open, onClose, catalogName, slug, logoUr
     // ─── کارت ویزیت ───
     const [cardOpen, setCardOpen] = useState(false);
     const [themeIdx, setThemeIdx] = useState(0);
+    const [customColor, setCustomColor] = useState<string | null>(null); // کالر‌سلکتور آزاد
     const [bgIdx, setBgIdx] = useState(-1); // -1 = بدون عکس (فقط تم)
     const [customBg, setCustomBg] = useState<string | null>(null);
+    const [customLogo, setCustomLogo] = useState<string | null>(null); // لوگوی انتخابی کاربر
+    const [overlayPct, setOverlayPct] = useState(45); // تاریکی پشت عکس
+    const [cardName, setCardName] = useState('');
     const [slogan, setSlogan] = useState('');
+    const [cardPhone, setCardPhone] = useState('');
+    const [cardCaption, setCardCaption] = useState(DEFAULT_CAPTION);
     const [fontsReady, setFontsReady] = useState(false);
     const cardCanvasRef = useRef<HTMLCanvasElement | null>(null);
     const bgFileRef = useRef<HTMLInputElement | null>(null);
+    const logoFileRef = useRef<HTMLInputElement | null>(null);
     const drawTokenRef = useRef(0);
+    const canvasFontRef = useRef<string>(CANVAS_FONT); // نام واقعی خانوادهٔ فونت next/font
 
     useEffect(() => {
         setMounted(true);
         return () => setMounted(false);
     }, []);
 
-    // آماده‌شدن فونت وب برای رسم مجدد کانواس
+    // آماده‌شدن فونت وب + کشف نام واقعی خانواده (next/font نامش را هش می‌کند)
     useEffect(() => {
         let alive = true;
         try {
-            document.fonts?.ready.then(() => { if (alive) setFontsReady(true); }).catch(() => {});
-        } catch {}
+            document.fonts?.ready.then(() => {
+                if (!alive) return;
+                try {
+                    for (const f of document.fonts as any) {
+                        if (String(f.family).includes('Vazirmatn')) {
+                            canvasFontRef.current = `"${f.family}", "Noto Sans Arabic", Tahoma, sans-serif`;
+                            break;
+                        }
+                    }
+                } catch {}
+                setFontsReady(true);
+            }).catch(() => setFontsReady(true));
+        } catch { setFontsReady(true); }
         return () => { alive = false; };
     }, []);
 
@@ -146,13 +212,20 @@ export default function ShareKitModal({ open, onClose, catalogName, slug, logoUr
         ? `${window.location.origin}/${slug}`   // ⚠️ اگر کاتالوگ هنوز در /c/ است: `/c/${slug}`
         : '';
 
-    // شعار پیش‌فرض از معرفی کوتاه کاتالوگ — هر بار باز شدن، شروع تازه
+    // شروع تازه با هر باز شدن — پیش‌فرض‌ها از مشخصات کاتالوگ (تم انتخابی می‌ماند)
     useEffect(() => {
         if (!open) return;
-        const firstLine = (description || '').trim().split('\n')[0].trim();
-        setSlogan(firstLine ? firstLine.slice(0, 80) : 'تازه‌ترین قیمت محصولات ما را آنلاین ببینید');
+        setCardName(catalogName || '');
+        setSlogan(deriveSlogan(description));
+        setCardPhone(phone || '');
+        setCardCaption(DEFAULT_CAPTION);
         setCardOpen(false);
-    }, [open, description]);
+        setBgIdx(-1);
+        setCustomBg(null);
+        setCustomLogo(null);
+        setCustomColor(null);
+        setOverlayPct(45);
+    }, [open, catalogName, phone, description]);
 
     // ─── رسم کارت ویزیت ۱۰۵۰×۶۰۰ (استاندارد ۹×۵ سانتی‌متر در ۳۰۰dpi) ───
     const drawCard = useCallback(async () => {
@@ -161,16 +234,18 @@ export default function ShareKitModal({ open, onClose, catalogName, slug, logoUr
         const ctx = canvas.getContext('2d');
         if (!ctx) return;
         const token = ++drawTokenRef.current;
+        const F = canvasFontRef.current;
 
         const W = 1050, H = 600;
-        const th = CARD_THEMES[themeIdx];
+        const th: CardTheme = customColor ? buildCustomTheme(customColor) : CARD_THEMES[themeIdx];
+        const RX = W - 64; // لبهٔ راست متن (RTL)
         canvas.width = W;
         canvas.height = H;
 
         try { await document.fonts.ready; } catch {}
         if (token !== drawTokenRef.current) return;
 
-        // ─── پس‌زمینه: عکس + تینت تم | یا گرادیان تم ───
+        // ─── پس‌زمینه: عکس + اسلایدر تاریکی | یا گرادیان تم ───
         const bgSrc = customBg ?? (bgIdx >= 0 ? CARD_BACKGROUNDS[bgIdx] : null);
         let painted = false;
         if (bgSrc) {
@@ -180,7 +255,7 @@ export default function ShareKitModal({ open, onClose, catalogName, slug, logoUr
                 const scale = Math.max(W / img.width, H / img.height);
                 const dw = img.width * scale, dh = img.height * scale;
                 ctx.drawImage(img, (W - dw) / 2, (H - dh) / 2, dw, dh);
-                ctx.fillStyle = th.tint;
+                ctx.fillStyle = `rgba(0,0,0,${Math.min(0.85, Math.max(0, overlayPct / 100))})`;
                 ctx.fillRect(0, 0, W, H);
                 painted = true;
             }
@@ -192,18 +267,63 @@ export default function ShareKitModal({ open, onClose, catalogName, slug, logoUr
             ctx.fillStyle = g;
             ctx.fillRect(0, 0, W, H);
         }
+        // روی عکس متن سفید می‌خواند؛ روی تم، رنگ خود تم
+        const text = painted ? '#ffffff' : th.text;
+        const muted = painted ? 'rgba(255,255,255,0.78)' : th.muted;
+        const accent = th.accent;
 
-        // نوار لهجهٔ لبهٔ راست (شروع RTL)
-        ctx.fillStyle = th.accent;
-        ctx.fillRect(W - 14, 0, 14, H);
+        // ─── تزئینات ترند روز: حلقهٔ محو + نقطه‌چین + نوار لهجهٔ گرد ───
+        ctx.save();
+        ctx.globalAlpha = painted ? 0.35 : 0.25;
+        ctx.strokeStyle = accent;
+        ctx.lineWidth = 2;
+        ctx.beginPath();
+        ctx.arc(150, 105, 190, 0, Math.PI * 2);
+        ctx.stroke();
+        ctx.restore();
+        ctx.save();
+        ctx.globalAlpha = 0.18;
+        ctx.fillStyle = text;
+        for (let i = 0; i < 6; i++) {
+            for (let j = 0; j < 2; j++) {
+                ctx.beginPath();
+                ctx.arc(RX - 180 + i * 36, 548 + j * 26, 2.2, 0, Math.PI * 2);
+                ctx.fill();
+            }
+        }
+        ctx.restore();
+        ctx.fillStyle = accent;
+        roundRectPath(ctx, W - 26, 24, 10, H - 48, 5);
+        ctx.fill();
 
-        // ─── ستون راست: لوگو + نام + شعار + تماس ───
-        const RX = W - 64;
-        const logoR = 56;
-        const logoCx = RX - logoR, logoCy = 142;
-        const logo = logoUrl ? await loadImageCached(logoUrl) : null;
+        // ─── برچسب کوچک «کاتالوگ آنلاین» ───
+        ctx.font = `bold 17px ${F}`;
+        ctx.direction = 'rtl';
+        const pillLabel = 'کاتالوگ آنلاین';
+        const pillW = ctx.measureText(pillLabel).width + 36;
+        const pillX = RX - pillW, pillY = 56;
+        ctx.fillStyle = accent;
+        roundRectPath(ctx, pillX, pillY, pillW, 34, 17);
+        ctx.fill();
+        ctx.fillStyle = th.accentText;
+        ctx.textAlign = 'center';
+        ctx.fillText(pillLabel, pillX + pillW / 2, pillY + 23);
+
+        // ─── لوگو روی بشقاب سفید + حلقهٔ لهجه ───
+        const logoCy = 166, plateR = 64, logoR = 52;
+        const logoCx = RX - plateR;
+        ctx.save();
+        ctx.shadowColor = 'rgba(0,0,0,0.3)';
+        ctx.shadowBlur = 18;
+        ctx.shadowOffsetY = 4;
+        ctx.fillStyle = '#ffffff';
+        ctx.beginPath();
+        ctx.arc(logoCx, logoCy, plateR, 0, Math.PI * 2);
+        ctx.fill();
+        ctx.restore();
+        const logoSrc = customLogo ?? logoUrl;
+        const logo = logoSrc ? await loadImageCached(logoSrc) : null;
         if (token !== drawTokenRef.current) return;
-
         if (logo) {
             ctx.save();
             ctx.beginPath();
@@ -212,64 +332,65 @@ export default function ShareKitModal({ open, onClose, catalogName, slug, logoUr
             ctx.clip();
             ctx.drawImage(logo, logoCx - logoR, logoCy - logoR, logoR * 2, logoR * 2);
             ctx.restore();
-            ctx.strokeStyle = th.key === 'classic' ? 'rgba(26,28,30,0.15)' : 'rgba(255,255,255,0.35)';
-            ctx.lineWidth = 3;
-            ctx.beginPath();
-            ctx.arc(logoCx, logoCy, logoR, 0, Math.PI * 2);
-            ctx.stroke();
         } else {
-            // فال‌بک: دایرهٔ کهربایی با حرف اول نام
-            ctx.fillStyle = '#f59e0b';
+            ctx.fillStyle = accent;
             ctx.beginPath();
             ctx.arc(logoCx, logoCy, logoR, 0, Math.PI * 2);
             ctx.fill();
-            ctx.fillStyle = '#ffffff';
+            ctx.fillStyle = th.accentText;
             ctx.textAlign = 'center';
-            ctx.direction = 'rtl';
-            ctx.font = `bold 54px ${CANVAS_FONT}`;
-            ctx.fillText((catalogName || 'ک').trim().charAt(0), logoCx, logoCy + 19);
+            ctx.font = `800 50px ${F}`;
+            ctx.fillText((cardName || 'ک').trim().charAt(0), logoCx, logoCy + 18);
         }
+        ctx.save();
+        ctx.globalAlpha = 0.45;
+        ctx.strokeStyle = accent;
+        ctx.lineWidth = 2;
+        ctx.beginPath();
+        ctx.arc(logoCx, logoCy, plateR, 0, Math.PI * 2);
+        ctx.stroke();
+        ctx.restore();
 
-        // نام کسب‌وکار — با کوچک‌شدن خودکار اگر بلند بود
+        // ─── نام کسب‌وکار — با کوچک‌شدن خودکار ───
         ctx.textAlign = 'right';
         ctx.direction = 'rtl';
-        ctx.fillStyle = th.text;
+        ctx.fillStyle = text;
         let nameSize = 50;
-        ctx.font = `bold ${nameSize}px ${CANVAS_FONT}`;
-        while (ctx.measureText(catalogName || '').width > 600 && nameSize > 30) {
+        ctx.font = `800 ${nameSize}px ${F}`;
+        while (ctx.measureText(cardName || '').width > 600 && nameSize > 30) {
             nameSize -= 3;
-            ctx.font = `bold ${nameSize}px ${CANVAS_FONT}`;
+            ctx.font = `800 ${nameSize}px ${F}`;
         }
-        ctx.fillText(catalogName || '', RX, 296);
+        ctx.fillText(cardName || '', RX, 318);
 
-        // شعار — حداکثر دو خط
+        // ─── شعار — حداکثر دو خط ───
         const sl = (slogan || '').trim();
         if (sl) {
-            ctx.font = `26px ${CANVAS_FONT}`;
+            ctx.font = `26px ${F}`;
             const lines = wrapText(ctx, sl, 580).slice(0, 2);
-            ctx.fillStyle = th.muted;
-            lines.forEach((ln, i) => ctx.fillText(ln, RX, 348 + i * 38));
+            ctx.fillStyle = muted;
+            lines.forEach((ln, i) => ctx.fillText(ln, RX, 368 + i * 38));
         }
 
-        // جداکنندهٔ لهجه
-        ctx.strokeStyle = th.accent;
+        // ─── جداکنندهٔ لهجه ───
+        ctx.strokeStyle = accent;
         ctx.lineWidth = 4;
         ctx.beginPath();
-        ctx.moveTo(RX - 150, 446);
-        ctx.lineTo(RX, 446);
+        ctx.moveTo(RX - 150, 452);
+        ctx.lineTo(RX, 452);
         ctx.stroke();
 
-        // تماس
-        if (phone) {
+        // ─── تماس ───
+        if (cardPhone.trim()) {
             ctx.textAlign = 'right';
             ctx.direction = 'rtl';
-            ctx.fillStyle = th.text;
-            ctx.font = `bold 31px ${CANVAS_FONT}`;
-            ctx.fillText(`تماس: ${faDigits(phone)}`, RX, 510);
+            ctx.fillStyle = text;
+            ctx.font = `bold 30px ${F}`;
+            ctx.fillText(`تماس: ${faDigits(cardPhone.trim())}`, RX, 510);
         }
 
-        // ─── ستون چپ: QR روی بشقاب سفید + اسلاگ ───
-        const plateS = 320, plateX = 60, plateY = (H - plateS) / 2 - 12;
+        // ─── ستون چپ: QR روی بشقاب سفید + زیرنویس قابل ویرایش + اسلاگ ───
+        const plateS = 300, plateX = 60, plateY = 118;
         ctx.save();
         ctx.shadowColor = 'rgba(0,0,0,0.3)';
         ctx.shadowBlur = 24;
@@ -278,6 +399,13 @@ export default function ShareKitModal({ open, onClose, catalogName, slug, logoUr
         roundRectPath(ctx, plateX, plateY, plateS, plateS, 26);
         ctx.fill();
         ctx.restore();
+        ctx.save();
+        ctx.globalAlpha = 0.35;
+        ctx.strokeStyle = accent;
+        ctx.lineWidth = 2;
+        roundRectPath(ctx, plateX, plateY, plateS, plateS, 26);
+        ctx.stroke();
+        ctx.restore();
         const qr = getQrCanvas();
         if (qr) {
             const inner = plateS - 40;
@@ -285,29 +413,37 @@ export default function ShareKitModal({ open, onClose, catalogName, slug, logoUr
             ctx.imageSmoothingQuality = 'high';
             ctx.drawImage(qr, plateX + 20, plateY + 20, inner, inner);
         }
+        const cap = (cardCaption || '').trim();
+        if (cap) {
+            ctx.textAlign = 'center';
+            ctx.direction = 'rtl';
+            ctx.fillStyle = text;
+            ctx.font = `bold 21px ${F}`;
+            ctx.fillText(cap, plateX + plateS / 2, 452);
+        }
         const shortUrl = url.replace(/^https?:\/\//, '');
         if (shortUrl) {
-            let s = 23;
+            let s = 17;
             ctx.textAlign = 'center';
             ctx.direction = 'ltr';
-            ctx.fillStyle = th.muted;
-            ctx.font = `bold ${s}px ${CANVAS_FONT}`;
-            while (ctx.measureText(shortUrl).width > plateS + 60 && s > 15) {
-                s -= 2;
-                ctx.font = `bold ${s}px ${CANVAS_FONT}`;
+            ctx.fillStyle = muted;
+            ctx.font = `bold ${s}px ${F}`;
+            while (ctx.measureText(shortUrl).width > plateS + 80 && s > 12) {
+                s -= 1;
+                ctx.font = `bold ${s}px ${F}`;
             }
-            ctx.fillText(shortUrl, plateX + plateS / 2, plateY + plateS + 40);
+            ctx.fillText(shortUrl, plateX + plateS / 2, 486);
         }
 
-        // امضای کوچک دیمت
+        // ─── امضای کوچک دیمت ───
         ctx.textAlign = 'center';
         ctx.direction = 'rtl';
-        ctx.globalAlpha = 0.75;
-        ctx.fillStyle = th.muted;
-        ctx.font = `19px ${CANVAS_FONT}`;
-        ctx.fillText('کاتالوگ آنلاین در دیمت', W / 2, H - 22);
+        ctx.globalAlpha = 0.55;
+        ctx.fillStyle = text;
+        ctx.font = `17px ${F}`;
+        ctx.fillText('ساخته‌شده با دیمت', W / 2, H - 20);
         ctx.globalAlpha = 1;
-    }, [open, themeIdx, bgIdx, customBg, slogan, catalogName, phone, logoUrl, url]);
+    }, [open, themeIdx, customColor, bgIdx, customBg, customLogo, overlayPct, cardName, slogan, cardPhone, cardCaption, logoUrl, url]);
 
     // رسم مجدد پیش‌نمایش با هر تغییر
     useEffect(() => {
@@ -362,7 +498,6 @@ export default function ShareKitModal({ open, onClose, catalogName, slug, logoUr
         if (!qr || posterBusy) return;
         setPosterBusy(true);
         try {
-            // فونت وب قبل از رسم حتماً لود شده باشد
             try { await document.fonts.ready; } catch {}
 
             const W = 1080, H = 1350;
@@ -412,7 +547,7 @@ export default function ShareKitModal({ open, onClose, catalogName, slug, logoUr
             const rowRight = W / 2 + rowW / 2;
             const logoCx = rowRight - logoR;
 
-            const logo = logoUrl ? await loadImage(logoUrl) : null;
+            const logo = logoUrl ? await loadImageCached(logoUrl) : null;
             if (logo) {
                 ctx.save();
                 ctx.beginPath();
@@ -492,6 +627,32 @@ export default function ShareKitModal({ open, onClose, catalogName, slug, logoUr
         e.target.value = '';
     };
 
+    const onPickLogoFile = (e: React.ChangeEvent<HTMLInputElement>) => {
+        const f = e.target.files?.[0];
+        if (!f) return;
+        const reader = new FileReader();
+        reader.onload = () => setCustomLogo(String(reader.result));
+        reader.readAsDataURL(f);
+        e.target.value = '';
+    };
+
+    /** بازگرداندن همه‌چیز به پیش‌فرض کاتالوگ */
+    const resetCard = () => {
+        setThemeIdx(0);
+        setCustomColor(null);
+        setBgIdx(-1);
+        setCustomBg(null);
+        setCustomLogo(null);
+        setOverlayPct(45);
+        setCardName(catalogName || '');
+        setSlogan(deriveSlogan(description));
+        setCardPhone(phone || '');
+        setCardCaption(DEFAULT_CAPTION);
+        toast.success('کارت به حالت پیش‌فرض برگشت');
+    };
+
+    const isPhotoActive = !!customBg || bgIdx >= 0;
+
     const ActionBtn = ({ icon: Icon, label, onClick }: any) => (
         <button onClick={onClick}
                 className="flex flex-col items-center gap-1.5 py-3 rounded-xl border border-outline-variant/40 dark:border-gray-700 hover:border-primary/40 hover:bg-primary/5 dark:hover:bg-primary/10 transition-colors text-on-surface">
@@ -542,7 +703,7 @@ export default function ShareKitModal({ open, onClose, catalogName, slug, logoUr
                     {/* QR چاپی + کارت ویزیت — خروجی‌های تصویری */}
                     {url && (
                         <div className="rounded-xl border border-dashed border-outline-variant/50 dark:border-gray-700 p-3 space-y-3">
-                            {/* 🔧 QR مخفیِ محلی برای رسم کانواس — رفع باگ: قبلاً رندر نمی‌شد و دانلودها بی‌صدا هیچ می‌کردند */}
+                            {/* 🔧 QR مخفیِ محلی برای رسم کانواس — بدون این، دانلودها بی‌صدا هیچ می‌کنند */}
                             <div className="hidden" aria-hidden="true">
                                 <QRCodeCanvas id="dm-print-qr" value={url} size={1024} level="Q" marginSize={2}
                                               bgColor="#ffffff" fgColor="#111827" />
@@ -591,7 +752,7 @@ export default function ShareKitModal({ open, onClose, catalogName, slug, logoUr
                                 {cardOpen ? 'بستن کارت ویزیت' : 'تولید کارت ویزیت'}
                             </button>
 
-                            {/* 🎨 سازندهٔ کارت ویزیت — پیش‌نمایش زنده + تم + پس‌زمینه + شعار */}
+                            {/* 🎨 سازندهٔ کارت ویزیت — پیش‌نمایش زنده + شخصی‌سازی کامل */}
                             {cardOpen && (
                                 <div className="space-y-3 rounded-xl border border-primary/20 dark:border-primary/30 bg-primary/5 dark:bg-primary/10 p-3">
                                     <div>
@@ -599,30 +760,51 @@ export default function ShareKitModal({ open, onClose, catalogName, slug, logoUr
                                             <IdCard className="w-3.5 h-3.5 text-primary" /> کارت ویزیت حرفه‌ای
                                         </p>
                                         <p className="text-[10px] text-on-surface-variant/70 leading-5 mt-1">
-                                            لوگو، شعار، تماس، QR و آدرس کاتالوگت روش هست — اندازهٔ استاندارد ۹×۵ سانتی‌متر.
+                                            لوگو، عنوان، شعار، تماس و نوشتهٔ زیر QR همه قابل ویرایش‌اند — اندازهٔ استاندارد ۹×۵ سانتی‌متر.
                                         </p>
                                     </div>
 
                                     <canvas ref={cardCanvasRef} width={1050} height={600}
                                             className="w-full h-auto rounded-xl border border-outline-variant/30 dark:border-gray-700 bg-white shadow-sm" />
 
-                                    {/* تم رنگ */}
+                                    {/* تم رنگ — آماده + کالر‌سلکتور آزاد */}
                                     <div className="flex items-center gap-2 flex-wrap">
                                         <span className="text-[10px] font-bold text-on-surface-variant">تم رنگ:</span>
                                         {CARD_THEMES.map((t, i) => (
-                                            <button key={t.key} type="button" onClick={() => setThemeIdx(i)}
+                                            <button key={t.key} type="button"
+                                                    onClick={() => { setThemeIdx(i); setCustomColor(null); }}
                                                     title={t.name} aria-label={`تم ${t.name}`}
                                                     className={cn(
                                                         'w-8 h-8 rounded-full transition-all',
-                                                        themeIdx === i
+                                                        !customColor && themeIdx === i
                                                             ? 'ring-2 ring-primary ring-offset-2 dark:ring-offset-gray-900 scale-110'
                                                             : 'ring-1 ring-outline-variant/50 dark:ring-gray-700 hover:scale-105',
                                                     )}
                                                     style={{ background: `linear-gradient(135deg, ${t.bg1}, ${t.bg2})` }} />
                                         ))}
+                                        <label className={cn(
+                                                'relative w-8 h-8 rounded-full cursor-pointer transition-all',
+                                                customColor
+                                                    ? 'ring-2 ring-primary ring-offset-2 dark:ring-offset-gray-900 scale-110'
+                                                    : 'ring-1 ring-outline-variant/50 dark:ring-gray-700 hover:scale-105',
+                                            )}
+                                            style={{ background: 'conic-gradient(#f87171,#fbbf24,#34d399,#60a5fa,#c084fc,#f87171)' }}
+                                            title="رنگ دلخواه">
+                                            <input type="color" value={customColor || '#f59e0b'}
+                                                   onChange={(e) => setCustomColor(e.target.value)}
+                                                   aria-label="انتخاب رنگ دلخواه"
+                                                   className="absolute inset-0 w-full h-full opacity-0 cursor-pointer" />
+                                        </label>
+                                        {customColor && (
+                                            <button type="button" onClick={() => setCustomColor(null)}
+                                                    className="h-7 px-2.5 rounded-lg text-[10px] font-bold text-red-600 dark:text-red-400
+                                                        hover:bg-red-500/10 active:scale-95 flex items-center gap-1 transition-all">
+                                                <XCircle className="w-3.5 h-3.5" /> حذف رنگ دلخواه
+                                            </button>
+                                        )}
                                     </div>
 
-                                    {/* پس‌زمینه */}
+                                    {/* پس‌زمینه + اسلایدر تاریکی */}
                                     <div className="flex items-center gap-2 flex-wrap">
                                         <button type="button" onClick={changeBg}
                                                 className="h-8 px-3 rounded-lg border border-outline-variant/50 dark:border-gray-700 text-[10px] font-bold
@@ -636,7 +818,7 @@ export default function ShareKitModal({ open, onClose, catalogName, slug, logoUr
                                                     flex items-center gap-1.5 transition-all">
                                             <ImageUp className="w-3.5 h-3.5" /> عکس خودم
                                         </button>
-                                        {(customBg || bgIdx >= 0) && (
+                                        {isPhotoActive && (
                                             <button type="button" onClick={() => { setCustomBg(null); setBgIdx(-1); }}
                                                     className="h-8 px-3 rounded-lg text-[10px] font-bold text-red-600 dark:text-red-400
                                                         hover:bg-red-500/10 active:scale-95 flex items-center gap-1.5 transition-all">
@@ -645,25 +827,87 @@ export default function ShareKitModal({ open, onClose, catalogName, slug, logoUr
                                         )}
                                         <input ref={bgFileRef} type="file" accept="image/*" hidden onChange={onPickBgFile} />
                                     </div>
+                                    {isPhotoActive && (
+                                        <div className="flex items-center gap-2.5">
+                                            <span className="text-[10px] font-bold text-on-surface-variant flex-shrink-0">تاریکی پشت متن‌ها:</span>
+                                            <input type="range" min={0} max={85} value={overlayPct}
+                                                   onChange={(e) => setOverlayPct(Number(e.target.value))}
+                                                   aria-label="تاریکی پس‌زمینه"
+                                                   className="flex-1 h-1.5 accent-amber-500 cursor-pointer" />
+                                            <span className="text-[10px] font-bold text-on-surface w-8 text-center">{faDigits(String(overlayPct))}٪</span>
+                                        </div>
+                                    )}
 
-                                    {/* شعار قابل ویرایش */}
-                                    <label className="block">
-                                        <span className="text-[10px] font-bold text-on-surface-variant">شعار روی کارت:</span>
-                                        <input value={slogan} onChange={(e) => setSlogan(e.target.value)} maxLength={80} dir="rtl"
-                                               placeholder="مثلاً بهترین قیمت عمده در شهر"
-                                               className="mt-1 w-full h-9 rounded-lg border border-outline-variant/40 dark:border-gray-700
-                                                   bg-white dark:bg-gray-900 px-3 text-xs text-on-surface placeholder:text-on-surface-variant/40
-                                                   outline-none focus:border-primary/50 transition-colors" />
-                                    </label>
+                                    {/* لوگو — انتخابی یا لوگوی کاتالوگ */}
+                                    <div className="flex items-center gap-2 flex-wrap">
+                                        <span className="text-[10px] font-bold text-on-surface-variant">لوگو:</span>
+                                        <button type="button" onClick={() => logoFileRef.current?.click()}
+                                                className="h-8 px-3 rounded-lg border border-outline-variant/50 dark:border-gray-700 text-[10px] font-bold
+                                                    text-on-surface hover:border-primary/40 hover:text-primary active:scale-95
+                                                    flex items-center gap-1.5 transition-all">
+                                            <ImageUp className="w-3.5 h-3.5" /> {customLogo ? 'تعویض لوگو' : 'لوگوی دلخواه'}
+                                        </button>
+                                        {customLogo && (
+                                            <button type="button" onClick={() => setCustomLogo(null)}
+                                                    className="h-8 px-3 rounded-lg text-[10px] font-bold text-red-600 dark:text-red-400
+                                                        hover:bg-red-500/10 active:scale-95 flex items-center gap-1.5 transition-all">
+                                                <XCircle className="w-3.5 h-3.5" /> برگشت به لوگوی کاتالوگ
+                                            </button>
+                                        )}
+                                        <input ref={logoFileRef} type="file" accept="image/*" hidden onChange={onPickLogoFile} />
+                                    </div>
+
+                                    {/* متن‌های قابل ویرایش */}
+                                    <div className="grid grid-cols-1 gap-2">
+                                        <label className="block">
+                                            <span className="text-[10px] font-bold text-on-surface-variant">عنوان:</span>
+                                            <input value={cardName} onChange={(e) => setCardName(e.target.value)} maxLength={48} dir="rtl"
+                                                   placeholder="نام کسب‌وکار"
+                                                   className="mt-0.5 w-full h-9 rounded-lg border border-outline-variant/40 dark:border-gray-700
+                                                       bg-white dark:bg-gray-900 px-3 text-xs text-on-surface placeholder:text-on-surface-variant/40
+                                                       outline-none focus:border-primary/50 transition-colors" />
+                                        </label>
+                                        <label className="block">
+                                            <span className="text-[10px] font-bold text-on-surface-variant">شعار:</span>
+                                            <input value={slogan} onChange={(e) => setSlogan(e.target.value)} maxLength={80} dir="rtl"
+                                                   placeholder="مثلاً بهترین قیمت عمده در شهر"
+                                                   className="mt-0.5 w-full h-9 rounded-lg border border-outline-variant/40 dark:border-gray-700
+                                                       bg-white dark:bg-gray-900 px-3 text-xs text-on-surface placeholder:text-on-surface-variant/40
+                                                       outline-none focus:border-primary/50 transition-colors" />
+                                        </label>
+                                        <label className="block">
+                                            <span className="text-[10px] font-bold text-on-surface-variant">شماره تماس:</span>
+                                            <input value={cardPhone} onChange={(e) => setCardPhone(e.target.value)} maxLength={20} dir="ltr"
+                                                   placeholder="09123456789"
+                                                   className="mt-0.5 w-full h-9 rounded-lg border border-outline-variant/40 dark:border-gray-700
+                                                       bg-white dark:bg-gray-900 px-3 text-xs text-on-surface placeholder:text-on-surface-variant/40
+                                                       outline-none focus:border-primary/50 transition-colors text-left" />
+                                        </label>
+                                        <label className="block">
+                                            <span className="text-[10px] font-bold text-on-surface-variant">نوشتهٔ زیر QR:</span>
+                                            <input value={cardCaption} onChange={(e) => setCardCaption(e.target.value)} maxLength={50} dir="rtl"
+                                                   placeholder={DEFAULT_CAPTION}
+                                                   className="mt-0.5 w-full h-9 rounded-lg border border-outline-variant/40 dark:border-gray-700
+                                                       bg-white dark:bg-gray-900 px-3 text-xs text-on-surface placeholder:text-on-surface-variant/40
+                                                       outline-none focus:border-primary/50 transition-colors" />
+                                        </label>
+                                    </div>
 
                                     <button type="button" onClick={downloadCard}
                                             className="h-10 w-full rounded-lg bg-primary text-on-primary text-[11px] font-extrabold
                                                 flex items-center justify-center gap-1.5 hover:bg-primary/90 active:scale-[0.98] transition-all">
                                         <Download className="w-4 h-4" /> دانلود کارت ویزیت
                                     </button>
-                                    <p className="text-[10px] text-on-surface-variant/60 leading-5">
-                                        فایل PNG را دانلود کن و به چاپخانه بده — برای پشت کارت هم می‌توانی همان را با QR بزرگ‌تر چاپ کنی.
-                                    </p>
+                                    <div className="flex items-center justify-between gap-2">
+                                        <button type="button" onClick={resetCard}
+                                                className="text-[10px] font-bold text-on-surface-variant/80 hover:text-primary
+                                                    flex items-center gap-1 transition-colors">
+                                            <RotateCcw className="w-3 h-3" /> بازگرداندن پیش‌فرض‌ها
+                                        </button>
+                                        <p className="text-[10px] text-on-surface-variant/60 leading-5 text-left">
+                                            فایل PNG آمادهٔ چاپخانه است.
+                                        </p>
+                                    </div>
                                 </div>
                             )}
 
