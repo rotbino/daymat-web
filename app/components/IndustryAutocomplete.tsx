@@ -44,11 +44,19 @@ export default function IndustryAutocomplete({
                 };
             }}
             createFn={allowCreate
-                ? (title) => apiService.industry.createByUser(title)
+                // ✅ EntityPicker آبجکت { title, ... } می‌دهد — فقط title به بک می‌رود
+                // (باگ قبلی: کل آبجکت به‌جای رشته پاس می‌شد و بک با ۵۰۰ می‌مرد)
+                ? async (data: { title: string }) => apiService.industry.createByUser(data.title)
                 : async () => { throw new Error('ایجاد مجاز نیست'); }
             }
             queryKey="industries-picker"
             createLabel="ایجاد صنف جدید"
+            createTitle="ثبت صنف جدید"
+            addButtonLabel="ثبت صنف جدید"
+            createFieldLabel="عنوان صنف"
+            createFieldPlaceholder="مثلاً: پخش مواد غذایی، لوازم یدکی خودرو…"
+            createHint="صنف خودت رو پیدا نکردی؟ همین‌جا ثبتش کن — بعد از تأیید ادمین، همه‌جا قابل استفاده می‌شه."
+            duplicateMessage="این صنف قبلاً ثبت شده — از لیست بالا انتخابش کن."
             minSearchChars={2}
             pageSize={10}
         />

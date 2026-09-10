@@ -89,6 +89,10 @@ interface Props {
     deleteFn?: (id: string) => Promise<any>;
     /** ✅ متن دکمه هدر مودال (مثلاً «کالای جدید» / «ثبت برند جدید») */
     addButtonLabel?: string;
+    /** ✅ لیبل فیلد عنوان در فرم ایجاد (پیش‌فرض محصولی: «عنوان کالا» — برای صنف: «عنوان صنف») */
+    createFieldLabel?: string;
+    /** ✅ placeholder فیلد عنوان در فرم ایجاد */
+    createFieldPlaceholder?: string;
     /** ✅ متن حالت خالی لیست — قبل از دکمه افزودن */
     emptyHint?: string;
 }
@@ -123,6 +127,8 @@ export default function EntityPicker({
     renderEditFields,
     deleteFn,
     addButtonLabel = 'جدید',
+    createFieldLabel = 'عنوان کالا',
+    createFieldPlaceholder = 'مثلاً: کنسرو ماهی مکنزی ۲۰۰ گرمی',
     emptyHint,
 }: Props) {
     const [isOpen, setIsOpen] = useState(false);
@@ -211,6 +217,8 @@ export default function EntityPicker({
                     deleteFn={deleteFn}
                     headerIcon={icon}
                     addButtonLabel={addButtonLabel}
+                    createFieldLabel={createFieldLabel}
+                    createFieldPlaceholder={createFieldPlaceholder}
                     emptyHint={emptyHint}
                 />
             )}
@@ -246,6 +254,8 @@ function EntityPickerModal({
     deleteFn,
     headerIcon,
     addButtonLabel = 'جدید',
+    createFieldLabel = 'عنوان کالا',
+    createFieldPlaceholder = 'مثلاً: کنسرو ماهی مکنزی ۲۰۰ گرمی',
     emptyHint,
 }: any) {
     const [search, setSearch] = useState('');
@@ -512,12 +522,12 @@ function EntityPickerModal({
                                 </div>
                             )}
                             <div className="space-y-1.5">
-                                <label className="text-xs font-bold text-on-surface block">عنوان کالا *</label>
+                                <label className="text-xs font-bold text-on-surface block">{createFieldLabel} *</label>
                                 <div className="relative">
                                     <input
                                         value={createTitle}
                                         onChange={(e) => setCreateTitle(e.target.value)}
-                                        placeholder="مثلاً: کنسرو ماهی مکنزی ۲۰۰ گرمی"
+                                        placeholder={createFieldPlaceholder}
                                         autoFocus
                                         className="w-full h-11 px-3 pl-16 rounded-xl bg-surface-container-lowest border border-outline-variant/40 text-sm outline-none focus:ring-2 focus:ring-primary/30 focus:border-primary transition-all"
                                     />
