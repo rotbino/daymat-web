@@ -3,7 +3,7 @@
 // فلسفه: هیچ‌وقت دادهٔ API را کش نمی‌کنیم (تازگی داده مقدس است)؛
 // فقط ناوبری‌ها network-first با صفحهٔ آفلاین، و استاتیک‌ها stale-while-revalidate.
 
-const VERSION = "v1";
+const VERSION = "v1.0";
 const STATIC_CACHE = `daymat-static-${VERSION}`;
 const OFFLINE_URL = "/offline.html";
 
