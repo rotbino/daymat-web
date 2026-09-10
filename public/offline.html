@@ -28,7 +28,20 @@
         }
         .icon img { width: 56px; height: 56px; }
         h1 { font-size: 22px; font-weight: 800; margin-bottom: 12px; }
-        p { font-size: 14px; line-height: 2; color: rgba(255,255,255,.65); margin-bottom: 28px; }
+        p { font-size: 14px; line-height: 2; color: rgba(255,255,255,.65); margin-bottom: 8px; }
+        .status { font-size: 12px; color: rgba(255,255,255,.35); margin-bottom: 28px; min-height: 18px; }
+        .status.probing::after {
+            content: '';
+            display: inline-block;
+            width: 12px; height: 12px;
+            border: 2px solid rgba(255,255,255,.25);
+            border-top-color: #f97316;
+            border-radius: 50%;
+            vertical-align: -2px;
+            margin-right: 6px;
+            animation: spin .8s linear infinite;
+        }
+        @keyframes spin { to { transform: rotate(360deg); } }
         button {
             font-family: inherit;
             font-size: 15px; font-weight: 700;
@@ -49,7 +62,104 @@
         </div>
         <h1>اتصال اینترنت قطع است</h1>
         <p>نگران نباش؛ به‌محض وصل شدن دوباره، دیمت همون‌جایی که بودی منتظرته.</p>
-        <button onclick="location.reload()">تلاش مجدد</button>
+        <div class="status" id="status">چک خودکار هر ۴ ثانیه انجام می‌شود</div>
+        <button id="retry">تلاش مجدد</button>
     </div>
+
+    <script>
+        // ─── پینگ سرور دیمت و بازگشت خودکار ───
+        // وقتی اینترنت برگشت و سرور+دیتابیس سالم بود → برگشت به صفحهٔ قبلی کاربر
+        // وقتی اینترنت هست ولی بک/دیتابیس مشکل دارد → صفحهٔ «سرور در دسترس نیست»
+        (function () {
+            var RETURN_URL_KEY = 'daymat:returnUrl';
+            var API_BASE_KEY = 'daymat:apiBase';
+            var statusEl = document.getElementById('status');
+            var probing = false;
+
+            function getBases() {
+                var bases = [];
+                try {
+                    var b = sessionStorage.getItem(API_BASE_KEY);
+                    if (b) bases.push(String(b).replace(/\/+$/, ''));
+                } catch (e) { /* noop */ }
+                bases.push('http://localhost:3011'); // فال‌بک پیش‌فرض اپ
+                // حذف تکراری‌ها
+                return bases.filter(function (v, i, a) { return a.indexOf(v) === i; });
+            }
+
+            function getReturnUrl() {
+                try { return sessionStorage.getItem(RETURN_URL_KEY) || '/'; }
+                catch (e) { return '/'; }
+            }
+
+            function probe(base) {
+                return new Promise(function (resolve) {
+                    var done = false;
+                    var ctrl = typeof AbortController !== 'undefined' ? new AbortController() : null;
+                    var timer = setTimeout(function () {
+                        if (!done) { done = true; if (ctrl) ctrl.abort(); resolve('down'); }
+                    }, 4500);
+                    fetch(base + '/health', { cache: 'no-store', signal: ctrl ? ctrl.signal : undefined })
+                        .then(function (res) {
+                            if (done) return;
+                            done = true; clearTimeout(timer);
+                            resolve(res.ok ? 'ok' : 'db'); // 503 = بک بالا، دیتابیس قطع
+                        })
+                        .catch(function () {
+                            if (done) return;
+                            done = true; clearTimeout(timer);
+                            resolve('down');
+                        });
+                });
+            }
+
+            function check() {
+                if (probing) return;
+                probing = true;
+                statusEl.className = 'status probing';
+                statusEl.textContent = 'در حال بررسی اتصال…';
+
+                var finish = function (outcome) {
+                    probing = false;
+                    if (outcome === 'ok') {
+                        statusEl.className = 'status';
+                        statusEl.textContent = 'اتصال برقرار شد — در حال بازگشت…';
+                        window.location.replace(getReturnUrl());
+                        return;
+                    }
+                    if (outcome === 'db' && navigator.onLine) {
+                        // اینترنت هست ولی دیتابیس/سرور مشکل دارد
+                        window.location.assign('/server-unavailable');
+                        return;
+                    }
+                    statusEl.className = 'status';
+                    statusEl.textContent = 'هنوز قطع است — دوباره چک می‌کنیم…';
+                };
+
+                if (!navigator.onLine) { probing = false; statusEl.className = 'status'; statusEl.textContent = 'هنوز قطع است — دوباره چک می‌کنیم…'; return; }
+
+                var bases = getBases();
+                var i = 0;
+                var next = function () {
+                    if (i >= bases.length) { finish('down'); return; }
+                    probe(bases[i++]).then(function (r) {
+                        if (r === 'ok') finish('ok');
+                        else if (r === 'db') finish('db');
+                        else next();
+                    });
+                };
+                next();
+            }
+
+            document.getElementById('retry').addEventListener('click', function () {
+                if (!navigator.onLine) { window.location.reload(); return; }
+                check();
+            });
+            window.addEventListener('online', check);
+
+            setInterval(check, 4000);
+            check();
+        })();
+    </script>
 </body>
 </html>

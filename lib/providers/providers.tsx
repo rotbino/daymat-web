@@ -8,6 +8,7 @@ import { ReactQueryDevtools } from '@tanstack/react-query-devtools';
 import { Toaster } from 'sonner';
 import { store, persistor } from '../store/store';
 import { AuthProvider } from './auth-provider';
+import { RouteTracker } from './RouteTracker';
 
 const queryClient = new QueryClient({
     defaultOptions: {
@@ -24,6 +25,7 @@ export function Providers({ children }: { children: React.ReactNode }) {
             <PersistGate loading={null} persistor={persistor}>
                 <QueryClientProvider client={queryClient}>
                     <AuthProvider>
+                        <RouteTracker />
                         {children}
                         <Toaster position="top-center" richColors />
                     </AuthProvider>

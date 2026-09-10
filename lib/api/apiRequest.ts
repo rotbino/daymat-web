@@ -4,6 +4,7 @@ import axios, { AxiosRequestConfig, InternalAxiosRequestConfig } from 'axios';
 import { clearUserSession } from '../store/slices/authSlice';
 import { ApiError } from './apiTypes';
 import { getFriendlyErrorMessage } from './errorHandler';
+import { handleNetworkFailure, rememberApiBase } from './networkGuard';
 
 let _store: any = null;
 export const injectStore = (s: any) => {
@@ -17,6 +18,9 @@ export const getApiUrl = (path: string): string => {
     const cleanPath = path.startsWith('/') ? path : `/${path}`;
     return `${base}${cleanPath}`;
 };
+
+// آدرس API را در سشن ثبت می‌کنیم تا offline.html (خارج از اپ) هم بداند کجا را پینگ کند
+if (typeof window !== 'undefined') rememberApiBase(API_BASE);
 
 // ─── توکن: تک‌منبع حقیقت = redux store (persist می‌شود) ───
 // آینهٔ localStorage در setAccessToken reducer نوشته می‌شود (برای fetch های دستی)
@@ -111,8 +115,9 @@ export const apiRequest = async <T = any>(
     } catch (err: any) {
         // ⏱ خطای سطح شبکه (بدون پاسخ HTTP): قطع اینترنت، تایم‌اوت، اتصال ردشده
         // به‌جای متن خام axios («Network Error» / «timeout of 15000ms exceeded»)
-        // پیام فارسی واضح برمی‌گردد تا UI در لودینگ بی‌نهایت گیر نکند
+        // پیام فارسی واضح برمی‌گردد و کاربر به صفحهٔ وضعیت هدایت می‌شود
         if (!err.response) {
+            handleNetworkFailure(); // آفلاین → offline.html | بک/دی‌بی قطع → server-unavailable
             throw new ApiError(0, getFriendlyErrorMessage(err), {
                 errorCode: err.code === 'ECONNABORTED' ? 'REQUEST_TIMEOUT' : 'NETWORK_ERROR',
             });
@@ -150,8 +155,9 @@ export const apiFileRequest = async <T = any>(
         });
         return response.data;
     } catch (err: any) {
-        // خطای سطح شبکه (بدون پاسخ HTTP) → پیام فارسی یکدست
+        // خطای سطح شبکه (بدون پاسخ HTTP) → پیام فارسی یکدست + هدایت به صفحهٔ وضعیت
         if (!err.response) {
+            handleNetworkFailure();
             throw new ApiError(0, getFriendlyErrorMessage(err), {
                 errorCode: err.code === 'ECONNABORTED' ? 'REQUEST_TIMEOUT' : 'NETWORK_ERROR',
             });
