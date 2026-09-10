@@ -1,20 +1,22 @@
 // app/my-catalogs/components/CatalogIdentityBar.tsx
 // نوار هویت کاتالوگ — سوییچر سبک اینستاگرام (لوگو + نام + فلش پایین)
-// ⋯ گزینه‌های بیشتر کنار شیر — «کاتالوگ جدید» فقط از همین منو (سیاست MVP)
+// شیر + چشم (مشاهدهٔ کاتالوگ عمومی) + ⋯ — «کاتالوگ جدید» فقط از همین منو (سیاست MVP)
+// موبایل: سه دکمه کوچک‌تر (w-9) تا برای عنوان جا بماند (بازخورد کاربر)
 // ⚠️ قانون: حالت تاریک همیشه چک شده
 'use client';
 
 import React, { useState } from 'react';
 import Image from 'next/image';
-import { Check, ChevronDown, Ellipsis, Key, LibraryBig, Plus, Share2 } from 'lucide-react';
+import { Check, ChevronDown, Ellipsis, Eye, Key, LibraryBig, Plus, Share2 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 
-export default function CatalogIdentityBar({ catalogs, currentCatalog, canShare, onSelect, onShare, onNewCatalog, onChangePassword }: {
+export default function CatalogIdentityBar({ catalogs, currentCatalog, canShare, onSelect, onShare, onPreview, onNewCatalog, onChangePassword }: {
     catalogs: any[];
     currentCatalog: any;
     canShare: boolean;
     onSelect: (id: string) => void;
     onShare: () => void;
+    onPreview: () => void;
     onNewCatalog: () => void;
     onChangePassword: () => void;
 }) {
@@ -44,7 +46,7 @@ export default function CatalogIdentityBar({ catalogs, currentCatalog, canShare,
     );
 
     return (
-        <div className="relative flex items-center justify-between gap-2">
+        <div className="relative flex items-center justify-between gap-1.5 lg:gap-2">
             {/* سوییچر / نمایش هویت */}
             {multi ? (
                 <button type="button" onClick={() => setOpen((o) => !o)} aria-expanded={open}
@@ -60,19 +62,29 @@ export default function CatalogIdentityBar({ catalogs, currentCatalog, canShare,
             {/* اشتراک‌گذاری سریع — همیشه یک لمس فاصله دارد */}
             {canShare && (
                 <button type="button" onClick={onShare} aria-label="اشتراک‌گذاری کاتالوگ" title="اشتراک‌گذاری کاتالوگ"
-                        className="w-10 h-10 rounded-lg grid place-items-center flex-shrink-0
+                        className="w-9 h-9 lg:w-10 lg:h-10 rounded-lg grid place-items-center flex-shrink-0
                             bg-primary/10 text-primary hover:bg-primary/15 active:scale-95 transition-all">
-                    <Share2 className="w-4.5 h-4.5" />
+                    <Share2 className="w-4 h-4 lg:w-[18px] lg:h-[18px]" />
                 </button>
             )}
 
-            {/* ⋯ گزینه‌های بیشتر — بنا بر خواستهٔ کاربر پایین آمد و کنار شیر نشست */}
+            {/* 👁 مشاهدهٔ کاتالوگ عمومی — دم دست، بنا بر خواستهٔ کاربر */}
+            {canShare && (
+                <button type="button" onClick={onPreview} aria-label="مشاهدهٔ کاتالوگ" title="مشاهدهٔ کاتالوگ"
+                        className="w-9 h-9 lg:w-10 lg:h-10 rounded-lg grid place-items-center flex-shrink-0
+                            bg-surface-container-high/70 dark:bg-gray-800 text-on-surface-variant
+                            hover:text-primary hover:bg-surface-container-high dark:hover:bg-gray-700 active:scale-95 transition-all">
+                    <Eye className="w-4 h-4 lg:w-[18px] lg:h-[18px]" />
+                </button>
+            )}
+
+            {/* ⋯ گزینه‌های بیشتر — کنار شیر و چشم */}
             <div className="relative flex-shrink-0">
                 <button type="button" onClick={() => setMenuOpen((o) => !o)} aria-label="گزینه‌های بیشتر"
                         aria-expanded={menuOpen}
-                        className="w-10 h-10 rounded-lg grid place-items-center text-on-surface-variant
+                        className="w-9 h-9 lg:w-10 lg:h-10 rounded-lg grid place-items-center text-on-surface-variant
                             border border-outline-variant/40 dark:border-gray-700 hover:bg-surface-container-high dark:hover:bg-gray-800 transition-colors">
-                    <Ellipsis className="w-4.5 h-4.5" />
+                    <Ellipsis className="w-4 h-4 lg:w-[18px] lg:h-[18px]" />
                 </button>
                 {menuOpen && (
                     <>

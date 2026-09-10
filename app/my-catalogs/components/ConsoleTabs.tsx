@@ -23,14 +23,14 @@ export default function ConsoleTabs({ items, active, onChange }: {
     onChange: (t: Tab) => void;
 }) {
     return (
-        <div>
+        <div className="pt-1 lg:pt-1.5">
             <nav aria-label="بخش‌های کاتالوگ"
                  className="flex items-stretch">
                 {items.map(({ key, label, icon: Icon, count }) => {
                     const isActive = active === key;
                     return (
                         <button key={key} type="button" onClick={() => onChange(key)} aria-current={isActive ? 'page' : undefined}
-                                className={cn('relative flex-1 lg:flex-none flex flex-col lg:flex-row items-center justify-center lg:justify-start gap-1 lg:gap-1.5 h-14 lg:h-[52px] px-1 lg:px-5 text-[10px] lg:text-sm whitespace-nowrap transition-colors',
+                                className={cn('relative flex-1 lg:flex-none flex flex-col lg:flex-row items-center justify-center lg:justify-start gap-1 lg:gap-1.5 h-14 lg:h-14 px-1 lg:px-5 text-[10px] lg:text-sm whitespace-nowrap transition-colors',
                                     isActive
                                         ? 'text-primary font-extrabold'
                                         : 'text-on-surface-variant font-bold hover:text-on-surface active:scale-[0.98]')}>

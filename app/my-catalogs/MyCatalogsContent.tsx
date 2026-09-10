@@ -196,6 +196,11 @@ export default function MyCatalogsContent() {
     const canShare = !!(currentCatalog as any)?.slug;
 
     const goNewCatalog = () => router.push('/business/register');
+    // 👁 مشاهدهٔ کاتالوگ عمومی — همان آدرسی که کیت اشتراک می‌سازد (app/[slug])
+    const previewCatalog = () => {
+        const slug = (currentCatalog as any)?.slug;
+        if (slug) router.push(`/${slug}`);
+    };
     const selectCatalog = (id: string) => { setCurrentId(id); setStatusFilter('all'); };
 
     const refreshAll = () => {
@@ -260,6 +265,7 @@ export default function MyCatalogsContent() {
                         canShare={canShare}
                         onSelect={selectCatalog}
                         onShare={openShare}
+                        onPreview={previewCatalog}
                         onNewCatalog={goNewCatalog}
                         onChangePassword={() => setPasswordOpen(true)}
                     />
