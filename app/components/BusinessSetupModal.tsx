@@ -102,7 +102,7 @@ export default function BusinessSetupModal({ isOpen, onClose, business, onSaved 
             toast.success(
                 isEdit
                     ? 'کسب‌وکار شما بروزرسانی شد'
-                    : 'کسب‌وکار شما ثبت شد! ✅ اکنون با پر کردن فرم زیر، کاتالوگ خود را ایجاد کنید',
+                    : 'کسب‌وکار ثبت شد ✅ — همین حالا برایش کاتالوگ بساز',
                 { duration: 6000 },
             );
             onSaved?.(res);
@@ -135,8 +135,10 @@ export default function BusinessSetupModal({ isOpen, onClose, business, onSaved 
                             <Building2 className="w-4.5 h-4.5 text-primary" />
                         </span>
                         <div>
-                            <h3 className="text-sm font-extrabold text-on-surface">{isEdit ? 'ویرایش کسب‌وکار' : 'ثبت کسب‌وکار'}</h3>
-                            <p className="text-[10px] text-on-surface-variant/70">کمتر از یک دقیقه!</p>
+                            <h3 className="text-sm font-extrabold text-on-surface">{isEdit ? 'ویرایش کسب‌وکار' : 'ثبت کسب‌وکار جدید'}</h3>
+                            <p className="text-[10px] text-on-surface-variant/70">
+                                {isEdit ? 'کمتر از یک دقیقه!' : 'برای افرادی که بیش از یک کسب‌وکار دارند · کمتر از یک دقیقه'}
+                            </p>
                         </div>
                     </div>
                     <button onClick={() => !busy && onClose()} aria-label="بستن"
@@ -147,6 +149,14 @@ export default function BusinessSetupModal({ isOpen, onClose, business, onSaved 
 
                 {/* بدنه — مینیمال */}
                 <div className="flex-1 min-h-0 overflow-y-auto scrollbar-slim px-4 py-4 space-y-4">
+                    {/* نکتهٔ ضد ثبت تکراری — فقط در حالت ایجاد */}
+                    {!isEdit && (
+                        <p className="text-[10px] leading-5 text-on-surface-variant/80 rounded-lg bg-amber-500/10 dark:bg-amber-400/10
+                                border border-amber-500/25 px-3 py-2">
+                            اگه کسب‌وکارت رو توی لیست انتخابگر بالا دیدی، نیازی به ثبت دوباره نیست — همین رو انتخاب کن.
+                        </p>
+                    )}
+
                     {/* نام کسب‌وکار */}
                     <div className="space-y-1.5">
                         <label className="text-xs font-medium text-on-surface block">
