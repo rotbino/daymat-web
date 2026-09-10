@@ -1,5 +1,6 @@
 // app/my-catalogs/components/ConsoleTabs.tsx
-// ناوبری بخش‌های کاتالوگ — تب‌چسبان (موبایل زیر ناوبری اصلی؛ دسکتاپ زیر هدر ۶۴px)
+// ناوبری بخش‌های کاتالوگ — داخل «هدر کنسول» (والد) سوار می‌شود:
+// والد نوار سفید/سایه‌دار چسبان را می‌سازد؛ اینجا فقط خودِ تب‌هاست.
 // ترند روز: تب‌افقی آندرلاین به‌سبک Stripe/اینستاگرام — آیکون + برچسب، بدون شبیه‌شدن به دکمه
 // موبایل: آیکون بالا + برچسب ریز پایین (عمودی) — ۴ تب بدون اسکرول افقی جا می‌گیرند
 'use client';
@@ -15,15 +16,14 @@ export interface ConsoleTabItem {
     count?: number;
 }
 
-/** نوار تب‌های چسبان — تب فعال = متن پررنگ + خط زیرین */
+/** نوار تب‌ها — تب فعال = متن پررنگ + خط زیرین */
 export default function ConsoleTabs({ items, active, onChange }: {
     items: ConsoleTabItem[];
     active: Tab;
     onChange: (t: Tab) => void;
 }) {
     return (
-        <div className="sticky top-0 lg:top-16 z-30 -mx-4 px-4 bg-surface/95 dark:bg-gray-950/95 backdrop-blur-md
-                border-b border-outline-variant/25 dark:border-gray-800/70">
+        <div>
             <nav aria-label="بخش‌های کاتالوگ"
                  className="flex items-stretch">
                 {items.map(({ key, label, icon: Icon, count }) => {

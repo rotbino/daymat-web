@@ -51,6 +51,8 @@ export default function MyCatalogsContent() {
     const [statusFilter, setStatusFilter] = useState<StatusFilter>('all');
     const [shareSlug, setShareSlug] = useState<string | null>(null);
     const [shareName, setShareName] = useState('');
+    const [sharePhone, setSharePhone] = useState('');
+    const [shareDesc, setShareDesc] = useState('');
     const [catalogEditOpen, setCatalogEditOpen] = useState(false);
     const [unitModalOpen, setUnitModalOpen] = useState(false);
     const [catModalOpen, setCatModalOpen] = useState(false);
@@ -187,6 +189,8 @@ export default function MyCatalogsContent() {
     const openShare = () => {
         setShareSlug(currentCatalog?.slug ?? null);
         setShareName(currentCatalog?.name ?? '');
+        setSharePhone(currentCatalog?.phone ?? '');
+        setShareDesc((currentCatalog as any)?.shortDescription ?? '');
     };
     // (تایپ Catalog در apiTypes هنوز slug ندارد — با cast تا فیکس apiTypes)
     const canShare = !!(currentCatalog as any)?.slug;
@@ -244,18 +248,26 @@ export default function MyCatalogsContent() {
                 <TemporaryPasswordBanner phone={user?.phone} onClick={() => setPasswordOpen(true)} />
             )}
 
-            {/* نوار هویت کاتالوگ — سوییچر سبک اینستاگرام + شیر سریع + منوی ⋯ (کاتالوگ جدید فقط اینجا) */}
-            <CatalogIdentityBar
-                catalogs={catalogs}
-                currentCatalog={currentCatalog}
-                canShare={canShare}
-                onSelect={selectCatalog}
-                onShare={openShare}
-                onNewCatalog={goNewCatalog}
-                onChangePassword={() => setPasswordOpen(true)}
-            />
+            {/* 🧭 هدر کنسول — هویت + تب‌ها در یک نوار سفید سایه‌دار، جدا از بدنه (درخواست کاربر) */}
+            {/* موبایل: چسبان به لبهٔ بالا | دسکتاپ: زیر ناوبری ۶۴px — تم تاریک: سطح روشن‌تر + سایهٔ پررنگ‌تر */}
+            <div className="sticky top-0 lg:top-16 z-30 -mx-4 px-4 bg-white dark:bg-gray-900
+                    border-b border-outline-variant/20 dark:border-gray-800
+                    shadow-[0_6px_16px_-8px_rgba(15,23,42,0.28)] dark:shadow-[0_6px_16px_-8px_rgba(0,0,0,0.7)]">
+                <div className="pt-3">
+                    <CatalogIdentityBar
+                        catalogs={catalogs}
+                        currentCatalog={currentCatalog}
+                        canShare={canShare}
+                        onSelect={selectCatalog}
+                        onShare={openShare}
+                        onNewCatalog={goNewCatalog}
+                        onChangePassword={() => setPasswordOpen(true)}
+                    />
+                </div>
+                <ConsoleTabs items={tabItems} active={tab} onChange={setTab} />
+            </div>
 
-            {/* 🎉 بنر جشن عضویت تازه — گذرا و قابل بستن */}
+            {/* 🎉 بنر جشن عضویت تازه — گذرا و قابل بستن (زیر هدر، در بدنه) */}
             {freshMembership && !celebrateDismissed && (
                 <CelebrationBanner
                     membership={freshMembership}
@@ -264,9 +276,6 @@ export default function MyCatalogsContent() {
                     onSetCategories={() => { setTab('products'); setStatusFilter('uncat'); }}
                 />
             )}
-
-            {/* ── تب‌های چسبان بخش‌ها ── */}
-            <ConsoleTabs items={tabItems} active={tab} onChange={setTab} />
 
             {/* ── محتوای تب فعال — بدون قاب اضافه، فلت ── */}
             <div className="pt-0.5 pb-2">
@@ -358,7 +367,8 @@ export default function MyCatalogsContent() {
                                    catalogId={currentCatalog.id} initialTree={localCatTree}
                                    onSaved={(tree: any[]) => { setLocalCatTree(tree); refreshAll(); }} />
             <ShareKitModal open={!!shareSlug} onClose={() => setShareSlug(null)} catalogName={shareName} slug={shareSlug ?? undefined}
-                           logoUrl={(currentCatalog as any)?.logoFile?.path || currentCatalog?.logoUrl || undefined} />
+                           logoUrl={(currentCatalog as any)?.logoFile?.path || currentCatalog?.logoUrl || undefined}
+                           phone={sharePhone || undefined} description={shareDesc || undefined} />
             <ChangePasswordModal isOpen={passwordOpen} onClose={() => setPasswordOpen(false)}
                                  onSuccess={() => dispatch(setUser({ ...user, temporaryPassword: false }))} />
             <VerificationModal isOpen={verifyOpen} onClose={() => setVerifyOpen(false)}
