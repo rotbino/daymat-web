@@ -2,7 +2,7 @@
 'use client';
 
 import React, { useState } from 'react';
-import { BadgeCheck, ChevronDown, ChevronLeft } from 'lucide-react';
+import { BadgeCheck, ChevronDown, ChevronLeft, Share2 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 
 interface CompletionItem {
@@ -12,15 +12,16 @@ interface CompletionItem {
 }
 
 /** کارت پیشرفت تکمیل کاتالوگ — حلقهٔ درصد + چک‌لیست بازشدنی */
-export default function CompletionCard({ percent, items, onItem }: {
+export default function CompletionCard({ percent, items, onItem, onShare }: {
     percent: number;
     items: CompletionItem[];
     onItem: (key: string) => void;
+    onShare?: () => void;
 }) {
     const [expanded, setExpanded] = useState(false);
     const safeItems = items ?? [];
 
-    // کامل — فقط یک نوار سبز جمع‌وجور
+    // کامل — نوار سبز جمع‌وجور + دکمهٔ اشتراک‌گذاری (لحظهٔ طلایی شیرکردن)
     if (percent === 100) {
         return (
             <div className="rounded-2xl border border-emerald-300/50 bg-gradient-to-l from-emerald-50/80 to-emerald-50/30
@@ -32,6 +33,14 @@ export default function CompletionCard({ percent, items, onItem }: {
                 <p className="flex-1 text-xs font-extrabold text-emerald-800 dark:text-emerald-300">
                     کاتالوگت کامل است ✓ — آمادهٔ دیده‌شدن و اعتماد گرفتن
                 </p>
+                {onShare && (
+                    <button type="button" onClick={onShare} aria-label="اشتراک‌گذاری کاتالوگ"
+                            className="h-8 px-3 rounded-lg bg-emerald-600 text-white text-[11px] font-extrabold
+                                flex items-center gap-1.5 flex-shrink-0 shadow-sm shadow-emerald-600/30
+                                hover:bg-emerald-700 active:scale-95 transition-all">
+                        <Share2 className="w-3.5 h-3.5" /> اشتراک‌گذاری
+                    </button>
+                )}
             </div>
         );
     }

@@ -9,10 +9,11 @@ import { cn } from '@/lib/utils';
 import { fmt, SALES_ICON, SALES_LABEL } from '../constants';
 
 /** کارت اصلی کاتالوگ — لوگو، نام، لینک، آمار و اکشن‌های سریع */
-export default function CatalogSummaryCard({ catalog, stats, onEdit }: {
+export default function CatalogSummaryCard({ catalog, stats, onEdit, onShare }: {
     catalog: any;
     stats: any;
     onEdit: () => void;
+    onShare?: () => void;
 }) {
     const router = useRouter();
     const SalesIcon = SALES_ICON[catalog.salesType] || SALES_ICON.wholesale;
@@ -50,6 +51,15 @@ export default function CatalogSummaryCard({ catalog, stats, onEdit }: {
                             bg-surface-container-high text-on-surface-variant flex-shrink-0">
                             <SalesIcon className="w-2.5 h-2.5" /> {SALES_LABEL[catalog.salesType] || ''}
                         </span>
+                        {/* 🔗 اشتراک‌گذاری — روبروی نام، پرمخاطب و همیشه در دسترس */}
+                        {onShare && catalog.slug && (
+                            <button type="button" onClick={onShare} aria-label="اشتراک‌گذاری کاتالوگ"
+                                    className="ms-auto h-8 px-3 rounded-xl bg-primary/10 text-primary text-[11px] font-extrabold
+                                        flex items-center gap-1.5 flex-shrink-0 hover:bg-primary/20 active:scale-95
+                                        shadow-sm transition-all">
+                                <Share2 className="w-3.5 h-3.5" /> اشتراک‌گذاری
+                            </button>
+                        )}
                     </div>
                     {catalog.slug
                         ? <p className="text-[13px] text-on-surface-variant/60 mt-0.5 truncate" dir="ltr">
