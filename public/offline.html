@@ -67,14 +67,51 @@
     </div>
 
     <script>
-        // ─── پینگ سرور دیمت و بازگشت خودکار ───
-        // وقتی اینترنت برگشت و سرور+دیتابیس سالم بود → برگشت به صفحهٔ قبلی کاربر
-        // وقتی اینترنت هست ولی بک/دیتابیس مشکل دارد → صفحهٔ «سرور در دسترس نیست»
+        // ─── جریان درست: اول اینترنت، بعد سرور ───
+        // ۱) پروب فعال اینترنت (به مقصدهای بی‌طرف خارج از دیمت) —
+        //    چون navigator.onLine وقتی وای‌فای به مودم وصل است ولی اینترنت
+        //    واقعی قطع است، دروغ می‌گوید (true).
+        // ۲) اینترنت قطع → همین‌جا می‌مانیم و هر ۴ ثانیه دوباره چک می‌کنیم
+        // ۳) اینترنت وصل → پینگ health دیمت:
+        //      200 → برگشت خودکار به صفحهٔ قبلی کاربر
+        //      خطا/503 → اینترنت هست ولی سرور/دیتابیس مشکل دارد → صفحهٔ «سرور در دسترس نیست»
         (function () {
             var RETURN_URL_KEY = 'daymat:returnUrl';
             var API_BASE_KEY = 'daymat:apiBase';
             var statusEl = document.getElementById('status');
             var probing = false;
+
+            // مقصدهای بی‌طرف برای تشخیص واقعی اینترنت (CDN — خارج از سرور دیمت)
+            var PROBE_URLS = [
+                'https://www.arvancloud.ir/favicon.ico',     // CDN ایرانی
+                'https://www.cloudflare.com/cdn-cgi/trace',  // گلوبال
+                'https://www.gstatic.com/generate_204'       // گلوبال
+            ];
+
+            function probeInternet(timeout) {
+                return new Promise(function (resolve) {
+                    var pending = PROBE_URLS.length;
+                    var settled = false;
+                    var finish = function (online) {
+                        if (settled) return;
+                        settled = true;
+                        resolve(online);
+                    };
+                    // مهلت کل — هیچ‌کدام جواب نداد در این مدت = آفلاین
+                    setTimeout(function () { finish(false); }, timeout || 3500);
+                    PROBE_URLS.forEach(function (u) {
+                        fetch(u + (u.indexOf('?') > -1 ? '&' : '?') + 't=' + Date.now(), {
+                            mode: 'no-cors',
+                            cache: 'no-store'
+                        })
+                            .then(function () { finish(true); })   // هر پاسخی (حتی ۴۰۴) = اینترنت وصل
+                            .catch(function () {
+                                pending -= 1;
+                                if (pending === 0) finish(false);
+                            });
+                    });
+                });
+            }
 
             function getBases() {
                 var bases = [];
@@ -119,36 +156,49 @@
                 statusEl.className = 'status probing';
                 statusEl.textContent = 'در حال بررسی اتصال…';
 
-                var finish = function (outcome) {
+                if (!navigator.onLine) {
                     probing = false;
-                    if (outcome === 'ok') {
-                        statusEl.className = 'status';
-                        statusEl.textContent = 'اتصال برقرار شد — در حال بازگشت…';
-                        window.location.replace(getReturnUrl());
-                        return;
-                    }
-                    if (outcome === 'db' && navigator.onLine) {
-                        // اینترنت هست ولی دیتابیس/سرور مشکل دارد
-                        window.location.assign('/server-unavailable');
-                        return;
-                    }
                     statusEl.className = 'status';
-                    statusEl.textContent = 'هنوز قطع است — دوباره چک می‌کنیم…';
-                };
+                    statusEl.textContent = 'اینترنت هنوز قطع است — دوباره چک می‌کنیم…';
+                    return;
+                }
 
-                if (!navigator.onLine) { probing = false; statusEl.className = 'status'; statusEl.textContent = 'هنوز قطع است — دوباره چک می‌کنیم…'; return; }
+                // 🌐 اول اینترنت واقعی سنجیده می‌شود
+                probeInternet(3500).then(function (netOk) {
+                    if (!netOk) {
+                        // اینترنت واقعاً قطع است (وای‌فای وصل ولی اینترنت نه) → می‌مانیم
+                        probing = false;
+                        statusEl.className = 'status';
+                        statusEl.textContent = 'اینترنت هنوز قطع است — دوباره چک می‌کنیم…';
+                        return;
+                    }
+                    // اینترنت وصل است → حالا سرور دیمت را چک کن
+                    var bases = getBases();
+                    var i = 0;
+                    var next = function () {
+                        if (i >= bases.length) { finish('down'); return; }
+                        probe(bases[i++]).then(function (r) {
+                            if (r === 'ok') finish('ok');
+                            else if (r === 'db') finish('db');
+                            else next();
+                        });
+                    };
+                    next();
+                });
+            }
 
-                var bases = getBases();
-                var i = 0;
-                var next = function () {
-                    if (i >= bases.length) { finish('down'); return; }
-                    probe(bases[i++]).then(function (r) {
-                        if (r === 'ok') finish('ok');
-                        else if (r === 'db') finish('db');
-                        else next();
-                    });
-                };
-                next();
+            function finish(outcome) {
+                probing = false;
+                if (outcome === 'ok') {
+                    statusEl.className = 'status';
+                    statusEl.textContent = 'اتصال برقرار شد — در حال بازگشت…';
+                    window.location.replace(getReturnUrl());
+                    return;
+                }
+                // اینترنت وصل است ولی سرور/دیتابیس در دسترس نیست → صفحهٔ وضعیت سرور
+                statusEl.className = 'status';
+                statusEl.textContent = 'اینترنت وصل است اما سرور پاسخ نمی‌دهد…';
+                window.location.assign('/server-unavailable');
             }
 
             document.getElementById('retry').addEventListener('click', function () {

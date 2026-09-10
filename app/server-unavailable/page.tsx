@@ -3,15 +3,17 @@
 // app/server-unavailable/page.tsx
 // صفحهٔ «سرور در دسترس نیست» — وقتی اینترنت وصل است ولی بک‌اند یا دیتابیس پاسخ نمی‌دهد.
 // رفتار:
+//   • اول پروب فعال اینترنت (navigator.onLine قابل‌اعتماد نیست) —
+//     اگر اینترنت واقعاً قطع بود → صفحهٔ آفلاین (offline.html)
 //   • هر ۵ ثانیه GET /health را پینگ می‌کند (مهلت ۵ ثانیه)
 //   • 200 → هدایت خودکار به صفحهٔ مقصد (ذخیره‌شده در sessionStorage)
 //   • 503 → «پایگاه داده پاسخ نمی‌دهد» | خطای شبکه → «ارتباط با سرور برقرار نیست»
-//   • navigator.onLine = false → حالت «اینترنت قطع است» (همان پیام offline)
 //   • دکمهٔ «تلاش مجدد» → بررسی فوری
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { getApiUrl } from '@/lib/api/apiRequest';
-import { consumeReturnUrl } from '@/lib/api/networkGuard';
+import { peekReturnUrl } from '@/lib/api/networkGuard';
+import { checkInternet } from '@/lib/api/connectivity';
 
 type Status = 'checking' | 'offline' | 'backend' | 'db';
 
@@ -48,6 +50,16 @@ export default function ServerUnavailablePage() {
                 setStatus('offline');
                 return false;
             }
+
+            // 🌐 پروب فعال اینترنت — navigator.onLine وقتی وای‌فای به مودم وصل است
+            // ولی اینترنت قطع، دروغ می‌گوید؛ پس واقعاً می‌سنحیم.
+            const online = await checkInternet(3000);
+            if (!online) {
+                // اینترنت قطع است → صفحهٔ آفلاین (طبق قاعده: قطعی اینترنت = صفحهٔ آفلاین)
+                window.location.replace('/offline.html');
+                return false;
+            }
+
             const ctrl = new AbortController();
             const timer = setTimeout(() => ctrl.abort(), 5000);
             try {
@@ -71,7 +83,10 @@ export default function ServerUnavailablePage() {
     }, []);
 
     useEffect(() => {
-        returnUrlRef.current = consumeReturnUrl();
+        // peek (نه consume) تا returnUrl در sessionStorage بماند —
+        // اگر اینجا مشخص شد اینترنت قطع است و رفت به offline.html،
+        // آن صفحه هم همان آدرس را برای بازگشت درست می‌خواند
+        returnUrlRef.current = peekReturnUrl();
 
         let stopped = false;
         let timerId: ReturnType<typeof setTimeout> | null = null;
@@ -155,6 +170,23 @@ export default function ServerUnavailablePage() {
                 <p style={{ fontSize: 14, lineHeight: 2, color: 'rgba(255,255,255,.65)', marginBottom: 8 }}>
                     {text.sub}
                 </p>
+                {(status === 'backend' || status === 'db') && (
+                    <p
+                        style={{
+                            fontSize: 13,
+                            lineHeight: 2,
+                            color: 'rgba(255,255,255,.55)',
+                            marginBottom: 8,
+                            padding: '10px 16px',
+                            borderRadius: 12,
+                            background: 'rgba(249,115,22,.08)',
+                            border: '1px solid rgba(249,115,22,.18)',
+                        }}
+                    >
+                        ضمن عذرخواهی از مشکل پیش‌آمده، به اطلاع می‌رساند همکاران فنی ما در حال
+                        بررسی و رفع مشکل پیش‌آمده هستند.
+                    </p>
+                )}
                 <p style={{ fontSize: 12, color: 'rgba(255,255,255,.35)', marginBottom: 28 }}>
                     بررسی خودکار هر ۵ ثانیه انجام می‌شود
                 </p>

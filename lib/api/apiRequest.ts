@@ -5,6 +5,7 @@ import { clearUserSession } from '../store/slices/authSlice';
 import { ApiError } from './apiTypes';
 import { getFriendlyErrorMessage } from './errorHandler';
 import { handleNetworkFailure, rememberApiBase } from './networkGuard';
+import { ensureInternet, noteApiSuccess } from './connectivity';
 
 let _store: any = null;
 export const injectStore = (s: any) => {
@@ -104,20 +105,42 @@ api.interceptors.response.use(
     }
 );
 
+// ============================================================
+// 🌐 گارد اینترنت قبل از هر کال — جریان درست به روایت کاربر:
+//    اول اینترنت بررسی شود؛ اگر قطع بود سریع به صفحهٔ آفلاین برود و
+//    اصلاً سراغ کال اندپوینت‌ها نرود؛ اگر وصل بود آن‌وقت کال انجام شود.
+//    (وقتی اینترنت وصل است صفر تأخیر اضافه دارد — کش ۳۰ثانیه‌ای)
+// ============================================================
+const OFFLINE_MESSAGE = 'اتصال اینترنت قطع است. لطفاً اتصال شبکه خود را بررسی کنید.';
+
+const gateInternet = async (): Promise<boolean> => {
+    if (typeof window === 'undefined') return true; // سمت سرور گاردی نداریم
+    const online = await ensureInternet();
+    if (!online) {
+        // اینترنت قطع است → صفحهٔ آفلاین (بدون هدر رفتن وقت روی کال)
+        handleNetworkFailure();
+        throw new ApiError(0, OFFLINE_MESSAGE, { errorCode: 'NETWORK_OFFLINE' });
+    }
+    return true;
+};
+
 export const apiRequest = async <T = any>(
     url: string,
     options?: AxiosRequestConfig
 ): Promise<T> => {
+    // ۱) اول اینترنت چک می‌شود؛ قطع بود → همین‌جا تمام است (بدون کال)
+    await gateInternet();
     try {
         const fullUrl = getApiUrl(url);
         const response = await api({ url: fullUrl, ...options });
+        noteApiSuccess(); // پاسخ موفق = اینترنت و قطعیت سرور سالم → کش آنلاین نو شود
         return response.data;
     } catch (err: any) {
         // ⏱ خطای سطح شبکه (بدون پاسخ HTTP): قطع اینترنت، تایم‌اوت، اتصال ردشده
         // به‌جای متن خام axios («Network Error» / «timeout of 15000ms exceeded»)
         // پیام فارسی واضح برمی‌گردد و کاربر به صفحهٔ وضعیت هدایت می‌شود
         if (!err.response) {
-            handleNetworkFailure(); // آفلاین → offline.html | بک/دی‌بی قطع → server-unavailable
+            handleNetworkFailure(); // پروب فعال: قطع اینترنت → offline.html | بک/دی‌بی قطع → server-unavailable
             throw new ApiError(0, getFriendlyErrorMessage(err), {
                 errorCode: err.code === 'ECONNABORTED' ? 'REQUEST_TIMEOUT' : 'NETWORK_ERROR',
             });
@@ -144,6 +167,9 @@ export const apiFileRequest = async <T = any>(
 
     const fullUrl = getApiUrl(url);
 
+    // ۱) اول اینترنت چک می‌شود (همان گارد apiRequest)
+    await gateInternet();
+
     try {
         const response = await axios.post(fullUrl, formData, {
             headers: {
@@ -153,6 +179,7 @@ export const apiFileRequest = async <T = any>(
             timeout: 120000, // آپلود فایل ممکن است سنگین باشد
             ...config,
         });
+        noteApiSuccess();
         return response.data;
     } catch (err: any) {
         // خطای سطح شبکه (بدون پاسخ HTTP) → پیام فارسی یکدست + هدایت به صفحهٔ وضعیت
