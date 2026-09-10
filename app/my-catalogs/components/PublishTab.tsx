@@ -38,7 +38,7 @@ export default function PublishTab({ currentCatalog, memberships, onShare, onVer
         <div className="space-y-3">
             {/* کیت اشتراک‌گذاری */}
             <button onClick={onShare}
-                    className="w-full bg-gradient-to-l from-primary/10 to-primary/5 border border-primary/25 rounded-2xl p-4
+                    className="w-full bg-gradient-to-l from-primary/10 to-primary/5 border border-primary/25 rounded-lg p-4
                         flex items-center gap-3.5 text-right hover:border-primary/50 transition-colors">
                 <span className="w-11 h-11 rounded-xl bg-primary/15 flex items-center justify-center flex-shrink-0">
                     <Share2 className="w-5 h-5 text-primary" />
@@ -78,9 +78,9 @@ export default function PublishTab({ currentCatalog, memberships, onShare, onVer
                                         {m.armName || m.arm?.name || m.slug}
                                     </span>
                                     {m.status === 'pending' ? (
-                                        <span className="text-[10px] text-amber-600 font-bold flex-shrink-0">⏳ تایید مدیر</span>
+                                        <span className="text-[10px] text-amber-600 dark:text-amber-400 font-bold flex-shrink-0">⏳ تایید مدیر</span>
                                     ) : m.status === 'paused' && m.publishState !== 'published' ? (
-                                        <span className="text-[10px] font-bold text-amber-600 flex-shrink-0">عضویت متوقف شده</span>
+                                        <span className="text-[10px] font-bold text-amber-600 dark:text-amber-400 flex-shrink-0">عضویت متوقف شده</span>
                                     ) : (
                                         <button onClick={() => togglePublish(m, isOn)}
                                                 className={cn('relative w-11 h-6 rounded-full transition-colors flex-shrink-0',

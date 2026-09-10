@@ -281,7 +281,7 @@ export default function CatalogEditModal({ isOpen, onClose, catalog, salesTypeLo
                         </div>
 
                         <div className="flex items-center gap-2 rounded bg-surface-container-high/50 px-3 py-2">
-                            <SalesIcon className="w-3.5 h-3.5 text-amber-600 flex-shrink-0" />
+                            <SalesIcon className="w-3.5 h-3.5 text-amber-600 dark:text-amber-400 flex-shrink-0" />
                             <span className="text-[11px] font-bold text-on-surface flex-1">{typeLabel}</span>
                             {salesTypeLocked && <span className="text-[9px] text-on-surface-variant/60">قابل تغییر نیست</span>}
                         </div>
@@ -377,11 +377,11 @@ export default function CatalogEditModal({ isOpen, onClose, catalog, salesTypeLo
                                         daymat.ir/<span className="text-primary">{catalog.slug}</span>
                                     </span>
                                 ) : (
-                                    <span className="text-[11px] text-amber-600">لینک تنظیم نشده</span>
+                                    <span className="text-[11px] text-amber-600 dark:text-amber-400">لینک تنظیم نشده</span>
                                 )}
                                 <button type="button" onClick={() => setSlugEditing(true)} aria-label="ویرایش لینک کاتالوگ"
                                         className="w-8 h-8 rounded-full bg-surface-container-high/50 grid place-items-center
-                                            text-on-surface-variant hover:text-amber-600 hover:bg-amber-500/10 transition-colors flex-shrink-0">
+                                            text-on-surface-variant hover:text-amber-600 dark:hover:text-amber-400 hover:bg-amber-500/10 transition-colors flex-shrink-0">
                                     <Pencil className="w-3.5 h-3.5" />
                                 </button>
                             </div>

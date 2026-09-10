@@ -48,6 +48,14 @@ export default function RootLayout({
     return (
         <html lang="fa" dir="rtl" suppressHydrationWarning>
         <body className={`${vazirmatn.variable} antialiased min-h-screen flex flex-col bg-background text-foreground`}>
+        {/* ⚠️ init تم قبل از اولین paint — فلش light در تم تاریک حذف می‌شود؛ هم‌ارز منطق ThemeProvider */}
+        <Script id="dm-theme-init" strategy="beforeInteractive">
+            {`try{
+                var t = localStorage.getItem('theme');
+                var d = t === 'dark' || ((!t || t === 'system') && window.matchMedia('(prefers-color-scheme: dark)').matches);
+                if (d) document.documentElement.classList.add('dark');
+            }catch(e){}`}
+        </Script>
         {/* ضبط زودهنگام beforeinstallprompt — قبل از هیدریشن تا رخداد از دست نرود */}
         <Script id="dm-pwa-capture" strategy="beforeInteractive">
             {`window.__dmInstallEvt = null;

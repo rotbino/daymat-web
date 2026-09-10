@@ -22,9 +22,9 @@ interface VerificationModalProps {
 }
 
 const LEVEL_DEFS = [
-    { value: 'blue', label: 'آبی', icon: <BadgeCheck className="w-5 h-5" />, color: 'text-blue-500', bg: 'bg-blue-50' },
-    { value: 'silver', label: 'نقره‌ای', icon: <BadgeCheck className="w-5 h-5" />, color: 'text-gray-400', bg: 'bg-gray-50' },
-    { value: 'gold', label: 'طلایی', icon: <BadgeCheck className="w-5 h-5" />, color: 'text-green-500', bg: 'bg-green-50' },
+    { value: 'blue', label: 'آبی', icon: <BadgeCheck className="w-5 h-5" />, color: 'text-blue-500', bg: 'bg-blue-50 dark:bg-blue-500/10' },
+    { value: 'silver', label: 'نقره‌ای', icon: <BadgeCheck className="w-5 h-5" />, color: 'text-gray-400', bg: 'bg-gray-50 dark:bg-gray-500/10' },
+    { value: 'gold', label: 'طلایی', icon: <BadgeCheck className="w-5 h-5" />, color: 'text-green-500', bg: 'bg-green-50 dark:bg-green-500/10' },
 ] as const;
 
 export function VerificationModal({
@@ -234,7 +234,7 @@ export function VerificationModal({
                                             : 'border-outline-variant hover:bg-surface-container-low'
                                     )}
                                 >
-                                    <div className={cn('w-8 h-8 flex items-center justify-center rounded-full', activeLevel === value ? 'bg-white shadow' : '')}>
+                                    <div className={cn('w-8 h-8 flex items-center justify-center rounded-full', activeLevel === value ? 'bg-white dark:bg-gray-800 shadow' : '')}>
                                         {icon}
                                     </div>
                                     <span className={cn("text-[11px] font-medium", activeLevel === value ? color : 'text-on-surface-variant')}>
@@ -391,7 +391,7 @@ export function VerificationModal({
 
                     {/* هشدار پروفایل ناقص */}
                     {!isProfileComplete && (
-                        <div className="bg-yellow-50 border border-yellow-200 text-yellow-700 p-3 rounded-xl text-sm">
+                        <div className="bg-yellow-50 dark:bg-yellow-900/20 border border-yellow-200 dark:border-yellow-800/50 text-yellow-700 dark:text-yellow-300 p-3 rounded-xl text-sm">
                             برای دریافت تیک اعتماد، ابتدا باید پروفایل کسب‌وکار خود را تکمیل کنید.
                         </div>
                     )}
@@ -401,7 +401,7 @@ export function VerificationModal({
                         <button
                             type="submit"
                             disabled={isSubmitting || !isProfileComplete}
-                            className="flex-1 h-11 bg-primary text-white rounded-xl text-sm font-medium hover:bg-primary/90 transition-colors disabled:opacity-50 flex items-center justify-center gap-2"
+                            className="flex-1 h-11 bg-primary text-on-primary rounded-xl text-sm font-medium hover:bg-primary/90 transition-colors disabled:opacity-50 flex items-center justify-center gap-2"
                         >
                             {isSubmitting && <Loader2 className="w-4 h-4 animate-spin" />}
                             {isSubmitting ? 'در حال ارسال...' : 'ارسال مدارک'}

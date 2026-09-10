@@ -74,9 +74,9 @@ export default function ProductsTab({
                 {/* افزودن سریع — همیشه در دسترس */}
                 <button onClick={() => router.push(`/ad/create?catalog=${currentCatalog.id}`)}
                         title={isService ? 'افزودن خدمت جدید' : 'افزودن محصول جدید'}
-                        className="h-8 px-3 rounded-full bg-secondary text-on-secondary text-[10px] font-extrabold
+                        className="h-8 px-3 rounded-full bg-amber-500 text-white text-[10px] font-extrabold
                             flex items-center gap-1 flex-shrink-0
-                            hover:bg-secondary/90 active:scale-95 transition-all">
+                            hover:bg-amber-600 active:scale-95 transition-all">
                     <Plus className="w-3.5 h-3.5" /> {isService ? 'خدمت' : 'محصول'}
                 </button>
                 {!isService && (
@@ -102,7 +102,7 @@ export default function ProductsTab({
                     <Package className="w-10 h-10 text-on-surface-variant/20 mx-auto mb-2.5" />
                     <p className="text-sm text-on-surface-variant">{isService ? ' خدمتی نیست' : ' محصولی نیست '}</p>
                     <button onClick={() => router.push(`/ad/create?catalog=${currentCatalog.id}`)}
-                            className="mt-3 h-9 px-4 rounded-lg bg-secondary text-on-secondary text-xs font-extrabold hover:bg-secondary/90 transition-colors">
+                            className="mt-3 h-9 px-4 rounded-lg bg-amber-500 text-white text-xs font-extrabold hover:bg-amber-600 transition-colors">
                         {isService ? 'افزودن اولین خدمت' : 'افزودن اولین محصول'}
                     </button>
                 </div>

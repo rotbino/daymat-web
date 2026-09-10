@@ -34,14 +34,14 @@ export default function TopBar({ onChangePassword, onNewCatalog }: {
                     {menuOpen && (
                         <>
                             <div className="fixed inset-0 z-40" onClick={() => setMenuOpen(false)} />
-                            <div className="absolute top-full end-0 mt-1 z-50 w-52 p-1.5 rounded-2xl bg-white dark:bg-gray-900
+                            <div className="absolute top-full end-0 mt-1 z-50 w-52 p-1.5 rounded-lg bg-white dark:bg-gray-900
                                 border border-outline-variant/30 dark:border-gray-700 shadow-xl animate-in fade-in zoom-in-95 duration-150">
                                 <button type="button" onClick={() => { setMenuOpen(false); onNewCatalog(); }}
-                                        className="w-full flex items-center gap-2.5 h-10 px-3 rounded-xl text-[13px] text-on-surface hover:bg-surface-container-high dark:hover:bg-gray-800 transition-colors">
-                                    <Plus className="w-4 h-4 text-secondary dark:text-[#9db9e3]" /> کاتالوگ جدید
+                                        className="w-full flex items-center gap-2.5 h-10 px-3 rounded-md text-[13px] text-on-surface hover:bg-surface-container-high dark:hover:bg-gray-800 transition-colors">
+                                    <Plus className="w-4 h-4 text-amber-600 dark:text-amber-400" /> کاتالوگ جدید
                                 </button>
                                 <button type="button" onClick={() => { setMenuOpen(false); onChangePassword(); }}
-                                        className="w-full flex items-center gap-2.5 h-10 px-3 rounded-xl text-[13px] text-on-surface hover:bg-surface-container-high transition-colors">
+                                        className="w-full flex items-center gap-2.5 h-10 px-3 rounded-md text-[13px] text-on-surface hover:bg-surface-container-high dark:hover:bg-gray-800 transition-colors">
                                     <Key className="w-4 h-4 text-on-surface-variant" /> تغییر رمز عبور
                                 </button>
                             </div>

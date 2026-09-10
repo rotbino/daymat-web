@@ -20,10 +20,10 @@ export const fmt = (n: number | undefined) => n?.toLocaleString('fa-IR') ?? '۰'
 
 // ─── چیپ وضعیت انتشار در بازار ───
 export const PUB_CHIP: Record<string, { label: string; cls: string; icon: any }> = {
-    active: { label: 'منتشر شده', cls: 'text-emerald-600 bg-emerald-50 dark:bg-emerald-900/25', icon: BadgeCheck },
-    pending: { label: 'در انتظار تایید مدیر', cls: 'text-amber-600 bg-amber-50 dark:bg-amber-900/25', icon: Hourglass },
-    paused: { label: 'خاموش', cls: 'text-gray-500 bg-gray-100 dark:bg-gray-800', icon: PauseCircle },
-    rejected: { label: 'رد شده', cls: 'text-red-600 bg-red-50 dark:bg-red-900/25', icon: XCircle },
+    active: { label: 'منتشر شده', cls: 'text-emerald-700 dark:text-emerald-300 bg-emerald-50 dark:bg-emerald-900/25', icon: BadgeCheck },
+    pending: { label: 'در انتظار تایید مدیر', cls: 'text-amber-700 dark:text-amber-300 bg-amber-50 dark:bg-amber-900/25', icon: Hourglass },
+    paused: { label: 'خاموش', cls: 'text-gray-600 dark:text-gray-400 bg-gray-100 dark:bg-gray-800', icon: PauseCircle },
+    rejected: { label: 'رد شده', cls: 'text-red-700 dark:text-red-300 bg-red-50 dark:bg-red-900/25', icon: XCircle },
 };
 
 // ─── نوع فروش کاتالوگ ───

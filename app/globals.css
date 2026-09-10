@@ -14,11 +14,10 @@
   --primary-fixed-dim: #ffb4a8;
   --on-primary: #ffffff;
   --on-primary-container: #ff907f;
-  /* رنگ مکمل برند: سرمه‌ای (به‌جای نارنجی قبلی) — مکمل قرمز تیرهٔ برند */
-  --secondary: #1e3a66;
-  --secondary-container: #e3ebf7;
+  --secondary: #904d00;
+  --secondary-container: #fd8b00;
   --on-secondary: #ffffff;
-  --on-secondary-container: #1e3a66;
+  --on-secondary-container: #603100;
   --surface: #f9f9fc;
   --surface-bright: #f9f9fc;
   --surface-dim: #dadadc;
@@ -81,11 +80,39 @@
 }
 
 .dark {
-  /* سرمه‌ایِ خوانا روی پس‌زمینهٔ تاریک */
-  --secondary: #4a6da8;
-  --secondary-container: #1c2e4d;
-  --on-secondary: #ffffff;
-  --on-secondary-container: #c3d5f2;
+  /* ⚠️ توکن‌های M3 تم تاریک — هم‌ارز ThemeProvider (DARK_COLORS) تا اولین رندر/SSR هم خوانا باشد */
+  --primary: #ffb4a8;
+  --primary-container: #8b0000;
+  --primary-fixed: #ffdad4;
+  --primary-fixed-dim: #ffb4a8;
+  --on-primary: #550000;
+  --on-primary-container: #ffdad4;
+  --secondary: #ffb870;
+  --secondary-container: #6d3700;
+  --on-secondary: #482200;
+  --on-secondary-container: #ffddba;
+  --surface: #131316;
+  --surface-bright: #39393b;
+  --surface-dim: #131316;
+  --surface-container: #1f1f22;
+  --surface-container-low: #1b1b1e;
+  --surface-container-lowest: #0e0e11;
+  --surface-container-high: #29292c;
+  --surface-container-highest: #343437;
+  --outline: #9f8c88;
+  --outline-variant: #53433f;
+  --background: #131316;
+  --on-background: #e3e2e6;
+  --on-surface: #e3e2e6;
+  --on-surface-variant: #d8c2bd;
+  --error: #ffb4ab;
+  --error-container: #93000a;
+  --on-error: #690005;
+  --on-error-container: #ffdad6;
+  --tertiary: #6cdba6;
+  --tertiary-container: #005235;
+  --on-tertiary: #003821;
+  --on-tertiary-container: #89f7be;
   --background-hsl: 222.2 84% 4.9%;
   --foreground: 210 40% 98%;
   --card: 222.2 84% 4.9%;

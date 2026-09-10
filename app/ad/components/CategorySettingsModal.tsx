@@ -179,18 +179,18 @@ export default function CategorySettingsModal({ isOpen, onClose, catalogId, init
                     <div className="flex items-center gap-0.5 flex-shrink-0">
                         {editingId === node.id ? (
                             <button type="button" onClick={() => commitRename(node.id)}
-                                    className="p-1.5 rounded-lg text-emerald-600 hover:bg-emerald-500/10">
+                                    className="p-1.5 rounded-lg text-emerald-600 dark:text-emerald-400 hover:bg-emerald-500/10">
                                 <Check className="w-3.5 h-3.5" />
                             </button>
                         ) : (
                             <button type="button" onClick={() => { setEditingId(node.id); setEditTitle(node.title); }}
-                                    className="p-1.5 rounded-lg text-on-surface-variant hover:text-amber-600 hover:bg-amber-500/10">
+                                    className="p-1.5 rounded-lg text-on-surface-variant hover:text-amber-600 dark:hover:text-amber-400 hover:bg-amber-500/10">
                                 <Pencil className="w-3.5 h-3.5" />
                             </button>
                         )}
                         {depth === 0 && (
                             <button type="button" onClick={() => startAdd(node.id)} title="افزودن زیرشاخه"
-                                    className="p-1.5 rounded-lg text-on-surface-variant hover:text-amber-600 hover:bg-amber-500/10">
+                                    className="p-1.5 rounded-lg text-on-surface-variant hover:text-amber-600 dark:hover:text-amber-400 hover:bg-amber-500/10">
                                 <FolderPlus className="w-3.5 h-3.5" />
                             </button>
                         )}
@@ -263,7 +263,7 @@ export default function CategorySettingsModal({ isOpen, onClose, catalogId, init
                                     'w-9 h-9 rounded-full grid place-items-center transition-colors',
                                     addingUnder === 'root'
                                         ? 'bg-amber-500 text-white'
-                                        : 'text-amber-600 hover:bg-amber-500/10',
+                                        : 'text-amber-600 dark:text-amber-400 hover:bg-amber-500/10',
                                 )}>
                             {addingUnder === 'root' ? <X className="w-4.5 h-4.5" /> : <Plus className="w-5 h-5" />}
                         </button>

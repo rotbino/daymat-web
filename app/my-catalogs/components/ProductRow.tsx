@@ -35,7 +35,7 @@ function ProductRowBase({ ad, onEdit, onCategory, onRefresh, onPublish }: {
                     ? 'bg-white dark:bg-gray-900 border-outline-variant/40'
                     : expired
                         ? 'bg-amber-50/60 dark:bg-amber-900/10 border-amber-200/50 dark:border-amber-800/40'
-                        : 'bg-surface-container-low/60 border-outline-variant/30 opacity-80')}>
+                        : 'bg-surface-container-low/60 dark:bg-gray-800/60 border-outline-variant/30 dark:border-gray-700/60 opacity-80')}>
 
             {/* بخش اصلی */}
             <div className="flex items-center gap-3">
@@ -86,11 +86,11 @@ function ProductRowBase({ ad, onEdit, onCategory, onRefresh, onPublish }: {
             </div>
 
             {/* اکشن‌ها — ردیف افقی پایین */}
-            <div className="flex items-center gap-1.5 mt-2.5 pt-2.5 border-t border-outline-variant/15 flex-wrap">
+            <div className="flex items-center gap-1.5 mt-2.5 pt-2.5 border-t border-outline-variant/15 dark:border-gray-700/40 flex-wrap">
                 {uncat && (
                     <button onClick={() => onCategory(ad)}
-                            className="h-8 px-3 rounded-md bg-secondary text-on-secondary text-[10px] font-bold flex items-center gap-1
-                                active:scale-95 transition-transform">
+                            className="h-8 px-3 rounded-md bg-amber-500 text-white text-[10px] font-bold flex items-center gap-1
+                                hover:bg-amber-600 active:scale-95 transition-transform">
                         <Layers className="w-3 h-3" /> دسته بازار
                     </button>
                 )}

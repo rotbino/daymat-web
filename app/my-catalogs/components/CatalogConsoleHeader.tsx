@@ -58,7 +58,7 @@ export default function CatalogConsoleHeader({ catalog, stats, productsCount, co
         )
         : (
             <button type="button" onClick={onEdit} aria-label="تنظیم آدرس کاتالوگ"
-                    className={cn(shareBtnCls, 'border border-secondary/50 text-secondary dark:text-[#9db9e3] hover:bg-secondary/5')}>
+                    className={cn(shareBtnCls, 'border border-amber-500/60 text-amber-600 dark:text-amber-400 hover:bg-amber-50 dark:hover:bg-amber-900/10')}>
                 <Link2 className="w-4 h-4" /> تنظیم آدرس
             </button>
         );
@@ -67,7 +67,7 @@ export default function CatalogConsoleHeader({ catalog, stats, productsCount, co
         { icon: Eye, value: stats?.views, label: 'بازدید', cls: 'text-blue-500/90 dark:text-blue-400/90' },
         { icon: Bookmark, value: stats?.saves, label: 'ذخیره', cls: 'text-amber-500/90 dark:text-amber-400/90' },
         { icon: Share2, value: stats?.shares, label: 'اشتراک', cls: 'text-emerald-500/90 dark:text-emerald-400/90' },
-        { icon: Package, value: productsCount, label: 'محصول', cls: 'text-secondary dark:text-[#9db9e3]' },
+        { icon: Package, value: productsCount, label: 'محصول', cls: 'text-purple-500/90 dark:text-purple-400/90' },
     ];
 
     return (
@@ -77,14 +77,14 @@ export default function CatalogConsoleHeader({ catalog, stats, productsCount, co
                 <div className="flex items-start gap-3.5">
                     <button type="button" onClick={onEdit} aria-label="ویرایش لوگو و اطلاعات کاتالوگ"
                             className="relative w-14 h-14 lg:w-16 lg:h-16 rounded-lg overflow-hidden flex-shrink-0
-                                ring-1 ring-outline-variant/60 dark:ring-gray-700 hover:ring-secondary/60
+                                ring-1 ring-outline-variant/60 dark:ring-gray-700 hover:ring-amber-500/40
                                 transition-all bg-surface-container-high dark:bg-gray-800 grid place-items-center group">
                         {logoSrc
                             ? <Image src={logoSrc} alt={catalog.name} width={64} height={64} className="w-full h-full object-cover" unoptimized />
                             : (
                                 <span className="flex flex-col items-center gap-0.5">
-                                    <Camera className="w-5 h-5 text-on-surface-variant/50 group-hover:text-secondary transition-colors" />
-                                    <span className="text-[8px] text-on-surface-variant/50 group-hover:text-secondary">لوگو</span>
+                                    <Camera className="w-5 h-5 text-on-surface-variant/50 group-hover:text-amber-600 dark:group-hover:text-amber-400 transition-colors" />
+                                    <span className="text-[8px] text-on-surface-variant/50 group-hover:text-amber-600 dark:group-hover:text-amber-400">لوگو</span>
                                 </span>
                             )}
                         <span className="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 transition-opacity grid place-items-center">
@@ -109,21 +109,21 @@ export default function CatalogConsoleHeader({ catalog, stats, productsCount, co
                         {catalog.slug ? (
                             <div className="flex items-center gap-1 mt-1.5">
                                 <Link href={`/${catalog.slug}`} target="_blank" title="مشاهده کاتالوگ"
-                                      className="inline-flex items-center gap-1 h-6 px-2 rounded border border-secondary/20 bg-secondary/5 dark:border-[#9db9e3]/25 dark:bg-secondary/15
-                                          text-[10px] font-bold text-secondary dark:text-[#9db9e3] hover:border-secondary/50
+                                      className="inline-flex items-center gap-1 h-6 px-2 rounded border border-amber-500/25 bg-amber-500/5 dark:border-amber-500/25 dark:bg-amber-500/10
+                                          text-[10px] font-bold text-amber-600 dark:text-amber-400 hover:border-amber-500/50
                                           transition-colors max-w-[240px]" dir="ltr">
                                     <span className="truncate">{host}/{catalog.slug}</span>
                                     <ExternalLink className="w-2.5 h-2.5 flex-shrink-0" />
                                 </Link>
                                 <button type="button" onClick={copyLink} aria-label="کپی لینک کاتالوگ" title="کپی لینک"
                                         className="w-6 h-6 rounded grid place-items-center text-on-surface-variant/50
-                                            hover:text-secondary hover:bg-secondary/5 transition-colors flex-shrink-0">
+                                            hover:text-amber-600 dark:hover:text-amber-400 hover:bg-amber-500/5 transition-colors flex-shrink-0">
                                     {copied ? <Check className="w-3.5 h-3.5 text-emerald-500" /> : <Copy className="w-3.5 h-3.5" />}
                                 </button>
                             </div>
                         ) : (
                             <button type="button" onClick={onEdit}
-                                    className="mt-1.5 inline-flex items-center gap-1 text-[10px] font-bold text-secondary dark:text-[#9db9e3] hover:underline">
+                                    className="mt-1.5 inline-flex items-center gap-1 text-[10px] font-bold text-amber-600 dark:text-amber-400 hover:underline">
                                 <Link2 className="w-3 h-3" /> آدرس کاتالوگ تنظیم نشده — همین حالا تنظیم کن
                             </button>
                         )}
@@ -132,22 +132,22 @@ export default function CatalogConsoleHeader({ catalog, stats, productsCount, co
                     {/* اکشن‌های دسکتاپ */}
                     <div className="hidden lg:flex items-center gap-2 flex-shrink-0">
                         <button type="button" onClick={() => window.open(`/ad/create?catalog=${catalog.id}`, '_self')}
-                                className="h-10 px-4 rounded-lg bg-secondary text-on-secondary text-xs font-extrabold
-                                    flex items-center gap-1.5 hover:bg-secondary/90 active:scale-[0.97] transition-all">
+                                className="h-10 px-4 rounded-lg bg-amber-500 text-white text-xs font-extrabold
+                                    flex items-center gap-1.5 hover:bg-amber-600 active:scale-[0.97] transition-all">
                             <Plus className="w-4 h-4" /> افزودن محصول
                         </button>
                         {shareBtn}
                         {catalog.slug && (
                             <Link href={`/${catalog.slug}`} target="_blank" title="مشاهده کاتالوگ"
                                   className="w-10 h-10 rounded-lg border border-outline-variant/50 dark:border-gray-700 grid place-items-center
-                                      text-on-surface-variant hover:text-secondary hover:border-secondary/40 transition-colors">
+                                      text-on-surface-variant hover:text-amber-600 dark:hover:text-amber-400 hover:border-amber-500/40 transition-colors">
                                 <ExternalLink className="w-4 h-4" />
                             </Link>
                         )}
                         {/* ✏️ ویرایش کاتالوگ — آیکون مداد */}
                         <button type="button" onClick={onEdit} title="ویرایش اطلاعات کاتالوگ"
                                 className="w-10 h-10 rounded-lg border border-outline-variant/50 dark:border-gray-700 grid place-items-center
-                                    text-on-surface-variant hover:text-secondary hover:border-secondary/40 transition-colors">
+                                    text-on-surface-variant hover:text-amber-600 dark:hover:text-amber-400 hover:border-amber-500/40 transition-colors">
                             <Pencil className="w-4 h-4" />
                         </button>
                     </div>
@@ -156,15 +156,15 @@ export default function CatalogConsoleHeader({ catalog, stats, productsCount, co
                 {/* اکشن‌های موبایل */}
                 <div className="flex lg:hidden items-center gap-2">
                     <button type="button" onClick={() => window.open(`/ad/create?catalog=${catalog.id}`, '_self')}
-                            className="flex-1 h-10 px-3 rounded-lg bg-secondary text-on-secondary text-[11px] font-extrabold
-                                flex items-center justify-center gap-1.5 active:scale-[0.97] transition-all">
+                            className="flex-1 h-10 px-3 rounded-lg bg-amber-500 text-white text-[11px] font-extrabold
+                                flex items-center justify-center gap-1.5 hover:bg-amber-600 active:scale-[0.97] transition-all">
                         <Plus className="w-4 h-4" /> افزودن محصول
                     </button>
                     {shareBtn}
                     {catalog.slug && (
                         <Link href={`/${catalog.slug}`} target="_blank" aria-label="مشاهده کاتالوگ"
                               className="w-10 h-10 rounded-lg border border-outline-variant/50 dark:border-gray-700 grid place-items-center
-                                  text-on-surface-variant hover:text-secondary transition-colors flex-shrink-0">
+                                  text-on-surface-variant hover:text-amber-600 dark:hover:text-amber-400 transition-colors flex-shrink-0">
                             <ExternalLink className="w-4 h-4" />
                         </Link>
                     )}
@@ -230,7 +230,7 @@ export default function CatalogConsoleHeader({ catalog, stats, productsCount, co
                                             {item.label}
                                         </span>
                                         {!item.ok && (
-                                            <span className="text-[10px] font-bold text-secondary dark:text-[#9db9e3] flex items-center flex-shrink-0">
+                                            <span className="text-[10px] font-bold text-amber-600 dark:text-amber-400 flex items-center flex-shrink-0">
                                                 تکمیل ←
                                             </span>
                                         )}

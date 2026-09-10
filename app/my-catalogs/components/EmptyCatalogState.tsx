@@ -33,8 +33,8 @@ export default function EmptyCatalogState({ hasTemporaryPassword, user }: {
                 </button>
             )}
 
-            <div className="rounded-2xl border-2 border-primary/25 bg-gradient-to-br from-primary/8 via-primary/5 to-transparent p-6 text-center">
-                <div className="w-14 h-14 rounded-2xl bg-primary/10 flex items-center justify-center mx-auto mb-3">
+            <div className="rounded-lg border-2 border-primary/25 bg-gradient-to-br from-primary/8 via-primary/5 to-transparent p-6 text-center">
+                <div className="w-14 h-14 rounded-lg bg-primary/10 flex items-center justify-center mx-auto mb-3">
                     <BookOpen className="w-7 h-7 text-primary" />
                 </div>
                 <h3 className="text-base font-extrabold text-on-surface mb-1.5">کاتالوگ محصولاتت را بساز</h3>
@@ -42,8 +42,8 @@ export default function EmptyCatalogState({ hasTemporaryPassword, user }: {
                     با عکس و قیمت، با لینک اختصاصی — چند دقیقه بیشتر وقت نمی‌گیرد.
                 </p>
                 <button onClick={() => router.push('/business/register')}
-                        className="mt-4 h-11 px-7 rounded-xl bg-primary text-on-primary text-sm font-extrabold
-                        hover:bg-primary/90 shadow-lg shadow-primary/25 active:scale-[0.98] transition-all">
+                        className="mt-4 h-11 px-7 rounded-lg bg-primary text-on-primary text-sm font-extrabold
+                        hover:bg-primary/90 active:scale-[0.98] transition-all">
                     شروع کن — رایگان
                 </button>
             </div>

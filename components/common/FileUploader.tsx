@@ -120,10 +120,10 @@ export function FileUploader({
                 className={cn(
                     "relative overflow-hidden border-2 border-dashed transition-all",
                     rounded ? 'rounded-full' : 'rounded-lg',
-                    disabled ? 'cursor-not-allowed opacity-60' : 'cursor-pointer hover:border-gray-400',
-                    isError ? 'border-red-500 bg-red-50' : 'border-gray-300',
+                    disabled ? 'cursor-not-allowed opacity-60' : 'cursor-pointer hover:border-gray-400 dark:hover:border-gray-500',
+                    isError ? 'border-red-500 bg-red-50 dark:bg-red-900/20' : 'border-gray-300 dark:border-gray-700',
                     hasFile ? 'border-green-500' : '',
-                    isDeleting ? 'border-yellow-400 bg-yellow-50' : ''
+                    isDeleting ? 'border-yellow-400 bg-yellow-50 dark:bg-yellow-900/20' : ''
                 )}
                 style={{ width, height }}
                 onClick={triggerFileSelect}
@@ -138,7 +138,7 @@ export function FileUploader({
                 />
 
                 {isDeleting ? (
-                    <div className="w-full h-full flex items-center justify-center bg-yellow-50">
+                    <div className="w-full h-full flex items-center justify-center bg-yellow-50 dark:bg-yellow-900/20">
                         <Loader2 className="w-8 h-8 text-yellow-500 animate-spin" />
                     </div>
                 ) : displayPreview ? (
@@ -154,7 +154,7 @@ export function FileUploader({
                         {!disabled && !isDeleting && showDeleteBtn && (
                             <button
                                 type="button"
-                                className="absolute top-2 left-2 bg-white rounded-full p-1 shadow-md hover:bg-red-100 transition-colors"
+                                className="absolute top-2 left-2 bg-white dark:bg-gray-800 rounded-full p-1 shadow-md hover:bg-red-100 dark:hover:bg-red-900/40 transition-colors"
                                 onClick={handleClear}
                                 disabled={isDeleting}
                             >

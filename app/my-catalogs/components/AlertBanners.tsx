@@ -13,7 +13,7 @@ import { fmt } from '../constants';
 /** هشدار بحرانی رمز موقت */
 export function TemporaryPasswordBanner({ phone, onClick }: { phone?: string; onClick: () => void }) {
     return (
-        <div className="rounded-2xl border border-error/40 bg-error/5 overflow-hidden animate-pulse">
+        <div className="rounded-lg border border-error/40 bg-error/5 overflow-hidden animate-pulse">
             <button onClick={onClick}
                     className="w-full p-3 flex items-center gap-3 text-right hover:bg-error/10 transition-colors">
                 <Key className="w-4.5 h-4.5 text-error flex-shrink-0" />
@@ -38,7 +38,7 @@ export function ProfileBanner({ avatarUrl, hasName, onClick }: {
 }) {
     return (
         <button onClick={onClick}
-                className="w-full bg-white dark:bg-gray-900 rounded-2xl border border-outline-variant/50 dark:border-gray-700
+                className="w-full bg-white dark:bg-gray-900 rounded-lg border border-outline-variant/50 dark:border-gray-700
                 p-3.5 flex items-center gap-3 text-right hover:border-primary/40 transition-colors">
             <span className="w-10 h-10 rounded-full bg-primary/10 flex items-center justify-center overflow-hidden flex-shrink-0">
                 {avatarUrl
@@ -68,7 +68,7 @@ export function CelebrationBanner({ membership, uncatCount, onDismiss, onSetCate
     const router = useRouter();
     const armName = membership.armName || membership.arm?.name || 'بازار';
     return (
-        <div className="rounded-2xl overflow-hidden border border-primary/30 bg-gradient-to-l
+        <div className="rounded-lg overflow-hidden border border-primary/30 bg-gradient-to-l
             from-primary/15 via-primary/8 to-transparent relative">
             <button onClick={onDismiss} aria-label="بستن"
                     className="absolute top-2 left-2 w-6 h-6 rounded-full grid place-items-center
@@ -93,13 +93,13 @@ export function CelebrationBanner({ membership, uncatCount, onDismiss, onSetCate
                 <div className="flex items-center gap-2 mt-3.5">
                     {uncatCount > 0 && (
                         <button onClick={onSetCategories}
-                                className="h-10 px-5 rounded-xl bg-secondary text-on-secondary text-xs font-extrabold
-                                    inline-flex items-center gap-1.5 hover:bg-secondary/90 active:scale-95 transition-all">
+                                className="h-10 px-5 rounded-lg bg-amber-500 text-white text-xs font-extrabold
+                                    inline-flex items-center gap-1.5 hover:bg-amber-600 active:scale-95 transition-all">
                             <Layers className="w-4 h-4" /> تنظیم دسته‌ها ({fmt(uncatCount)})
                         </button>
                     )}
                     <button onClick={() => router.push(`/${membership.arm?.slug || membership.slug}`)}
-                            className="h-10 px-5 rounded-xl border border-primary/40 text-primary text-xs font-extrabold
+                            className="h-10 px-5 rounded-lg border border-primary/40 text-primary text-xs font-extrabold
                                 inline-flex items-center gap-1.5 hover:bg-primary/5 active:scale-95 transition-all">
                         <Store className="w-4 h-4" /> دیدن تابلوی بازار
                     </button>
@@ -118,7 +118,7 @@ export function UncategorizedBanner({ count, armName, onClick }: {
     return (
         <button onClick={onClick}
                 className="w-full bg-gradient-to-l from-amber-50 to-amber-50/40 dark:from-amber-900/15 dark:to-amber-900/5
-                border border-amber-300/60 dark:border-amber-800/50 rounded-2xl p-4
+                border border-amber-300/60 dark:border-amber-800/50 rounded-lg p-4
                 flex items-center gap-3.5 text-right hover:border-amber-400 transition-colors group">
             <span className="w-11 h-11 rounded-xl bg-amber-100 dark:bg-amber-900/40 flex items-center justify-center flex-shrink-0">
                 <AlertTriangle className="w-5 h-5 text-amber-600 dark:text-amber-400" />
@@ -131,7 +131,7 @@ export function UncategorizedBanner({ count, armName, onClick }: {
                     در جستجو دیده می‌شوند ولی از فیلتر دسته‌بندی‌ها پیدا نمی‌شوند — دسته‌شان را مشخص کن
                 </span>
             </span>
-            <span className="h-9 px-4 rounded-xl bg-amber-500 text-white text-[11px] font-bold inline-flex items-center flex-shrink-0 group-hover:bg-amber-600 transition-colors">
+            <span className="h-9 px-4 rounded-lg bg-amber-500 text-white text-[11px] font-bold inline-flex items-center flex-shrink-0 group-hover:bg-amber-600 transition-colors">
                 تنظیم دسته‌ها
             </span>
         </button>
