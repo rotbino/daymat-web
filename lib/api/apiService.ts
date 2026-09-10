@@ -105,6 +105,10 @@ export const apiService = {
         updateConfig: (id: string, dto: { units?: any[]; categoryTree?: any[] }): Promise<any> =>
             apiRequest(`/catalog/${id}/config`, { method: 'PATCH', data: dto }),
 
+        // 💾 کارت ویزیت — ذخیرهٔ مشخصات (JSON) روی کاتالوگ تا زحمت کاربر از بین نرود
+        updateVisitCard: (id: string, spec: any): Promise<any> =>
+            apiRequest(`/catalog/${id}/visit-card`, { method: 'PATCH', data: { spec } }),
+
         // ─── عمومی ───
         getBySlug: (slug: string) => apiRequest(`/catalog/slug/${slug}`),
 

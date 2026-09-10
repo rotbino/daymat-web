@@ -52,7 +52,7 @@ export default function MyCatalogsContent() {
     const [statusFilter, setStatusFilter] = useState<StatusFilter>('all');
     const [shareSlug, setShareSlug] = useState<string | null>(null);
     const [shareName, setShareName] = useState('');
-    const [cardOpen, setCardOpen] = useState(false); // 🪪 استودیو کارت ویزیت — دکمهٔ مستقل در هدر
+    const [cardOpen, setCardOpen] = useState(false); // 🪪 استودیو کارت ویزیت — از تب انتشار باز می‌شود
     const [catalogEditOpen, setCatalogEditOpen] = useState(false);
     const [unitModalOpen, setUnitModalOpen] = useState(false);
     const [catModalOpen, setCatModalOpen] = useState(false);
@@ -264,7 +264,6 @@ export default function MyCatalogsContent() {
                         onSelect={selectCatalog}
                         onShare={openShare}
                         onPreview={previewCatalog}
-                        onOpenCard={() => setCardOpen(true)}
                         onNewCatalog={goNewCatalog}
                         onChangePassword={() => setPasswordOpen(true)}
                     />
@@ -337,6 +336,8 @@ export default function MyCatalogsContent() {
                         onShare={openShare}
                         onEditCatalog={() => setCatalogEditOpen(true)}
                         onRefreshAll={refreshAll}
+                        onOpenCard={() => setCardOpen(true)}
+                        savedCard={(currentCatalog as any)?.metadata?.visitCard ?? null}
                     />
                 )}
             </div>
@@ -373,9 +374,12 @@ export default function MyCatalogsContent() {
                                    onSaved={(tree: any[]) => { setLocalCatTree(tree); refreshAll(); }} />
             <ShareKitModal open={!!shareSlug} onClose={() => setShareSlug(null)} catalogName={shareName} slug={shareSlug ?? undefined}
                            logoUrl={(currentCatalog as any)?.logoFile?.path || currentCatalog?.logoUrl || undefined} />
-            {/* 🪪 استودیو کارت ویزیت — از کیت اشتراک‌گذاری بیرون آمد (خواستهٔ کاربر) */}
+            {/* 🪪 استودیو کارت ویزیت — از تب انتشار باز می‌شود؛ با ذخیره، spec روی کاتالوگ می‌ماند */}
             <VisitCardModal open={cardOpen} onClose={() => setCardOpen(false)} catalogName={currentCatalog.name}
                             slug={(currentCatalog as any)?.slug ?? undefined}
+                            catalogId={currentCatalog.id}
+                            savedSpec={(currentCatalog as any)?.metadata?.visitCard ?? null}
+                            onSaved={refreshAll}
                             logoUrl={(currentCatalog as any)?.logoFile?.path || currentCatalog?.logoUrl || undefined}
                             phone={currentCatalog?.phone ?? undefined}
                             description={(currentCatalog as any)?.shortDescription ?? undefined} />

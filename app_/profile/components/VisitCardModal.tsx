@@ -1,27 +1,29 @@
 // app_/profile/components/VisitCardModal.tsx
-// استودیوی کارت ویزیت — مستقل از کیت اشتراک‌گذاری (بنا بر خواستهٔ کاربر از کیت بیرون آمد)
-//   • ۷ قالب پس‌زمینهٔ آمادهٔ /public/visit-card/1..7.jpg به‌صورت نوار افقی + «عکس دلخواه»
+// استودیوی کارت ویزیت — مستقل از کیت اشتراک‌گذاری
+//   • ۳ قالب پس‌زمینهٔ آمادهٔ /public/visit-card/1..3.jpg + «عکس دلخواه» — کاشی‌های کوچک (بنا بر بازخورد)
 //   • پیش‌فرض: قالب ۱ — تاریکی عکس با اسلایدر (۰ تا ۸۵٪)
-//   • پنل شیشه‌ای (شیشه‌مorphism ترند روز) پشت متن‌ها → خوانا روی هر قالبی
-//   • لوگوی بزرگ بدون پدینگ و بدون بشقاب (خواستهٔ کاربر) + امکان تعویض لوگو
+//   • طرح فلت — بدون کادر شیشه‌ای و بدون خط عمودی (بنا بر بازخورد کاربر) + رنگ متن خودکار از روشنایی
+//   • لوگوی بزرگ بدون پدینگ + امکان تعویض لوگو
 //   • ویرایش عنوان/شعار/تماس/نوشتهٔ زیر QR + تم‌های آماده + کالر‌سلکتور آزاد
-//   • امضای برند: آیکون dm دیمت + اسلاگ (به‌جای چاپ آدرس کامل) — برندسازی دیمت
+//   • امضای برند: آیکون dm دیمت چسبیده زیر QR (مارجین ~۳px) + اسلاگ — زیرنویس QR زیر آن
+//   • 💾 ذخیرهٔ مشخصات کارت (JSON) روی کاتالوگ → زحمت کاربر گم نمی‌شود + پیش‌نمایش در تب انتشار
 // ⚠️ قانون: حالت تاریک همیشه چک شده
 'use client';
 import React, { useState, useEffect, useRef, useCallback } from 'react';
 import { createPortal } from 'react-dom';
 import {
-    X, Download, Loader2, IdCard, ImageUp, XCircle, RotateCcw, Palette,
+    X, Download, Loader2, IdCard, ImageUp, XCircle, RotateCcw, Palette, Save,
 } from 'lucide-react';
 import { QRCodeCanvas } from 'qrcode.react';
 import { toast } from 'sonner';
 import { cn } from "@/lib/utils/utils";
+import { apiService } from '@/lib/api/apiService';
 import {
     CANVAS_FONT, DEFAULT_CAPTION, DAYMAT_BADGE_SRC, faDigits,
-    CARD_THEMES, buildCustomTheme,
+    CARD_THEMES, buildCustomTheme, buildBgTemplates, sanitizeSpec, compressDataUrl,
     deriveSlogan, triggerDownload, getQrCanvas, loadImageCached,
     roundRectPath, wrapText, regionLuminance, drawWithHalo,
-    type CardTheme,
+    type CardTheme, type VisitCardSpec,
 } from './visitCardShared';
 
 interface Props {
@@ -35,14 +37,20 @@ interface Props {
     phone?: string;
     /** معرفی کوتاه کاتالوگ — پیش‌فرض شعار */
     description?: string;
+    /** شناسهٔ کاتالوگ — با بودنش دکمهٔ ذخیره فعال می‌شود */
+    catalogId?: string;
+    /** کارت ذخیره‌شدهٔ قبلی (metadata.visitCard) — با باز شدن، کارت کاربر برمی‌گردد */
+    savedSpec?: any;
+    /** بعد از ذخیرهٔ موفق — برای تازه‌سازی لیست کاتالوگ‌ها */
+    onSaved?: () => void;
 }
 
-/* ۷ قالب آمادهٔ برند — هم‌مبدأ و بدون دردسر CORS */
-const BG_TEMPLATES = Array.from({ length: 7 }, (_, i) => `/visit-card/${i + 1}.jpg`);
+/* قالب‌های آمادهٔ برند — هم‌مبدأ و بدون دردسر CORS (۳ قالب + عکس دلخواه) */
+const BG_TEMPLATES = buildBgTemplates();
 
 const W = 1050, H = 600; // ۹×۵ سانتی‌متر در ۳۰۰dpi
 
-export default function VisitCardModal({ open, onClose, catalogName, slug, logoUrl, phone, description }: Props) {
+export default function VisitCardModal({ open, onClose, catalogName, slug, logoUrl, phone, description, catalogId, savedSpec, onSaved }: Props) {
     const [mounted, setMounted] = useState(false);
     const [busy, setBusy] = useState(false);
 
@@ -58,6 +66,8 @@ export default function VisitCardModal({ open, onClose, catalogName, slug, logoU
     const [cardPhone, setCardPhone] = useState('');
     const [cardCaption, setCardCaption] = useState(DEFAULT_CAPTION);
     const [fontsReady, setFontsReady] = useState(false);
+    const [saving, setSaving] = useState(false);      // 💾 ذخیرهٔ spec روی کاتالوگ
+    const [savedAt, setSavedAt] = useState<string | null>(null); // آخرین ذخیره (از spec یا همین الان)
     const cardCanvasRef = useRef<HTMLCanvasElement | null>(null);
     const bgFileRef = useRef<HTMLInputElement | null>(null);
     const logoFileRef = useRef<HTMLInputElement | null>(null);
@@ -93,19 +103,35 @@ export default function VisitCardModal({ open, onClose, catalogName, slug, logoU
         ? `${window.location.origin}/${slug}`
         : '';
 
-    // شروع تازه با هر باز شدن — پیش‌فرض‌ها از مشخصات کاتالوگ (تم انتخابی می‌ماند)
+    // شروع با هر باز شدن — اگر کارت ذخیره‌شده دارد همان برمی‌گردد (زحمت کاربر گم نمی‌شود)
     useEffect(() => {
         if (!open) return;
-        setCardName(catalogName || '');
-        setSlogan(deriveSlogan(description));
-        setCardPhone(phone || '');
-        setCardCaption(DEFAULT_CAPTION);
-        setBgIdx(0);
-        setCustomBg(null);
-        setCustomLogo(null);
-        setCustomColor(null);
-        setOverlayPct(0);
-    }, [open, catalogName, phone, description]);
+        const s = sanitizeSpec(savedSpec);
+        if (s) {
+            setCardName(s.cardName || catalogName || '');
+            setSlogan(s.slogan || deriveSlogan(description));
+            setCardPhone(s.cardPhone || phone || '');
+            setCardCaption(s.cardCaption || DEFAULT_CAPTION);
+            setBgIdx(s.bgIdx);
+            setCustomBg(s.customBg ?? null);
+            setCustomLogo(s.customLogo ?? null);
+            setCustomColor(s.customColor ?? null);
+            setThemeIdx(s.themeIdx);
+            setOverlayPct(s.overlayPct);
+            setSavedAt(s.updatedAt ?? null);
+        } else {
+            setCardName(catalogName || '');
+            setSlogan(deriveSlogan(description));
+            setCardPhone(phone || '');
+            setCardCaption(DEFAULT_CAPTION);
+            setBgIdx(0);
+            setCustomBg(null);
+            setCustomLogo(null);
+            setCustomColor(null);
+            setOverlayPct(0);
+            setSavedAt(null);
+        }
+    }, [open, catalogName, phone, description, savedSpec]);
 
     // ─── رسم کارت ۱۰۵۰×۶۰۰ ───
     const drawCard = useCallback(async () => {
@@ -147,32 +173,18 @@ export default function VisitCardModal({ open, onClose, catalogName, slug, logoU
             ctx.fillRect(0, 0, W, H);
         }
 
-        // ─── پنل شیشه‌ای پشت ستون متن (فقط حالت عکس) — گلس‌مورفیسم ترند روز ───
-        let RX = W - 64;              // لبهٔ راست متن
-        if (painted) {
-            const px = 470, py = 34, pw = 536, ph = H - 68;
-            ctx.save();
-            ctx.shadowColor = 'rgba(15,23,42,0.20)';
-            ctx.shadowBlur = 30;
-            ctx.shadowOffsetY = 8;
-            ctx.fillStyle = 'rgba(255,255,255,0.74)';
-            roundRectPath(ctx, px, py, pw, ph, 30);
-            ctx.fill();
-            ctx.restore();
-            ctx.strokeStyle = 'rgba(255,255,255,0.65)';
-            ctx.lineWidth = 1.5;
-            roundRectPath(ctx, px, py, pw, ph, 30);
-            ctx.stroke();
-            // نوار لهجهٔ گرد لبهٔ راست پنل
-            ctx.fillStyle = accent;
-            roundRectPath(ctx, px + pw - 12, py + 24, 6, ph - 48, 3);
-            ctx.fill();
-            RX = px + pw - 34;
-        }
+        // ─── طرح فلت — بدون کادر شیشه‌ای (بنا بر بازخورد کاربر) ───
+        const RX = W - 64;            // لبهٔ راست متن
         const CX = 504;               // لبهٔ چپ ستون متن
-        // روی پنل شیشه‌ای جوهر تیره؛ روی تم گرادیانی رنگ خود تم
-        const ink = painted ? '#101418' : th.text;
-        const sub = painted ? '#4b5563' : th.muted;
+        // بدون پنل، رنگ متن از روشنایی واقعی ناحیهٔ ستون متن + هالهٔ خوانایی
+        const rlum = painted ? regionLuminance(canvas, CX, 40, RX - CX, H - 80) : (th.text === '#ffffff' ? 0.25 : 0.85);
+        const ink = painted ? (rlum > 0.55 ? '#101418' : '#ffffff') : th.text;
+        const sub = painted ? (rlum > 0.55 ? '#4b5563' : 'rgba(255,255,255,0.88)') : th.muted;
+        const halo = painted ? (rlum > 0.55 ? 'rgba(255,255,255,0.85)' : 'rgba(15,23,42,0.55)') : null;
+        const drawInk = (text: string, x: number, y: number, color: string) => {
+            if (halo) drawWithHalo(ctx, text, x, y, color, halo);
+            else { ctx.fillStyle = color; ctx.fillText(text, x, y); }
+        };
 
         // ─── تزئینات کوچک لبهٔ بالا-چپ روی پس‌زمینه ───
         ctx.fillStyle = accent;
@@ -187,21 +199,8 @@ export default function VisitCardModal({ open, onClose, catalogName, slug, logoU
         }
         ctx.restore();
 
-        // ─── برچسب پیل «کاتالوگ آنلاین» ───
-        ctx.font = `bold 17px ${F}`;
-        ctx.direction = 'rtl';
-        const pillLabel = 'کاتالوگ آنلاین';
-        const pillW = ctx.measureText(pillLabel).width + 36;
-        const pillX = RX - pillW, pillY = 58;
-        ctx.fillStyle = accent;
-        roundRectPath(ctx, pillX, pillY, pillW, 32, 16);
-        ctx.fill();
-        ctx.fillStyle = th.accentText;
-        ctx.textAlign = 'center';
-        ctx.fillText(pillLabel, pillX + pillW / 2, pillY + 22);
-
         // ─── لوگوی بزرگ — بدون پدینگ و بدون بشقاب (خواستهٔ کاربر) ───
-        const logoTop = 104;
+        const logoTop = 92;
         const logoMaxH = 174, logoMaxW = RX - CX;
         const logoSrc = customLogo ?? logoUrl;
         const logo = logoSrc ? await loadImageCached(logoSrc) : null;
@@ -239,15 +238,14 @@ export default function VisitCardModal({ open, onClose, catalogName, slug, logoU
         // ─── نام کسب‌وکار — کوچک‌شدن خودکار ───
         ctx.textAlign = 'right';
         ctx.direction = 'rtl';
-        ctx.fillStyle = ink;
-        const nameY = Math.min(352, Math.max(240, logoBottom + 58));
+        const nameY = Math.min(356, Math.max(238, logoBottom + 54));
         let nameSize = 46;
         ctx.font = `800 ${nameSize}px ${F}`;
         while (ctx.measureText(cardName || '').width > RX - CX && nameSize > 28) {
             nameSize -= 3;
             ctx.font = `800 ${nameSize}px ${F}`;
         }
-        ctx.fillText(cardName || '', RX, nameY);
+        drawInk(cardName || '', RX, nameY, ink);
 
         // ─── شعار — حداکثر دو خط ───
         const sl = (slogan || '').trim();
@@ -255,8 +253,7 @@ export default function VisitCardModal({ open, onClose, catalogName, slug, logoU
         if (sl) {
             ctx.font = `25px ${F}`;
             sloganLines = wrapText(ctx, sl, RX - CX).slice(0, 2);
-            ctx.fillStyle = sub;
-            sloganLines.forEach((ln, i) => ctx.fillText(ln, RX, nameY + 48 + i * 38));
+            sloganLines.forEach((ln, i) => drawInk(ln, RX, nameY + 48 + i * 38, sub));
         }
 
         // ─── جداکنندهٔ لهجه + تماس ───
@@ -270,9 +267,8 @@ export default function VisitCardModal({ open, onClose, catalogName, slug, logoU
         if (cardPhone.trim()) {
             ctx.textAlign = 'right';
             ctx.direction = 'rtl';
-            ctx.fillStyle = ink;
             ctx.font = `bold 29px ${F}`;
-            ctx.fillText(`تماس: ${faDigits(cardPhone.trim())}`, RX, dividerY + 56);
+            drawInk(`تماس: ${faDigits(cardPhone.trim())}`, RX, dividerY + 56, ink);
         }
 
         // ─── ستون چپ: QR روی بشقاب سفید + زیرنویس قابل ویرایش ───
@@ -305,6 +301,43 @@ export default function VisitCardModal({ open, onClose, catalogName, slug, logoU
         const outInk = lum > 0.55 ? '#0f172a' : '#ffffff';
         const outHalo = lum > 0.55 ? 'rgba(255,255,255,0.85)' : 'rgba(15,23,42,0.5)';
 
+        // ─── آیکون برند دیمت + اسلاگ — چسبیده زیر QR با ~۳px مارجین (بنا بر بازخورد کاربر) ───
+        const slugText = (slug || '').trim();
+        const badge = await loadImageCached(DAYMAT_BADGE_SRC);
+        if (token !== drawTokenRef.current) return;
+        const sigTop = plateY + plateS + 4; // ~۳px زیر کیوآر
+        const badgeS = 38, gap = 10;
+        const textY = sigTop + 28;          // baseline متن هم‌تراز وسط آیکون
+        const isFa = /[\u0600-\u06FF]/.test(slugText);
+        if (slugText) {
+            let ss = 22;
+            ctx.font = `bold ${ss}px ${F}`;
+            while (ctx.measureText(slugText).width > 300 && ss > 14) {
+                ss -= 1;
+                ctx.font = `bold ${ss}px ${F}`;
+            }
+            const textW = ctx.measureText(slugText).width;
+            const groupW = badgeS + gap + textW;
+            const gx = plateX + plateS / 2 - groupW / 2;
+            if (isFa) {
+                // اسلاگ فارسی: آیکون سمت راستِ متن
+                if (badge) ctx.drawImage(badge, gx + groupW - badgeS, sigTop, badgeS, badgeS);
+                ctx.textAlign = 'right';
+                ctx.direction = 'rtl';
+                drawWithHalo(ctx, slugText, gx + groupW - badgeS - gap, textY, outInk, outHalo);
+            } else {
+                if (badge) ctx.drawImage(badge, gx, sigTop, badgeS, badgeS);
+                ctx.textAlign = 'left';
+                ctx.direction = 'ltr';
+                drawWithHalo(ctx, slugText, gx + badgeS + gap, textY, outInk, outHalo);
+            }
+        } else if (badge) {
+            // بدون اسلاگ — فقط آیکون وسطِ زیر QR
+            ctx.drawImage(badge, plateX + plateS / 2 - badgeS / 2, sigTop, badgeS, badgeS);
+        }
+
+        // ─── زیرنویس QR — زیر امضای برند ───
+        const sigBottom = sigTop + badgeS;
         const cap = (cardCaption || '').trim();
         if (cap) {
             ctx.textAlign = 'center';
@@ -315,38 +348,7 @@ export default function VisitCardModal({ open, onClose, catalogName, slug, logoU
                 cs -= 1;
                 ctx.font = `bold ${cs}px ${F}`;
             }
-            drawWithHalo(ctx, cap, plateX + plateS / 2, 448, outInk, outHalo);
-        }
-
-        // ─── امضای برند دیمت: آیکون dm + اسلاگ (به‌جای آدرس کامل — خواستهٔ کاربر) ───
-        const slugText = (slug || '').trim();
-        if (slugText) {
-            const isFa = /[\u0600-\u06FF]/.test(slugText);
-            let ss = 22;
-            ctx.font = `bold ${ss}px ${F}`;
-            while (ctx.measureText(slugText).width > 300 && ss > 14) {
-                ss -= 1;
-                ctx.font = `bold ${ss}px ${F}`;
-            }
-            const textW = ctx.measureText(slugText).width;
-            const badgeS = 42, gap = 12;
-            const groupW = badgeS + gap + textW;
-            const gx = plateX + plateS / 2 - groupW / 2;
-            const badge = await loadImageCached(DAYMAT_BADGE_SRC);
-            if (token !== drawTokenRef.current) return;
-            const textY = 530;
-            if (isFa) {
-                // اسلاگ فارسی: آیکون سمت راستِ متن
-                if (badge) ctx.drawImage(badge, gx + groupW - badgeS, textY - 30, badgeS, badgeS);
-                ctx.textAlign = 'right';
-                ctx.direction = 'rtl';
-                drawWithHalo(ctx, slugText, gx + groupW - badgeS - gap, textY, outInk, outHalo);
-            } else {
-                if (badge) ctx.drawImage(badge, gx, textY - 30, badgeS, badgeS);
-                ctx.textAlign = 'left';
-                ctx.direction = 'ltr';
-                drawWithHalo(ctx, slugText, gx + badgeS + gap, textY, outInk, outHalo);
-            }
+            drawWithHalo(ctx, cap, plateX + plateS / 2, sigBottom + 38, outInk, outHalo);
         }
     }, [open, themeIdx, customColor, bgIdx, customBg, customLogo, overlayPct, cardName, slogan, cardPhone, cardCaption, logoUrl, slug, url]);
 
@@ -406,14 +408,57 @@ export default function VisitCardModal({ open, onClose, catalogName, slug, logoU
         toast.success('کارت به حالت پیش‌فرض برگشت');
     };
 
+    /** 💾 ساخت spec جمع‌وجور — عکس‌ها فشرده + پیش‌نمایش کوچک از خود کانواس */
+    const buildSpec = async (): Promise<VisitCardSpec | null> => {
+        const bg = customBg ? await compressDataUrl(customBg, 1050, 0.72) : null;
+        const logo = customLogo ? await compressDataUrl(customLogo, 512, 0.9, 'image/png') : null;
+        let preview: string | null = null;
+        try {
+            const src = cardCanvasRef.current;
+            if (src) {
+                const off = document.createElement('canvas');
+                off.width = 480;
+                off.height = Math.round((480 * H) / W);
+                const octx = off.getContext('2d');
+                if (octx) {
+                    octx.drawImage(src, 0, 0, off.width, off.height);
+                    preview = off.toDataURL('image/jpeg', 0.72);
+                }
+            }
+        } catch { preview = null; } // کانواس مقید/خطا → بی‌پیش‌نمایش
+        return sanitizeSpec({
+            v: 1, bgIdx, customBg: bg, overlayPct, themeIdx, customColor,
+            cardName: cardName.trim(), slogan: slogan.trim(), cardPhone: cardPhone.trim(),
+            cardCaption: cardCaption.trim(), customLogo: logo, preview,
+        });
+    };
+
+    const saveSpec = async () => {
+        if (!catalogId || saving) return;
+        setSaving(true);
+        try {
+            const spec = await buildSpec();
+            if (!spec) throw new Error('spec');
+            const res: any = await apiService.catalog.updateVisitCard(catalogId, spec);
+            const at = res?.visitCard?.updatedAt || new Date().toISOString();
+            setSavedAt(at);
+            onSaved?.();
+            toast.success('کارت ذخیره شد — در تب انتشار دیده می‌شود');
+        } catch (e: any) {
+            toast.error(e?.data?.message || 'ذخیرهٔ کارت ممکن نشد');
+        } finally {
+            setSaving(false);
+        }
+    };
+
     const isPhotoActive = !!customBg || bgIdx >= 0;
     const isNoPhoto = !customBg && bgIdx < 0; // کاشی «بدون عکس»
     const selectedBg: number | 'custom' = customBg ? 'custom' : bgIdx;
 
     const tileCls = (active: boolean) => cn(
-        'flex-shrink-0 w-[68px] h-12 rounded-lg overflow-hidden transition-all grid place-items-center',
+        'flex-shrink-0 w-14 h-9 rounded-lg overflow-hidden transition-all grid place-items-center',
         active
-            ? 'ring-2 ring-primary ring-offset-2 dark:ring-offset-gray-900 scale-105'
+            ? 'ring-2 ring-primary ring-offset-1 dark:ring-offset-gray-900'
             : 'ring-1 ring-outline-variant/50 dark:ring-gray-700 hover:ring-primary/40 opacity-90 hover:opacity-100',
     );
 
@@ -592,22 +637,39 @@ export default function VisitCardModal({ open, onClose, catalogName, slug, logoU
                         </div>
                     </div>
 
-                    <button type="button" onClick={downloadCard} disabled={busy}
-                            className="h-10 w-full rounded-lg bg-primary text-on-primary text-[11px] font-extrabold
-                                flex items-center justify-center gap-1.5 hover:bg-primary/90 active:scale-[0.98]
-                                disabled:opacity-60 transition-all">
-                        {busy ? <Loader2 className="w-4 h-4 animate-spin" /> : <Download className="w-4 h-4" />}
-                        دانلود کارت ویزیت (PNG چاپی)
-                    </button>
+                    <div className="grid grid-cols-2 gap-2">
+                        {/* 💾 ذخیره — مشخصات کارت روی کاتالوگ می‌ماند و در تب انتشار دیده می‌شود */}
+                        <button type="button" onClick={saveSpec} disabled={!catalogId || saving}
+                                title={catalogId ? 'ذخیرهٔ طرح روی کاتالوگ' : 'کاتالوگ شناسه ندارد'}
+                                className="h-10 rounded-lg border border-primary/40 bg-primary/5 dark:bg-primary/10 text-primary text-[11px] font-extrabold
+                                    flex items-center justify-center gap-1.5 hover:bg-primary/10 active:scale-[0.98]
+                                    disabled:opacity-60 transition-all">
+                            {saving ? <Loader2 className="w-4 h-4 animate-spin" /> : <Save className="w-4 h-4" />}
+                            {savedAt ? 'به‌روزرسانی ذخیره' : 'ذخیرهٔ کارت'}
+                        </button>
+                        <button type="button" onClick={downloadCard} disabled={busy}
+                                className="h-10 rounded-lg bg-primary text-on-primary text-[11px] font-extrabold
+                                    flex items-center justify-center gap-1.5 hover:bg-primary/90 active:scale-[0.98]
+                                    disabled:opacity-60 transition-all">
+                            {busy ? <Loader2 className="w-4 h-4 animate-spin" /> : <Download className="w-4 h-4" />}
+                            دانلود PNG چاپی
+                        </button>
+                    </div>
                     <div className="flex items-center justify-between gap-2">
                         <button type="button" onClick={resetCard}
                                 className="text-[10px] font-bold text-on-surface-variant/80 hover:text-primary
                                     flex items-center gap-1 transition-colors">
                             <RotateCcw className="w-3 h-3" /> بازگرداندن پیش‌فرض‌ها
                         </button>
-                        <p className="text-[10px] text-on-surface-variant/60 leading-5 text-left">
-                            فایل PNG آمادهٔ چاپخانه است.
-                        </p>
+                        {savedAt ? (
+                            <p className="text-[10px] font-bold text-emerald-600 dark:text-emerald-400 leading-5 text-left">
+                                ذخیره شده — آخرین: {faDigits(new Date(savedAt).toLocaleDateString('fa-IR'))}
+                            </p>
+                        ) : (
+                            <p className="text-[10px] text-on-surface-variant/60 leading-5 text-left">
+                                با ذخیره، طرح کارت روی کاتالوگ می‌ماند.
+                            </p>
+                        )}
                     </div>
                 </div>
             </div>

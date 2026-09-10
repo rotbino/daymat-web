@@ -2,7 +2,7 @@
 'use client';
 
 import React from 'react';
-import { ExternalLink, Globe, Share2 } from 'lucide-react';
+import { ExternalLink, Globe, IdCard, Share2 } from 'lucide-react';
 import { apiService } from '@/lib/api/apiService';
 import { useQueryClient } from '@tanstack/react-query';
 import { toast } from 'sonner';
@@ -15,10 +15,14 @@ interface Props {
     onShare: () => void;
     onEditCatalog: () => void;
     onRefreshAll: () => void;
+    /** 🪪 استودیوی کارت ویزیت — بنا بر خواستهٔ کاربر داخل تب انتشار */
+    onOpenCard: () => void;
+    /** کارت ذخیره‌شده (metadata.visitCard) — با بودنش پیش‌نمایش کارت نشان داده می‌شود */
+    savedCard?: any;
 }
 
-/** تب انتشار — اشتراک‌گذاری و مدیریت عضویت‌ها در بازارها (نماد اعتماد به تب مشخصات منتقل شد) */
-export default function PublishTab({ currentCatalog, memberships, onShare, onEditCatalog, onRefreshAll }: Props) {
+/** تب انتشار — اشتراک‌گذاری، کارت ویزیت و مدیریت عضویت‌ها در بازارها */
+export default function PublishTab({ currentCatalog, memberships, onShare, onEditCatalog, onRefreshAll, onOpenCard, savedCard }: Props) {
     const queryClient = useQueryClient();
 
     const togglePublish = async (m: any, isOn: boolean) => {
@@ -78,6 +82,48 @@ export default function PublishTab({ currentCatalog, memberships, onShare, onEdi
                     <span className="block text-[11px] text-on-surface-variant mt-0.5">لینک + پیام آماده + QR چاپی</span>
                 </span>
             </button>
+
+            {/* 🪪 ساخت کارت ویزیت کاتالوگ — بنا بر خواستهٔ کاربر داخل تب انتشار */}
+            {/* اگر کارت ذخیره‌شده دارد، پیش‌نمایشش همین‌جا دیده می‌شود تا زحمت کاربر از بین نرود */}
+            {(() => {
+                const cardPreview = typeof savedCard?.preview === 'string' && savedCard.preview.startsWith('data:image')
+                    ? savedCard.preview : null;
+                const savedLabel = savedCard?.updatedAt
+                    ? new Date(savedCard.updatedAt).toLocaleDateString('fa-IR')
+                    : null;
+                if (cardPreview) {
+                    return (
+                        <button onClick={onOpenCard}
+                                className={cn(CARD_CLS, 'p-3.5 w-full flex items-center gap-3.5 text-right hover:border-primary/40 transition-colors')}>
+                            <span className="w-[72px] h-[41px] rounded-lg overflow-hidden ring-1 ring-outline-variant/40 dark:ring-gray-700
+                                    bg-white flex-shrink-0 shadow-sm">
+                                {/* eslint-disable-next-line @next/next/no-img-element */}
+                                <img src={cardPreview} alt="کارت ویزیت کاتالوگ" className="w-full h-full object-cover" />
+                            </span>
+                            <span className="flex-1 min-w-0">
+                                <span className="block text-sm font-extrabold text-on-surface">کارت ویزیت کاتالوگ</span>
+                                <span className="block text-[11px] text-on-surface-variant mt-0.5 truncate">
+                                    {savedLabel ? `ذخیره‌شده در ${savedLabel} — ` : 'ذخیره‌شده — '}برای ویرایش لمس کن
+                                </span>
+                            </span>
+                            <IdCard className="w-4.5 h-4.5 text-amber-600 dark:text-amber-400 flex-shrink-0" />
+                        </button>
+                    );
+                }
+                return (
+                    <button onClick={onOpenCard}
+                            className="w-full bg-gradient-to-l from-amber-500/10 to-amber-500/5 border border-amber-500/25 dark:border-amber-500/20
+                                rounded-lg p-4 flex items-center gap-3.5 text-right hover:border-amber-500/50 transition-colors">
+                        <span className="w-11 h-11 rounded-xl bg-amber-500/15 dark:bg-amber-500/20 flex items-center justify-center flex-shrink-0">
+                            <IdCard className="w-5 h-5 text-amber-600 dark:text-amber-400" />
+                        </span>
+                        <span className="flex-1 min-w-0">
+                            <span className="block text-sm font-extrabold text-amber-700 dark:text-amber-300">ساخت کارت ویزیت کاتالوگ</span>
+                            <span className="block text-[11px] text-on-surface-variant mt-0.5">طرح چاپی ۹×۵ با لوگو و QR کاتالوگ</span>
+                        </span>
+                    </button>
+                );
+            })()}
 
             {/* عضویت‌ها در بازارها */}
             <div className={CARD_CLS + ' p-4'}>

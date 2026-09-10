@@ -9,6 +9,82 @@ export const DEFAULT_CAPTION = 'برای دیدن کاتالوگ ما اسکن �
 /** آیکون برند دیمت (نشان dm با گوشه‌های شفاف) — برای امضای برند پایین کارت */
 export const DAYMAT_BADGE_SRC = '/icons/icon-512.png';
 
+/* ─── قالب‌های آمادهٔ پس‌زمینه — ۳ قالب برند (بنا بر خواستهٔ کاربر: از ۷ به ۳) ─── */
+export const BG_TEMPLATE_COUNT = 3;
+export const buildBgTemplates = () =>
+    Array.from({ length: BG_TEMPLATE_COUNT }, (_, i) => `/visit-card/${i + 1}.jpg`);
+
+/* ─── کارت ویزیت ذخیره‌شده — spec JSON روی کاتالوگ (زحمت کاربر گم نشود) ─── */
+export interface VisitCardSpec {
+    v: 1;
+    bgIdx: number;              // 0..2 یا -1 (بدون عکس)
+    customBg?: string | null;   // dataURL فشرده‌شدهٔ عکس دلخواه
+    overlayPct: number;         // تاریکی ۰..۸۵
+    themeIdx: number;           // 0..5
+    customColor?: string | null;
+    cardName: string;
+    slogan: string;
+    cardPhone: string;
+    cardCaption: string;
+    customLogo?: string | null; // dataURL فشرده‌شدهٔ لوگوی دلخواه
+    preview?: string | null;    // بندانگشتی JPEG کارت — برای تب انتشار
+    updatedAt?: string;
+}
+
+/** پاک‌سازی spec ورودی (از دیتابیس یا خروجی فرم) — هر چیز نامعتبر → پیش‌فرض */
+export const sanitizeSpec = (raw: any): VisitCardSpec | null => {
+    if (!raw || typeof raw !== 'object') return null;
+    const clamp = (n: any, lo: number, hi: number, d: number) =>
+        typeof n === 'number' && isFinite(n) ? Math.min(hi, Math.max(lo, Math.round(n))) : d;
+    const str = (s: any, max: number) => (typeof s === 'string' ? s.slice(0, max) : '');
+    const dataUrl = (s: any) =>
+        typeof s === 'string' && s.startsWith('data:image/') && s.length < 900_000 ? s : null;
+    return {
+        v: 1,
+        bgIdx: clamp(raw.bgIdx, -1, BG_TEMPLATE_COUNT - 1, 0),
+        customBg: dataUrl(raw.customBg),
+        overlayPct: clamp(raw.overlayPct, 0, 85, 0),
+        themeIdx: clamp(raw.themeIdx, 0, CARD_THEMES.length - 1, 0),
+        customColor: typeof raw.customColor === 'string' && /^#[0-9a-fA-F]{6}$/.test(raw.customColor) ? raw.customColor : null,
+        cardName: str(raw.cardName, 48),
+        slogan: str(raw.slogan, 80),
+        cardPhone: str(raw.cardPhone, 20),
+        cardCaption: str(raw.cardCaption, 50),
+        customLogo: dataUrl(raw.customLogo),
+        preview: dataUrl(raw.preview),
+        updatedAt: typeof raw.updatedAt === 'string' ? raw.updatedAt : undefined,
+    };
+};
+
+/**
+ * فشرده‌سازی تصویر dataURL — برای جا شدن در JSON کاتالوگ
+ * (پس‌زمینه: JPEG ۱۰۵۰px | لوگو: PNG تا ۵۱۲px با شفافیت)
+ */
+export const compressDataUrl = (
+    src: string, maxW: number, quality: number, mime = 'image/jpeg',
+): Promise<string | null> =>
+    new Promise((resolve) => {
+        const img = new Image();
+        img.onload = () => {
+            try {
+                const scale = Math.min(1, maxW / img.width);
+                const off = document.createElement('canvas');
+                off.width = Math.max(1, Math.round(img.width * scale));
+                off.height = Math.max(1, Math.round(img.height * scale));
+                const octx = off.getContext('2d');
+                if (!octx) return resolve(null);
+                if (mime === 'image/jpeg') {
+                    octx.fillStyle = '#ffffff';
+                    octx.fillRect(0, 0, off.width, off.height);
+                }
+                octx.drawImage(img, 0, 0, off.width, off.height);
+                resolve(off.toDataURL(mime, quality));
+            } catch { resolve(null); }
+        };
+        img.onerror = () => resolve(null);
+        img.src = src;
+    });
+
 /** ارقام فارسی برای خوانایی کارت */
 export const faDigits = (s: string) => s.replace(/[0-9]/g, (d) => '۰۱۲۳۴۵۶۷۸۹'[+d]);
 
