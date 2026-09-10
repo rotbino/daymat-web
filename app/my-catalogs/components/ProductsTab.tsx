@@ -3,7 +3,7 @@
 
 import React, { useMemo } from 'react';
 import { useRouter } from 'next/navigation';
-import { BookOpen, Layers, Package } from 'lucide-react';
+import { BookOpen, Layers, Package, Plus } from 'lucide-react';
 import { ProductRow } from './ProductRow';
 import { cn } from '@/lib/utils';
 import { fmt, isAdExpired, inMarket, isUncategorized, StatusFilter } from '../constants';
@@ -71,6 +71,14 @@ export default function ProductsTab({
                     </button>
                 ))}
                 <span className="flex-1" />
+                {/* افزودن سریع — همیشه در دسترس */}
+                <button onClick={() => router.push(`/ad/create?catalog=${currentCatalog.id}`)}
+                        title={isService ? 'افزودن خدمت جدید' : 'افزودن محصول جدید'}
+                        className="h-8 px-3 rounded-full bg-amber-500 text-white text-[10px] font-extrabold
+                            flex items-center gap-1 flex-shrink-0 shadow-sm shadow-amber-500/30
+                            hover:bg-amber-600 active:scale-95 transition-all">
+                    <Plus className="w-3.5 h-3.5" /> {isService ? 'خدمت' : 'محصول'}
+                </button>
                 {!isService && (
                     <>
                         <button onClick={onOpenCategorySettings} title="دسته‌های کاتالوگ — گروه‌بندی کالاها"

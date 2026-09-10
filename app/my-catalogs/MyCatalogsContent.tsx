@@ -1,6 +1,6 @@
 // app/my-catalogs/MyCatalogsContent.tsx
-// ارکستراتور صفحهٔ «کاتالوگ‌های من» — state و data fetching و ترکیب کامپوننت‌ها
-// (بازسازی: از ۱۴۷۹ خط به کامپوننت‌های کوچک در ./components شکسته شد)
+// ارکستراتور صفحهٔ «مدیریت کاتالوگ» — state و data fetching و ترکیب کامپوننت‌ها
+// چیدمان: رِیل کاتالوگ‌ها (دسکتاپ) + پنل کنسول یکپارچه (هدر + تب‌ها + محتوا)
 'use client';
 
 import React, { useEffect, useMemo, useState } from 'react';
@@ -14,8 +14,7 @@ import {
     useArms, useMyUncategorized, useSetOwnAdCategory,
 } from '@/lib/api/apiHooks';
 import { toast } from 'sonner';
-import { Bookmark, Globe, Loader2, Package } from 'lucide-react';
-import { cn } from '@/lib/utils';
+import { BarChart3, Globe, Loader2, Package } from 'lucide-react';
 
 import UnitSettingsModal from '@/app/ad/components/UnitSettingsModal';
 import CategorySettingsModal from '@/app/ad/components/CategorySettingsModal';
@@ -27,8 +26,10 @@ import { VerificationModal } from '@/app/business/VerificationModal';
 import { StatusFilter, Tab } from './constants';
 import TopBar from './components/TopBar';
 import EmptyCatalogState from './components/EmptyCatalogState';
-import CatalogSummaryCard from './components/CatalogSummaryCard';
-import CompletionCard from './components/CompletionCard';
+import CatalogConsoleHeader from './components/CatalogConsoleHeader';
+import ConsoleTabs from './components/ConsoleTabs';
+import CatalogRail from './components/CatalogRail';
+import CatalogChipStrip from './components/CatalogChipStrip';
 import ProductsTab from './components/ProductsTab';
 import PublishTab from './components/PublishTab';
 import StatsTab from './components/StatsTab';
@@ -190,6 +191,9 @@ export default function MyCatalogsContent() {
     // (تایپ Catalog در apiTypes هنوز slug ندارد — با cast تا فیکس apiTypes)
     const canShare = !!(currentCatalog as any)?.slug;
 
+    const goNewCatalog = () => router.push('/business/register');
+    const selectCatalog = (id: string) => { setCurrentId(id); setStatusFilter('all'); };
+
     const refreshAll = () => {
         queryClient.invalidateQueries({ queryKey: ['catalogs'] });
         queryClient.invalidateQueries({ queryKey: ['catalog-products', currentId] });
@@ -225,61 +229,47 @@ export default function MyCatalogsContent() {
     const userAvatar = user?.avatarFile?.thumbnailPath || user?.avatarUrl;
     const userHasName = !!user?.fullName?.trim();
 
-    const tabItems: readonly [Tab, string, any][] = [
-        ['products', 'محصولات', Package],
-        ['publish', 'انتشار', Globe],
-        ['stats', 'آمار', Bookmark],
+    const tabItems = [
+        { key: 'products' as Tab, label: 'محصولات', icon: Package, count: products.length },
+        { key: 'publish' as Tab, label: 'انتشار', icon: Globe, count: memberships.length > 0 ? memberships.length : undefined },
+        { key: 'stats' as Tab, label: 'آمار', icon: BarChart3 },
     ];
 
     return (
         <div className="space-y-4">
-            {/* هدر + منو */}
-            <TopBar
-                catalogs={catalogs}
-                currentCatalog={currentCatalog}
-                currentId={currentId}
-                onSelectCatalog={(id) => { setCurrentId(id); setStatusFilter('all'); }}
-                onShare={openShare}
-                onChangePassword={() => setPasswordOpen(true)}
-            />
-
             {/* 🔴 هشدار رمز موقت */}
             {hasTemporaryPassword && (
                 <TemporaryPasswordBanner phone={user?.phone} onClick={() => setPasswordOpen(true)} />
             )}
 
-            {/* ── چیدمان دو ستونی دسکتاپ (lg+) ──
-                • ستون راست (شروع RTL) = هویت کاتالوگ: کارت کاتالوگ + تکمیل + پروفایل — هنگام اسکرول چسبان
-                • ستون چپ (انتها) = کار: بنرها + تب‌ها + محتوا
-                موبایل: همان حالت تک‌ستونی قبلی (فقط بنرها بعد از کارت‌های وضعیت می‌آیند) */}
-            <div className="flex flex-col gap-4 lg:grid lg:grid-cols-[minmax(0,360px)_minmax(0,1fr)] lg:items-start lg:gap-5">
-                {/* ستون هویت کاتالوگ */}
-                <div className="space-y-4 min-w-0 lg:sticky lg:top-[84px]">
-                    {/* کارت اصلی کاتالوگ — دکمهٔ اشتراک‌گذاری روبروی نام */}
-                    <CatalogSummaryCard
-                        catalog={currentCatalog}
-                        stats={stats}
-                        onEdit={() => setCatalogEditOpen(true)}
-                        onShare={canShare ? openShare : undefined}
-                    />
+            {/* هدر صفحه */}
+            <TopBar onChangePassword={() => setPasswordOpen(true)} onNewCatalog={goNewCatalog} />
 
-                    {/* ✅ کارت تکمیل کاتالوگ — وقتی کامل شد دکمهٔ شیر روبروی پیام */}
-                    <CompletionCard
-                        percent={completion.percent}
-                        items={completion.items}
-                        onItem={completion.openItem}
-                        onShare={canShare ? openShare : undefined}
-                    />
+            {/* نوار چیپ کاتالوگ‌ها — موبایل، وقتی بیش از یک کاتالوگ است */}
+            {catalogs.length > 1 && (
+                <CatalogChipStrip
+                    catalogs={catalogs}
+                    currentId={currentId}
+                    onSelect={selectCatalog}
+                    onNew={goNewCatalog}
+                />
+            )}
 
-                    {/* 👤 نکتهٔ پروفایل — کم‌اهمیت‌تر از کار کاتالوگ */}
-                    {(!userHasName || !userAvatar) && (
-                        <ProfileBanner avatarUrl={userAvatar} hasName={userHasName} onClick={() => router.push('/profile')} />
-                    )}
-                </div>
+            {/* ── چیدمان کنسول ──
+                دسکتاپ (lg+): رِیل کاتالوگ‌ها (ستون باریک چسبان) + پنل کنسول یکپارچه
+                موبایل: همه چیز تک‌ستونی — هدر، چیپ‌ها، کنسول */}
+            <div className="flex flex-col gap-4 lg:grid lg:grid-cols-[264px_minmax(0,1fr)] lg:items-start lg:gap-5">
+                {/* رِیل کاتالوگ‌ها — فقط دسکتاپ */}
+                <CatalogRail
+                    catalogs={catalogs}
+                    currentId={currentId}
+                    onSelect={selectCatalog}
+                    onNew={goNewCatalog}
+                />
 
-                {/* ستون کار */}
-                <div className="space-y-4 min-w-0">
-                    {/* ⚠️ کالاهای بی‌دسته — بالای تب‌ها چون اکشن روی کالاست */}
+                {/* ستون کنسول */}
+                <div className="min-w-0 space-y-3.5">
+                    {/* ⚠️ کالاهای بی‌دسته — بالای کنسول چون اکشن روی کالاست */}
                     {uncatItems.length > 0 && (
                         <UncategorizedBanner
                             count={uncatItems.length}
@@ -298,48 +288,60 @@ export default function MyCatalogsContent() {
                         />
                     )}
 
-                    {/* تب‌ها */}
-                    <div className="flex gap-1">
-                        {tabItems.map(([key, label, Icon]) => (
-                            <button key={key} onClick={() => setTab(key)}
-                                    className={cn('flex-1 flex items-center justify-center gap-1.5 h-9 lg:h-10 rounded-xl text-xs lg:text-[13px] font-bold transition-colors',
-                                        tab === key ? 'bg-primary text-on-primary shadow-sm' : 'text-on-surface-variant hover:bg-surface-container-high')}>
-                                <Icon className="w-3.5 h-3.5" /> {label}
-                            </button>
-                        ))}
-                    </div>
-
-                    {/* تب محصولات */}
-                    {tab === 'products' && (
-                        <ProductsTab
-                            products={products}
-                            adsLoading={adsLoading}
-                            statusFilter={statusFilter}
-                            onFilterChange={setStatusFilter}
-                            currentCatalog={currentCatalog}
-                            onOpenCategorySettings={() => setCatModalOpen(true)}
-                            onOpenUnitSettings={() => setUnitModalOpen(true)}
-                            onCategory={openCategoryModal}
-                            onRefresh={setRefreshAd}
-                            onPublish={setPublishModalAd}
-                        />
-                    )}
-
-                    {/* تب انتشار */}
-                    {tab === 'publish' && (
-                        <PublishTab
-                            currentCatalog={currentCatalog}
-                            memberships={memberships}
+                    {/* پنل کنسول کاتالوگ — یکپارچه: هدر + تب‌ها + محتوا */}
+                    <section className="bg-white dark:bg-gray-900 rounded-3xl border border-outline-variant/50 dark:border-gray-700
+                            shadow-sm overflow-hidden">
+                        <CatalogConsoleHeader
+                            catalog={currentCatalog}
+                            stats={stats}
+                            productsCount={products.length}
+                            completion={completion}
+                            canShare={canShare}
                             onShare={openShare}
-                            onVerify={() => setVerifyOpen(true)}
-                            onEditCatalog={() => setCatalogEditOpen(true)}
-                            onRefreshAll={refreshAll}
+                            onEdit={() => setCatalogEditOpen(true)}
                         />
-                    )}
 
-                    {/* تب آمار — اعتبار فقط همین‌جا fetch می‌شود */}
-                    {tab === 'stats' && (
-                        <StatsTab currentCatalog={currentCatalog} stats={stats} productsCount={products.length} />
+                        <ConsoleTabs items={tabItems} active={tab} onChange={setTab} />
+
+                        <div className="p-4 lg:p-6">
+                            {/* تب محصولات */}
+                            {tab === 'products' && (
+                                <ProductsTab
+                                    products={products}
+                                    adsLoading={adsLoading}
+                                    statusFilter={statusFilter}
+                                    onFilterChange={setStatusFilter}
+                                    currentCatalog={currentCatalog}
+                                    onOpenCategorySettings={() => setCatModalOpen(true)}
+                                    onOpenUnitSettings={() => setUnitModalOpen(true)}
+                                    onCategory={openCategoryModal}
+                                    onRefresh={setRefreshAd}
+                                    onPublish={setPublishModalAd}
+                                />
+                            )}
+
+                            {/* تب انتشار */}
+                            {tab === 'publish' && (
+                                <PublishTab
+                                    currentCatalog={currentCatalog}
+                                    memberships={memberships}
+                                    onShare={openShare}
+                                    onVerify={() => setVerifyOpen(true)}
+                                    onEditCatalog={() => setCatalogEditOpen(true)}
+                                    onRefreshAll={refreshAll}
+                                />
+                            )}
+
+                            {/* تب آمار — اعتبار فقط همین‌جا fetch می‌شود */}
+                            {tab === 'stats' && (
+                                <StatsTab currentCatalog={currentCatalog} stats={stats} productsCount={products.length} />
+                            )}
+                        </div>
+                    </section>
+
+                    {/* 👤 نکتهٔ پروفایل — کم‌اهمیت‌تر از کار کاتالوگ */}
+                    {(!userHasName || !userAvatar) && (
+                        <ProfileBanner avatarUrl={userAvatar} hasName={userHasName} onClick={() => router.push('/profile')} />
                     )}
                 </div>
             </div>
