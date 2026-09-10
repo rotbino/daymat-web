@@ -2,7 +2,7 @@
 'use client';
 
 import React from 'react';
-import { ExternalLink, Globe, Share2, ShieldCheck } from 'lucide-react';
+import { ExternalLink, Globe, Share2 } from 'lucide-react';
 import { apiService } from '@/lib/api/apiService';
 import { useQueryClient } from '@tanstack/react-query';
 import { toast } from 'sonner';
@@ -13,13 +13,12 @@ interface Props {
     currentCatalog: any;
     memberships: any[];
     onShare: () => void;
-    onVerify: () => void;
     onEditCatalog: () => void;
     onRefreshAll: () => void;
 }
 
-/** تب انتشار — اشتراک‌گذاری، مدیریت عضویت‌ها در بازارها، تیک اعتماد */
-export default function PublishTab({ currentCatalog, memberships, onShare, onVerify, onEditCatalog, onRefreshAll }: Props) {
+/** تب انتشار — اشتراک‌گذاری و مدیریت عضویت‌ها در بازارها (نماد اعتماد به تب مشخصات منتقل شد) */
+export default function PublishTab({ currentCatalog, memberships, onShare, onEditCatalog, onRefreshAll }: Props) {
     const queryClient = useQueryClient();
 
     const togglePublish = async (m: any, isOn: boolean) => {
@@ -126,20 +125,6 @@ export default function PublishTab({ currentCatalog, memberships, onShare, onVer
                     </div>
                 )}
             </div>
-
-            {/* تیک اعتماد */}
-            <button onClick={onVerify}
-                    className={CARD_CLS + ' p-4 flex items-center gap-3.5 text-right hover:border-primary/40 transition-colors'}>
-                <span className="w-11 h-11 rounded-xl bg-surface-container-high dark:bg-gray-800 flex items-center justify-center flex-shrink-0">
-                    <ShieldCheck className="w-5 h-5 text-on-surface-variant" />
-                </span>
-                <span className="flex-1">
-                    <span className="block text-sm font-bold text-on-surface">تیک اعتماد کسب‌وکار</span>
-                    <span className="block text-[11px] text-on-surface-variant mt-0.5">
-                        {currentCatalog.verificationStatus === 'approved' ? 'تایید شده' : 'با ارسال مدارک، نشان اعتماد بگیر'}
-                    </span>
-                </span>
-            </button>
         </div>
     );
 }

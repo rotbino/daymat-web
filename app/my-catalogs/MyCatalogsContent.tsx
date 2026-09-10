@@ -278,6 +278,7 @@ export default function MyCatalogsContent() {
                         canShare={canShare}
                         onShare={openShare}
                         onEdit={() => setCatalogEditOpen(true)}
+                        onVerify={() => setVerifyOpen(true)}
                         userAvatar={userAvatar}
                         userHasName={userHasName}
                         onProfile={() => router.push('/profile')}
@@ -320,7 +321,6 @@ export default function MyCatalogsContent() {
                         currentCatalog={currentCatalog}
                         memberships={memberships}
                         onShare={openShare}
-                        onVerify={() => setVerifyOpen(true)}
                         onEditCatalog={() => setCatalogEditOpen(true)}
                         onRefreshAll={refreshAll}
                     />
@@ -357,7 +357,8 @@ export default function MyCatalogsContent() {
             <CategorySettingsModal isOpen={catModalOpen} onClose={() => setCatModalOpen(false)}
                                    catalogId={currentCatalog.id} initialTree={localCatTree}
                                    onSaved={(tree: any[]) => { setLocalCatTree(tree); refreshAll(); }} />
-            <ShareKitModal open={!!shareSlug} onClose={() => setShareSlug(null)} catalogName={shareName} slug={shareSlug ?? undefined} />
+            <ShareKitModal open={!!shareSlug} onClose={() => setShareSlug(null)} catalogName={shareName} slug={shareSlug ?? undefined}
+                           logoUrl={(currentCatalog as any)?.logoFile?.path || currentCatalog?.logoUrl || undefined} />
             <ChangePasswordModal isOpen={passwordOpen} onClose={() => setPasswordOpen(false)}
                                  onSuccess={() => dispatch(setUser({ ...user, temporaryPassword: false }))} />
             <VerificationModal isOpen={verifyOpen} onClose={() => setVerifyOpen(false)}

@@ -139,13 +139,13 @@ export default function AdminCatalogesPage() {
                     </div>
                     <div className="bg-white dark:bg-gray-800 p-4 rounded-xl border border-outline-variant">
                         <div className="flex items-center gap-2 text-yellow-500 text-xs mb-2">
-                            <Clock className="w-4 h-4" /> در انتظار تیک
+                            <Clock className="w-4 h-4" /> در انتظار نماد
                         </div>
                         <div className="text-2xl font-bold">{stats.pendingVerification}</div>
                     </div>
                     <div className="bg-white dark:bg-gray-800 p-4 rounded-xl border border-outline-variant">
                         <div className="flex items-center gap-2 text-on-surface-variant text-xs mb-2">
-                            <BadgeCheck className="w-4 h-4 text-green-500" /> تیک طلایی
+                            <BadgeCheck className="w-4 h-4 text-green-500" /> نماد طلایی
                         </div>
                         <div className="text-2xl font-bold">{stats.tierStats.gold}</div>
                     </div>
@@ -201,7 +201,7 @@ export default function AdminCatalogesPage() {
                             </select>
                         </div>
                         <div>
-                            <label className="text-xs mb-1 block">وضعیت تیک</label>
+                            <label className="text-xs mb-1 block">وضعیت نماد</label>
                             <select
                                 value={filters.verificationStatus}
                                 onChange={(e) => setFilters({ ...filters, verificationStatus: e.target.value, page: 1 })}
@@ -215,7 +215,7 @@ export default function AdminCatalogesPage() {
                             </select>
                         </div>
                         <div>
-                            <label className="text-xs mb-1 block">سطح تیک</label>
+                            <label className="text-xs mb-1 block">سطح نماد</label>
                             <select
                                 value={filters.verificationTier}
                                 onChange={(e) => setFilters({ ...filters, verificationTier: e.target.value, page: 1 })}
@@ -244,7 +244,7 @@ export default function AdminCatalogesPage() {
                                     <th className="px-4 py-3 text-right">نام</th>
                                     <th className="px-4 py-3 text-right">نوع</th>
                                     <th className="px-4 py-3 text-right">شهر</th>
-                                    <th className="px-4 py-3 text-right">وضعیت تیک</th>
+                                    <th className="px-4 py-3 text-right">وضعیت نماد</th>
                                     <th className="px-4 py-3 text-right">اعتبار</th>
                                     <th className="px-4 py-3 text-right">آگهی</th>
                                     <th className="px-4 py-3 text-right">تاریخ ثبت</th>

@@ -1,24 +1,21 @@
 // app/my-catalogs/components/StatsTab.tsx
+// تب آمار کاتالوگ — فقط آمارِ خود کاتالوگ (کیف اعتبار حساب کاربری از اینجا حذف شد — جای آن پروفایل است)
 'use client';
 
 import React from 'react';
 import Image from 'next/image';
 import { Bookmark, Eye, Package, Share2, User as UserIcon } from 'lucide-react';
-import CreditsCard from '@/app_/profile/components/CreditsCard';
-import { useCreditBalance } from '@/lib/api/apiHooks';
 import { cn } from '@/lib/utils';
 import { fmt } from '../constants';
 
 /**
- * تب آمار — اعتبار فقط همین‌جا fetch می‌شود (perf: قبل از باز کردن تب لود نمی‌شود)
+ * تب آمار — بازدید، ذخیره، اشتراک، محصول + ذخیره‌کنندگان
  */
 export default function StatsTab({ currentCatalog, stats, productsCount }: {
     currentCatalog: any;
     stats: any;
     productsCount: number;
 }) {
-    // ✅ query فقط وقتی تب آمار باز است mount می‌شود
-    const { data: creditBalance } = useCreditBalance();
 
     const cards = [
         { icon: Eye, value: stats?.views, label: 'بازدید', cls: 'text-blue-500' },
@@ -38,8 +35,6 @@ export default function StatsTab({ currentCatalog, stats, productsCount }: {
                     </div>
                 ))}
             </div>
-
-            <CreditsCard balance={creditBalance?.balance} />
 
             <div className="bg-white dark:bg-gray-900 rounded-xl border border-outline-variant/40 dark:border-gray-700 p-4">
                 <h3 className="text-xs font-extrabold text-on-surface flex items-center gap-1.5 mb-3">

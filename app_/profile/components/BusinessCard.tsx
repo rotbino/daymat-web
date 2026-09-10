@@ -92,7 +92,7 @@ export default function CatalogCard({
 
                 {/* ستون راست: نام، نوع، موقعیت */}
                 <div className="flex-1 min-w-0">
-                    {/* خط اول: نام + تیک اعتماد */}
+                    {/* خط اول: نام + نماد اعتماد */}
                     <div className="flex items-center justify-between gap-2">
                         <div className="flex items-center gap-2 min-w-0">
                             <h2 className="text-lg font-semibold text-on-surface dark:text-gray-100 truncate">
@@ -173,7 +173,7 @@ export default function CatalogCard({
                         <span>اطلاعات شما کامل است</span>
                     </div>
                     <button onClick={onVerificationClick} className="text-[10px] font-medium bg-primary text-on-primary px-3 py-1.5 rounded-lg hover:bg-primary/90 transition-colors">
-                        دریافت تیک اعتماد
+                        دریافت نماد اعتماد
                     </button>
                 </div>
             )}

@@ -104,7 +104,7 @@ export default function AdminCatalogDetailPage() {
 
     // ======================== تأیید/رد ========================
     const handleVerify = async () => {
-        if (actionMode === 'approve' && !selectedTier) return toast.error('سطح تیک را انتخاب کنید');
+        if (actionMode === 'approve' && !selectedTier) return toast.error('سطح نماد را انتخاب کنید');
         if (actionMode === 'reject' && !rejectReason.trim()) return toast.error('دلیل رد را وارد کنید');
         setVerifying(true);
         try {
@@ -114,7 +114,7 @@ export default function AdminCatalogDetailPage() {
             body.verificationId = catalog?.latestVerification?.id;
 
             await apiService.admin.cataloges.verify(catalogId, body);
-            toast.success(actionMode === 'approve' ? 'تیک با موفقیت تأیید شد' : 'درخواست رد شد');
+            toast.success(actionMode === 'approve' ? 'نماد با موفقیت تأیید شد' : 'درخواست رد شد');
             setActionMode('none');
             fetchDetail(false);
         } catch (err: any) {
@@ -283,7 +283,7 @@ export default function AdminCatalogDetailPage() {
                         <InfoCard label="تلفن" value={catalog.phone} icon={Phone} dir="ltr" />
                         <InfoCard label="وب‌سایت" value={catalog.website || '—'} icon={Globe} />
                         <InfoCard label="وضعیت" value={catalog.status === 'active' ? 'فعال' : 'غیرفعال'} icon={CheckCircle} />
-                        <InfoCard label="تیک اعتماد" value={
+                        <InfoCard label="نماد اعتماد" value={
                             catalog.verificationStatus === 'none' ? 'ندارد' :
                                 catalog.verificationStatus === 'pending' ? 'در انتظار' :
                                     catalog.verificationStatus === 'approved' ? `تأیید شده (${catalog.verificationTier})` : 'رد شده'
@@ -300,7 +300,7 @@ export default function AdminCatalogDetailPage() {
                     </div>
                 )}
 
-                {/* ══════ مدارک و تیک ══════ */}
+                {/* ══════ مدارک و نماد ══════ */}
                 {activeTab === 'verification' && (
                     <div className="space-y-6">
                         {latestVer ? (
@@ -308,7 +308,7 @@ export default function AdminCatalogDetailPage() {
                                 <div className="flex items-center justify-between mb-4">
                                     <div className="flex items-center gap-2">
                                         <Shield className="w-5 h-5 text-primary" />
-                                        <h3 className="font-semibold">درخواست تیک {latestVer.tier === 'blue' ? 'آبی' : latestVer.tier === 'silver' ? 'نقره‌ای' : 'طلایی'}</h3>
+                                        <h3 className="font-semibold">درخواست نماد {latestVer.tier === 'blue' ? 'آبی' : latestVer.tier === 'silver' ? 'نقره‌ای' : 'طلایی'}</h3>
                                     </div>
                                     <span className={cn(
                                         "text-xs px-2 py-0.5 rounded-full",
@@ -350,7 +350,7 @@ export default function AdminCatalogDetailPage() {
 
                                         {actionMode === 'approve' && (
                                             <div className="space-y-3 bg-surface-container-low p-4 rounded-lg">
-                                                <p className="text-sm">انتخاب سطح تیک:</p>
+                                                <p className="text-sm">انتخاب سطح نماد:</p>
                                                 <div className="flex gap-2">
                                                     {['blue', 'silver', 'gold'].map(t => (
                                                         <button key={t} onClick={() => setSelectedTier(t)}
@@ -360,7 +360,7 @@ export default function AdminCatalogDetailPage() {
                                                     ))}
                                                 </div>
                                                 <button onClick={handleVerify} disabled={verifying}
-                                                        className="px-4 py-2 bg-primary text-white rounded-lg">{verifying ? '...' : 'تأیید تیک'}</button>
+                                                        className="px-4 py-2 bg-primary text-white rounded-lg">{verifying ? '...' : 'تأیید نماد'}</button>
                                             </div>
                                         )}
 
@@ -376,7 +376,7 @@ export default function AdminCatalogDetailPage() {
                                 )}
                             </div>
                         ) : (
-                            <EmptyState icon={Shield} text="هیچ درخواست تیک اعتمادی ثبت نشده است." />
+                            <EmptyState icon={Shield} text="هیچ درخواست نماد اعتمادی ثبت نشده است." />
                         )}
                     </div>
                 )}

@@ -40,6 +40,7 @@ export default function MemberHome({ user: userProp }: Props) {
 
     const [shareSlug, setShareSlug] = useState<string | null>(null);
     const [shareName, setShareName] = useState('');
+    const [shareLogo, setShareLogo] = useState<string | undefined>(undefined);
 
     // ─── کاتالوگ‌ها ───
     const { data: cataloges, isLoading: bizLoading } = useQuery({
@@ -87,7 +88,7 @@ export default function MemberHome({ user: userProp }: Props) {
         [adsSummary],
     );
 
-    const openShare = (c: any) => { setShareSlug(c.slug); setShareName(c.name); };
+    const openShare = (c: any) => { setShareSlug(c.slug); setShareName(c.name); setShareLogo(c.logoFile?.path || c.logoUrl || undefined); };
     const goEdit = (c: any) => router.push(c.slug ? `/${c.slug}?edit=1` : `/catalog/edit/${c.id}`);
 
     // اعلان‌های مشتق — فقط شمارنده برای هدر خلاصه
@@ -294,7 +295,7 @@ export default function MemberHome({ user: userProp }: Props) {
 
 
 
-            <ShareKitModal open={!!shareSlug} onClose={() => setShareSlug(null)} catalogName={shareName} slug={shareSlug ?? undefined} />
+            <ShareKitModal open={!!shareSlug} onClose={() => setShareSlug(null)} catalogName={shareName} slug={shareSlug ?? undefined} logoUrl={shareLogo} />
 
 
 

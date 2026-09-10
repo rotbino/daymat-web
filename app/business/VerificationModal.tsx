@@ -39,7 +39,7 @@ export function VerificationModal({
     const user = useSelector((state: RootState) => state.auth.user);
     const userNationalId = user?.nationalId || null;
 
-    // سطوح مجاز بر اساس تیک فعلی
+    // سطوح مجاز بر اساس نماد فعلی
     const allowedLevels = useMemo(() => {
         if (currentLevel === 'none') return ['blue', 'silver', 'gold'];
         if (currentLevel === 'blue') return ['silver', 'gold'];
@@ -187,7 +187,7 @@ export function VerificationModal({
 
             await apiService.catalog.requestVerification(catalogId, payload);
             const levelNames = { blue: 'آبی', silver: 'نقره‌ای', gold: 'طلایی' };
-            toast.success(`درخواست تیک ${levelNames[activeLevel]} با موفقیت ارسال شد`);
+            toast.success(`درخواست نماد ${levelNames[activeLevel]} با موفقیت ارسال شد`);
             onSuccess?.();
             onClose();
         } catch (error: any) {
@@ -207,7 +207,7 @@ export function VerificationModal({
                             <Shield className="w-5 h-5 text-primary" />
                         </div>
                         <div>
-                            <h3 className="text-lg font-semibold text-on-surface">تیک اعتماد</h3>
+                            <h3 className="text-lg font-semibold text-on-surface">نماد اعتماد</h3>
                             <p className="text-xs text-on-surface-variant">{catalogName}</p>
                         </div>
                     </div>
@@ -220,7 +220,7 @@ export function VerificationModal({
 
                     {/* انتخاب سطح */}
                     <div>
-                        <label className="text-xs font-medium text-on-surface-variant mb-2 block">سطح تیک اعتماد</label>
+                        <label className="text-xs font-medium text-on-surface-variant mb-2 block">سطح نماد اعتماد</label>
                         <div className="grid grid-cols-3 gap-3">
                             {LEVEL_DEFS.filter(({ value }) => allowedLevels.includes(value)).map(({ value, label, icon, color, bg }) => (
                                 <button
@@ -238,7 +238,7 @@ export function VerificationModal({
                                         {icon}
                                     </div>
                                     <span className={cn("text-[11px] font-medium", activeLevel === value ? color : 'text-on-surface-variant')}>
-                                        تیک {label}
+                                        نماد {label}
                                     </span>
                                 </button>
                             ))}
@@ -392,7 +392,7 @@ export function VerificationModal({
                     {/* هشدار پروفایل ناقص */}
                     {!isProfileComplete && (
                         <div className="bg-yellow-50 dark:bg-yellow-900/20 border border-yellow-200 dark:border-yellow-800/50 text-yellow-700 dark:text-yellow-300 p-3 rounded-xl text-sm">
-                            برای دریافت تیک اعتماد، ابتدا باید پروفایل کسب‌وکار خود را تکمیل کنید.
+                            برای دریافت نماد اعتماد، ابتدا باید پروفایل کسب‌وکار خود را تکمیل کنید.
                         </div>
                     )}
 

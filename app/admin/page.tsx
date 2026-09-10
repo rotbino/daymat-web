@@ -122,7 +122,7 @@ export default function AdminDashboard() {
                             <BadgeCheck className="w-6 h-6 text-blue-600" />
                             <div>
                                 <p className="font-semibold text-blue-800 dark:text-blue-200">
-                                    {stats.pendingVerifications} درخواست تیک اعتماد
+                                    {stats.pendingVerifications} درخواست نماد اعتماد
                                 </p>
                                 <p className="text-xs text-blue-600/80 dark:text-blue-400/80 mt-0.5">
                                     بررسی درخواست‌ها

@@ -308,7 +308,7 @@ export default function EditCatalogPage() {
 
 
 
-                 {/*========== کارت‌های تیک اعتماد (کامل) ==========*/}
+                 {/*========== کارت‌های نماد اعتماد (کامل) ==========*/}
                 {isPending && (
                     <div className="bg-yellow-50 border-2 border-yellow-300 rounded-2xl p-6 mb-4">
                         <div className="flex items-center gap-4">
@@ -355,7 +355,7 @@ export default function EditCatalogPage() {
                                 <BadgeCheck className="w-8 h-8 text-primary" />
                                 <div>
                                     <h3 className="font-semibold text-on-surface dark:text-gray-100">
-                                        شما دارای تیک {currentTier === 'blue' ? 'آبی' : currentTier === 'silver' ? 'نقره‌ای' : 'طلایی'} هستید
+                                        شما دارای نماد {currentTier === 'blue' ? 'آبی' : currentTier === 'silver' ? 'نقره‌ای' : 'طلایی'} هستید
                                     </h3>
                                     <p className="text-sm text-on-surface-variant dark:text-gray-400">
                                         {isGold ? 'بالاترین سطح اعتماد را کسب کرده‌اید.' : 'می‌توانید برای ارتقاء به سطح بالاتر اقدام کنید.'}
@@ -368,7 +368,7 @@ export default function EditCatalogPage() {
                                     className="flex items-center gap-2 px-6 py-2.5 bg-primary text-on-primary rounded-xl hover:bg-primary/90 transition-all text-sm font-medium whitespace-nowrap"
                                 >
                                     <BadgeCheck className="w-4 h-4" />
-                                    ارتقاء تیک
+                                    ارتقاء نماد
                                 </button>
                             )}
                         </div>
@@ -387,7 +387,7 @@ export default function EditCatalogPage() {
                                         اطلاعات کسب‌وکار شما کامل است! ✅
                                     </h3>
                                     <p className="text-sm text-on-surface-variant dark:text-gray-400">
-                                        اکنون می‌توانید برای دریافت تیک اعتماد اقدام کنید.
+                                        اکنون می‌توانید برای دریافت نماد اعتماد اقدام کنید.
                                     </p>
                                 </div>
                             </div>
@@ -396,7 +396,7 @@ export default function EditCatalogPage() {
                                 className="flex items-center gap-2 px-6 py-2.5 bg-primary text-on-primary rounded-xl hover:bg-primary/90 transition-all text-sm font-medium whitespace-nowrap"
                             >
                                 <BadgeCheck className="w-4 h-4" />
-                                دریافت تیک اعتماد
+                                دریافت نماد اعتماد
                             </button>
                         </div>
                     </div>

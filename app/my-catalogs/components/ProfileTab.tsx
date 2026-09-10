@@ -8,7 +8,7 @@ import Image from 'next/image';
 import Link from 'next/link';
 import { toast } from 'sonner';
 import {
-    BadgeCheck, Camera, Check, ChevronDown, ChevronLeft, Copy, Pencil, Phone, Share2,
+    BadgeCheck, Camera, Check, ChevronDown, ChevronLeft, Copy, Pencil, Phone, Share2, ShieldCheck,
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { SALES_ICON, SALES_LABEL } from '../constants';
@@ -16,12 +16,13 @@ import { ProfileBanner } from './AlertBanners';
 
 interface CompletionItem { key: string; label: string; ok: boolean; }
 
-export default function ProfileTab({ catalog, completion, canShare, onShare, onEdit, userAvatar, userHasName, onProfile }: {
+export default function ProfileTab({ catalog, completion, canShare, onShare, onEdit, onVerify, userAvatar, userHasName, onProfile }: {
     catalog: any;
     completion: { percent: number; items: CompletionItem[]; openItem: (key: string) => void };
     canShare: boolean;
     onShare: () => void;
     onEdit: () => void;
+    onVerify: () => void;
     userAvatar?: string | null;
     userHasName: boolean;
     onProfile: () => void;
@@ -215,6 +216,28 @@ export default function ProfileTab({ catalog, completion, canShare, onShare, onE
                     <span className="block text-sm font-bold text-on-surface">ویرایش اطلاعات کاتالوگ</span>
                     <span className="block text-[11px] text-on-surface-variant mt-0.5">نام، لوگو، آدرس، صنف و تماس</span>
                 </span>
+            </button>
+
+            {/* 🛡️ نماد اعتماد — جزو مشخصات کاتالوگ است، نه انتشار (بنا بر بازخورد) */}
+            <button onClick={onVerify}
+                    className="w-full bg-white dark:bg-gray-900 rounded-xl border border-outline-variant/50 dark:border-gray-700
+                        p-4 flex items-center gap-3.5 text-right hover:border-amber-500/40 transition-colors">
+                <span className={cn('w-11 h-11 rounded-xl flex items-center justify-center flex-shrink-0',
+                    verified
+                        ? 'bg-emerald-50 dark:bg-emerald-900/25'
+                        : 'bg-surface-container-high dark:bg-gray-800')}>
+                    <ShieldCheck className={cn('w-5 h-5', verified ? 'text-emerald-600 dark:text-emerald-400' : 'text-on-surface-variant')} />
+                </span>
+                <span className="flex-1 min-w-0">
+                    <span className="block text-sm font-bold text-on-surface">نماد اعتماد</span>
+                    <span className={cn('block text-[11px] mt-0.5 leading-5',
+                        verified ? 'text-emerald-700 dark:text-emerald-300 font-bold' : 'text-on-surface-variant')}>
+                        {verified
+                            ? 'کاتالوگ شما نماد اعتماد دارد ✓'
+                            : 'با ارسال مدارک هویت شخصی و کسب و کاری برای کاتالوگت نماد اعتماد بگیر.'}
+                    </span>
+                </span>
+                {!verified && <ChevronLeft className="w-4 h-4 text-on-surface-variant/40 flex-shrink-0" />}
             </button>
 
             {/* 👤 نکتهٔ پروفایل کاربر — کم‌اهمیت‌تر از کار کاتالوگ */}

@@ -59,25 +59,25 @@ export default function ProductsTab({
 
     return (
         <div className="space-y-2.5">
-            {/* 🧰 نوار مدیریت کالاها — ابتدا: دسته‌بندی‌ها و واحدها | انتها: افزودن
-                (بدون overflow — همیشه بدون اسکرول دیده می‌شوند تا کاربر کم‌سواد دسته‌بندی را پیدا کند) */}
-            <div className="flex items-center gap-2">
+            {/* 🧰 نوار ابزار کالاها — آیکون‌های ساده بدون کانتینر (بنا بر بازخورد) + افزودن در انتها
+                مارجین بالا/پایین برای تنفس بهتر المان‌ها */}
+            <div className="flex items-center gap-1 my-3">
                 {!isService && (
                     <>
-                        <button onClick={onOpenCategorySettings} title="دسته‌های کاتالوگ — گروه‌بندی کالاها"
-                                className="h-9 px-3 rounded-lg border border-primary/40 bg-primary/5 text-primary
-                                    hover:bg-primary/10 active:scale-[0.97] flex items-center gap-1.5 flex-shrink-0 transition-all text-[11px] font-extrabold">
-                            <BookOpen className="w-4 h-4" /> دسته‌بندی‌ها
+                        <button onClick={onOpenCategorySettings} title="دسته‌بندی‌های کاتالوگ — گروه‌بندی کالاها" aria-label="دسته‌بندی‌های کاتالوگ"
+                                className="w-9 h-9 -ms-1.5 grid place-items-center rounded-lg text-on-surface-variant
+                                    hover:text-primary hover:bg-primary/5 active:scale-90 transition-all flex-shrink-0">
+                            <BookOpen className="w-[21px] h-[21px]" />
                         </button>
-                        <button onClick={onOpenUnitSettings} title="واحدهای کاتالوگ — کارتن، بسته و..."
-                                className="h-9 px-3 rounded-lg border border-primary/40 bg-primary/5 text-primary
-                                    hover:bg-primary/10 active:scale-[0.97] flex items-center gap-1.5 flex-shrink-0 transition-all text-[11px] font-extrabold">
-                            <Layers className="w-4 h-4" /> واحدها
+                        <button onClick={onOpenUnitSettings} title="واحدهای کاتالوگ — کارتن، بسته و..." aria-label="واحدهای کاتالوگ"
+                                className="w-9 h-9 grid place-items-center rounded-lg text-on-surface-variant
+                                    hover:text-primary hover:bg-primary/5 active:scale-90 transition-all flex-shrink-0">
+                            <Layers className="w-[21px] h-[21px]" />
                         </button>
                     </>
                 )}
                 <span className="flex-1" />
-                {/* ✨ CTA اصلی — جمع‌وجور در انتهای نوار تا شبیه نوار به نظر نرسد */}
+                {/* ✨ CTA اصلی — جمع‌وجور در انتهای نوار */}
                 <button onClick={() => router.push(`/ad/create?catalog=${currentCatalog.id}`)}
                         className="h-9 px-3.5 rounded-lg bg-amber-500 text-white text-[12px] font-extrabold
                             flex items-center gap-1.5 flex-shrink-0 whitespace-nowrap

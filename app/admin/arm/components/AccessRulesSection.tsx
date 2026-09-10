@@ -77,7 +77,7 @@ export function AccessRulesSection({ watch, setValue, onSave, isSaving, isAdmin 
             icon: Shield,
             rules: [
                 { key: 'requirePhoneVerification', label: 'تأیید موبایل اجباری', hint: 'کاربر باید شماره موبایلش تأیید شده باشد', icon: Phone, adminOnly: true },
-                { key: 'requireCatalogVerification', label: 'تیک اعتماد اجباری', hint: 'کاربر باید تیک اعتماد داشته باشد', icon: Shield, adminOnly: true },
+                { key: 'requireCatalogVerification', label: 'نماد اعتماد اجباری', hint: 'کاربر باید نماد اعتماد داشته باشد', icon: Shield, adminOnly: true },
             ],
         },
     ];
