@@ -21,6 +21,7 @@ import { BarChart3, Globe, IdCard, Loader2, Package } from 'lucide-react';
 import UnitSettingsModal from '@/app/ad/components/UnitSettingsModal';
 import CategorySettingsModal from '@/app/ad/components/CategorySettingsModal';
 import ShareKitModal from '@/app_/profile/components/ShareKitModal';
+import VisitCardModal from '@/app_/profile/components/VisitCardModal';
 import { RefreshModal } from '@/app/ad/RefreshModal';
 import { ChangePasswordModal } from '@/app_/register/ChangePasswordModal';
 import { VerificationModal } from '@/app/business/VerificationModal';
@@ -51,8 +52,7 @@ export default function MyCatalogsContent() {
     const [statusFilter, setStatusFilter] = useState<StatusFilter>('all');
     const [shareSlug, setShareSlug] = useState<string | null>(null);
     const [shareName, setShareName] = useState('');
-    const [sharePhone, setSharePhone] = useState('');
-    const [shareDesc, setShareDesc] = useState('');
+    const [cardOpen, setCardOpen] = useState(false); // 🪪 استودیو کارت ویزیت — دکمهٔ مستقل در هدر
     const [catalogEditOpen, setCatalogEditOpen] = useState(false);
     const [unitModalOpen, setUnitModalOpen] = useState(false);
     const [catModalOpen, setCatModalOpen] = useState(false);
@@ -189,8 +189,6 @@ export default function MyCatalogsContent() {
     const openShare = () => {
         setShareSlug(currentCatalog?.slug ?? null);
         setShareName(currentCatalog?.name ?? '');
-        setSharePhone(currentCatalog?.phone ?? '');
-        setShareDesc((currentCatalog as any)?.shortDescription ?? '');
     };
     // (تایپ Catalog در apiTypes هنوز slug ندارد — با cast تا فیکس apiTypes)
     const canShare = !!(currentCatalog as any)?.slug;
@@ -266,6 +264,7 @@ export default function MyCatalogsContent() {
                         onSelect={selectCatalog}
                         onShare={openShare}
                         onPreview={previewCatalog}
+                        onOpenCard={() => setCardOpen(true)}
                         onNewCatalog={goNewCatalog}
                         onChangePassword={() => setPasswordOpen(true)}
                     />
@@ -373,8 +372,13 @@ export default function MyCatalogsContent() {
                                    catalogId={currentCatalog.id} initialTree={localCatTree}
                                    onSaved={(tree: any[]) => { setLocalCatTree(tree); refreshAll(); }} />
             <ShareKitModal open={!!shareSlug} onClose={() => setShareSlug(null)} catalogName={shareName} slug={shareSlug ?? undefined}
-                           logoUrl={(currentCatalog as any)?.logoFile?.path || currentCatalog?.logoUrl || undefined}
-                           phone={sharePhone || undefined} description={shareDesc || undefined} />
+                           logoUrl={(currentCatalog as any)?.logoFile?.path || currentCatalog?.logoUrl || undefined} />
+            {/* 🪪 استودیو کارت ویزیت — از کیت اشتراک‌گذاری بیرون آمد (خواستهٔ کاربر) */}
+            <VisitCardModal open={cardOpen} onClose={() => setCardOpen(false)} catalogName={currentCatalog.name}
+                            slug={(currentCatalog as any)?.slug ?? undefined}
+                            logoUrl={(currentCatalog as any)?.logoFile?.path || currentCatalog?.logoUrl || undefined}
+                            phone={currentCatalog?.phone ?? undefined}
+                            description={(currentCatalog as any)?.shortDescription ?? undefined} />
             <ChangePasswordModal isOpen={passwordOpen} onClose={() => setPasswordOpen(false)}
                                  onSuccess={() => dispatch(setUser({ ...user, temporaryPassword: false }))} />
             <VerificationModal isOpen={verifyOpen} onClose={() => setVerifyOpen(false)}

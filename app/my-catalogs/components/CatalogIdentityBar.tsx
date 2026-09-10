@@ -1,22 +1,23 @@
 // app/my-catalogs/components/CatalogIdentityBar.tsx
 // نوار هویت کاتالوگ — سوییچر سبک اینستاگرام (لوگو + نام + فلش پایین)
-// شیر + چشم (مشاهدهٔ کاتالوگ عمومی) + ⋯ — «کاتالوگ جدید» فقط از همین منو (سیاست MVP)
-// موبایل: سه دکمه کوچک‌تر (w-9) تا برای عنوان جا بماند (بازخورد کاربر)
+// شیر + چشم (مشاهدهٔ کاتالوگ عمومی) + کارت ویزیت (استودیوی مستقل) + ⋯
+// موبایل: دکمه‌ها کوچک‌تر (w-9) تا برای عنوان جا بماند (بازخورد کاربر)
 // ⚠️ قانون: حالت تاریک همیشه چک شده
 'use client';
 
 import React, { useState } from 'react';
 import Image from 'next/image';
-import { Check, ChevronDown, Ellipsis, Eye, Key, LibraryBig, Plus, Share2 } from 'lucide-react';
+import { Check, ChevronDown, Ellipsis, Eye, IdCard, Key, LibraryBig, Plus, Share2 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 
-export default function CatalogIdentityBar({ catalogs, currentCatalog, canShare, onSelect, onShare, onPreview, onNewCatalog, onChangePassword }: {
+export default function CatalogIdentityBar({ catalogs, currentCatalog, canShare, onSelect, onShare, onPreview, onOpenCard, onNewCatalog, onChangePassword }: {
     catalogs: any[];
     currentCatalog: any;
     canShare: boolean;
     onSelect: (id: string) => void;
     onShare: () => void;
     onPreview: () => void;
+    onOpenCard: () => void;
     onNewCatalog: () => void;
     onChangePassword: () => void;
 }) {
@@ -75,6 +76,15 @@ export default function CatalogIdentityBar({ catalogs, currentCatalog, canShare,
                             bg-surface-container-high/70 dark:bg-gray-800 text-on-surface-variant
                             hover:text-primary hover:bg-surface-container-high dark:hover:bg-gray-700 active:scale-95 transition-all">
                     <Eye className="w-4 h-4 lg:w-[18px] lg:h-[18px]" />
+                </button>
+            )}
+
+            {/* 🪪 استودیو کارت ویزیت — از کیت اشتراک‌گذاری بیرون آمد تا دم دست باشد (خواستهٔ کاربر) */}
+            {canShare && (
+                <button type="button" onClick={onOpenCard} aria-label="کارت ویزیت" title="ساخت کارت ویزیت"
+                        className="w-9 h-9 lg:w-10 lg:h-10 rounded-lg grid place-items-center flex-shrink-0
+                            bg-amber-500/10 text-amber-600 dark:text-amber-400 hover:bg-amber-500/20 active:scale-95 transition-all">
+                    <IdCard className="w-4 h-4 lg:w-[18px] lg:h-[18px]" />
                 </button>
             )}
 
