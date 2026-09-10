@@ -59,16 +59,35 @@ export default function ProductsTab({
 
     return (
         <div className="space-y-2.5">
-            {/* ✨ CTA اصلی این تب — بزرگ و واضح برای همهٔ کاربران */}
-            <button onClick={() => router.push(`/ad/create?catalog=${currentCatalog.id}`)}
-                    className="w-full h-11 rounded-lg bg-amber-500 text-white text-[13px] font-extrabold
-                        flex items-center justify-center gap-1.5
-                        hover:bg-amber-600 active:scale-[0.99] transition-all">
-                <Plus className="w-4.5 h-4.5" />
-                {isService ? 'افزودن خدمت جدید' : 'افزودن محصول جدید'}
-            </button>
+            {/* 🧰 نوار مدیریت کالاها — ابتدا: دسته‌بندی‌ها و واحدها | انتها: افزودن
+                (بدون overflow — همیشه بدون اسکرول دیده می‌شوند تا کاربر کم‌سواد دسته‌بندی را پیدا کند) */}
+            <div className="flex items-center gap-2">
+                {!isService && (
+                    <>
+                        <button onClick={onOpenCategorySettings} title="دسته‌های کاتالوگ — گروه‌بندی کالاها"
+                                className="h-9 px-3 rounded-lg border border-primary/40 bg-primary/5 text-primary
+                                    hover:bg-primary/10 active:scale-[0.97] flex items-center gap-1.5 flex-shrink-0 transition-all text-[11px] font-extrabold">
+                            <BookOpen className="w-4 h-4" /> دسته‌بندی‌ها
+                        </button>
+                        <button onClick={onOpenUnitSettings} title="واحدهای کاتالوگ — کارتن، بسته و..."
+                                className="h-9 px-3 rounded-lg border border-primary/40 bg-primary/5 text-primary
+                                    hover:bg-primary/10 active:scale-[0.97] flex items-center gap-1.5 flex-shrink-0 transition-all text-[11px] font-extrabold">
+                            <Layers className="w-4 h-4" /> واحدها
+                        </button>
+                    </>
+                )}
+                <span className="flex-1" />
+                {/* ✨ CTA اصلی — جمع‌وجور در انتهای نوار تا شبیه نوار به نظر نرسد */}
+                <button onClick={() => router.push(`/ad/create?catalog=${currentCatalog.id}`)}
+                        className="h-9 px-3.5 rounded-lg bg-amber-500 text-white text-[12px] font-extrabold
+                            flex items-center gap-1.5 flex-shrink-0 whitespace-nowrap
+                            hover:bg-amber-600 active:scale-[0.97] transition-all">
+                    <Plus className="w-4 h-4" />
+                    {isService ? 'افزودن خدمت' : 'افزودن محصول'}
+                </button>
+            </div>
 
-            {/* نوار فیلتر + تنظیمات کاتالوگِ کالاها */}
+            {/* نوار فیلتر وضعیت کالاها */}
             <div className="flex items-center gap-1.5 overflow-x-auto scrollbar-hide">
                 {filters.map(([k, label]) => (
                     <button key={k} onClick={() => onFilterChange(k)}
@@ -79,21 +98,6 @@ export default function ProductsTab({
                         {label}
                     </button>
                 ))}
-                <span className="flex-1" />
-                {!isService && (
-                    <>
-                        <button onClick={onOpenCategorySettings} title="دسته‌های کاتالوگ — گروه‌بندی کالاها"
-                                className="h-8 px-2.5 rounded-full border border-primary/40 bg-primary/5 text-primary
-                                    hover:bg-primary/10 flex items-center gap-1 flex-shrink-0 transition-colors text-[10px] font-bold">
-                            <BookOpen className="w-3.5 h-3.5" /> دسته‌ها
-                        </button>
-                        <button onClick={onOpenUnitSettings} title="واحدهای کاتالوگ — کارتن، بسته و..."
-                                className="h-8 px-2.5 rounded-full border border-primary/40 bg-primary/5 text-primary
-                                    hover:bg-primary/10 flex items-center gap-1 flex-shrink-0 transition-colors text-[10px] font-bold">
-                            <Layers className="w-3.5 h-3.5" /> واحدها
-                        </button>
-                    </>
-                )}
             </div>
 
             {adsLoading ? (

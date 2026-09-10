@@ -26,7 +26,6 @@ import { ChangePasswordModal } from '@/app_/register/ChangePasswordModal';
 import { VerificationModal } from '@/app/business/VerificationModal';
 
 import { StatusFilter, Tab } from './constants';
-import TopBar from './components/TopBar';
 import EmptyCatalogState from './components/EmptyCatalogState';
 import CatalogIdentityBar from './components/CatalogIdentityBar';
 import ConsoleTabs from './components/ConsoleTabs';
@@ -245,16 +244,15 @@ export default function MyCatalogsContent() {
                 <TemporaryPasswordBanner phone={user?.phone} onClick={() => setPasswordOpen(true)} />
             )}
 
-            {/* هدر صفحه — عنوان + منوی سه‌نقطه (کاتالوگ جدید فقط اینجا) */}
-            <TopBar onChangePassword={() => setPasswordOpen(true)} onNewCatalog={goNewCatalog} />
-
-            {/* نوار هویت کاتالوگ — سوییچر سبک اینستاگرام + شیر سریع */}
+            {/* نوار هویت کاتالوگ — سوییچر سبک اینستاگرام + شیر سریع + منوی ⋯ (کاتالوگ جدید فقط اینجا) */}
             <CatalogIdentityBar
                 catalogs={catalogs}
                 currentCatalog={currentCatalog}
                 canShare={canShare}
                 onSelect={selectCatalog}
                 onShare={openShare}
+                onNewCatalog={goNewCatalog}
+                onChangePassword={() => setPasswordOpen(true)}
             />
 
             {/* 🎉 بنر جشن عضویت تازه — گذرا و قابل بستن */}

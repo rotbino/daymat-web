@@ -1,22 +1,25 @@
 // app/my-catalogs/components/CatalogIdentityBar.tsx
 // نوار هویت کاتالوگ — سوییچر سبک اینستاگرام (لوگو + نام + فلش پایین)
-// ⚠️ ایجاد کاتالوگ جدید اینجا نیست — فقط از منوی سه‌نقطهٔ بالای صفحه (سیاست MVP)
+// ⋯ گزینه‌های بیشتر کنار شیر — «کاتالوگ جدید» فقط از همین منو (سیاست MVP)
 // ⚠️ قانون: حالت تاریک همیشه چک شده
 'use client';
 
 import React, { useState } from 'react';
 import Image from 'next/image';
-import { Check, ChevronDown, LibraryBig, Share2 } from 'lucide-react';
+import { Check, ChevronDown, Ellipsis, Key, LibraryBig, Plus, Share2 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 
-export default function CatalogIdentityBar({ catalogs, currentCatalog, canShare, onSelect, onShare }: {
+export default function CatalogIdentityBar({ catalogs, currentCatalog, canShare, onSelect, onShare, onNewCatalog, onChangePassword }: {
     catalogs: any[];
     currentCatalog: any;
     canShare: boolean;
     onSelect: (id: string) => void;
     onShare: () => void;
+    onNewCatalog: () => void;
+    onChangePassword: () => void;
 }) {
     const [open, setOpen] = useState(false);
+    const [menuOpen, setMenuOpen] = useState(false);
     const multi = catalogs.length > 1;
     const logoSrc = currentCatalog?.logoFile?.path || currentCatalog?.logoUrl;
 
@@ -62,6 +65,33 @@ export default function CatalogIdentityBar({ catalogs, currentCatalog, canShare,
                     <Share2 className="w-4.5 h-4.5" />
                 </button>
             )}
+
+            {/* ⋯ گزینه‌های بیشتر — بنا بر خواستهٔ کاربر پایین آمد و کنار شیر نشست */}
+            <div className="relative flex-shrink-0">
+                <button type="button" onClick={() => setMenuOpen((o) => !o)} aria-label="گزینه‌های بیشتر"
+                        aria-expanded={menuOpen}
+                        className="w-10 h-10 rounded-lg grid place-items-center text-on-surface-variant
+                            border border-outline-variant/40 dark:border-gray-700 hover:bg-surface-container-high dark:hover:bg-gray-800 transition-colors">
+                    <Ellipsis className="w-4.5 h-4.5" />
+                </button>
+                {menuOpen && (
+                    <>
+                        <div className="fixed inset-0 z-40" onClick={() => setMenuOpen(false)} />
+                        <div className="absolute top-full end-0 mt-1 z-50 w-52 p-1.5 rounded-lg bg-white dark:bg-gray-900
+                            border border-outline-variant/30 dark:border-gray-700 shadow-xl animate-in fade-in zoom-in-95 duration-150">
+                            {/* 📍 ایجاد کاتالوگ جدید فقط از این منو — در MVP پنهان می‌ماند تا کاربر روی کیفیت بماند */}
+                            <button type="button" onClick={() => { setMenuOpen(false); onNewCatalog(); }}
+                                    className="w-full flex items-center gap-2.5 h-10 px-3 rounded-md text-[13px] text-on-surface hover:bg-surface-container-high dark:hover:bg-gray-800 transition-colors">
+                                <Plus className="w-4 h-4 text-amber-600 dark:text-amber-400" /> کاتالوگ جدید
+                            </button>
+                            <button type="button" onClick={() => { setMenuOpen(false); onChangePassword(); }}
+                                    className="w-full flex items-center gap-2.5 h-10 px-3 rounded-md text-[13px] text-on-surface hover:bg-surface-container-high dark:hover:bg-gray-800 transition-colors">
+                                <Key className="w-4 h-4 text-on-surface-variant" /> تغییر رمز عبور
+                            </button>
+                        </div>
+                    </>
+                )}
+            </div>
 
             {/* منوی سوییچ کاتالوگ‌ها — بدون «کاتالوگ جدید» */}
             {open && multi && (
