@@ -69,7 +69,7 @@ function ProductRowBase({ ad, onEdit, onCategory, onRefresh, onPublish }: {
                                 <Clock className="w-2.5 h-2.5" /> نیازمند قیمت تازه
                             </span>
                         ) : (
-                            <span className="text-[9px] font-bold px-2 py-0.5 rounded-full bg-gray-100 text-gray-500 dark:bg-gray-800">غیرفعال</span>
+                            <span className="text-[9px] font-bold px-2 py-0.5 rounded-full bg-gray-100 text-gray-500 dark:bg-gray-800 dark:text-gray-400">غیرفعال</span>
                         )}
                         {uncat && (
                             <span title="این کالا در فیلترهای دسته‌بندی بازار پیدا نمی‌شود — لینک شکسته"

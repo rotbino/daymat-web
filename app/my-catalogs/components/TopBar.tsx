@@ -19,7 +19,7 @@ export default function TopBar({ onChangePassword, onNewCatalog }: {
                     <BookOpen className="w-5 h-5 text-primary flex-shrink-0" /> مدیریت کاتالوگ
                 </h1>
                 <p className="hidden lg:block text-[11px] text-on-surface-variant/70 mt-0.5">
-                    محصولات، انتشار در بازارها و آمار — همه در یک کنسول
+                    مشخصات، محصولات، آمار و انتشار — هر بخش در تب خودش
                 </p>
             </div>
 

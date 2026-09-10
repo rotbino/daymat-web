@@ -59,7 +59,16 @@ export default function ProductsTab({
 
     return (
         <div className="space-y-2.5">
-            {/* نوار فیلتر + دکمه‌های تنظیم */}
+            {/* ✨ CTA اصلی این تب — بزرگ و واضح برای همهٔ کاربران */}
+            <button onClick={() => router.push(`/ad/create?catalog=${currentCatalog.id}`)}
+                    className="w-full h-11 rounded-lg bg-amber-500 text-white text-[13px] font-extrabold
+                        flex items-center justify-center gap-1.5
+                        hover:bg-amber-600 active:scale-[0.99] transition-all">
+                <Plus className="w-4.5 h-4.5" />
+                {isService ? 'افزودن خدمت جدید' : 'افزودن محصول جدید'}
+            </button>
+
+            {/* نوار فیلتر + تنظیمات کاتالوگِ کالاها */}
             <div className="flex items-center gap-1.5 overflow-x-auto scrollbar-hide">
                 {filters.map(([k, label]) => (
                     <button key={k} onClick={() => onFilterChange(k)}
@@ -71,14 +80,6 @@ export default function ProductsTab({
                     </button>
                 ))}
                 <span className="flex-1" />
-                {/* افزودن سریع — همیشه در دسترس */}
-                <button onClick={() => router.push(`/ad/create?catalog=${currentCatalog.id}`)}
-                        title={isService ? 'افزودن خدمت جدید' : 'افزودن محصول جدید'}
-                        className="h-8 px-3 rounded-full bg-amber-500 text-white text-[10px] font-extrabold
-                            flex items-center gap-1 flex-shrink-0
-                            hover:bg-amber-600 active:scale-95 transition-all">
-                    <Plus className="w-3.5 h-3.5" /> {isService ? 'خدمت' : 'محصول'}
-                </button>
                 {!isService && (
                     <>
                         <button onClick={onOpenCategorySettings} title="دسته‌های کاتالوگ — گروه‌بندی کالاها"

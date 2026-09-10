@@ -135,7 +135,7 @@ export default function AdminFeedbacksPage() {
             case 'open': return { icon: Clock, cls: 'bg-yellow-100 text-yellow-700', label: 'باز' };
             case 'under_review': return { icon: Clock, cls: 'bg-blue-100 text-blue-700', label: 'در بررسی' };
             case 'resolved': return { icon: CheckCircle, cls: 'bg-green-100 text-green-700', label: 'حل شده' };
-            case 'closed': return { icon: XCircle, cls: 'bg-gray-100 text-gray-700', label: 'بسته' };
+            case 'closed': return { icon: XCircle, cls: 'bg-gray-100 text-gray-700 dark:bg-gray-800 dark:text-gray-300', label: 'بسته' };
             default: return { icon: Clock, cls: 'bg-yellow-100 text-yellow-700', label: 'باز' };
         }
     };

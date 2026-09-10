@@ -9,8 +9,8 @@ export default function NotFound() {
             <Card className="w-full max-w-md">
                 <CardContent className="p-8 text-center">
                     <h1 className="text-6xl font-bold text-gray-300 mb-4">404</h1>
-                    <h2 className="text-2xl font-bold text-gray-900 mb-2">صفحه یافت نشد</h2>
-                    <p className="text-gray-600 mb-6">
+                    <h2 className="text-2xl font-bold text-gray-900 dark:text-gray-100 mb-2">صفحه یافت نشد</h2>
+                    <p className="text-gray-600 dark:text-gray-400 mb-6">
                         متأسفانه صفحه‌ای که به دنبال آن بودید وجود ندارد.
                     </p>
                     <Link href="/">

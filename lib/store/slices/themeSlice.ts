@@ -7,13 +7,18 @@ interface ThemeState {
     mode: ThemeMode;
 }
 
-const initialState: ThemeState = {
-    mode: (typeof window !== 'undefined' ? (localStorage.getItem('theme') as ThemeMode) : null) || 'light',
-};
+// ⚠️ هم‌ارز منطق dm-theme-init (layout): بدون انتخاب ذخیره‌شده، system-dark → 'system'
+// تا Provider هم بعد از mount همان dark پیش‌paint را نگه دارد (بدون فلش light)
+const initialStateFn = (): ThemeState => ({
+    mode: (typeof window !== 'undefined'
+        ? ((localStorage.getItem('theme') as ThemeMode)
+            || (window.matchMedia('(prefers-color-scheme: dark)').matches ? 'system' : 'light'))
+        : 'light'),
+});
 
 const themeSlice = createSlice({
     name: 'theme',
-    initialState,
+    initialState: initialStateFn(),
     reducers: {
         setThemeMode: (state, action: PayloadAction<ThemeMode>) => {
             state.mode = action.payload;

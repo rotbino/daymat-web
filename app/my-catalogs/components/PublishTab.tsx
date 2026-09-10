@@ -2,7 +2,7 @@
 'use client';
 
 import React from 'react';
-import { Globe, Settings2, Share2, ShieldCheck } from 'lucide-react';
+import { ExternalLink, Globe, Share2, ShieldCheck } from 'lucide-react';
 import { apiService } from '@/lib/api/apiService';
 import { useQueryClient } from '@tanstack/react-query';
 import { toast } from 'sonner';
@@ -36,6 +36,37 @@ export default function PublishTab({ currentCatalog, memberships, onShare, onVer
 
     return (
         <div className="space-y-3">
+            {/* لینک عمومی کاتالوگ — همان چیزی که مشتری می‌بیند */}
+            {currentCatalog.slug ? (
+                <div className={CARD_CLS + ' p-4'}>
+                    <h3 className="text-sm font-extrabold text-on-surface mb-2">لینک عمومی کاتالوگ</h3>
+                    <div className="flex items-center gap-2">
+                        <a href={`/${currentCatalog.slug}`} target="_blank" rel="noreferrer"
+                           className="flex-1 min-w-0 h-10 px-3 rounded-lg bg-surface-container-low dark:bg-gray-800
+                               flex items-center gap-2 text-xs font-bold text-amber-600 dark:text-amber-400
+                               hover:bg-surface-container-high dark:hover:bg-gray-700 transition-colors" dir="ltr">
+                            <ExternalLink className="w-3.5 h-3.5 flex-shrink-0" />
+                            <span className="truncate" dir="ltr">{typeof window !== 'undefined' ? window.location.host : ''}/{currentCatalog.slug}</span>
+                        </a>
+                        <button onClick={() => { navigator.clipboard?.writeText(`${window.location.origin}/${currentCatalog.slug}`).then(() => toast.success('لینک کپی شد')).catch(() => {}); }}
+                                aria-label="کپی لینک"
+                                className="h-10 px-3 rounded-lg border border-outline-variant/50 dark:border-gray-700 text-[11px] font-bold
+                                    text-on-surface-variant hover:text-primary hover:border-primary/40 transition-colors flex-shrink-0">
+                            کپی
+                        </button>
+                    </div>
+                </div>
+            ) : (
+                <button onClick={onEditCatalog}
+                        className="w-full rounded-lg border border-amber-500/50 bg-amber-500/5 dark:bg-amber-500/10 p-3.5
+                            flex items-center gap-3 text-right hover:border-amber-500 transition-colors">
+                    <Globe className="w-5 h-5 text-amber-600 dark:text-amber-400 flex-shrink-0" />
+                    <span className="flex-1 text-xs font-bold text-amber-700 dark:text-amber-300">
+                        برای انتشار، اول آدرس اختصاصی کاتالوگ را تنظیم کن
+                    </span>
+                </button>
+            )}
+
             {/* کیت اشتراک‌گذاری */}
             <button onClick={onShare}
                     className="w-full bg-gradient-to-l from-primary/10 to-primary/5 border border-primary/25 rounded-lg p-4
@@ -99,7 +130,7 @@ export default function PublishTab({ currentCatalog, memberships, onShare, onVer
             {/* تیک اعتماد */}
             <button onClick={onVerify}
                     className={CARD_CLS + ' p-4 flex items-center gap-3.5 text-right hover:border-primary/40 transition-colors'}>
-                <span className="w-11 h-11 rounded-xl bg-surface-container-high flex items-center justify-center flex-shrink-0">
+                <span className="w-11 h-11 rounded-xl bg-surface-container-high dark:bg-gray-800 flex items-center justify-center flex-shrink-0">
                     <ShieldCheck className="w-5 h-5 text-on-surface-variant" />
                 </span>
                 <span className="flex-1">
@@ -107,18 +138,6 @@ export default function PublishTab({ currentCatalog, memberships, onShare, onVer
                     <span className="block text-[11px] text-on-surface-variant mt-0.5">
                         {currentCatalog.verificationStatus === 'approved' ? 'تایید شده' : 'با ارسال مدارک، نشان اعتماد بگیر'}
                     </span>
-                </span>
-            </button>
-
-            {/* ویرایش کاتالوگ */}
-            <button onClick={onEditCatalog}
-                    className={CARD_CLS + ' p-4 flex items-center gap-3.5 text-right hover:border-primary/40 transition-colors'}>
-                <span className="w-11 h-11 rounded-xl bg-surface-container-high flex items-center justify-center flex-shrink-0">
-                    <Settings2 className="w-5 h-5 text-on-surface-variant" />
-                </span>
-                <span className="flex-1">
-                    <span className="block text-sm font-bold text-on-surface">ویرایش اطلاعات کاتالوگ</span>
-                    <span className="block text-[11px] text-on-surface-variant mt-0.5">نام، لوگو، آدرس، صنف و تماس</span>
                 </span>
             </button>
         </div>

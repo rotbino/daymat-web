@@ -8,6 +8,7 @@ import { useQuery } from '@tanstack/react-query';
 import { useDispatch, useSelector } from 'react-redux';
 import { RootState, AppDispatch } from '@/lib/store/store';
 import { performLogout } from '@/lib/store/slices/authSlice';
+import { setThemeMode } from '@/lib/store/slices/themeSlice';
 import { apiService } from '@/lib/api/apiService';
 import { toast } from 'sonner';
 import {
@@ -24,7 +25,8 @@ export default function ProfilePage() {
     const router = useRouter();
     const dispatch = useDispatch<AppDispatch>();
     const { user } = useSelector((s: RootState) => s.auth);
-    const [isDark, setIsDark] = useState(false);
+    const themeMode = useSelector((s: RootState) => s.theme.mode);
+    const [sysDark, setSysDark] = useState(false);
     const [editOpen, setEditOpen] = useState(false);
     const [passOpen, setPassOpen] = useState(false);
     const [copied, setCopied] = useState<'code' | 'link' | null>(null);
@@ -37,15 +39,16 @@ export default function ProfilePage() {
     });
 
     React.useEffect(() => {
-        setIsDark(document.documentElement.classList.contains('dark'));
+        const mq = window.matchMedia('(prefers-color-scheme: dark)');
+        setSysDark(mq.matches);
+        const h = (e: MediaQueryListEvent) => setSysDark(e.matches);
+        mq.addEventListener('change', h);
+        return () => mq.removeEventListener('change', h);
     }, []);
 
-    const toggleTheme = () => {
-        const next = !isDark;
-        document.documentElement.classList.toggle('dark', next);
-        localStorage.setItem('theme', next ? 'dark' : 'light');
-        setIsDark(next);
-    };
+    // ✅ فیکس ریشه‌ای تم: تاگل فقط از مجرای redux — هم‌ارز HeaderMenu
+    const isDark = themeMode === 'dark' || (themeMode === 'system' && sysDark);
+    const toggleTheme = () => dispatch(setThemeMode(isDark ? 'light' : 'dark'));
 
     const firstName = (user?.fullName || '').split(' ')[0] || 'کاربر';
 

@@ -3,8 +3,9 @@
 import React, { useEffect, useRef, useState } from 'react';
 import Link from 'next/link';
 import Image from 'next/image';
-import { useSelector } from 'react-redux';
+import { useDispatch, useSelector } from 'react-redux';
 import { RootState } from '@/lib/store/store';
+import { setThemeMode } from '@/lib/store/slices/themeSlice';
 import {
     EllipsisVertical, Moon, Sun, Info, FileText, User, Store,
     ShieldCheck, Bookmark, Lightbulb, LogIn,
@@ -17,11 +18,13 @@ import { cn } from '@/lib/utils';
  */
 export default function HeaderMenu({ className }: { className?: string }) {
     const [open, setOpen] = useState(false);
-    const [isDark, setIsDark] = useState(false);
+    const [sysDark, setSysDark] = useState(false);
     const ref = useRef<HTMLDivElement>(null);
 
+    const dispatch = useDispatch();
     const { currentSlug, currentArm } = useSelector((s: RootState) => s.arm);
     const { isAuthenticated, user } = useSelector((s: RootState) => s.auth);
+    const themeMode = useSelector((s: RootState) => s.theme.mode);
 
     const armName = currentArm?.name || 'بازار';
     const loginHref = `/login?arm=${currentSlug ?? ''}`;
@@ -32,7 +35,13 @@ export default function HeaderMenu({ className }: { className?: string }) {
         ((currentArm as any)?.ownerUserId === user.id ||
             (currentArm as any)?.arm?.ownerUserId === user.id);
 
-    useEffect(() => { setIsDark(document.documentElement.classList.contains('dark')); }, []);
+    useEffect(() => {
+        const mq = window.matchMedia('(prefers-color-scheme: dark)');
+        setSysDark(mq.matches);
+        const h = (e: MediaQueryListEvent) => setSysDark(e.matches);
+        mq.addEventListener('change', h);
+        return () => mq.removeEventListener('change', h);
+    }, []);
 
     useEffect(() => {
         if (!open) return;
@@ -46,12 +55,10 @@ export default function HeaderMenu({ className }: { className?: string }) {
         };
     }, [open]);
 
-    const toggleTheme = () => {
-        const next = !isDark;
-        document.documentElement.classList.toggle('dark', next);
-        localStorage.setItem('theme', next ? 'dark' : 'light');
-        setIsDark(next);
-    };
+    // ✅ فیکس ریشه‌ای تم تاریک: تاگل فقط از مجرای redux — ThemeProvider مقادیر inline توکن‌های M3 را
+    // هم‌زمان با کلاس .dark به‌روز می‌کند (تاگل مستقیم DOM باعث متن تیره روی زمینه تیره می‌شد)
+    const isDark = themeMode === 'dark' || (themeMode === 'system' && sysDark);
+    const toggleTheme = () => dispatch(setThemeMode(isDark ? 'light' : 'dark'));
 
     const item = 'w-full flex items-center gap-2.5 h-10 px-3 rounded-xl text-[13px] text-on-surface hover:bg-surface-container-high transition-colors text-right';
     const close = () => setOpen(false);
