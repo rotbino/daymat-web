@@ -42,6 +42,9 @@ const api = axios.create({
     baseURL: API_BASE,
     headers: { 'Content-Type': 'application/json' },
     withCredentials: true,
+    // ⏱ مهلت ۱۵ ثانیه — بدون این، قطعی شبکه/هنگ بک‌اند یعنی لودینگ بی‌نهایت
+    // (پیش‌فرض axios = 0 یعنی بی‌نهایت صبر کن)
+    timeout: 15000,
 });
 
 api.interceptors.request.use(
@@ -106,6 +109,14 @@ export const apiRequest = async <T = any>(
         const response = await api({ url: fullUrl, ...options });
         return response.data;
     } catch (err: any) {
+        // ⏱ خطای سطح شبکه (بدون پاسخ HTTP): قطع اینترنت، تایم‌اوت، اتصال ردشده
+        // به‌جای متن خام axios («Network Error» / «timeout of 15000ms exceeded»)
+        // پیام فارسی واضح برمی‌گردد تا UI در لودینگ بی‌نهایت گیر نکند
+        if (!err.response) {
+            throw new ApiError(0, getFriendlyErrorMessage(err), {
+                errorCode: err.code === 'ECONNABORTED' ? 'REQUEST_TIMEOUT' : 'NETWORK_ERROR',
+            });
+        }
         // پیام فارسی - اولویت با message از بک‌اند
         const data = err.response?.data || err.data || {};
         const message = data?.message || err?.message || getFriendlyErrorMessage(err);
@@ -134,10 +145,17 @@ export const apiFileRequest = async <T = any>(
                 Authorization: `Bearer ${token}`,
                 'Content-Type': 'multipart/form-data',
             },
+            timeout: 120000, // آپلود فایل ممکن است سنگین باشد
             ...config,
         });
         return response.data;
     } catch (err: any) {
+        // خطای سطح شبکه (بدون پاسخ HTTP) → پیام فارسی یکدست
+        if (!err.response) {
+            throw new ApiError(0, getFriendlyErrorMessage(err), {
+                errorCode: err.code === 'ECONNABORTED' ? 'REQUEST_TIMEOUT' : 'NETWORK_ERROR',
+            });
+        }
         const data = err.response?.data || {};
         const message = data?.message || err?.message || getFriendlyErrorMessage(err);
         const status = err.response?.status || 500;
