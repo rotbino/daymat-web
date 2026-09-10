@@ -47,3 +47,4 @@ Thumbs.db
 *.sublime-project
 .vercel
 .env*
+public/__test_inject.html

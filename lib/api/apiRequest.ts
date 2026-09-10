@@ -77,7 +77,17 @@ api.interceptors.response.use(
 
         const isSkipped = SKIP_FORCE_LOGOUT.some((p) => url.includes(p)) || originalRequest?._skipAuth;
 
-        if (error.response?.status === 401 && !isSkipped) {
+        // ✅ 401 فقط وقتی توکن داشتیم یعنی «نشست باطل شده» —
+        //    درخواستِ بدون توکن (کاربر مهمان یا بوت سرد قبل از rehydrate)
+        //    نباید سشن را پاک کند؛ فقط خطا برمی‌گردد
+        let hadToken = false;
+        const h = originalRequest?.headers as any;
+        if (h) {
+            const auth = typeof h.get === 'function' ? h.get('Authorization') : (h.Authorization ?? h.authorization);
+            hadToken = !!auth && String(auth).startsWith('Bearer ');
+        }
+
+        if (error.response?.status === 401 && !isSkipped && hadToken) {
             // توکن منقضی یا باطل‌شده (SESSION_REVOKED بعد از لاگ‌اوت/تغییر رمز)
             // → پاک‌سازی کامل کلاینت؛ auth-provider کاربر را به لاگین می‌برد
             forceLocalLogout();

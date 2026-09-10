@@ -4,6 +4,8 @@
 import React from 'react';
 import Link from 'next/link';
 import { useQuery } from '@tanstack/react-query';
+import { useSelector } from 'react-redux';
+import { RootState } from '@/lib/store/store';
 import { apiService } from '@/lib/api/apiService';
 import { AlertTriangle, AlertCircle, Info, ArrowLeft, BellCheck } from 'lucide-react';
 import { cn } from '@/lib/utils';
@@ -16,9 +18,11 @@ const SEV: Record<string, { icon: any; cls: string }> = {
 };
 
 export default function NotificationsPage() {
+    const isAuthenticated = useSelector((s: RootState) => s.auth.isAuthenticated);
     const { data, isLoading } = useQuery({
         queryKey: ['notifications-derived'],
         queryFn: () => apiService.notification.getDerived(),
+        enabled: isAuthenticated, // ✅ فقط با نشست — بوت سرد نباید 401 بزند
         staleTime: 60_000,
     });
     const items = data?.items ?? [];

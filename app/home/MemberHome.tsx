@@ -33,6 +33,7 @@ export default function MemberHome({ user: userProp }: Props) {
     const queryClient = useQueryClient();
     const { mode } = useNavModeSafe();
     const authUser = useSelector((s: RootState) => s.auth.user);
+    const isAuthenticated = useSelector((s: RootState) => s.auth.isAuthenticated);
     const user = userProp ?? authUser;
     const isMember = mode === 'member';
     const firstName = (user?.fullName || '').split(' ')[0] || 'کاربر';
@@ -90,9 +91,11 @@ export default function MemberHome({ user: userProp }: Props) {
     const goEdit = (c: any) => router.push(c.slug ? `/${c.slug}?edit=1` : `/catalog/edit/${c.id}`);
 
     // اعلان‌های مشتق — فقط شمارنده برای هدر خلاصه
+    // ✅ gated: فقط با نشست (بوت سرد نباید 401 بدون توکن بزند)
     const { data: notif } = useQuery({
         queryKey: ['notifications-derived'],
         queryFn: () => apiService.notification.getDerived(),
+        enabled: isAuthenticated,
         staleTime: 60_000,
     });
     const urgent = notif?.items?.filter((n: any) => n.severity !== 'info') ?? [];
