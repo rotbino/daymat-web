@@ -58,7 +58,7 @@ export default function PublishTab({ currentCatalog, memberships, onShare, onVer
                     با انتشار، کالاهای دارای قیمت معتبر در تابلوی قیمت بازار هم نمایش داده می‌شوند.
                 </p>
                 {memberships.length === 0 ? (
-                    <div className="rounded-xl border border-dashed border-outline-variant/50 p-4 text-center">
+                    <div className="rounded-lg border border-dashed border-outline-variant/50 dark:border-gray-700 p-4 text-center">
                         <p className="text-xs text-on-surface-variant leading-6">
                             این کاتالوگ هنوز عضو هیچ بازاری نیست.<br />وقتی مدیر بازار کاتالوگت را عضو کند، اینجا فعال می‌شود.
                         </p>
@@ -70,7 +70,7 @@ export default function PublishTab({ currentCatalog, memberships, onShare, onVer
                             const chip = PUB_CHIP[effectiveState ?? m.status] ?? PUB_CHIP.paused;
                             const isOn = effectiveState === 'published';
                             return (
-                                <div key={m.slug} className="rounded-xl border border-outline-variant/40 p-3 flex items-center gap-3">
+                                <div key={m.slug} className="rounded-lg border border-outline-variant/40 dark:border-gray-700 p-3 flex items-center gap-3">
                                     <span className={cn('inline-flex items-center gap-1 text-[10px] font-bold px-2 py-1 rounded-full flex-shrink-0', chip.cls)}>
                                         <chip.icon className="w-3 h-3" /> {chip.label}
                                     </span>

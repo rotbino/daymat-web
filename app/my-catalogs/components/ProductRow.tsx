@@ -28,7 +28,7 @@ function ProductRowBase({ ad, onEdit, onCategory, onRefresh, onPublish }: {
     const logoSrc = ad.files?.[0]?.thumbnailPath || ad.files?.[0]?.path;
 
     return (
-        <div className={cn('rounded-xl border p-3 transition-colors',
+        <div className={cn('rounded-lg border p-3 transition-colors',
             uncat
                 ? 'bg-amber-50/50 dark:bg-amber-900/10 border-amber-300/50 dark:border-amber-800/40'
                 : onTable
@@ -89,8 +89,8 @@ function ProductRowBase({ ad, onEdit, onCategory, onRefresh, onPublish }: {
             <div className="flex items-center gap-1.5 mt-2.5 pt-2.5 border-t border-outline-variant/15 flex-wrap">
                 {uncat && (
                     <button onClick={() => onCategory(ad)}
-                            className="h-8 px-3 rounded-lg bg-amber-500 text-white text-[10px] font-bold flex items-center gap-1
-                                active:scale-95 transition-transform shadow-sm">
+                            className="h-8 px-3 rounded-md bg-secondary text-on-secondary text-[10px] font-bold flex items-center gap-1
+                                active:scale-95 transition-transform">
                         <Layers className="w-3 h-3" /> دسته بازار
                     </button>
                 )}

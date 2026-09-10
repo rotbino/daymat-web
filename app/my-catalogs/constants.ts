@@ -39,6 +39,6 @@ export const SALES_ICON: Record<string, any> = {
     service: Wrench,
 };
 
-// ─── کلاس استاندارد کارت سفید ───
+// ─── کلاس استاندارد کارت سفید (فلت) ───
 export const CARD_CLS =
-    'bg-white dark:bg-gray-900 rounded-2xl border border-outline-variant/50 dark:border-gray-700';
+    'bg-white dark:bg-gray-900 rounded-xl border border-outline-variant/40 dark:border-gray-700';

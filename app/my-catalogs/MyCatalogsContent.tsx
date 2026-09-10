@@ -28,7 +28,6 @@ import TopBar from './components/TopBar';
 import EmptyCatalogState from './components/EmptyCatalogState';
 import CatalogConsoleHeader from './components/CatalogConsoleHeader';
 import ConsoleTabs from './components/ConsoleTabs';
-import CatalogRail from './components/CatalogRail';
 import CatalogChipStrip from './components/CatalogChipStrip';
 import ProductsTab from './components/ProductsTab';
 import PublishTab from './components/PublishTab';
@@ -221,7 +220,7 @@ export default function MyCatalogsContent() {
     if (!currentCatalog) {
         return (
             <div className="py-10 text-center">
-                <Loader2 className="w-8 h-8 animate-spin text-amber-500 mx-auto" />
+                <Loader2 className="w-8 h-8 animate-spin text-primary mx-auto" />
             </div>
         );
     }
@@ -245,30 +244,17 @@ export default function MyCatalogsContent() {
             {/* هدر صفحه */}
             <TopBar onChangePassword={() => setPasswordOpen(true)} onNewCatalog={goNewCatalog} />
 
-            {/* نوار چیپ کاتالوگ‌ها — موبایل، وقتی بیش از یک کاتالوگ است */}
+            {/* نوار چیپ کاتالوگ‌ها — وقتی بیش از یک کاتالوگ است (موبایل و دسکتاپ) */}
             {catalogs.length > 1 && (
                 <CatalogChipStrip
                     catalogs={catalogs}
                     currentId={currentId}
                     onSelect={selectCatalog}
-                    onNew={goNewCatalog}
                 />
             )}
 
-            {/* ── چیدمان کنسول ──
-                دسکتاپ (lg+): رِیل کاتالوگ‌ها (ستون باریک چسبان) + پنل کنسول یکپارچه
-                موبایل: همه چیز تک‌ستونی — هدر، چیپ‌ها، کنسول */}
-            <div className="flex flex-col gap-4 lg:grid lg:grid-cols-[264px_minmax(0,1fr)] lg:items-start lg:gap-5">
-                {/* رِیل کاتالوگ‌ها — فقط دسکتاپ */}
-                <CatalogRail
-                    catalogs={catalogs}
-                    currentId={currentId}
-                    onSelect={selectCatalog}
-                    onNew={goNewCatalog}
-                />
-
-                {/* ستون کنسول */}
-                <div className="min-w-0 space-y-3.5">
+            {/* ── چیدمان تک‌ستون کنسول (موبایل و دسکتاپ یکسان) ── */}
+            <div className="space-y-3.5">
                     {/* ⚠️ کالاهای بی‌دسته — بالای کنسول چون اکشن روی کالاست */}
                     {uncatItems.length > 0 && (
                         <UncategorizedBanner
@@ -288,8 +274,8 @@ export default function MyCatalogsContent() {
                         />
                     )}
 
-                    {/* پنل کنسول کاتالوگ — یکپارچه: هدر + تب‌ها + محتوا */}
-                    <section className="bg-white dark:bg-gray-900 rounded-3xl border border-outline-variant/50 dark:border-gray-700
+                    {/* پنل کنسول کاتالوگ — یکپارچه و فلت: هدر + تکمیل + آمار + تب‌ها + محتوا */}
+                    <section className="bg-white dark:bg-gray-900 rounded-xl border border-outline-variant/40 dark:border-gray-700
                             shadow-sm overflow-hidden">
                         <CatalogConsoleHeader
                             catalog={currentCatalog}
@@ -343,10 +329,7 @@ export default function MyCatalogsContent() {
                     {(!userHasName || !userAvatar) && (
                         <ProfileBanner avatarUrl={userAvatar} hasName={userHasName} onClick={() => router.push('/profile')} />
                     )}
-                </div>
             </div>
-
-            {/* مودال دستهٔ بازاری */}
             <CatalogCategoryModal
                 ad={catModalAd}
                 tree={catModalTree}

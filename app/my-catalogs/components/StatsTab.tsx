@@ -31,7 +31,7 @@ export default function StatsTab({ currentCatalog, stats, productsCount }: {
         <div className="space-y-3">
             <div className="grid grid-cols-2 sm:grid-cols-4 gap-2.5">
                 {cards.map((s) => (
-                    <div key={s.label} className="bg-white dark:bg-gray-900 rounded-2xl border border-outline-variant/40 p-4 text-center">
+                    <div key={s.label} className="bg-white dark:bg-gray-900 rounded-xl border border-outline-variant/40 dark:border-gray-700 p-4 text-center">
                         <s.icon className={cn('w-5 h-5 mx-auto mb-1.5', s.cls)} />
                         <p className="text-xl font-extrabold text-on-surface">{fmt(s.value)}</p>
                         <p className="text-[10px] text-on-surface-variant mt-0.5">{s.label}</p>
@@ -41,7 +41,7 @@ export default function StatsTab({ currentCatalog, stats, productsCount }: {
 
             <CreditsCard balance={creditBalance?.balance} />
 
-            <div className="bg-white dark:bg-gray-900 rounded-2xl border border-outline-variant/40 p-4">
+            <div className="bg-white dark:bg-gray-900 rounded-xl border border-outline-variant/40 dark:border-gray-700 p-4">
                 <h3 className="text-xs font-extrabold text-on-surface flex items-center gap-1.5 mb-3">
                     <Bookmark className="w-3.5 h-3.5 text-amber-500" /> چه کسانی کاتالوگت را ذخیره کرده‌اند
                     <span className="text-on-surface-variant/60">({fmt(stats?.savedBy?.length)})</span>

@@ -9,7 +9,7 @@ import { cn } from '@/lib/utils';
 import { fmt, isAdExpired, inMarket, isUncategorized, StatusFilter } from '../constants';
 
 function RowSkeleton() {
-    return <div style={{ height: 116 }} className="rounded-xl bg-surface-container-high/50 animate-pulse" />;
+    return <div style={{ height: 116 }} className="rounded-lg bg-surface-container-high/50 dark:bg-gray-800/60 animate-pulse" />;
 }
 
 interface Props {
@@ -74,9 +74,9 @@ export default function ProductsTab({
                 {/* افزودن سریع — همیشه در دسترس */}
                 <button onClick={() => router.push(`/ad/create?catalog=${currentCatalog.id}`)}
                         title={isService ? 'افزودن خدمت جدید' : 'افزودن محصول جدید'}
-                        className="h-8 px-3 rounded-full bg-amber-500 text-white text-[10px] font-extrabold
-                            flex items-center gap-1 flex-shrink-0 shadow-sm shadow-amber-500/30
-                            hover:bg-amber-600 active:scale-95 transition-all">
+                        className="h-8 px-3 rounded-full bg-secondary text-on-secondary text-[10px] font-extrabold
+                            flex items-center gap-1 flex-shrink-0
+                            hover:bg-secondary/90 active:scale-95 transition-all">
                     <Plus className="w-3.5 h-3.5" /> {isService ? 'خدمت' : 'محصول'}
                 </button>
                 {!isService && (
@@ -98,11 +98,11 @@ export default function ProductsTab({
             {adsLoading ? (
                 <div className="space-y-2.5">{[0, 1, 2].map((i) => <RowSkeleton key={i} />)}</div>
             ) : filtered.length === 0 ? (
-                <div className="text-center py-10 rounded-2xl border border-dashed border-outline-variant/50">
+                <div className="text-center py-10 rounded-lg border border-dashed border-outline-variant/50 dark:border-gray-700">
                     <Package className="w-10 h-10 text-on-surface-variant/20 mx-auto mb-2.5" />
                     <p className="text-sm text-on-surface-variant">{isService ? ' خدمتی نیست' : ' محصولی نیست '}</p>
                     <button onClick={() => router.push(`/ad/create?catalog=${currentCatalog.id}`)}
-                            className="mt-3 h-9 px-4 rounded-xl bg-amber-500 text-white text-xs font-extrabold">
+                            className="mt-3 h-9 px-4 rounded-lg bg-secondary text-on-secondary text-xs font-extrabold hover:bg-secondary/90 transition-colors">
                         {isService ? 'افزودن اولین خدمت' : 'افزودن اولین محصول'}
                     </button>
                 </div>

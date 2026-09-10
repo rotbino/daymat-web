@@ -93,8 +93,8 @@ export function CelebrationBanner({ membership, uncatCount, onDismiss, onSetCate
                 <div className="flex items-center gap-2 mt-3.5">
                     {uncatCount > 0 && (
                         <button onClick={onSetCategories}
-                                className="h-10 px-5 rounded-xl bg-amber-500 text-white text-xs font-extrabold
-                                    inline-flex items-center gap-1.5 hover:bg-amber-600 active:scale-95 transition-all shadow-sm">
+                                className="h-10 px-5 rounded-xl bg-secondary text-on-secondary text-xs font-extrabold
+                                    inline-flex items-center gap-1.5 hover:bg-secondary/90 active:scale-95 transition-all">
                             <Layers className="w-4 h-4" /> تنظیم دسته‌ها ({fmt(uncatCount)})
                         </button>
                     )}

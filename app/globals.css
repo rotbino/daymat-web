@@ -14,10 +14,11 @@
   --primary-fixed-dim: #ffb4a8;
   --on-primary: #ffffff;
   --on-primary-container: #ff907f;
-  --secondary: #904d00;
-  --secondary-container: #fd8b00;
+  /* رنگ مکمل برند: سرمه‌ای (به‌جای نارنجی قبلی) — مکمل قرمز تیرهٔ برند */
+  --secondary: #1e3a66;
+  --secondary-container: #e3ebf7;
   --on-secondary: #ffffff;
-  --on-secondary-container: #603100;
+  --on-secondary-container: #1e3a66;
   --surface: #f9f9fc;
   --surface-bright: #f9f9fc;
   --surface-dim: #dadadc;
@@ -80,6 +81,11 @@
 }
 
 .dark {
+  /* سرمه‌ایِ خوانا روی پس‌زمینهٔ تاریک */
+  --secondary: #4a6da8;
+  --secondary-container: #1c2e4d;
+  --on-secondary: #ffffff;
+  --on-secondary-container: #c3d5f2;
   --background-hsl: 222.2 84% 4.9%;
   --foreground: 210 40% 98%;
   --card: 222.2 84% 4.9%;

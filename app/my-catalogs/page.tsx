@@ -11,8 +11,8 @@ export default function MyCatalogsPage() {
         <div className="min-h-screen bg-gradient-to-b from-surface via-surface to-surface-container-low/40
             dark:from-gray-950 dark:via-gray-950 dark:to-gray-900/40 pb-24">
             <NavTabs />
-            {/* دسکتاپ: max-w-7xl برای چیدمان رِیل + کنسول؛ موبایل/تبلت: همان max-w-3xl قبلی */}
-            <main className="max-w-3xl lg:max-w-7xl mx-auto px-4 pt-5">
+            {/* تک‌ستون در موبایل و دسکتاپ — max-w-4xl برای تنفس بیشتر در دسکتاپ */}
+            <main className="max-w-4xl mx-auto px-4 pt-5">
                 <MyCatalogsContent />
             </main>
         </div>

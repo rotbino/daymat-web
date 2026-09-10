@@ -24,17 +24,11 @@ export default function TopBar({ onChangePassword, onNewCatalog }: {
             </div>
 
             <div className="flex items-center gap-2 flex-shrink-0">
-                <button type="button" onClick={onNewCatalog}
-                        className="hidden lg:inline-flex h-10 px-4 rounded-xl border border-amber-500/60 text-amber-600
-                            text-xs font-extrabold items-center gap-1.5 hover:bg-amber-50 dark:hover:bg-amber-900/10
-                            active:scale-[0.97] transition-all">
-                    <Plus className="w-4 h-4" /> کاتالوگ جدید
-                </button>
-
+                {/* 📍 ایجاد کاتالوگ جدید فقط از منوی سه‌نقطه — در MVP پنهان می‌ماند تا کاربر روی کیفیت بماند */}
                 <div className="relative">
                     <button type="button" onClick={() => setMenuOpen((o) => !o)} aria-label="گزینه‌های بیشتر"
-                            className="w-10 h-10 rounded-xl grid place-items-center text-on-surface-variant
-                                border border-outline-variant/40 dark:border-gray-700 hover:bg-surface-container-high transition-colors">
+                            className="w-10 h-10 rounded-lg grid place-items-center text-on-surface-variant
+                                border border-outline-variant/40 dark:border-gray-700 hover:bg-surface-container-high dark:hover:bg-gray-800 transition-colors">
                         <Ellipsis className="w-4.5 h-4.5" />
                     </button>
                     {menuOpen && (
@@ -43,8 +37,8 @@ export default function TopBar({ onChangePassword, onNewCatalog }: {
                             <div className="absolute top-full end-0 mt-1 z-50 w-52 p-1.5 rounded-2xl bg-white dark:bg-gray-900
                                 border border-outline-variant/30 dark:border-gray-700 shadow-xl animate-in fade-in zoom-in-95 duration-150">
                                 <button type="button" onClick={() => { setMenuOpen(false); onNewCatalog(); }}
-                                        className="lg:hidden w-full flex items-center gap-2.5 h-10 px-3 rounded-xl text-[13px] text-on-surface hover:bg-surface-container-high transition-colors">
-                                    <Plus className="w-4 h-4 text-amber-500" /> کاتالوگ جدید
+                                        className="w-full flex items-center gap-2.5 h-10 px-3 rounded-xl text-[13px] text-on-surface hover:bg-surface-container-high dark:hover:bg-gray-800 transition-colors">
+                                    <Plus className="w-4 h-4 text-secondary dark:text-[#9db9e3]" /> کاتالوگ جدید
                                 </button>
                                 <button type="button" onClick={() => { setMenuOpen(false); onChangePassword(); }}
                                         className="w-full flex items-center gap-2.5 h-10 px-3 rounded-xl text-[13px] text-on-surface hover:bg-surface-container-high transition-colors">
