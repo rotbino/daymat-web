@@ -12,7 +12,7 @@ export default function MyCatalogsPage() {
             dark:from-gray-950 dark:via-gray-950 dark:to-gray-900/40 pb-24">
             <NavTabs />
             {/* تک‌ستون در موبایل و دسکتاپ — max-w-4xl برای تنفس بیشتر در دسکتاپ */}
-            <main className="max-w-4xl mx-auto px-4 pt-5">
+            <main className="max-w-4xl mx-auto px-4 ">
                 <MyCatalogsContent />
             </main>
         </div>

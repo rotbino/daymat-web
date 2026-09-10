@@ -238,14 +238,14 @@ export default function MyCatalogsContent() {
 
     // ─── تب‌های بخش‌های کاتالوگ (RTL: مشخصات در راست) ───
     const tabItems = [
-        { key: 'profile' as Tab, label: 'مشخصات', icon: IdCard },
         { key: 'products' as Tab, label: 'محصولات', icon: Package, count: products.length },
+        { key: 'profile' as Tab, label: 'مشخصات', icon: IdCard },
         { key: 'stats' as Tab, label: 'آمار', icon: BarChart3 },
         { key: 'publish' as Tab, label: 'انتشار', icon: Globe, count: memberships.length > 0 ? memberships.length : undefined },
     ];
 
     return (
-        <div className="space-y-3.5">
+        <div className="space-y-4">
             {/* 🔴 هشدار رمز موقت */}
             {hasTemporaryPassword && (
                 <TemporaryPasswordBanner phone={user?.phone} onClick={() => setPasswordOpen(true)} />
@@ -256,7 +256,7 @@ export default function MyCatalogsContent() {
             <div className="sticky top-0 lg:top-16 z-30 -mx-4 px-4 bg-white dark:bg-gray-900
                     border-b border-outline-variant/20 dark:border-gray-800
                     shadow-[0_6px_16px_-8px_rgba(15,23,42,0.28)] dark:shadow-[0_6px_16px_-8px_rgba(0,0,0,0.7)]">
-                <div className="pt-3">
+                <div className="pb-4 pt-2">
                     <CatalogIdentityBar
                         catalogs={catalogs}
                         currentCatalog={currentCatalog}

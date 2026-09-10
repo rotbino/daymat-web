@@ -245,7 +245,7 @@ export default function RegisterCatalogPage() {
 
             <main className="flex-1 w-full max-w-lg mx-auto px-4 pt-5 pb-[100px]">
                 <p className="text-[11px] leading-5 text-on-surface-variant/70 mb-5">
-                    کاتالوگت رو در کمتر از ۳۰ ثانیه بساز — بقیهٔ مشخصات هدر، از همون کسب‌وکار برمی‌داره.
+                    کاتالوگت رو در کمتر از ۳۰ ثانیه بساز .
                 </p>
 
                 {/* ═══ ۱) انتخاب کسب‌وکار ═══ */}
@@ -277,38 +277,6 @@ export default function RegisterCatalogPage() {
                         </p>
                     )}
 
-                    {/* کارت تأیید انتساب — کاربر صریحاً می‌بیند کاتالوگ برای کدام کسب‌وکار ساخته می‌شود */}
-                    {selectedBiz && (
-                        <div className="rounded-xl border border-primary/25 bg-primary/[0.05] dark:bg-primary/10 p-3">
-                            <div className="flex items-center gap-1.5 mb-2">
-                                <BadgeCheck className="w-3.5 h-3.5 text-primary flex-shrink-0" />
-                                <p className="text-[10px] font-bold text-primary">این کاتالوگ برای این کسب‌وکار ساخته می‌شه</p>
-                            </div>
-                            <div className="flex items-center gap-2.5">
-                                <span className="w-10 h-10 rounded-lg overflow-hidden bg-primary/10 dark:bg-primary/15
-                                        grid place-items-center flex-shrink-0">
-                                    {selectedBiz.logoUrl
-                                        ? <Image src={selectedBiz.logoUrl} alt="" width={40} height={40} className="w-full h-full object-cover" unoptimized />
-                                        : <Building2 className="w-5 h-5 text-primary" />}
-                                </span>
-                                <div className="flex-1 min-w-0">
-                                    <p className="text-sm font-bold text-on-surface truncate">{selectedBiz.name}</p>
-                                    <div className="flex items-center gap-2 text-[10px] text-on-surface-variant/70 mt-0.5">
-                                        {selectedBiz.industryName && <span className="truncate">{selectedBiz.industryName}</span>}
-                                        {selectedBiz.city && (
-                                            <span className="flex items-center gap-0.5 flex-shrink-0">
-                                                <MapPin className="w-3 h-3" />{selectedBiz.city}
-                                            </span>
-                                        )}
-                                    </div>
-                                </div>
-                                <button type="button" onClick={() => { setBizModalMode('edit'); setBizModalOpen(true); }}
-                                        className="text-[10px] font-bold text-primary flex-shrink-0">
-                                    ویرایش
-                                </button>
-                            </div>
-                        </div>
-                    )}
                 </section>
 
                 <form onSubmit={handleSubmit} className="space-y-5">
@@ -383,7 +351,7 @@ export default function RegisterCatalogPage() {
 
                     {/* ═══ ۳) نوع فروش ═══ */}
                     <section className="space-y-2">
-                        <SectionTitle n={3} title="نوع فروش کاتالوگ" />
+                        <SectionTitle n={3} title="نوع فروش در این کاتالوگ" />
                         <div className="grid grid-cols-3 gap-2">
                             {[
                                 { v: 'wholesale', t: 'عمده', icon: '📦' },
