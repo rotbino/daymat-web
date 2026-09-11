@@ -75,8 +75,8 @@ const PERMISSIONS: PermissionItem[] = [
     { key: 'modules.canEditPriceTable', label: 'ویرایش تابلوی قیمت', category: 'modules' },
     { key: 'modules.canEditBuyLead', label: 'ویرایش درخواست خرید', category: 'modules' },
 
-    // ========== قوانین دسترسی ==========
-    { key: 'accessRules.canEdit', label: 'ویرایش قوانین دسترسی', category: 'access' },
+    // ========== عضویت ==========
+    { key: 'accessRules.canEdit', label: 'ویرایش تنظیمات عضویت', category: 'access' },
 
     // ========== اقتصاد ==========
     { key: 'economy.canEdit', label: 'ویرایش تنظیمات اقتصادی', category: 'economy' },

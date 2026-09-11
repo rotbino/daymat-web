@@ -3,7 +3,7 @@
 
 import React, { useState } from 'react';
 import { UseFormWatch, UseFormSetValue } from 'react-hook-form';
-import { Save, Loader2, Check, Shield, Users, Lock, Phone, MapPin, AlertTriangle, Zap, Building2, Layers } from 'lucide-react';
+import { Save, Loader2, Check, Users, Lock, AlertTriangle, Layers, UserPlus } from 'lucide-react';
 import { cn } from '@/lib/utils';
 
 // انواع کاتالوگ پذیرفته‌شدهٔ بازار — هم‌راستا با فیلد درجه‌یک Arm.acceptedCatalogTypes در بک
@@ -23,19 +23,12 @@ interface AccessRulesSectionProps {
 
 export function AccessRulesSection({ watch, setValue, onSave, isSaving, isAdmin = false }: AccessRulesSectionProps) {
     const [saved, setSaved] = useState(false);
-    const rules = watch('config.accessRules') || {};
 
     const armAdminPermission = watch('config.armAdminPermission') || {};
     const accessRulesAccess = armAdminPermission.accessRules || {};
 
     const canEdit = isAdmin || accessRulesAccess.canEdit === true;
     const isOwnerWithNoAccess = !isAdmin && !canEdit;
-
-    const setRule = (key: string, value: any) => {
-        if (!canEdit) return;
-        const updated = { ...rules, [key]: value };
-        setValue('config.accessRules', updated);
-    };
 
     // انواع کاتالوگ پذیرفته‌شده — فیلد روت بازار (نه داخل config)
     const acceptedTypes: string[] = watch('acceptedCatalogTypes') || [];
@@ -58,115 +51,17 @@ export function AccessRulesSection({ watch, setValue, onSave, isSaving, isAdmin 
         setTimeout(() => setSaved(false), 2000);
     };
 
-    const ruleGroups = [
-        {
-            title: 'پیوستن به بازار',
-            icon: Users,
-            rules: [
-                {
-                    key: 'autoJoinOnEntry',
-                    label: 'پیوستن به بازار بصورت اتوماتیک هنگام ورود',
-                    hint: 'کاربران لاگین‌کرده به‌محض ورود به بازار، عضو می‌شوند',
-                    icon: Zap,
-                    adminOnly: false,
-                },
-                {
-                    key: 'requireCatalogForMembership',
-                    label: 'نیاز به کسب‌وکار برای پیوستن به باار',
-                    hint: 'اگر فعال باشد، کاربر باید کسب‌وکار خود را ثبت کرده و انتخاب کند',
-                    icon: Building2,
-                    adminOnly: true,
-                },
-                {
-                    key: 'requireAdminApprovalForMembership',
-                    label: 'نیاز به تایید مدیر برای پیوستن به بازار',
-                    hint: 'هر درخواست پیوستن باید توسط مدیر تأیید شود',
-                    icon: Lock,
-                    adminOnly: false,
-                },
-                {
-                    key: 'restrictMembershipByLocation',
-                    label: 'محدودیت موقعیت مکانی',
-                    hint: 'فقط کاربران شهر/استان‌های بازار می‌توانند عضو شوند',
-                    icon: MapPin,
-                    adminOnly: true,
-                },
-            ],
-        },
-        {
-            title: 'تأیید هویت',
-            icon: Shield,
-            rules: [
-                { key: 'requirePhoneVerification', label: 'تأیید موبایل اجباری', hint: 'کاربر باید شماره موبایلش تأیید شده باشد', icon: Phone, adminOnly: true },
-                { key: 'requireCatalogVerification', label: 'نماد اعتماد اجباری', hint: 'کاربر باید نماد اعتماد داشته باشد', icon: Shield, adminOnly: true },
-            ],
-        },
-    ];
-
-    const renderRule = (rule: any) => {
-        const Icon = rule.icon;
-        const value = rules[rule.key];
-        const disabled = !canEdit || (rule.adminOnly && !isAdmin);
-
-        return (
-            <div key={rule.key} className={cn(
-                "bg-surface-container-lowest border rounded-xl p-3 transition-all",
-                value === true ? 'border-primary/30 bg-primary/5' : 'border-outline-variant/20'
-            )}>
-                <div className="flex items-center justify-between gap-3">
-                    <div className="flex items-center gap-2.5 flex-1 min-w-0">
-                        <Icon className={cn(
-                            "w-4 h-4 flex-shrink-0",
-                            value ? 'text-primary' : 'text-on-surface-variant/50'
-                        )} />
-                        <div>
-                            <div className="flex items-center gap-2 flex-wrap">
-                                <span className="text-sm font-medium">{rule.label}</span>
-                                {rule.adminOnly && (
-                                    <span className="text-[9px] bg-purple-50 text-purple-600 px-1.5 py-0.5 rounded-full flex items-center gap-0.5">
-                                        <Lock className="w-2.5 h-2.5" /> مدیر
-                                    </span>
-                                )}
-                                {disabled && (
-                                    <span className="text-[9px] bg-gray-50 text-gray-500 px-1.5 py-0.5 rounded-full flex items-center gap-0.5">
-                                        فقط مشاهده
-                                    </span>
-                                )}
-                            </div>
-                            <p className="text-[10px] text-on-surface-variant mt-0.5">{rule.hint}</p>
-                        </div>
-                    </div>
-                    <label className="relative inline-flex items-center flex-shrink-0">
-                        <input
-                            type="checkbox"
-                            checked={value ?? false}
-                            onChange={e => setRule(rule.key, e.target.checked)}
-                            disabled={disabled}
-                            className="sr-only peer"
-                        />
-                        <div className={cn(
-                            "w-11 h-6 rounded-full relative transition-all duration-200",
-                            disabled ? 'bg-outline-variant/50' : value ? 'bg-primary' : 'bg-outline-variant',
-                            "after:content-[''] after:absolute after:top-0.5 after:right-0.5 after:bg-white after:rounded-full after:h-5 after:w-5 after:transition-all after:duration-200",
-                            value && !disabled && 'after:translate-x-5'
-                        )} />
-                    </label>
-                </div>
-            </div>
-        );
-    };
-
     return (
         <div className="space-y-6">
             {/* هدر با دکمه ذخیره */}
             <div className="flex items-center justify-between bg-surface-container-low p-4 rounded-xl border border-outline-variant">
                 <div>
                     <h3 className="text-lg font-semibold text-on-surface flex items-center gap-2">
-                        <Shield className="w-5 h-5 text-primary" />
-                        قوانین دسترسی
+                        <Users className="w-5 h-5 text-primary" />
+                        تنظیمات عضویت
                     </h3>
                     <p className="text-xs text-on-surface-variant">
-                        تنظیمات پیوستن به بازار و محدودیت‌ها
+                        شرایط عضویت کسب‌وکارها در بازار و کنترل دسترسی به قیمت‌ها
                     </p>
                 </div>
                 {canEdit && (
@@ -192,18 +87,18 @@ export function AccessRulesSection({ watch, setValue, onSave, isSaving, isAdmin 
                 </div>
             )}
 
-            {ruleGroups.map(group => (
-                <div key={group.title} className="bg-surface-container-low p-5 border border-outline-variant rounded-xl">
-                    <div className="flex items-center gap-2 mb-4">
-                        <group.icon className="w-4 h-4 text-primary" />
-                        <h4 className="text-sm font-semibold">{group.title}</h4>
-                        {isOwnerWithNoAccess && (
-                            <span className="text-[9px] text-on-surface-variant/40 mr-auto">فقط مشاهده</span>
-                        )}
-                    </div>
-                    <div className="space-y-2">{group.rules.map(renderRule)}</div>
+            {/* مدل عضویت — توضیح کوتاه جای توگل‌های قدیمی */}
+            <div className="bg-primary/5 border border-primary/20 rounded-xl p-4 flex items-start gap-3">
+                <UserPlus className="w-5 h-5 text-primary mt-0.5 flex-shrink-0" />
+                <div className="text-xs leading-6 text-on-surface">
+                    <p className="font-semibold mb-1">عضویت در بازار همیشه از مسیر کسب‌وکار است</p>
+                    <p className="text-on-surface-variant">
+                        هر کاربر برای عضویت، «فروشنده» یا «خریدار» بودن خود را انتخاب می‌کند؛
+                        خریدار با ثبت کسب‌وکار و فروشنده با ساخت کاتالوگ به بازار می‌پیوندد.
+                        اگر بازار خصوصی باشد، ابتدا شرایط عضویت را می‌پذیرد و درخواستش برای تاییدِ شما می‌آید.
+                    </p>
                 </div>
-            ))}
+            </div>
 
             {/* ✅ بازار خصوصی — مثل کانال خصوصی تلگرام؛ جایگزین مفهوم «مشاهده قیمت فقط برای اعضا» */}
             <div className={cn(

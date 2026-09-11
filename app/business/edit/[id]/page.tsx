@@ -35,7 +35,6 @@ export default function EditCatalogPage() {
     const uploadMutation = useUploadFile();
 
     const armConfig = currentArm?.config as any || {};
-    const restrictMembershipByIndustry = armConfig.accessRules?.restrictMembershipByIndustry ?? false;
     const supplierIndustries: { id: string; title: string }[] = armConfig.supplierIndustries || [];
     const buyerIndustries: { id: string; title: string }[] = armConfig.buyerIndustries || [];
     const labels = armConfig.formLabels || {};
@@ -55,10 +54,6 @@ export default function EditCatalogPage() {
     const [isVerificationModalOpen, setIsVerificationModalOpen] = useState(false);
     const [savingSection, setSavingSection] = useState<EditMode | null>(null);
     const [slug, setSlug] = useState('');
-    const availableIndustries = useMemo(() => {
-        if (!formData.type) return [];
-        return formData.type === 'wholesaler' ? supplierIndustries : buyerIndustries;
-    }, [formData.type, supplierIndustries, buyerIndustries]);
     const industryLabel = useMemo(() => {
         if (!formData.industryId) return '';
         const found = [...supplierIndustries, ...buyerIndustries].find(i => i.id === formData.industryId);
@@ -525,28 +520,13 @@ export default function EditCatalogPage() {
                                         {USER_POSITIONS.map((pos) => <option key={pos.value} value={pos.value}>{pos.label}</option>)}
                                     </select>
                                 </div>
-                                {/*{restrictMembershipByIndustry && (
-                                    <div>
-                                        <label className="text-xs font-medium text-on-surface-variant dark:text-gray-400 block mb-1">صنف</label>
-                                        {availableIndustries.length === 0 ? (
-                                            <p className="text-[11px] text-warning">هیچ صنفی برای این نقش تعریف نشده</p>
-                                        ) : (
-                                            <select value={formData.industryId} onChange={(e) => setFormData({ ...formData, industryId: e.target.value })}
-                                                    className="w-full bg-surface-container-lowest dark:bg-gray-800 border border-outline dark:border-gray-700 rounded-lg h-10 px-3 text-sm text-right appearance-none focus:ring-2 focus:ring-primary/20 focus:border-primary outline-none transition-all">
-                                                <option value="">انتخاب صنف...</option>
-                                                {availableIndustries.map(ind => <option key={ind.id} value={ind.id}>{ind.title}</option>)}
-                                            </select>
-                                        )}
-                                    </div>
-                                )}*/}
-                            </div>
+                                </div>
                         ) : (
                             <div className="space-y-2 text-sm">
                                 <div className="flex justify-between py-1.5 border-b border-outline-variant/30 dark:border-gray-800"><span className="text-on-surface-variant dark:text-gray-400">نام</span><span className="text-on-surface dark:text-gray-200 font-medium">{formData.name || '—'}</span></div>
                                 <div className="flex justify-between py-1.5 border-b border-outline-variant/30 dark:border-gray-800"><span className="text-on-surface-variant dark:text-gray-400">معرفی کوتاه</span><span className="text-on-surface dark:text-gray-200 font-medium">{formData.shortDescription || '—'}</span></div>
                                 <div className="flex justify-between py-1.5 border-b border-outline-variant/30 dark:border-gray-800"><span className="text-on-surface-variant dark:text-gray-400">نوع</span><span className="text-on-surface dark:text-gray-200">{catalogTypeLabel || '—'}</span></div>
                                 <div className="flex justify-between py-1.5 border-b border-outline-variant/30 dark:border-gray-800"><span className="text-on-surface-variant dark:text-gray-400">سمت</span><span className="text-on-surface dark:text-gray-200">{positionLabel || '—'}</span></div>
-                              {/*  {restrictMembershipByIndustry && <div className="flex justify-between py-1.5"><span className="text-on-surface-variant dark:text-gray-400">صنف</span><span className="text-on-surface dark:text-gray-200">{industryLabel || '—'}</span></div>}*/}
                             </div>
                         )}
                     </div>

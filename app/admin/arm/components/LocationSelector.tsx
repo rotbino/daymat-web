@@ -49,14 +49,6 @@ export function LocationSelector({
     const canRemove = isAdmin || locationsAccess.canRemove === true;
     const isOwnerWithNoAccess = !isAdmin && !canAdd && !canRemove;
 
-    // ⭐ فیلد محدودیت پیوستن به بازار بر اساس موقعیت
-    const restrictMembershipByLocation = watch('config.accessRules.restrictMembershipByLocation') ?? false;
-
-    const handleToggleRestrictMembership = (e: React.ChangeEvent<HTMLInputElement>) => {
-        setValue('config.accessRules.restrictMembershipByLocation', e.target.checked, { shouldDirty: true });
-        if (onSave) onSave();
-    };
-
     useEffect(() => {
         apiService.admin.locations.getTree()
             .then(data => {
@@ -166,28 +158,6 @@ export function LocationSelector({
                     </p>
                 </div>
             )}
-
-            {/* ═══════════════ محدودیت پیوستن به بازار بر اساس موقعیت ═══════════════ */}
-            <div className="bg-surface-container-lowest rounded-xl border border-outline-variant/30 p-4 flex items-center justify-between gap-4">
-                <div>
-                    <h3 className="text-sm font-semibold flex items-center gap-2">
-                        <Lock className="w-4 h-4 text-primary" />
-                        محدودیت پیوستن به بازار بر اساس موقعیت
-                    </h3>
-                    <p className="text-xs text-on-surface-variant mt-1">
-                        فقط کسب‌وکارهای مستقر در شهرهای انتخاب‌شده بتوانند در این بازار عضو شوند.
-                    </p>
-                </div>
-                <label className="relative inline-flex items-center cursor-pointer flex-shrink-0">
-                    <input
-                        type="checkbox"
-                        checked={restrictMembershipByLocation}
-                        onChange={handleToggleRestrictMembership}
-                        className="sr-only peer"
-                    />
-                    <div className="w-11 h-6 bg-gray-200 peer-focus:outline-none peer-focus:ring-2 peer-focus:ring-primary/20 rounded-full peer dark:bg-gray-700 peer-checked:bg-primary peer-checked:after:translate-x-full after:content-[''] after:absolute after:top-[2px] after:right-[2px] after:bg-white after:rounded-full after:h-5 after:w-5 after:transition-all"></div>
-                </label>
-            </div>
 
             {/* ═══════════════ موقعیت‌های انتخاب‌شده (بالا) ═══════════════ */}
             <div className="bg-surface-container-lowest rounded-xl border border-outline-variant/30 p-4">

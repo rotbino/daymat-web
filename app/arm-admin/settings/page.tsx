@@ -36,7 +36,7 @@ const TABS: { id: SettingsTab; label: string; icon: string }[] = [
     { id: 'payment', label: 'درگاه پرداخت', icon: '💳' },
     { id: 'economy', label: 'اقتصاد', icon: '💰' },
     { id: 'modules', label: 'ماژول‌ها', icon: '🧩' },
-    { id: 'access', label: 'دسترسی', icon: '🔐' },
+    { id: 'access', label: 'عضویت', icon: '🔐' },
     { id: 'categories', label: 'گروه‌ها', icon: '📂' },
     { id: 'locations', label: 'موقعیت‌ها', icon: '📍' },
     { id: 'labels', label: 'برچسب‌ها', icon: '🏷️' },
