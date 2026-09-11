@@ -79,6 +79,9 @@ export function ArmCreateWizard() {
         geoScopeType: 'multi_city',
         featuresEnabled: [],
         acceptedCatalogTypes: [],
+        // ✅ بازار خصوصی + شرایط عضویت
+        isPrivate: false,
+        membershipTerms: '',
         rankingAlgorithm: 'simple',
         categoryTree: [],
         allowedCategoryScopeTree: [],
@@ -137,7 +140,7 @@ export function ArmCreateWizard() {
         trigger,
         reset,
         formState: { errors },
-    } = useForm({ defaultValues, mode: 'onTouched' });
+    } = useForm<any>({ defaultValues, mode: 'onTouched' });
 
     // ─── لود بازار (در صورت وجود slug) ───
     useEffect(() => {

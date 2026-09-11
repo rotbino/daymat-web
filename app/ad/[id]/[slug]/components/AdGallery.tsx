@@ -102,7 +102,8 @@ export default function AdGallery({ images, title }: Props) {
                     alt={title}
                     fill
                     className={cn(
-                        "object-cover transition-opacity duration-300",
+                        // ✅ تصویر کامل بدون بریدن — عرض پر، سقف کانتینر
+                        "object-contain transition-opacity duration-300",
                         !imgLoaded && 'opacity-0'
                     )}
                     unoptimized
@@ -140,7 +141,7 @@ export default function AdGallery({ images, title }: Props) {
                                     src={thumb || '/images/no_image.jpg'}
                                     alt={`${title} - تصویر ${idx + 1}`}
                                     fill
-                                    className="object-cover"
+                                    className="object-contain"
                                     unoptimized
                                     loading="lazy"
                                 />

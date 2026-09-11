@@ -20,6 +20,7 @@ import {
     ShoppingCart,
     Package, BookOpen,
     Tag,
+    UserPlus,
 } from 'lucide-react';
 import { toast } from 'sonner';
 import { apiService } from '@/lib/api/apiService';
@@ -33,6 +34,7 @@ const menuItems = [
     { href: '/arm-admin/ads', label: 'آگهی‌ها', icon: Package },
     { href: '/arm-admin/sellers', label: 'فروشندگان', icon: Store },
     { href: '/arm-admin/buyers', label: 'خریداران', icon: ShoppingCart },
+    { href: '/arm-admin/membership-requests', label: 'درخواست‌های عضویت', icon: UserPlus },
     { href: '/arm-admin/references', label: 'کالا و برندها', icon: Tag },
     { href: '/arm-admin/financial', label: 'مالی', icon: CreditCard },
     { href: '/arm-admin/settings', label: 'تنظیمات', icon: Settings },
@@ -58,6 +60,15 @@ export default function ArmAdminLayout({ children }: { children: React.ReactNode
         enabled: !!(currentSlug && isAuthorized === true),
         staleTime: 1000 * 60 * 5,
     });
+
+    // ✅ بج درخواست‌های عضویت بازار خصوصی — تعداد pending
+    const { data: mreqData } = useQuery({
+        queryKey: ['arm-membership-requests', currentSlug, 'pending'],
+        queryFn: () => apiService.armAdmin.getMembershipRequests(currentSlug, { status: 'pending', limit: 1 }),
+        enabled: !!(currentSlug && isAuthorized === true),
+        staleTime: 1000 * 30,
+    });
+    const membershipReqCount: number = mreqData?.pendingCount ?? 0;
 
     useEffect(() => {
         const checkAuthorization = async () => {
@@ -195,6 +206,8 @@ export default function ArmAdminLayout({ children }: { children: React.ReactNode
                     if (item.href === '/arm-admin/ads') badgeCount = stats?.pendingAds || 0;
                     if (item.href === '/arm-admin/financial') badgeCount = stats?.pendingPayments || 0;
                     if (item.href === '/arm-admin/sellers' || item.href === '/arm-admin/buyers') badgeCount = stats?.pendingMembers || 0;
+                    // ✅ بج درخواست‌های عضویت — count از endpoint خودش
+                    if (item.href === '/arm-admin/membership-requests') badgeCount = membershipReqCount;
 
                     return (
                         <React.Fragment key={item.href}>
@@ -319,6 +332,7 @@ export default function ArmAdminLayout({ children }: { children: React.ReactNode
                                 if (item.href === '/arm-admin/ads') badgeCount = stats?.pendingAds || 0;
                                 if (item.href === '/arm-admin/financial') badgeCount = stats?.pendingPayments || 0;
                                 if (item.href === '/arm-admin/sellers' || item.href === '/arm-admin/buyers') badgeCount = stats?.pendingMembers || 0;
+                                if (item.href === '/arm-admin/membership-requests') badgeCount = membershipReqCount;
 
                                 return (
                                     <Link

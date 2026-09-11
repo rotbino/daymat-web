@@ -11,7 +11,7 @@ import { useArms, useVitrine, vitrineKeys, normalizeVitrineParams } from '@/lib/
 import { apiService } from '@/lib/api/apiService';
 import { setArm } from '@/lib/store/slices/armSlice';
 import { toast } from 'sonner';
-import { Package, RefreshCw, Archive, Clock, Wrench, Loader2 } from 'lucide-react';
+import { Package, RefreshCw, Archive, Clock, Wrench, Loader2, ShieldCheck } from 'lucide-react';
 import { useFilters } from '@/lib/hooks/useFilters';
 import { cn } from '@/lib/utils';
 import { buildFilterHref, findNodeById } from '@/lib/utils/filterUrl';
@@ -23,6 +23,7 @@ import { MobileFilterStrip, DesktopFilterToolbar } from '../../app_/home/FilterT
 import FilterSheet from '../../app_/home/FilterSheet';
 import AdCard from '../../app_/home/AdCard';
 import AdModal from '../../app_/home/AdModal';
+import MembershipModal from '@/app_/home/MembershipModal';
 import NavTabs from '@/app/home/nav/NavTabs';
 import {LocationFilter} from "@/app/components/LocationFilter";
 
@@ -42,6 +43,8 @@ export default function MarketContent({ search: searchProp }: { search?: string 
     const [selectedAd, setSelectedAd] = useState<any>(null);
     const [isCalling, setIsCalling] = useState(false);
     const [sheetOpen, setSheetOpen] = useState(false);
+    const [membershipOpen, setMembershipOpen] = useState(false);
+    const openMembership = useCallback(() => setMembershipOpen(true), []);
     const loadMoreRef = useRef<HTMLDivElement>(null);
 
     const vitrineSlug = currentSlug || '';
@@ -90,6 +93,8 @@ export default function MarketContent({ search: searchProp }: { search?: string 
     const totalPages = data?.pages?.[0]?.pagination?.totalPages || 1;
     // ✅ فاست‌ها — بازهٔ قیمت و لیست برند از بازهٔ فیلتری (بدون پیجینگ)
     const facets = data?.pages?.[0]?.facets as VitrineFacets | undefined;
+    // ✅ گیت بازار خصوصی — اگر کاربر حق دیدن قیمت ندارد، بنر عضویت + دکمهٔ عضو شو
+    const canViewPrices = data?.pages?.[0]?.canViewPrices !== false;
     const hasAds = ads.length > 0;
     const hasActiveFilters = !!(categoryFromUrl || searchFromUrl || minqFromUrl || minstockFromUrl ||
         brandFromUrl || minpFromUrl || maxpFromUrl || chkFromUrl || chkminFromUrl || chkmaxFromUrl);
@@ -329,6 +334,26 @@ export default function MarketContent({ search: searchProp }: { search?: string 
                         />
                     </div>
                     <div className="px-3 lg:px-6 py-5 pb-24 lg:pb-10 max-w-[1440px] mx-auto">
+                        {/* ✅ بنر بازار خصوصی — قیمت‌ها قفل است؛ CTA عضویت */}
+                        {!isPending && canViewPrices === false && (
+                            <div className="mb-4 flex items-center gap-3 flex-wrap p-4 rounded-2xl
+                                bg-amber-50 dark:bg-amber-900/20 border border-amber-200/70 dark:border-amber-800/60">
+                                <div className="w-10 h-10 rounded-xl bg-amber-100 dark:bg-amber-900/40 flex items-center justify-center flex-shrink-0">
+                                    <ShieldCheck className="w-5 h-5 text-amber-600 dark:text-amber-400" />
+                                </div>
+                                <div className="flex-1 min-w-[200px]">
+                                    <p className="text-[13px] font-extrabold text-amber-900 dark:text-amber-200">این بازار خصوصی است</p>
+                                    <p className="text-[11px] text-amber-800/80 dark:text-amber-300/80 leading-5">
+                                        قیمت‌ها فقط برای اعضای تاییدشده نمایش داده می‌شود — شرایط را ببین و درخواست عضویت بده.
+                                    </p>
+                                </div>
+                                <button type="button" onClick={openMembership}
+                                        className="h-9 px-4 rounded-lg bg-amber-600 hover:bg-amber-700 text-white
+                                            text-[12px] font-bold shadow-sm transition-colors flex-shrink-0">
+                                    درخواست عضویت
+                                </button>
+                            </div>
+                        )}
                         {isPending ? (
                             <div className="text-center py-20">
                                 <div className="animate-spin rounded-full h-10 w-10 border-2 border-primary border-t-transparent mx-auto mb-4" />
@@ -342,7 +367,7 @@ export default function MarketContent({ search: searchProp }: { search?: string 
                                     isPlaceholderData && 'opacity-60 pointer-events-none',
                                 )}>
                                     {ads.map((ad: any) => (
-                                        <AdCard key={ad.id} ad={ad} onContact={handleContactClick} onDetail={setSelectedAd} />
+                                        <AdCard key={ad.id} ad={ad} onContact={handleContactClick} onDetail={setSelectedAd} onJoinMarket={openMembership} />
                                     ))}
                                 </div>
 
@@ -388,9 +413,12 @@ export default function MarketContent({ search: searchProp }: { search?: string 
                 </main>
             </div>
 
-            {selectedAd && <AdModal ad={selectedAd} onClose={() => setSelectedAd(null)} onContact={handleContactClick} />}
+            {selectedAd && <AdModal ad={selectedAd} onClose={() => setSelectedAd(null)} onContact={handleContactClick} onJoinMarket={openMembership} />}
 
             <FilterSheet open={sheetOpen} onClose={() => setSheetOpen(false)} categoryTree={categoryTree} />
+
+            {/* ✅ ویزارد درخواست عضویت بازار خصوصی */}
+            <MembershipModal open={membershipOpen} onClose={() => setMembershipOpen(false)} slug={vitrineSlug} arm={currentArm} />
         </div>
     );
 }

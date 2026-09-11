@@ -47,6 +47,10 @@ export function AccessRulesSection({ watch, setValue, onSave, isSaving, isAdmin 
         setValue('acceptedCatalogTypes', next, { shouldDirty: true });
     };
 
+    // ✅ بازار خصوصی + شرایط عضویت — فیلدهای ریشه‌ای Arm
+    const isPrivate = watch('isPrivate') === true;
+    const membershipTerms: string = watch('membershipTerms') || '';
+
     const handleSave = () => {
         if (!canEdit) return;
         onSave?.();
@@ -200,6 +204,66 @@ export function AccessRulesSection({ watch, setValue, onSave, isSaving, isAdmin 
                     <div className="space-y-2">{group.rules.map(renderRule)}</div>
                 </div>
             ))}
+
+            {/* ✅ بازار خصوصی — مثل کانال خصوصی تلگرام؛ جایگزین مفهوم «مشاهده قیمت فقط برای اعضا» */}
+            <div className={cn(
+                'bg-surface-container-low p-5 border rounded-xl transition-all',
+                isPrivate ? 'border-primary/40 bg-primary/5' : 'border-outline-variant',
+            )}>
+                <div className="flex items-center justify-between gap-3">
+                    <div className="flex items-center gap-2">
+                        <Lock className={cn('w-4 h-4', isPrivate ? 'text-primary' : 'text-on-surface-variant/50')} />
+                        <div>
+                            <h4 className="text-sm font-semibold">بازار خصوصی</h4>
+                            <p className="text-[10px] text-on-surface-variant mt-0.5">
+                                قیمت‌ها و امکانات فقط برای اعضای تاییدشده — درخواست عضویت به پنل مالک می‌آید
+                            </p>
+                        </div>
+                    </div>
+                    <label className={cn('relative inline-flex items-center flex-shrink-0', canEdit ? 'cursor-pointer' : 'cursor-default')}>
+                        <input
+                            type="checkbox"
+                            checked={isPrivate}
+                            onChange={e => setValue('isPrivate', e.target.checked, { shouldDirty: true })}
+                            disabled={!canEdit}
+                            className="sr-only peer"
+                        />
+                        <div className={cn(
+                            'w-11 h-6 rounded-full relative transition-all duration-200',
+                            !canEdit ? 'bg-outline-variant/50' : isPrivate ? 'bg-primary' : 'bg-outline-variant',
+                            "after:content-[''] after:absolute after:top-0.5 after:right-0.5 after:bg-white after:rounded-full after:h-5 after:w-5 after:transition-all after:duration-200",
+                            isPrivate && canEdit && 'after:translate-x-5'
+                        )} />
+                    </label>
+                </div>
+
+                {isPrivate && (
+                    <div className="mt-4">
+                        <label className="block text-xs font-semibold text-on-surface mb-1.5">
+                            شرایط عضویت در بازار
+                            <span className="text-[9px] font-normal text-on-surface-variant mr-1.5">
+                                در مدال درخواست عضویت به کاربر نمایش داده می‌شود
+                            </span>
+                        </label>
+                        <textarea
+                            value={membershipTerms}
+                            onChange={e => setValue('membershipTerms', e.target.value, { shouldDirty: true })}
+                            disabled={!canEdit}
+                            rows={5}
+                            maxLength={2000}
+                            placeholder={'مثلاً:\n• عضویت به‌عنوان خریدار: فقط سوپرمارکت‌ها و فروشگاه‌های زنجیره‌ای شهر همدان\n• عضویت به‌عنوان فروشنده: شرکت‌های پخش و عمده‌فروشی با کاتالوگ کامل\n• درخواست‌ها ابتدا بررسی و توسط مدیر تایید می‌شود'}
+                            className={cn(
+                                'w-full rounded-xl border bg-surface-container-lowest p-3 text-xs text-on-surface leading-6',
+                                'border-outline-variant/40 focus:border-primary/50 focus:ring-1 focus:ring-primary/20 outline-none',
+                                'disabled:opacity-60 resize-y min-h-[110px]',
+                            )}
+                        />
+                        <p className="text-[9px] text-on-surface-variant/60 mt-1 text-left">
+                            {membershipTerms.length.toLocaleString('fa-IR')} / ۲۰۰۰
+                        </p>
+                    </div>
+                )}
+            </div>
 
             {/* ✅ انواع کاتالوگ پذیرفته‌شده — ملاک گارد عضویت و فیلتر تابلوی بازار */}
             <div className="bg-surface-container-low p-5 border border-outline-variant rounded-xl">

@@ -58,6 +58,9 @@ export function ArmForm({ initialData, onSubmit, isSubmitting = false, isEditMod
             visibility: 'public',
             geoScopeType: 'multi_city',
             featuresEnabled: [],
+            // ✅ بازار خصوصی + شرایط عضویت
+            isPrivate: false,
+            membershipTerms: '',
             rankingAlgorithm: 'simple',
             categoryTree: [],
             allowedCategoryScopeTree: [],

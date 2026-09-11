@@ -62,7 +62,7 @@ const moduleConfigs: Record<string, { title: string; icon: any; groups: RuleGrou
                 groupIcon: 'Eye',
                 rules: [
                     { key: 'requireLoginToViewPrices', label: 'مشاهده قیمت فقط برای اعضای سایت', hint: 'کاربر مهمان قیمت‌ها را نمی‌بیند', icon: 'Eye' },
-                    { key: 'requireMembershipToViewPrices', label: 'پیوستن به بازار برای مشاهده قیمت', hint: 'تا عضو بازار نشده قیمت مخفی است', icon: 'Shield' },
+                    // ✅ «پیوستن به بازار برای مشاهده قیمت» به مفهوم جامع‌تر «بازار خصوصی» در تب قوانین دسترسی منتقل شد
                     { key: 'requireMembershipToCall', label: 'تماس فقط برای اعضای بازار', hint: 'دکمه تماس فقط برای اعضا فعال است', icon: 'Phone' },
                     { key: 'allowAnonymousPublishing', label: 'انتشار ناشناس آگهی', hint: 'فروشنده بدون نمایش نام کسب‌وکار آگهی دهد', icon: 'Shield' },
                     {

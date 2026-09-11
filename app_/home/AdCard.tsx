@@ -4,7 +4,7 @@ import React, { useState } from 'react';
 import Image from 'next/image';
 import {
     MapPin, Star, Verified, Lock, Tag,
-    Banknote, Layers, Store, TrendingUp
+    Banknote, Layers, Store, TrendingUp, Sparkles
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { unitLabel } from '@/lib/utils/unitLabel';
@@ -14,6 +14,8 @@ interface AdCardProps {
     ad: any;
     onContact: (adId: string) => void;
     onDetail: (ad: any) => void;
+    /** ✅ فراخوانِ گیت قیمت — اگر بده، جای متن ساده دکمهٔ «عضو شو» می‌نشیند */
+    onJoinMarket?: () => void;
 }
 
 function formatNum(n: number | undefined) {
@@ -62,7 +64,7 @@ function getProfitInfo(ad: any) {
     return { unitBase, profit, percent, perWholesale };
 }
 
-export default function AdCard({ ad, onContact, onDetail }: AdCardProps) {
+export default function AdCard({ ad, onContact, onDetail, onJoinMarket }: AdCardProps) {
     const router = useRouter();
     const [imgLoading, setImgLoading] = useState(true);
     const unit = unitLabel(ad.unit); // ✅ عنوان فارسی واحد، نه کد انگلیسی
@@ -88,7 +90,6 @@ export default function AdCard({ ad, onContact, onDetail }: AdCardProps) {
 
     // ✅ زمان
     const relTime = getRelativeTime(ad.updatedAt || ad.createdAt);
-    const isFresh = relTime === 'امروز' || relTime === 'دیروز';
 
     // ✅ سود خریدار عمده
     const profitInfo = getProfitInfo(ad);
@@ -123,6 +124,28 @@ export default function AdCard({ ad, onContact, onDetail }: AdCardProps) {
             )}
         </div>
     );
+
+    /** ✅ گیت قیمت — دکمهٔ عضویت (اگر handler باشد) یا متن ساده */
+    const JoinGate = ({ className }: { className?: string }) => {
+        if (!onJoinMarket) {
+            return <span className={cn('text-[11px] font-bold text-amber-600', className)}>برای دیدن قیمت عضو شوید</span>;
+        }
+        return (
+            <button
+                type="button"
+                onClick={(e) => { e.stopPropagation(); onJoinMarket(); }}
+                className={cn(
+                    'inline-flex items-center gap-1 h-6 px-2 rounded-md bg-amber-50 dark:bg-amber-900/30',
+                    'text-amber-700 dark:text-amber-300 border border-amber-200/70 dark:border-amber-800/60',
+                    'text-[10px] font-bold hover:bg-amber-100 dark:hover:bg-amber-900/50 active:scale-95 transition-all',
+                    className,
+                )}
+            >
+                <Lock className="w-2.5 h-2.5" />
+                برای دیدن قیمت عضو شوید
+            </button>
+        );
+    };
 
     /** ✅ بج سود — سبز برای اسکن چشم سریع خریدار عمده */
     const ProfitBadge = ({ showPerWholesale = false }: { showPerWholesale?: boolean }) => {
@@ -234,7 +257,8 @@ export default function AdCard({ ad, onContact, onDetail }: AdCardProps) {
                     width={112}
                     height={160}
                     className={cn(
-                        'w-full h-full object-cover group-hover:scale-105 transition-transform duration-500',
+                        // ✅ تصویر کامل داخل کادر — عرض ثابت کانتینر، اگر بلندتر بود جا می‌شود
+                        'w-full h-full object-contain group-hover:scale-105 transition-transform duration-500',
                         imgLoading && 'opacity-0',
                     )}
                     unoptimized={isExternal}
@@ -247,10 +271,9 @@ export default function AdCard({ ad, onContact, onDetail }: AdCardProps) {
                         <Star className="w-2.5 h-2.5 text-white fill-white" />
                     </div>
                 )}
-                {isFresh && (
-                    <div className="absolute top-1.5 left-1.5 bg-primary/90 text-white px-1.5 py-0.5 rounded-full text-[8px] font-medium shadow-sm z-10">
-                        {relTime === 'امروز' ? '📌 امروز' : '🔄 دیروز'}
-                    </div>
+                {/* ✅ نشان تازگی — فقط آیکون، بدون کانتینر و متن */}
+                {relTime === 'امروز' && (
+                    <Sparkles className="absolute top-1.5 left-1.5 w-4 h-4 text-amber-400 fill-amber-300 drop-shadow-md z-10" />
                 )}
 
                 {/* ✅ روش پرداخت روی تصویر — جایگزین شهر/استان */}
@@ -280,7 +303,7 @@ export default function AdCard({ ad, onContact, onDetail }: AdCardProps) {
                     <span className="text-[11px] text-gray-500 dark:text-gray-400">هر {unit}:</span>
                     <div className="flex items-baseline gap-1">
                         {ad.unitPrice === null || ad.unitPrice === undefined ? (
-                            <span className="text-[11px] font-bold text-amber-600">برای دیدن قیمت عضو شوید</span>
+                            <JoinGate />
                         ) : (
                             <>
                                 <span className="text-[16px] font-bold text-primary leading-none">{formatNum(ad.unitPrice)}</span>
@@ -326,7 +349,8 @@ export default function AdCard({ ad, onContact, onDetail }: AdCardProps) {
                     alt={ad.productType || ad.title}
                     fill
                     className={cn(
-                        'object-cover transition-transform duration-500 group-hover:scale-105',
+                        // ✅ تصویر کامل — width-first با سقف ارتفاع کانتینر (بدون بریدن)
+                        'object-contain transition-transform duration-500 group-hover:scale-105',
                         imgLoading && 'opacity-0',
                     )}
                     unoptimized={isExternal}
@@ -339,10 +363,9 @@ export default function AdCard({ ad, onContact, onDetail }: AdCardProps) {
                         <Star className="w-3 h-3 text-white fill-white" />
                     </div>
                 )}
-                {isFresh && (
-                    <div className="absolute top-2 left-2 bg-primary/90 text-white px-2 py-0.5 rounded-full text-[9px] font-medium shadow-sm z-10">
-                        {relTime === 'امروز' ? '📌 امروز' : '🔄 دیروز'}
-                    </div>
+                {/* ✅ نشان تازگی — فقط آیکون، بدون کانتینر و متن */}
+                {relTime === 'امروز' && (
+                    <Sparkles className="absolute top-2 left-2 w-5 h-5 text-amber-400 fill-amber-300 drop-shadow-md z-10" />
                 )}
 
                 {hasPaymentTags && (
@@ -370,7 +393,7 @@ export default function AdCard({ ad, onContact, onDetail }: AdCardProps) {
                     <span className="text-[11px] text-gray-500 dark:text-gray-400">هر {unit}</span>
                     <div className="flex items-baseline gap-1">
                         {ad.unitPrice === null || ad.unitPrice === undefined ? (
-                            <span className="text-[11px] font-bold text-amber-600">برای دیدن قیمت عضو شوید</span>
+                            <JoinGate />
                         ) : (
                             <>
                                 <span className="text-[16px] font-bold text-primary leading-none">{formatNum(ad.unitPrice)}</span>

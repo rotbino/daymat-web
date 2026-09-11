@@ -4,7 +4,7 @@ import React from 'react';
 import Image from 'next/image';
 import {
     Clock, MapPin, Phone, TrendingUp, X, Package, Award,
-    Zap, Layers, FileText, BarChart3, Truck,
+    Zap, Layers, FileText, BarChart3, Truck, Lock,
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { unitLabel } from '@/lib/utils/unitLabel';
@@ -13,6 +13,8 @@ interface AdModalProps {
     ad: any;
     onClose: () => void;
     onContact: (adId: string) => void;
+    /** ✅ اگر بدهی، وقتی قیمت مخفی است (بازار خصوصی) دکمهٔ عضویت می‌آید */
+    onJoinMarket?: () => void;
 }
 
 function formatNum(n: number | undefined) {
@@ -182,7 +184,7 @@ function PaymentCard({
 /* ═══════════════════════════════════════════════════
    مودال اصلی
    ═══════════════════════════════════════════════════ */
-export default function AdModal({ ad, onClose, onContact }: AdModalProps) {
+export default function AdModal({ ad, onClose, onContact, onJoinMarket }: AdModalProps) {
     const unit = unitLabel(ad.unit, 'تن'); // ✅ عنوان فارسی واحد، نه کد انگلیسی
     const tier = ad.catalog?.verificationTier;
     const adImages =
@@ -330,6 +332,18 @@ export default function AdModal({ ad, onClose, onContact }: AdModalProps) {
                                 unit={unit}
                                 expiresAt={ad.expiresAt}
                             />
+
+                            {/* ✅ گیت بازار خصوصی — قیمت مخفی است؛ CTA عضویت */}
+                            {ad.unitPrice == null && onJoinMarket && (
+                                <button type="button" onClick={onJoinMarket}
+                                        className="w-full flex items-center justify-center gap-2 h-11 rounded-xl
+                                            bg-amber-50 dark:bg-amber-900/25 border border-amber-200/70 dark:border-amber-800/60
+                                            text-amber-700 dark:text-amber-300 text-[13px] font-bold
+                                            hover:bg-amber-100 dark:hover:bg-amber-900/40 active:scale-[0.98] transition-all">
+                                    <Lock className="w-4 h-4" />
+                                    برای دیدن قیمت عضو شوید
+                                </button>
+                            )}
 
                             {/* روش‌های پرداخت */}
                             {chequeDetail && (

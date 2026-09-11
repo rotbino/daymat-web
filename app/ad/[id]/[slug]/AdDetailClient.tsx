@@ -28,8 +28,9 @@ const AdPriceCard = dynamic(() => import('./components/AdPriceCard'), {
 });
 
 const AdTabs = dynamic(() => import('./components/AdTabs'), {
-    loading: () => <div className="h-20 bg-gray-100 rounded-2xl animate-pulse" />,
-});
+    loading: () => <div className="h-20 bg-gray-100 rounded-2xl animate-pulse" />,});
+
+const MembershipModal = dynamic(() => import('@/app_/home/MembershipModal'), { ssr: false });
 
 interface Props {
     adId: string;
@@ -43,6 +44,8 @@ export default function AdDetailClient({ adId, initialData }: Props) {
     const { data: savedData, refetch: refetchSaved } = useAdSaved(adId);
 
     const [localSaved, setLocalSaved] = useState<boolean | null>(null);
+    const [membershipOpen, setMembershipOpen] = useState(false);
+    const openMembership = useCallback(() => setMembershipOpen(true), []);
 
     const isSaved = localSaved !== null ? localSaved : (savedData?.isSaved || false);
 
@@ -173,6 +176,7 @@ export default function AdDetailClient({ adId, initialData }: Props) {
                             onSaveToggle={handleSaveToggle}
                             onContact={handleContact}
                             onShare={handleShare}
+                            onJoinMarket={openMembership}
                         />
                     </div>
                 </div>
@@ -180,6 +184,14 @@ export default function AdDetailClient({ adId, initialData }: Props) {
                 {/* تب‌ها */}
                 <AdTabs ad={displayAd} isOwner={isOwner} />
             </main>
+
+            {/* ✅ ویزارد درخواست عضویت بازار خصوصی (آگهیِ فقط-خصوصی قیمت null می‌آید) */}
+            <MembershipModal
+                open={membershipOpen}
+                onClose={() => setMembershipOpen(false)}
+                slug={displayAd?.arm?.slug || ''}
+                arm={displayAd?.arm}
+            />
         </div>
     );
 }

@@ -294,6 +294,17 @@ export const apiService = {
         join: (slug: string, body?: { roleType?: 'seller' | 'buyer'; catalogId?: string }): Promise<any> =>
             apiRequest(`/arm/${slug}/join`, { method: 'POST', data: body }),
 
+        // ✅ درخواست عضویت در بازار خصوصی — ویزارد شرایط → نقش → کسب‌وکار/کاتالوگ
+        requestMembership: (
+            slug: string,
+            body: { roleType: 'buyer' | 'seller'; businessId?: string; catalogId?: string; termsAccepted?: boolean },
+        ): Promise<any> =>
+            apiRequest(`/arm/${slug}/membership-request`, { method: 'POST', data: body }),
+
+        // ✅ وضعیت آخرین درخواست عضویت من در این بازار + خلاصهٔ عضویت
+        getMyMembershipRequest: (slug: string): Promise<any> =>
+            apiRequest(`/arm/${slug}/membership-request/my`),
+
         leave: (slug: string): Promise<any> =>
             apiRequest(`/arm/${slug}/leave`, { method: 'DELETE' }),
 
@@ -859,6 +870,16 @@ export const apiService = {
         // دریافت لیست فیش‌های در انتظار
         getPayments: (slug: string): Promise<any> =>
             apiRequest(`/arm-admin/${slug}/payments`),
+
+        // ✅ درخواست‌های عضویت بازار خصوصی — پنل مالک
+        getMembershipRequests: (slug: string, params?: { status?: string; page?: number; limit?: number }): Promise<any> =>
+            apiRequest(`/arm-admin/${slug}/members/membership-requests`, { params }),
+
+        approveMembershipRequest: (slug: string, requestId: string): Promise<any> =>
+            apiRequest(`/arm-admin/${slug}/members/membership-requests/${requestId}/approve`, { method: 'POST' }),
+
+        rejectMembershipRequest: (slug: string, requestId: string, reason: string): Promise<any> =>
+            apiRequest(`/arm-admin/${slug}/members/membership-requests/${requestId}/reject`, { method: 'POST', data: { reason } }),
 
         // ✅ تأیید فیش
         approvePayment: (slug: string, paymentId: string): Promise<any> =>
