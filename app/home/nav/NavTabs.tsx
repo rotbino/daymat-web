@@ -12,6 +12,7 @@ import { useNavMode } from './useNavMode';
 import { useUnreadNotifications } from './useUnreadNotifications';
 import { NAV, NavItemDef } from './config';
 import ArmSwitcher from '@/app_/components/ArmSwitcher';
+import PostPriceButton from '@/app_/components/PostPriceButton';
 import { LocationFilter } from '@/app/components/LocationFilter';
 import HeaderMenu from '@/app/components/HeaderMenu';
 import SearchBox from '@/app_/home/SearchBox';
@@ -57,15 +58,13 @@ function GuestMarketNav({ slug, pathname }: { slug: string; pathname: string }) 
     const cleanPath = pathname.replace(/\/+$/, '') || '/';
     const onMarket = cleanPath === `/${slug}`;
 
-    const loginHref = `/login?redirect=${encodeURIComponent(`/${slug}`)}`;
-
     return (
         <nav className="hidden lg:block bg-white dark:bg-gray-900 border-b border-outline-variant/15 dark:border-gray-800/60
-            shadow-[0_1px_3px_rgba(0,0,0,0.04)] sticky top-0 z-40">
+            shadow-[0_2px_10px_rgba(0,0,0,0.06)] sticky top-0 z-40">
             <div className="px-4 xl:px-6 h-16 flex items-center gap-2.5">
 
-                {/* برند فرزند — بازارِ مهمان (لوگو + نام + شعار) */}
-                <ArmSwitcher variant="mobile" />
+                {/* برند فرزند — بازارِ مهمان (لوگو + نام + شعار) — نسخهٔ دسکتاپ تا لوگو واقعاً دیده شود */}
+                <ArmSwitcher variant="desktop" />
 
                 {/* سرچ وسط — دو فنر دو طرف تا لوگو و شعار جا باز کنند */}
                 <div className="flex-1" />
@@ -94,12 +93,8 @@ function GuestMarketNav({ slug, pathname }: { slug: string; pathname: string }) 
                     <BookOpen className="w-4 h-4" /> کاتالوگ من
                 </Link>
 
-                {/* CTA ورود | عضویت */}
-                <Link href={loginHref}
-                      className="flex-shrink-0 flex items-center h-10 px-5 rounded-lg bg-primary text-on-primary
-                          text-sm font-bold hover:bg-primary/90 shadow-sm transition-colors">
-                    عضویت | ورود
-                </Link>
+                {/* CTA ثبت قیمت — لیبل بر اساس نوع بازار؛ مهمان → ثبت‌نام/ورود بعدش /my-catalogs */}
+                <PostPriceButton size="desktop" />
             </div>
         </nav>
     );
@@ -161,11 +156,11 @@ export default function NavTabs({ guestMarketSlug }: { guestMarketSlug?: string 
         <>
             {/* ═══ دسکتاپ — یک نوار ═══ */}
             <nav className="hidden lg:block bg-white dark:bg-gray-900 border-b border-outline-variant/15 dark:border-gray-800/60
-                shadow-[0_1px_3px_rgba(0,0,0,0.04)] sticky top-0 z-40">
+                shadow-[0_2px_10px_rgba(0,0,0,0.06)] sticky top-0 z-40">
                 <div className="px-4 xl:px-6 h-16 flex items-center gap-2.5">
 
-                    {/* برند فرزند — لوگو + نام + شعار بازار فعلی */}
-                    <ArmSwitcher variant="mobile" />
+                    {/* برند فرزند — لوگو + نام + شعار بازار فعلی — نسخهٔ دسکتاپ تا لوگو واقعاً دیده شود */}
+                    <ArmSwitcher variant="desktop" />
 
                     {/* سرچ وسط — دو فنر دو طرف تا لوگو و شعار جا باز کنند */}
                     <div className="flex-1" />
@@ -176,6 +171,9 @@ export default function NavTabs({ guestMarketSlug }: { guestMarketSlug?: string 
                         </div>
                     </Suspense>
                     <div className="flex-1" />
+
+                    {/* ✅ دکمهٔ ثبت قیمت — لیبل بر اساس نوع بازار (عمده/خرده/خدمات) */}
+                    <PostPriceButton size="desktop" />
 
                     {/* بازار */}
                     <IconLink href={currentSlug ? `/${currentSlug}` : '/market'}

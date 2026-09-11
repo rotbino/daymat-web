@@ -10,6 +10,7 @@ import { cn } from '@/lib/utils';
 import { LocationFilter } from './LocationFilter';
 import HeaderMenu from './HeaderMenu';
 import ArmSwitcher from '@/app_/components/ArmSwitcher';
+import PostPriceButton from '@/app_/components/PostPriceButton';
 import { useUnreadNotifications } from '@/app/home/nav/useUnreadNotifications';
 
 interface MobileHeaderProps {
@@ -30,7 +31,12 @@ export default function MobileHeader({ showLocation = false, fixed = true, showB
     const unread = useUnreadNotifications();
 
     return (
-        <header className={cn('lg:hidden w-full bg-white dark:bg-gray-900', fixed && 'sticky top-0 z-40')}>
+        <header className={cn(
+            'lg:hidden w-full bg-white dark:bg-gray-900',
+            'border-b border-outline-variant/15 dark:border-gray-800/60',
+            'shadow-[0_2px_8px_rgba(0,0,0,0.05)]',
+            fixed && 'sticky top-0 z-40',
+        )}>
             <div className="h-12 px-1.5 flex items-center gap-0.5">
                 {showBack && (
                     <button type="button" onClick={() => router.back()} aria-label="بازگشت"
@@ -45,10 +51,13 @@ export default function MobileHeader({ showLocation = false, fixed = true, showB
 
                 {showLocation && <div className="flex-shrink-0"><LocationFilter /></div>}
 
-                {/* ✅ اعلان‌ها — بالا، همیشه در دسترس */}
+                {/* ✅ دکمهٔ ثبت قیمت — جمع‌وجور و ریزفونت تا برای عنوان بازار جا بماند */}
+                <PostPriceButton size="mobile" className="mx-0.5" />
+
+                {/* ✅ اعلان‌ها — بالا، همیشه در دسترس؛ جمع‌وجور تا به سه‌نقطه نزدیک بماند */}
                 {isAuthenticated && (
                     <Link href="/notifications" aria-label="اعلان‌ها"
-                          className="relative flex-shrink-0 w-11 h-10 flex items-center justify-center rounded-full
+                          className="relative flex-shrink-0 w-9 h-10 flex items-center justify-center rounded-full
                               text-on-surface-variant active:bg-surface-container-high transition-colors">
                         <Bell className="w-[21px] h-[21px]" />
                         {unread > 0 && (

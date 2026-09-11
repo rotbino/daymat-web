@@ -77,23 +77,23 @@ export default function ArmSwitcher({ variant = 'desktop' }: Props) {
                 className={cn('flex-shrink-0 flex items-center min-w-0', isMobile ? 'gap-1.5 px-1' : 'gap-2.5')}
             >
                 {logo ? (
-                    <Image
+                    // ✅ ارتفاع ثابت + عرض اتو با نسبت واقعی تصویر — مربع قبلی لوگوی عریض را ریز می‌کرد
+                    // eslint-disable-next-line @next/next/no-img-element
+                    <img
                         src={logo} alt={armName}
-                        width={isMobile ? 32 : 40} height={isMobile ? 32 : 40}
-                        className={cn('rounded-xl object-contain flex-shrink-0', isMobile ? 'w-8 h-8' : 'w-10 h-10')}
-                        unoptimized={logo.startsWith('https://')}
+                        className={cn('rounded-lg object-contain flex-shrink-0', isMobile ? 'h-9 w-auto max-w-[120px]' : 'h-11 w-auto max-w-[180px]')}
                     />
                 ) : (
-                    <div className={cn('rounded-xl bg-primary/10 flex items-center justify-center flex-shrink-0', isMobile ? 'w-8 h-8' : 'w-9 h-9')}>
-                        <Store className={cn('text-primary', isMobile ? 'w-4 h-4' : 'w-[18px] h-[18px]')} />
+                    <div className={cn('rounded-xl bg-primary/10 flex items-center justify-center flex-shrink-0', isMobile ? 'w-9 h-9' : 'w-11 h-11')}>
+                        <Store className={cn('text-primary', isMobile ? 'w-5 h-5' : 'w-6 h-6')} />
                     </div>
                 )}
-                <span className="flex flex-col leading-tight min-w-0">
+                <span className="flex flex-col items-start text-right leading-tight min-w-0">
                     <span className={cn('font-extrabold text-on-surface truncate', isMobile ? 'text-[13px] max-w-[110px]' : 'text-[15px] max-w-[190px]')}>
                         {armName}
                     </span>
                     {slogan && (
-                        <span className={cn('text-[10px] text-on-surface-variant truncate max-w-[140px]', !isMobile && 'max-w-[190px]')}>
+                        <span className={cn('mt-1 text-[10px] text-on-surface-variant truncate max-w-[140px]', !isMobile && 'max-w-[190px]')}>
                             {slogan}
                         </span>
                     )}
@@ -117,28 +117,31 @@ export default function ArmSwitcher({ variant = 'desktop' }: Props) {
                 )}
             >
                 {logo ? (
-                    <Image
+                    // ✅ ارتفاع ثابت + عرض اتو با نسبت واقعی تصویر — مربع قبلی لوگوی عریض را ریز می‌کرد
+                    // eslint-disable-next-line @next/next/no-img-element
+                    <img
                         src={logo} alt={armName}
-                        width={isMobile ? 32 : 40} height={isMobile ? 32 : 40}
-                        className={cn('rounded-xl object-contain flex-shrink-0', isMobile ? 'w-8 h-8' : 'w-10 h-10')}
-                        unoptimized={logo.startsWith('https://')}
+                        className={cn('rounded-lg object-contain flex-shrink-0', isMobile ? 'h-9 w-auto max-w-[120px]' : 'h-11 w-auto max-w-[180px]')}
                     />
                 ) : (
-                    <div className={cn('rounded-xl bg-primary/10 flex items-center justify-center flex-shrink-0', isMobile ? 'w-8 h-8' : 'w-9 h-9')}>
-                        <Store className={cn('text-primary', isMobile ? 'w-4 h-4' : 'w-[18px] h-[18px]')} />
+                    <div className={cn('rounded-xl bg-primary/10 flex items-center justify-center flex-shrink-0', isMobile ? 'w-9 h-9' : 'w-11 h-11')}>
+                        <Store className={cn('text-primary', isMobile ? 'w-5 h-5' : 'w-6 h-6')} />
                     </div>
                 )}
-                <span className="flex flex-col leading-tight min-w-0">
-                    <span className={cn('font-extrabold text-on-surface truncate', isMobile ? 'text-[13px] max-w-[100px]' : 'text-[15px] max-w-[190px]')}>
-                        {armName}
+                <span className="flex flex-col items-start text-right leading-tight min-w-0">
+                    {/* ✅ شفرون به خودِ عنوان می‌چسبد نه به کل کانتینر شعار+عنوان — و پررنگ‌تر */}
+                    <span className="flex items-center min-w-0 gap-0.5">
+                        <span className={cn('font-extrabold text-on-surface truncate', isMobile ? 'text-[13px] max-w-[100px]' : 'text-[15px] max-w-[170px]')}>
+                            {armName}
+                        </span>
+                        <ChevronDown className={cn('flex-shrink-0 text-on-surface-variant transition-transform', isMobile ? 'w-4 h-4' : 'w-4 h-4', open && 'rotate-180')} />
                     </span>
                     {slogan && (
-                        <span className={cn('text-[10px] text-on-surface-variant truncate max-w-[140px]', !isMobile && 'max-w-[190px]')}>
+                        <span className={cn('mt-1 text-[10px] text-on-surface-variant truncate max-w-[140px]', !isMobile && 'max-w-[190px]')}>
                             {slogan}
                         </span>
                     )}
                 </span>
-                <ChevronDown className={cn('flex-shrink-0 text-on-surface-variant/70 transition-transform', isMobile ? 'w-3.5 h-3.5' : 'w-4 h-4', open && 'rotate-180')} />
             </button>
 
             {open && (
