@@ -36,7 +36,13 @@ export default function ArmSwitcher({ variant = 'desktop' }: Props) {
 
     const armName = currentArm?.name || 'بازار';
     const slogan = (currentArm as any)?.slogan || '';
-    const logo = (currentArm as any)?.logoUrl || undefined;
+    // ✅ لوگو: فیلد ریشه‌ای مقدم؛ fallback به config.general برای اسنپ‌شات‌های پرسسیست‌شدهٔ قدیمی
+    // (تنظیمات بازار فقط config.general.logoUrl می‌نویسد)
+    const logo =
+        (currentArm as any)?.logoUrl ||
+        (currentArm as any)?.config?.general?.logoUrl ||
+        (currentArm as any)?.config?.general?.logoFile?.path ||
+        undefined;
     const isMobile = variant === 'mobile';
 
     // لیست بازارهای عضو — تا وقتی لود نشده یا تک‌موردی است، dropdown معنا ندارد

@@ -11,6 +11,7 @@ import {
     ShieldCheck, Bookmark, Lightbulb, LogIn,
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
+import { useArms } from '@/lib/api/apiHooks';
 
 /**
  * منوی سه‌نقطه هدر: حساب کاربری + تم + صفحات ثابت + برندینگ.
@@ -29,11 +30,17 @@ export default function HeaderMenu({ className }: { className?: string }) {
     const armName = currentArm?.name || 'بازار';
     const loginHref = `/login?arm=${currentSlug ?? ''}`;
 
-    // ⚠️ اگر isArmOwner را از جای دیگری (هوک/ArmMembership) می‌گیری، فقط این خط را عوض کن
+    // ✅ مالکیت بازار — چند مسیره تا هیچ‌وقت لینک مدیریت گم نشود:
+    //   ۱) فلگ بک‌اند findBySlug (isArmOwner — بر اساس عضویت arm_owner فعال)
+    //   ۲) مقایسه ownerUserId (وقتی currentArm از findBySlug آمده)
+    //   ۳) لیست عضویت‌ها (وقتی currentArm از getUserArms آمده — آن payload اصلاً ownerUserId ندارد!)
+    const { data: arms } = useArms();
     const isArmOwner =
         !!user?.id &&
-        ((currentArm as any)?.ownerUserId === user.id ||
-            (currentArm as any)?.arm?.ownerUserId === user.id);
+        ((currentArm as any)?.isArmOwner === true ||
+            (currentArm as any)?.ownerUserId === user.id ||
+            (currentArm as any)?.arm?.ownerUserId === user.id ||
+            (arms ?? []).some((m: any) => m.role === 'arm_owner'));
 
     useEffect(() => {
         const mq = window.matchMedia('(prefers-color-scheme: dark)');
@@ -116,7 +123,7 @@ export default function HeaderMenu({ className }: { className?: string }) {
                                         text-primary hover:bg-primary/10 dark:hover:bg-primary/20 transition-colors text-right"
                                 >
                                     <ShieldCheck className="w-4 h-4" />
-                                    پنل ادمین
+                                    پنل ادمین سیستم
                                 </Link>
                             )}
                         </>

@@ -20,11 +20,11 @@ import SearchBox from '@/app_/home/SearchBox';
  * ناوبری دیمت (نسخهٔ ۵ — مهمان‌پذیر روی بازار):
  *
  *   کاربرِ لاگین (دسکتاپ):
- *   [برند فرزند ▾] [🔍 سرش....] [📍]    [🏪 بازار] [📚 کاتالوگ] [🔔n] [👤] [⋯]
+ *   [لوگو+نام+شعار بازار ▾]    [🔍 سرچ وسط]    [🏪 بازار] [📚 کاتالوگ] [🔔n] [👤] [⋯]
  *
  *   مهمان:
  *   - روی صفحات بازار (وقتی MarketContent پراپ guestMarketSlug بدهد):
- *     [برند فرزند] [🔍 سرش....] [📍]    [🏪 بازار] [📚 کاتالوگ‌ها] [ورود | عضویت]
+ *     [لوگو+نام+شعار بازار]    [🔍 سرچ وسط]    [🏪 بازار] [📚 کاتالوگ‌ها] [ورود | عضویت]
  *     → سطحِ جذب: گوگل و لینک ویروسی کاربر را اینجا می‌آورد؛ ناو راه کشف را باز می‌کند
  *   - روی کاتالوگ عمومی: هیچ ناو (فوترِ ویروسی کافی است)
  *   - موبایل: MarketContent خودش MobileHeader را برای همه (حتی مهمان) می‌گذارد
@@ -64,17 +64,17 @@ function GuestMarketNav({ slug, pathname }: { slug: string; pathname: string }) 
             shadow-[0_1px_3px_rgba(0,0,0,0.04)] sticky top-0 z-40">
             <div className="px-4 xl:px-6 h-16 flex items-center gap-2.5">
 
-                {/* برند فرزند — بازارِ مهمان */}
+                {/* برند فرزند — بازارِ مهمان (لوگو + نام + شعار) */}
                 <ArmSwitcher variant="mobile" />
 
-                {/* سرچ — عمومی */}
-                <Suspense fallback={<div className="flex-1 max-w-2xl h-10 rounded-xl bg-surface-container-high/70 animate-pulse" />}>
-                    <div className="flex flex-1 max-w-2xl min-w-0 gap-1">
+                {/* سرچ وسط — دو فنر دو طرف تا لوگو و شعار جا باز کنند */}
+                <div className="flex-1" />
+                <Suspense fallback={<div className="w-full max-w-xl h-10 rounded-xl bg-surface-container-high/70 animate-pulse" />}>
+                    <div className="w-full max-w-xl min-w-0 flex gap-1">
                         <SearchBox compact className="w-full" />
                         <div className="flex-shrink-0"><LocationFilter /></div>
                     </div>
                 </Suspense>
-
                 <div className="flex-1" />
 
                 {/* تب‌های عمومی مهمان */}
@@ -164,15 +164,17 @@ export default function NavTabs({ guestMarketSlug }: { guestMarketSlug?: string 
                 shadow-[0_1px_3px_rgba(0,0,0,0.04)] sticky top-0 z-40">
                 <div className="px-4 xl:px-6 h-16 flex items-center gap-2.5">
 
+                    {/* برند فرزند — لوگو + نام + شعار بازار فعلی */}
                     <ArmSwitcher variant="mobile" />
 
-                    <Suspense fallback={<div className="flex-1 max-w-2xl h-10 rounded-xl bg-surface-container-high/70 animate-pulse" />}>
-                        <div className="flex flex-1 max-w-2xl min-w-0 gap-1">
+                    {/* سرچ وسط — دو فنر دو طرف تا لوگو و شعار جا باز کنند */}
+                    <div className="flex-1" />
+                    <Suspense fallback={<div className="w-full max-w-xl h-10 rounded-xl bg-surface-container-high/70 animate-pulse" />}>
+                        <div className="w-full max-w-xl min-w-0 flex gap-1">
                             <SearchBox compact className="w-full" />
                             <div className="flex-shrink-0"><LocationFilter /></div>
                         </div>
                     </Suspense>
-
                     <div className="flex-1" />
 
                     {/* بازار */}
