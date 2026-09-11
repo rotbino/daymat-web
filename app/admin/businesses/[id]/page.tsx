@@ -493,7 +493,7 @@ export default function AdminCatalogDetailPage() {
                                         <div className="min-w-0">
                                             <p className="font-medium text-sm truncate">{m.arm?.name}</p>
                                             <p className="text-xs text-on-surface-variant">
-                                                {m.role === 'arm_owner' ? 'مدیر' : m.role === 'arm_seller' ? 'فروشنده' : m.role === 'arm_buyer' ? 'خریدار' : 'عضو'}
+                                                {m.role === 'arm_owner' ? 'مالک' : m.role === 'arm_admin' ? 'ادمین بازار' : m.role === 'arm_seller' ? 'فروشنده' : m.role === 'arm_buyer' ? 'خریدار' : 'عضو'}
                                             </p>
                                             <span className={cn("text-[10px] px-1.5 py-0.5 rounded-full",
                                                 m.status === 'active' ? 'bg-green-50 text-green-600' : 'bg-red-50 text-red-600')}>

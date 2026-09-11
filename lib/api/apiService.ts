@@ -881,6 +881,16 @@ export const apiService = {
         rejectMembershipRequest: (slug: string, requestId: string, reason: string): Promise<any> =>
             apiRequest(`/arm-admin/${slug}/members/membership-requests/${requestId}/reject`, { method: 'POST', data: { reason } }),
 
+        // ✅ ادمین‌های بازار — منصوبِ مالک؛ انتصاب/عزل فقط مالک
+        getAdmins: (slug: string): Promise<any> =>
+            apiRequest(`/arm-admin/${slug}/members/admins`),
+
+        addAdmin: (slug: string, phone: string): Promise<any> =>
+            apiRequest(`/arm-admin/${slug}/members/admins`, { method: 'POST', data: { phone } }),
+
+        removeAdmin: (slug: string, userId: string): Promise<any> =>
+            apiRequest(`/arm-admin/${slug}/members/admins/${userId}/remove`, { method: 'POST' }),
+
         // ✅ تأیید فیش
         approvePayment: (slug: string, paymentId: string): Promise<any> =>
             apiRequest(`/arm-admin/${slug}/payments/${paymentId}/approve`, {

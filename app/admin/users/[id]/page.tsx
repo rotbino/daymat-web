@@ -421,7 +421,8 @@ export default function AdminUserDetailPage() {
                         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
                             {userData.armMemberships.map((m: any) => {
                                 const ROLE_OPTIONS = [
-                                    { value: 'arm_owner', label: 'مدیر کانال' },
+                                    { value: 'arm_owner', label: 'مالک بازار' },
+                                    { value: 'arm_admin', label: 'ادمین بازار' },
                                     { value: 'arm_seller', label: 'فروشنده' },
                                     { value: 'arm_buyer', label: 'خریدار' },
                                     { value: 'arm_member', label: 'عضو عادی' },

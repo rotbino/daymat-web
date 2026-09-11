@@ -157,7 +157,7 @@ export default function ProfilePage() {
     const isArmOwner = useMemo(() => {
         if (!user || !currentSlug || !userArms) return false;
         return userArms.some(
-            (a: any) => a.slug === currentSlug && a.role === 'arm_owner'
+            (a: any) => a.slug === currentSlug && ['arm_owner', 'arm_admin'].includes(a.role)
         );
     }, [userArms, currentSlug, user]);
 

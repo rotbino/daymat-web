@@ -19,11 +19,11 @@ export function AppFooter({ activeTab = 'dashboard' }: AppFooterProps) {
     const { user } = useSelector((state: RootState) => state.auth);
     const { data: arms } = useArms();
 
-    // ✅ بررسی مالک بودن کاربر در بازار فعلی
+    // ✅ مدیریت بازار (مالک یا ادمین) در بازار فعلی
     const isArmOwner = useMemo(() => {
         if (!user || !currentSlug || !arms) return false;
         return arms.some(
-            (a: any) => a.slug === currentSlug && a.role === 'arm_owner'
+            (a: any) => a.slug === currentSlug && ['arm_owner', 'arm_admin'].includes(a.role)
         );
     }, [arms, currentSlug, user]);
 

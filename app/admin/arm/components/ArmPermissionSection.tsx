@@ -9,7 +9,10 @@ import { cn } from '@/lib/utils';
 interface ArmPermissionSectionProps {
     watch: UseFormWatch<any>;
     setValue: UseFormSetValue<any>;
+    /** مدیر سیستم */
     isAdmin?: boolean;
+    /** مالک بازار — می‌تواند دسترسی‌های ادمینِ منصوبش را تنظیم کند */
+    isOwner?: boolean;
     isSaving?: boolean;
     onSave?: () => void;
 }
@@ -118,7 +121,7 @@ const PERMISSIONS: PermissionItem[] = [
 const CATEGORY_LABELS: Record<string, { label: string; icon: string; description: string }> = {
     general: { label: 'عمومی', icon: '🏠', description: 'تنظیمات عمومی بازار' },
     modules: { label: 'ماژول‌ها', icon: '🧩', description: 'تنظیمات ماژول‌های بازار' },
-    access: { label: 'قوانین دسترسی', icon: '🔐', description: 'تنظیمات قوانین دسترسی' },
+    access: { label: 'عضویت', icon: '🔐', description: 'تنظیمات عضویت بازار' },
     economy: { label: 'اقتصاد', icon: '💰', description: 'تنظیمات اقتصادی بازار' },
     payment: { label: 'پرداخت', icon: '💳', description: 'تنظیمات درگاه پرداخت' },
     categories: { label: 'دسته‌بندی‌ها', icon: '📂', description: 'تنظیمات دسته‌بندی‌ها' },
@@ -133,10 +136,14 @@ export function ArmPermissionSection({
                                          watch,
                                          setValue,
                                          isAdmin = false,
+                                         isOwner = false,
                                          isSaving = false,
                                          onSave,
                                      }: ArmPermissionSectionProps) {
     const armAdminPermission = watch('config.armAdminPermission') || {};
+
+    // ✅ مدیر سیستم یا مالک بازار می‌تواند دسترسی‌های ادمین را تنظیم کند
+    const canEditPermissions = isAdmin || isOwner;
 
     const getValue = (key: PermissionKey): boolean => {
         const parts = key.split('.');
@@ -149,7 +156,7 @@ export function ArmPermissionSection({
     };
 
     const togglePermission = (key: PermissionKey) => {
-        if (!isAdmin) return;
+        if (!canEditPermissions) return;
         const current = getValue(key);
         const parts = key.split('.');
 
@@ -167,8 +174,8 @@ export function ArmPermissionSection({
         return acc;
     }, {} as Record<string, PermissionItem[]>);
 
-    // اگر کاربر ادمین نیست، فقط نمایش بده (بدون قابلیت تغییر)
-    const isReadOnly = !isAdmin;
+    // اگر نه ادمین سیستم است نه مالک — فقط نمایش
+    const isReadOnly = !canEditPermissions;
 
     return (
         <div className="space-y-6">
@@ -177,7 +184,7 @@ export function ArmPermissionSection({
                 <div className="flex items-center gap-2">
                     <Shield className="w-5 h-5 text-primary" />
                     <h3 className="text-sm font-bold text-on-surface dark:text-gray-100">
-                        دسترسی‌های مالک بازار
+                        دسترسی‌های ادمین بازار
                     </h3>
                 </div>
                 {isReadOnly && (
@@ -261,8 +268,9 @@ export function ArmPermissionSection({
             {/* راهنما */}
             <div className="bg-amber-50 dark:bg-amber-900/20 border border-amber-200 dark:border-amber-800 rounded-xl p-3">
                 <p className="text-xs text-amber-800 dark:text-amber-300">
-                    ⚠️ تغییرات این بخش فقط توسط مدیر سیستم قابل انجام است.
-                    مالک بازار فقط می‌تواند این تنظیمات را مشاهده کند.
+                    {isOwner && !isAdmin
+                        ? '⚠️ مالک بازار: با هر کلید مشخص می‌کنید ادمینِ منصوب‌تان به کدام بخش دسترسی تغییر دارد؛ بخش‌های غیرفعال برای ادمین فقط قابل مشاهده‌اند.'
+                        : '⚠️ این دسترسی‌ها فقط برای ادمینِ منصوبِ بازار اعمال می‌شود — مالک همیشه به همه‌جا دسترسی دارد. مدیریت ادمین‌ها از منوی «ادمین‌های بازار» پنل.'}
                 </p>
             </div>
         </div>

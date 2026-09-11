@@ -30,17 +30,19 @@ export default function HeaderMenu({ className }: { className?: string }) {
     const armName = currentArm?.name || 'بازار';
     const loginHref = `/login?arm=${currentSlug ?? ''}`;
 
-    // ✅ مالکیت بازار — چند مسیره تا هیچ‌وقت لینک مدیریت گم نشود:
-    //   ۱) فلگ بک‌اند findBySlug (isArmOwner — بر اساس عضویت arm_owner فعال)
+    // ✅ مدیریت بازار (مالک یا ادمین) — چند مسیره تا هیچ‌وقت لینک مدیریت گم نشود:
+    //   ۱) فلگ بک‌اند findBySlug (isArmManager — مالک یا ادمینِ فعال)
     //   ۲) مقایسه ownerUserId (وقتی currentArm از findBySlug آمده)
     //   ۳) لیست عضویت‌ها (وقتی currentArm از getUserArms آمده — آن payload اصلاً ownerUserId ندارد!)
     const { data: arms } = useArms();
-    const isArmOwner =
+    const isArmManager =
         !!user?.id &&
-        ((currentArm as any)?.isArmOwner === true ||
+        ((currentArm as any)?.isArmManager === true ||
+            (currentArm as any)?.isArmOwner === true ||
+            (currentArm as any)?.isArmAdmin === true ||
             (currentArm as any)?.ownerUserId === user.id ||
             (currentArm as any)?.arm?.ownerUserId === user.id ||
-            (arms ?? []).some((m: any) => m.role === 'arm_owner'));
+            (arms ?? []).some((m: any) => ['arm_owner', 'arm_admin'].includes(m.role)));
 
     useEffect(() => {
         const mq = window.matchMedia('(prefers-color-scheme: dark)');
@@ -101,7 +103,7 @@ export default function HeaderMenu({ className }: { className?: string }) {
                                 <Bookmark className="w-4 h-4 text-on-surface-variant" />
                                 آگهی‌های ذخیره‌شده
                             </Link>
-                            {isArmOwner && (
+                            {isArmManager && (
                                 <Link
                                     href="/arm-admin"
                                     role="menuitem"
@@ -111,7 +113,7 @@ export default function HeaderMenu({ className }: { className?: string }) {
                                         transition-colors text-right"
                                 >
                                     <Store className="w-4 h-4" />
-                                    پنل مالک بازار
+                                    پنل مدیریت بازار
                                 </Link>
                             )}
                             {user?.role === 'system_admin' && (

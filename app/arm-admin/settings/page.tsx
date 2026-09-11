@@ -14,6 +14,7 @@ import {
 } from 'lucide-react';
 import { toast } from 'sonner';
 import { apiService } from '@/lib/api/apiService';
+import { useArms } from '@/lib/api/apiHooks';
 import { cn } from '@/lib/utils';
 
 import { GeneralSection } from '@/app/admin/arm/components/GeneralSection';
@@ -47,8 +48,13 @@ export default function ArmAdminSettings() {
     const searchParams = useSearchParams();
     const { currentSlug } = useSelector((state: RootState) => state.arm);
     const { user } = useSelector((state: RootState) => state.auth);
+    const { data: userArms } = useArms();
 
     const isSystemAdmin = user?.role === 'system_admin';
+    // ✅ مالکِ این بازار — می‌تواند دسترسی‌های ادمینِ منصوبش را تنظیم کند
+    const isOwnerOfCurrentArm = (userArms as any[] | undefined)?.some(
+        (a) => a.slug === currentSlug && a.role === 'arm_owner',
+    ) ?? false;
 
     const tabFromUrl = (searchParams.get('tab') as SettingsTab) || 'general';
     const [activeTab, setActiveTab] = useState<SettingsTab>(tabFromUrl);
@@ -345,6 +351,7 @@ export default function ArmAdminSettings() {
                             watch={watch}
                             setValue={handleSetValue}
                             isAdmin={isSystemAdmin}
+                            isOwner={isOwnerOfCurrentArm}
                             isSaving={saving}
                             onSave={handleAutoSave}
                         />

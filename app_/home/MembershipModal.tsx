@@ -73,7 +73,7 @@ export default function MembershipModal({ open, onClose, slug, arm }: Props) {
                 const isRealMember =
                     membership?.status === 'active' &&
                     membership.businessStatus === 'active' &&
-                    (!!membership.businessId || membership.role === 'arm_owner');
+                    (!!membership.businessId || ['arm_owner', 'arm_admin'].includes(membership.role));
                 if (isRealMember) {
                     setStep('member');
                 } else if (request?.status === 'pending') {

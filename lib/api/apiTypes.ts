@@ -4,7 +4,7 @@
 export type SystemRole = 'system_admin' | 'system_user';
 
 // نقش‌های سطح بازار (Arm) - ساده شده
-export type ArmRole = 'arm_owner' | 'arm_seller' | 'arm_buyer' | 'arm_member';
+export type ArmRole = 'arm_owner' | 'arm_admin' | 'arm_seller' | 'arm_buyer' | 'arm_member';
 
 // نقش‌های سطح کسب‌وکار (Catalog) - ساده شده
 export type CatalogRole = 'catalog_owner' | 'catalog_admin' | 'catalog_seller';

@@ -21,6 +21,7 @@ import {
     Package, BookOpen,
     Tag,
     UserPlus,
+    ShieldCheck,
 } from 'lucide-react';
 import { toast } from 'sonner';
 import { apiService } from '@/lib/api/apiService';
@@ -28,13 +29,14 @@ import { ThemeToggle } from '@/app_/components/ThemeToggle';
 import { cn } from '@/lib/utils';
 import { useQuery } from '@tanstack/react-query';
 
-const menuItems = [
+const menuItems: { href: string; label: string; icon: any; exact?: boolean; ownerOnly?: boolean }[] = [
     { href: '/arm-admin', label: 'داشبورد', icon: LayoutDashboard, exact: true },
     { href: '/arm-admin/catalogs', label: 'کاتالوگ‌ها', icon: BookOpen },
     { href: '/arm-admin/ads', label: 'آگهی‌ها', icon: Package },
     { href: '/arm-admin/sellers', label: 'فروشندگان', icon: Store },
     { href: '/arm-admin/buyers', label: 'خریداران', icon: ShoppingCart },
     { href: '/arm-admin/membership-requests', label: 'درخواست‌های عضویت', icon: UserPlus },
+    { href: '/arm-admin/admins', label: 'ادمین‌های بازار', icon: ShieldCheck, ownerOnly: true },
     { href: '/arm-admin/references', label: 'کالا و برندها', icon: Tag },
     { href: '/arm-admin/financial', label: 'مالی', icon: CreditCard },
     { href: '/arm-admin/settings', label: 'تنظیمات', icon: Settings },
@@ -70,6 +72,11 @@ export default function ArmAdminLayout({ children }: { children: React.ReactNode
     });
     const membershipReqCount: number = mreqData?.pendingCount ?? 0;
 
+    // ✅ نقش کاربر در بازار فعلی — آیتم «ادمین‌های بازار» فقط برای مالک
+    const currentRole = (userArms as any[] | undefined)?.find((a) => a.slug === currentSlug)?.role;
+    const isOwnerOfCurrent = currentRole === 'arm_owner';
+    const visibleMenuItems = menuItems.filter((item) => !item.ownerOnly || isOwnerOfCurrent);
+
     useEffect(() => {
         const checkAuthorization = async () => {
             // ✅ صبر کن تا redux-persist hydrate بشه
@@ -88,35 +95,35 @@ export default function ArmAdminLayout({ children }: { children: React.ReactNode
 
             // اگه userArms از React Query لود شده
             if (userArms) {
-                // پیدا کن arm_owner بازارها
-                const ownerArms = userArms.filter((a: any) => a.role === 'arm_owner');
+                // ✅ مالک یا ادمین بازارها — هر دو به پنل دسترسی دارند
+                const managerArms = userArms.filter((a: any) => ['arm_owner', 'arm_admin'].includes(a.role));
 
-                if (ownerArms.length === 0) {
-                    toast.error('شما مالک هیچ بازاری نیستید');
+                if (managerArms.length === 0) {
+                    toast.error('شما مالک یا ادمین هیچ بازاری نیستید');
                     router.push('/');
                     setLoading(false);
                     return;
                 }
 
-                // اگه currentSlug روی یه بازاری هست که arm_owner نیست، سوئیچ کن
-                const isOwnerOfCurrent = ownerArms.some((a: any) => a.slug === currentSlug);
-                if (!isOwnerOfCurrent) {
-                    // اولین arm_owner بازار رو انتخاب کن
-                    const ownerArm = ownerArms[0];
-                    localStorage.setItem('lastArmSlug', ownerArm.slug);
+                // اگه currentSlug روی یه بازاری نیست که مالک/ادمینش هستیم، سوئیچ کن
+                const isManagerOfCurrent = managerArms.some((a: any) => a.slug === currentSlug);
+                if (!isManagerOfCurrent) {
+                    // اولین بازار مدیریتی رو انتخاب کن
+                    const managerArm = managerArms[0];
+                    localStorage.setItem('lastArmSlug', managerArm.slug);
                     // ✅ dispatch کن به‌جای reload (جلوگیری از لوپ)
                     dispatch(setArm({
                         arm: {
-                            id: ownerArm.id,
-                            slug: ownerArm.slug,
-                            name: ownerArm.name,
-                            slogan: ownerArm.slogan || '',
+                            id: managerArm.id,
+                            slug: managerArm.slug,
+                            name: managerArm.name,
+                            slogan: managerArm.slogan || '',
                             status: 'active',
                             visibility: 'public',
                             featuresEnabled: [],
-                            colorPrimary: ownerArm.colorPrimary,
+                            colorPrimary: managerArm.colorPrimary,
                         },
-                        slug: ownerArm.slug,
+                        slug: managerArm.slug,
                     }));
                     setIsAuthorized(true);
                     setLoading(false);
@@ -198,7 +205,7 @@ export default function ArmAdminLayout({ children }: { children: React.ReactNode
 
             {/* ⭐ منوی سایدبار با رنگ فونت به جای پس‌زمینه */}
             <nav className="flex-1  overflow-y-auto px-3 py-5 space-y-1">
-                {menuItems.map((item, index) => {
+                {visibleMenuItems.map((item, index) => {
                     const active = isActive(item.href, item.exact);
                     const Icon = item.icon;
 
@@ -251,7 +258,7 @@ export default function ArmAdminLayout({ children }: { children: React.ReactNode
                                 )}
                             </Link>
                             {/* خط عمودی بین آیتم‌ها */}
-                            {!isCollapsed && index < menuItems.length - 1 && (
+                            {!isCollapsed && index < visibleMenuItems.length - 1 && (
                                 <div className="mx-3 h-px bg-outline-variant/20 dark:bg-gray-800" />
                             )}
                         </React.Fragment>
@@ -324,7 +331,7 @@ export default function ArmAdminLayout({ children }: { children: React.ReactNode
                 <div className="lg:hidden sticky top-0 z-30 flex-shrink-0">
                     <div className="bg-white dark:bg-gray-900 border-b border-outline-variant/20 dark:border-gray-800 shadow-sm">
                         <div className="flex items-center gap-1 px-3 py-2 overflow-x-auto scrollbar-hide">
-                            {menuItems.map((item) => {
+                            {visibleMenuItems.map((item) => {
                                 const active = isActive(item.href, item.exact);
                                 const Icon = item.icon;
 
