@@ -8,6 +8,8 @@ import { ArrowUpDown, Check, ChevronDown, SlidersHorizontal, X } from 'lucide-re
 import { cn } from '@/lib/utils';
 import { buildActiveChips, buildFilterHref, findNodeById, CategoryNode } from '@/lib/utils/filterUrl';
 import { QuantityChip } from './QuantityFilters';
+import { MarketFilterChips } from './MarketFilterBar';
+import type { VitrineFacets } from '@/lib/api/apiTypes';
 
 export const SORT_OPTIONS = [
     { value: '', label: 'جدیدترین' },
@@ -104,13 +106,14 @@ export function ActiveFilterChips({ categoryTree, excludeKeys, onClearAllHref, c
     );
 }
 
-/* ─── نوار موبایل: دسته روی دکمه + حجم/موجودی + مرتب‌سازی + چیپ‌ها + تعداد ─── */
-export function MobileFilterStrip({ categoryTree, resultCount, onOpenCategories, showQuantityFilters, quantityUnit = '' }: {
+/* ─── نوار موبایل: دسته روی دکمه + حجم/موجودی + فیلترهای بازار + چیپ‌ها + تعداد ─── */
+export function MobileFilterStrip({ categoryTree, resultCount, onOpenCategories, showQuantityFilters, quantityUnit = '', facets }: {
     categoryTree: CategoryNode[];
     resultCount?: number;
     onOpenCategories: () => void;
     showQuantityFilters: boolean;
     quantityUnit?: string;
+    facets?: VitrineFacets;
 }) {
     const pathname = usePathname(); // ✅ فیکس: مسیر فعلی برای لینک حذف دسته
     const searchParams = useSearchParams();
@@ -149,7 +152,8 @@ export function MobileFilterStrip({ categoryTree, resultCount, onOpenCategories,
             {showQuantityFilters && <QuantityChip param="minq" label="حجم خرید" unit={quantityUnit} categoryTree={categoryTree} />}
             {showQuantityFilters && <QuantityChip param="minstock" label="موجودی" unit={quantityUnit} categoryTree={categoryTree} />}
 
-            {/*<SortMenu />*/}
+            {/* ✅ فیلترهای بازار — برند / بازهٔ قیمت / چک */}
+            <MarketFilterChips facets={facets} />
 
             <ActiveFilterChips categoryTree={categoryTree} excludeKeys={excludeKeys} className="flex-1 min-w-0" />
 
@@ -163,12 +167,13 @@ export function MobileFilterStrip({ categoryTree, resultCount, onOpenCategories,
     );
 }
 
-/* ─── تولبار دسکتاپ: حجم/موجودی کنار مرتب‌سازی + چیپ‌ها + تعداد ─── */
-export function DesktopFilterToolbar({ categoryTree, resultCount, showQuantityFilters, quantityUnit = '' }: {
+/* ─── تولبار دسکتاپ: حجم/موجودی + فیلترهای بازار + چیپ‌ها + تعداد ─── */
+export function DesktopFilterToolbar({ categoryTree, resultCount, showQuantityFilters, quantityUnit = '', facets }: {
     categoryTree: CategoryNode[];
     resultCount?: number;
     showQuantityFilters: boolean;
     quantityUnit?: string;
+    facets?: VitrineFacets;
 }) {
     const pathname = usePathname();
     const searchParams = useSearchParams();
@@ -194,11 +199,11 @@ export function DesktopFilterToolbar({ categoryTree, resultCount, showQuantityFi
                     <QuantityChip param="minstock" label="موجودی" unit={quantityUnit} categoryTree={categoryTree} />
                 </div>
             )}
-           {/* {chips.length > 0 && <div className="w-px h-5 bg-outline-variant/25 flex-shrink-0" />}*/}
-            {/* <SortMenu/>*/}
-
-
-
+            {/* ✅ فیلترهای بازار — برند / بازهٔ قیمت / چک (همیشه نمایان) */}
+            <div className="flex items-center gap-1.5 flex-shrink-0">
+                <div className="w-px h-6 bg-outline-variant/25 flex-shrink-0" />
+                <MarketFilterChips facets={facets} />
+            </div>
 
             {resultCount !== undefined && (
                 <span className="flex-shrink-0 text-xs text-on-surface-variant">

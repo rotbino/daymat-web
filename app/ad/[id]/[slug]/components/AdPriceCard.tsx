@@ -5,7 +5,7 @@ import React from 'react';
 import Image from 'next/image';
 import {
     Phone, Bookmark, Share2, ShoppingCart, MapPin, Timer, Eye,
-    ArrowUpCircle, Layers, Package, Lock, Store, Banknote, Loader2,
+    ArrowUpCircle, Layers, Package, Lock, Store, Banknote, Loader2, Tag,
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { useSelector } from 'react-redux';
@@ -146,6 +146,18 @@ export default function AdPriceCard({ ad, isOwner, isSaved, onSaveToggle, onCont
 
                 {/* ✅ اطلاعات تکمیلی - همیشه */}
                 <div className="space-y-2.5 mt-3 pt-3 border-t border-gray-100 dark:border-gray-800">
+                    {/* ✅ برند */}
+                    {ad.brand?.title && (
+                        <div className="flex items-center justify-between">
+                            <span className="text-xs text-gray-400 flex items-center gap-1.5">
+                                <Tag className="w-3.5 h-3.5" />
+                                برند
+                            </span>
+                            <span className="text-sm font-medium text-gray-700 dark:text-gray-300">
+                                {ad.brand.title}
+                            </span>
+                        </div>
+                    )}
                     {ad.city && (
                         <div className="flex items-center justify-between">
                             <span className="text-xs text-gray-400 flex items-center gap-1.5">

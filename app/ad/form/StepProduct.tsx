@@ -6,7 +6,7 @@
 
 import React from 'react';
 import { useSelector } from 'react-redux';
-import { Camera, Images, Package, Pencil, Plus, Store, Tag, X } from 'lucide-react';
+import { Camera, Images, Package, Pencil, Plus, Store, X } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { RootState } from '@/lib/store/store';
 import { NumberInput } from '@/components/common/NumberInput';
@@ -14,6 +14,7 @@ import { DropSelector } from '@/components/common/DropSelector';
 import ProductReferencePicker from '@/app/components/ProductReferencePicker';
 import CategoryPicker from '@/app/ad/components/CategoryPicker';
 import { useAdForm } from './AdFormStore';
+import BrandPicker, { BrandValue } from '@/app/components/BrandPicker';
 import { SectionTitle, inputCls } from './ui-bits';
 import { MAX_IMAGES } from './constants';
 
@@ -22,6 +23,7 @@ export function StepProduct() {
         selectedCatalog, isWholesale,
         categoryTree, hasCategoryTree, formData, patchForm,
         selectedProduct, selectProduct, unitName, baseUnitTitle,
+        selectedBrand, brandMode, setSelectedBrand, setBrandMode,
         localUnitSettings, suggestedUnitIds, allUnits, unitOptions,
         selectUnit, handleUnitQtyChange,
         images, openImagePicker, removeImage,
@@ -80,13 +82,19 @@ export function StepProduct() {
                                     {(formData.productType || '').length}/۶۰
                                 </span>
                             </div>
-                            {/* ✅ برند از کالای مرجع — زیر عنوان */}
-                            {selectedProduct.brandTitle && (
-                                <div className="flex items-center gap-1.5 pt-0.5">
-                                    <span className="inline-flex items-center gap-1 rounded-full bg-primary/[0.07] border border-primary/15 px-2 py-0.5">
-                                        <Tag className="w-2.5 h-2.5 text-primary" />
-                                        <span className="text-[10px] font-bold text-primary">{selectedProduct.brandTitle}</span>
-                                    </span>
+                            {/* ✅ برند — قابل انتخاب/تغییر (پیش‌فرض از کالای مرجع) */}
+                            {selectedProduct && (
+                                <div className="pt-1">
+                                    <BrandPicker
+                                        value={selectedBrand}
+                                        onChange={(b: BrandValue | null) => {
+                                            setSelectedBrand(b);
+                                            if (b) setBrandMode(true);
+                                        }}
+                                        mode={brandMode}
+                                        onModeChange={setBrandMode}
+                                        armSlug={currentSlug || undefined}
+                                    />
                                 </div>
                             )}
                         </div>

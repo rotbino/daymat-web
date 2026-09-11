@@ -3,7 +3,7 @@
 import React, { useState } from 'react';
 import Image from 'next/image';
 import {
-    MapPin, Star, Verified, Lock,
+    MapPin, Star, Verified, Lock, Tag,
     Banknote, Layers, Store, TrendingUp
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
@@ -266,6 +266,14 @@ export default function AdCard({ ad, onContact, onDetail }: AdCardProps) {
                     {ad.productType || ad.title}
                 </h3>
 
+                {/* ✅ برند — زیر عنوان */}
+                {ad.brand?.title && (
+                    <span className="text-[10px] text-gray-500 dark:text-gray-400 truncate -mt-0.5 flex items-center gap-1">
+                        <Tag className="w-2.5 h-2.5 text-gray-400 dark:text-gray-500 flex-shrink-0" />
+                        {ad.brand.title}
+                    </span>
+                )}
+
                 {/* قیمت عمده — لنگر بصری کارت */}
                 <div className="flex items-baseline justify-between">
                     <span className="text-[11px] text-gray-500 dark:text-gray-400">هر {unit}:</span>
@@ -348,6 +356,14 @@ export default function AdCard({ ad, onContact, onDetail }: AdCardProps) {
                 <h4 className="font-bold text-[13px] text-gray-900 dark:text-gray-100 line-clamp-2 leading-snug min-h-[2.5rem]">
                     {ad.productType || ad.title}
                 </h4>
+
+                {/* ✅ برند — زیر عنوان */}
+                {ad.brand?.title && (
+                    <span className="text-[10px] text-gray-500 dark:text-gray-400 truncate -mt-1 flex items-center gap-1">
+                        <Tag className="w-2.5 h-2.5 text-gray-400 dark:text-gray-500 flex-shrink-0" />
+                        {ad.brand.title}
+                    </span>
+                )}
 
                 <div className="flex items-baseline justify-between">
                     <span className="text-[11px] text-gray-500 dark:text-gray-400">هر {unit}</span>

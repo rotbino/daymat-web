@@ -12,6 +12,7 @@ import { apiService } from '@/lib/api/apiService';
 import { useCreateAd, useUpdateAd, useAd, useUploadFile, useDeleteFile } from '@/lib/api/apiHooks';
 import { toast } from 'sonner';
 import type { ProductValue } from '@/app/components/ProductReferencePicker';
+import type { BrandValue } from '@/app/components/BrandPicker';
 import { TOTAL_STEPS, MAX_IMAGES } from './constants';
 import { findNodeInTree, getAvailableUnits, getCategoryConstraints } from './tree-utils';
 import type { AdFormValues, ImageSlot, PaymentState, UnitSettingEntry } from './types';
@@ -59,6 +60,11 @@ export interface AdFormStore {
     // مقادیر فرم
     formData: AdFormValues;
     selectedProduct: ProductValue | null;
+    // ✅ برند آگهی — مستقل از کالای مرجع (پیش‌فرض از مرجع ارث می‌برد)
+    selectedBrand: BrandValue | null;
+    brandMode: boolean | null; // null=دست‌نخورده (ارث از مرجع) | true=دارای برند | false=بدون برند
+    setSelectedBrand: (b: BrandValue | null) => void;
+    setBrandMode: (m: boolean | null) => void;
     images: ImageSlot[];
     payment: PaymentState;
     showAdvanced: boolean;
@@ -209,6 +215,9 @@ export function AdFormProvider({ adId, onSuccess, children }: { adId?: string; o
     const [currentStep, setCurrentStep] = useState(1);
     const [formData, setFormData] = useState<AdFormValues>(initialFormValues);
     const [selectedProduct, setSelectedProduct] = useState<ProductValue | null>(null);
+    // ✅ برند آگهی — انتخابگر مستقل؛ پیش‌فرض از کالای مرجع
+    const [selectedBrand, setSelectedBrand] = useState<BrandValue | null>(null);
+    const [brandMode, setBrandMode] = useState<boolean | null>(null);
     const [images, setImages] = useState<ImageSlot[]>([]);
     const [submitting, setSubmitting] = useState(false);
     const [unitModalOpen, setUnitModalOpen] = useState(false);
@@ -316,6 +325,14 @@ export function AdFormProvider({ adId, onSuccess, children }: { adId?: string; o
         setSelectedProduct(product);
         if (product) {
             setFormData((p) => ({ ...p, productType: product.title }));
+            // ✅ برند از کالای مرجع ارث می‌برد (کاربر بعداً می‌تواند عوضش کند)
+            if (product.brandId) {
+                setBrandMode(true);
+                setSelectedBrand({ id: product.brandId, title: (product as any).brandTitle || '' });
+            } else {
+                setBrandMode(null);
+                setSelectedBrand(null);
+            }
             // ✅ عکس کالای مرجع رو فقط اگه عکس موجود نباشه اضافه کن
             const imgUrl = product.thumbnailUrl || product.imageUrl;
             if (imgUrl) {
@@ -467,6 +484,9 @@ export function AdFormProvider({ adId, onSuccess, children }: { adId?: string; o
                 productReferenceId: ad.productReferenceId || '',
                 brandId: ad.brandId || '',
             }));
+            // ✅ برند آگهی موجود — تصمیم قبلی فروشنده بازگردانی می‌شود
+            setBrandMode(ad.brandId ? true : false);
+            setSelectedBrand(ad.brandId ? { id: ad.brandId, title: ad.brand?.title || '' } : null);
             // ✅ اگه آگهی کالای مرجع داره، اون رو نمایش بده (برند هم از مرجع ارث می‌بره)
             if (ad.productReferenceId) {
                 setSelectedProduct({
@@ -601,7 +621,8 @@ export function AdFormProvider({ adId, onSuccess, children }: { adId?: string; o
                         title: composedTitle,
                         productType: selectedProduct?.title || formData.productType,
                         productReferenceId: selectedProduct?.id || null,
-                        brandId: selectedProduct?.brandId || null,
+                        // ✅ برند: «بدون برند» صریح → null | انتخاب کاربر → ارث از مرجع
+                        brandId: brandMode === false ? null : (selectedBrand?.id || selectedProduct?.brandId || null),
                         unitPrice: formData.unitPrice,
                         singleUnitPrice: formData.singleUnitPrice || null,
                         consumerPrice: formData.consumerPrice || null,
@@ -634,7 +655,8 @@ export function AdFormProvider({ adId, onSuccess, children }: { adId?: string; o
                     title: composedTitle,
                     productType: selectedProduct?.title || formData.productType,
                     productReferenceId: selectedProduct?.id || undefined,
-                    brandId: selectedProduct?.brandId || undefined,
+                    // ✅ برند: بدون برند → undefined | انتخاب کاربر → ارث از مرجع
+                    brandId: brandMode === false ? undefined : ((selectedBrand as any)?.id || selectedProduct?.brandId || undefined),
                     unitPrice: formData.unitPrice,
                     singleUnitPrice: formData.singleUnitPrice || null,
                     consumerPrice: formData.consumerPrice || null,
@@ -682,7 +704,8 @@ export function AdFormProvider({ adId, onSuccess, children }: { adId?: string; o
         catalogId, hasCatalogId,
         currentStep, submitting,
         selectedCatalog, catalogLoading, adLoading, allUnits: allUnits as any[],
-        formData, selectedProduct, images, payment, showAdvanced,
+        formData, selectedProduct, selectedBrand, brandMode, setSelectedBrand, setBrandMode,
+        images, payment, showAdvanced,
         localUnitSettings, localCategoryTree,
         salesType, isWholesale, categoryTree, hasCategoryTree,
         selectedCategoryNode, unitName, baseUnitTitle,

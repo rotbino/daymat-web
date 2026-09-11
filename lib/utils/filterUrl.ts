@@ -15,6 +15,13 @@ export interface FilterUrlChanges {
     minstock?: string | null;
     sort?: string | null;
     page?: string | null;
+    // ✅ فیلترهای بازار (فیلتربار توسعه‌پذیر)
+    brand?: string | null;      // شناسهٔ برندها جداشده با ویرگول
+    minp?: string | null;       // حداقل قیمت (قیمت تکی مصرف‌کننده)
+    maxp?: string | null;       // حداکثر قیمت
+    chk?: string | null;        // '1' = فقط چکی
+    chkmin?: string | null;     // حداقل مهلت چک (روز)
+    chkmax?: string | null;     // حداکثر مهلت چک (روز)
     resetAll?: boolean;
 }
 
@@ -95,7 +102,8 @@ export function buildFilterHref(
     const params = new URLSearchParams(searchParams?.toString() ?? '');
 
     if (changes.resetAll) {
-        ['category', 'path', 'search', 'minq', 'minstock', 'sort', 'page'].forEach((k) => params.delete(k));
+        ['category', 'path', 'search', 'minq', 'minstock', 'sort', 'page',
+         'brand', 'minp', 'maxp', 'chk', 'chkmin', 'chkmax'].forEach((k) => params.delete(k));
         const qs = params.toString();
         return qs ? `${base}?${qs}` : base;
     }
@@ -116,6 +124,13 @@ export function buildFilterHref(
     setOrDelete(params, 'minq', changes.minq);
     setOrDelete(params, 'minstock', changes.minstock);
     setOrDelete(params, 'sort', changes.sort);
+    // ✅ فیلترهای بازار
+    setOrDelete(params, 'brand', changes.brand);
+    setOrDelete(params, 'minp', changes.minp);
+    setOrDelete(params, 'maxp', changes.maxp);
+    setOrDelete(params, 'chk', changes.chk);
+    setOrDelete(params, 'chkmin', changes.chkmin);
+    setOrDelete(params, 'chkmax', changes.chkmax);
     setOrDelete(params, 'page', changes.page !== undefined ? changes.page : null);
 
     const qs = params.toString();

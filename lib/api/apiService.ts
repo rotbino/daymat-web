@@ -12,6 +12,7 @@ import {
     CreateAdDto,
     Ad,
     AdListQuery,
+    VitrineFacets,
     PurchaseCreditDto,
     PurchaseCreditResponse,
     CreditBalance, User, BusinessEntity,
@@ -359,7 +360,7 @@ export const apiService = {
 
 
 
-        getVitrine: (slug: string, query: AdListQuery): Promise<{ arm: any; ads: Ad[]; pagination: any }> =>
+        getVitrine: (slug: string, query: AdListQuery): Promise<{ ads: Ad[]; canViewPrices: boolean; pagination: any; facets?: VitrineFacets }> =>
             apiRequest(`/ad/arm/${slug}`, { method: 'GET', params: query }),
 
         getCatalogAds: (catalogId: string, page: number = 1, limit: number = 10, status?: string) =>

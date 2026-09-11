@@ -83,11 +83,13 @@ export default function ArmSwitcher({ variant = 'desktop' }: Props) {
                     </div>
                 )}
                 <span className="flex flex-col leading-tight min-w-0">
-                    <span className={cn('font-extrabold text-on-surface truncate', isMobile ? 'text-[13px] max-w-[110px]' : 'text-[15px]')}>
+                    <span className={cn('font-extrabold text-on-surface truncate', isMobile ? 'text-[13px] max-w-[110px]' : 'text-[15px] max-w-[190px]')}>
                         {armName}
                     </span>
-                    {!isMobile && slogan && (
-                        <span className="hidden xl:block text-[10px] text-on-surface-variant truncate">{slogan}</span>
+                    {slogan && (
+                        <span className={cn('text-[10px] text-on-surface-variant truncate max-w-[140px]', !isMobile && 'max-w-[190px]')}>
+                            {slogan}
+                        </span>
                     )}
                 </span>
             </Link>
@@ -121,11 +123,13 @@ export default function ArmSwitcher({ variant = 'desktop' }: Props) {
                     </div>
                 )}
                 <span className="flex flex-col leading-tight min-w-0">
-                    <span className={cn('font-extrabold text-on-surface truncate', isMobile ? 'text-[13px] max-w-[100px]' : 'text-[15px]')}>
+                    <span className={cn('font-extrabold text-on-surface truncate', isMobile ? 'text-[13px] max-w-[100px]' : 'text-[15px] max-w-[190px]')}>
                         {armName}
                     </span>
-                    {!isMobile && slogan && (
-                        <span className="hidden xl:block text-[10px] text-on-surface-variant truncate">{slogan}</span>
+                    {slogan && (
+                        <span className={cn('text-[10px] text-on-surface-variant truncate max-w-[140px]', !isMobile && 'max-w-[190px]')}>
+                            {slogan}
+                        </span>
                     )}
                 </span>
                 <ChevronDown className={cn('flex-shrink-0 text-on-surface-variant/70 transition-transform', isMobile ? 'w-3.5 h-3.5' : 'w-4 h-4', open && 'rotate-180')} />

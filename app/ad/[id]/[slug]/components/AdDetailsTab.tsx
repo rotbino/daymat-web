@@ -10,8 +10,9 @@ interface Props {
 export default function AdDetailsTab({ ad }: Props) {
     // ✅ ویژگی‌ها مال کالای مرجع‌ست — با fallback به specs قدیمی آگهی (داده‌های legacy)
     const specs = ad.productRef?.specs || ad.specs || {};
+    const brandTitle = ad.brand?.title || null;
 
-    if (!ad.description?.trim() && Object.keys(specs).length === 0) return null;
+    if (!ad.description?.trim() && Object.keys(specs).length === 0 && !brandTitle) return null;
 
     return (
         <div className="bg-white dark:bg-gray-900 rounded-2xl border border-gray-200/80 dark:border-gray-800 shadow-sm overflow-hidden">
@@ -22,6 +23,15 @@ export default function AdDetailsTab({ ad }: Props) {
                     <p className="text-sm text-gray-600 dark:text-gray-300 leading-7 text-justify whitespace-pre-wrap">
                         {ad.description}
                     </p>
+                </div>
+            )}
+
+            {/* ✅ برند */}
+            {brandTitle && (
+                <div className="px-5 py-4 flex items-center gap-2 border-b border-gray-100 dark:border-gray-800/50">
+                    <Tag className="w-4 h-4 text-primary/60 flex-shrink-0" />
+                    <span className="text-xs text-gray-500 dark:text-gray-400">برند:</span>
+                    <span className="text-sm font-bold text-gray-800 dark:text-gray-100">{brandTitle}</span>
                 </div>
             )}
 

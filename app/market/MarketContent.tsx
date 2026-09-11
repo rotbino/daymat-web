@@ -15,6 +15,7 @@ import { Package, RefreshCw, Archive, Clock, Wrench, Loader2 } from 'lucide-reac
 import { useFilters } from '@/lib/hooks/useFilters';
 import { cn } from '@/lib/utils';
 import { buildFilterHref, findNodeById } from '@/lib/utils/filterUrl';
+import type { VitrineFacets } from '@/lib/api/apiTypes';
 import SearchBox from '../../app_/home/SearchBox';
 import CategorySidebar from '../../app_/home/CategorySidebar';
 import { MobileFilterStrip, DesktopFilterToolbar } from '../../app_/home/FilterToolbar';
@@ -50,6 +51,13 @@ export default function MarketContent({ search: searchProp }: { search?: string 
     const minqFromUrl = searchParams.get('minq');
     const minstockFromUrl = searchParams.get('minstock');
     const sortFromUrl = searchParams.get('sort');
+    // ✅ فیلترهای بازار (فیلتربار توسعه‌پذیر)
+    const brandFromUrl = searchParams.get('brand');
+    const minpFromUrl = searchParams.get('minp');
+    const maxpFromUrl = searchParams.get('maxp');
+    const chkFromUrl = searchParams.get('chk') === '1';
+    const chkminFromUrl = searchParams.get('chkmin');
+    const chkmaxFromUrl = searchParams.get('chkmax');
 
     const baseFilterParams = useMemo(() => getFilterParams(), [getFilterParams]);
     const categoryTree = useMemo(() => currentArm?.categoryTree || [], [currentArm]);
@@ -62,17 +70,28 @@ export default function MarketContent({ search: searchProp }: { search?: string 
         minQuantity: minqFromUrl ? Number(minqFromUrl) : undefined,
         minAvailableQuantity: minstockFromUrl ? Number(minstockFromUrl) : undefined,
         sort: sortFromUrl || undefined,
+        // ✅ فیلترهای بازار
+        brandIds: brandFromUrl || undefined,
+        minPrice: minpFromUrl ? Number(minpFromUrl) : undefined,
+        maxPrice: maxpFromUrl ? Number(maxpFromUrl) : undefined,
+        hasCheque: chkFromUrl || undefined,
+        chequeMinDays: chkFromUrl && chkminFromUrl ? Number(chkminFromUrl) : undefined,
+        chequeMaxDays: chkFromUrl && chkmaxFromUrl ? Number(chkmaxFromUrl) : undefined,
         page: pageFromUrl ? Math.max(1, parseInt(pageFromUrl, 10) || 1) : 1,
         limit: 10,
-    }), [baseFilterParams, categoryFromUrl, searchFromUrl, minqFromUrl, minstockFromUrl, sortFromUrl, pageFromUrl]);
+    }), [baseFilterParams, categoryFromUrl, searchFromUrl, minqFromUrl, minstockFromUrl, sortFromUrl,
+         brandFromUrl, minpFromUrl, maxpFromUrl, chkFromUrl, chkminFromUrl, chkmaxFromUrl, pageFromUrl]);
 
     const { data, isPending, isFetching, isFetchingNextPage, hasNextPage, fetchNextPage, isPlaceholderData } = useVitrine(vitrineSlug, queryParams);
 
     const ads = useMemo(() => data?.pages.flatMap((p: any) => p?.ads ?? []) ?? [], [data]);
     const total = data?.pages?.[0]?.pagination?.total;
     const totalPages = data?.pages?.[0]?.pagination?.totalPages || 1;
+    // ✅ فاست‌ها — بازهٔ قیمت و لیست برند از بازهٔ فیلتری (بدون پیجینگ)
+    const facets = data?.pages?.[0]?.facets as VitrineFacets | undefined;
     const hasAds = ads.length > 0;
-    const hasActiveFilters = !!(categoryFromUrl || searchFromUrl || minqFromUrl || minstockFromUrl);
+    const hasActiveFilters = !!(categoryFromUrl || searchFromUrl || minqFromUrl || minstockFromUrl ||
+        brandFromUrl || minpFromUrl || maxpFromUrl || chkFromUrl || chkminFromUrl || chkmaxFromUrl);
     const mainRef = useRef<HTMLElement>(null);
     const loggedSearchRef = useRef<string | null>(null);
     const prevCatRef = useRef(categoryFromUrl);
@@ -284,6 +303,7 @@ export default function MarketContent({ search: searchProp }: { search?: string 
                             onOpenCategories={() => setSheetOpen(true)}
                             showQuantityFilters={showQuantityFilters}
                             quantityUnit={quantityUnit}
+                            facets={facets}
                         />
                     </div>
                 </div>
@@ -303,6 +323,7 @@ export default function MarketContent({ search: searchProp }: { search?: string 
                             resultCount={total}
                             showQuantityFilters={showQuantityFilters}
                             quantityUnit={quantityUnit}
+                            facets={facets}
                         />
                     </div>
                     <div className="px-3 lg:px-6 py-5 pb-24 lg:pb-10 max-w-[1440px] mx-auto">

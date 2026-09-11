@@ -273,6 +273,7 @@ export interface Ad {
     catalogId?: string;
     productReferenceId?: string | null;
     brandId?: string | null;
+    brand?: { id: string; title: string } | null;
     publishToMarket?: boolean;
     singleUnitPrice?: number | null;
     consumerPrice?: number | null;
@@ -365,6 +366,23 @@ export interface AdListQuery {
     page?: number;
     limit?: number;
     requireSufficientStock?: boolean;
+    // ✅ فیلترهای بازار (فیلتربار توسعه‌پذیر)
+    brandIds?: string;          // شناسهٔ برندها جداشده با ویرگول (چندانتخابی)
+    hasCheque?: boolean;        // فقط آگهی‌های چکی
+    chequeMinDays?: number;     // حداقل مهلت چک (روز)
+    chequeMaxDays?: number;     // حداکثر مهلت چک (روز)
+}
+
+// ✅ فاست‌های ویترین — از بازهٔ فیلتری (بدون پیجینگ)
+export interface VitrineBrandFacet {
+    id: string;
+    title: string;
+    count: number;
+}
+export interface VitrineFacets {
+    priceMin: number | null;
+    priceMax: number | null;
+    brands: VitrineBrandFacet[];
 }
 
 export interface SortItem {
