@@ -41,6 +41,8 @@ export default function MembershipModal({ open, onClose, slug, arm }: Props) {
     const [businessId, setBusinessId] = useState<string>('');
     const [catalogId, setCatalogId] = useState<string>('');
     const [rejectInfo, setRejectInfo] = useState<string | null>(null);
+    // ✅ عضویت شخصیِ بدون کسب‌وکار (مثل عضویت قدیمی) — کاربر عضو است اما کسب‌وکارش به بازار اضافه نشده
+    const [personalMember, setPersonalMember] = useState(false);
 
     // کسب‌وکارها و کاتالوگ‌های کاربر — فقط وقتی مودال باز است
     const { data: bizData, isLoading: bizLoading } = useMyBusinesses(open && isAuthenticated);
@@ -64,7 +66,15 @@ export default function MembershipModal({ open, onClose, slug, arm }: Props) {
             .then((res: any) => {
                 const membership = res?.membership;
                 const request = res?.request;
-                if (membership?.status === 'active' && membership.businessStatus === 'active') {
+                // ✅ آینهٔ گیت قیمت بک (canViewVitrinePrices): عضو واقعی یعنی
+                //    عضویتِ کسب‌وکاری فعال (businessId دارد) — یا مالکِ بازار.
+                //    عضویتِ شخصیِ بدون کسب‌وکار (businessId=null) برای دیدن قیمت کافی نیست
+                //    → ویزارد راهنما (شرایط → نقش → کسب‌وکار/کاتالوگ) ادامه دارد
+                const isRealMember =
+                    membership?.status === 'active' &&
+                    membership.businessStatus === 'active' &&
+                    (!!membership.businessId || membership.role === 'arm_owner');
+                if (isRealMember) {
                     setStep('member');
                 } else if (request?.status === 'pending') {
                     setStep('pending');
@@ -72,6 +82,7 @@ export default function MembershipModal({ open, onClose, slug, arm }: Props) {
                     if (request?.status === 'rejected') {
                         setRejectInfo(request.rejectReason || null);
                     }
+                    setPersonalMember(membership?.status === 'active' && !membership.businessId);
                     setStep('terms');
                 }
             })
@@ -181,6 +192,16 @@ export default function MembershipModal({ open, onClose, slug, arm }: Props) {
                                     <p className="text-[11px] text-rose-700 dark:text-rose-300 leading-5">
                                         درخواست قبلی شما رد شد{rejectInfo ? ` — دلیل: ${rejectInfo}` : ''}.
                                         می‌توانید پس از رفع مشکل دوباره درخواست بدهید.
+                                    </p>
+                                </div>
+                            )}
+                            {personalMember && (
+                                <div className="mb-3 flex items-start gap-2 p-3 rounded-xl bg-amber-50 dark:bg-amber-900/20
+                                    border border-amber-200/70 dark:border-amber-800/60">
+                                    <Info className="w-4 h-4 text-amber-600 dark:text-amber-400 mt-0.5 flex-shrink-0" />
+                                    <p className="text-[11px] text-amber-800 dark:text-amber-300 leading-5">
+                                        حساب شما در این بازار عضو است؛ اما برای دیدن قیمت‌ها، کسب‌وکار
+                                        (خریدار) یا کاتالوگ (فروشنده) شما باید به بازار اضافه شود و مدیر تایید کند.
                                     </p>
                                 </div>
                             )}

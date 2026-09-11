@@ -24,12 +24,15 @@ interface Props {
 /**
  * سوییچر بازار: بلوک برند (لوگو + نام) کلیک‌پذیر است و
  * لیست بازارهایی که کاربر عضو آن‌هاست را باز می‌کند.
+ * ✅ برای کاربرِ لاگین‌شده همیشه دراپ‌داون باز می‌شود (حتی تک‌بازاری/بدون بازار) —
+ *    چون نقطهٔ دسترسیِ «سایر بازارها» (لیست و جستجوی بازارها) همین‌جاست.
  * عضویت غیرفعال نمایش داده می‌شود ولی قابل انتخاب نیست.
- * مهمان یا تک‌بازاری → Link ساده به بازار فعلی.
+ * مهمان → Link ساده به بازار فعلی.
  */
 export default function ArmSwitcher({ variant = 'desktop' }: Props) {
     const router = useRouter();
     const { currentSlug, currentArm } = useSelector((s: RootState) => s.arm);
+    const { isAuthenticated } = useSelector((s: RootState) => s.auth);
     const { data: arms } = useArms();
     const [open, setOpen] = useState(false);
     const ref = useRef<HTMLDivElement>(null);
@@ -45,8 +48,9 @@ export default function ArmSwitcher({ variant = 'desktop' }: Props) {
         undefined;
     const isMobile = variant === 'mobile';
 
-    // لیست بازارهای عضو — تا وقتی لود نشده یا تک‌موردی است، dropdown معنا ندارد
-    const switchable = !!arms && arms.length > 1;
+    // ✅ دراپ‌داون برای همهٔ کاربرانِ لاگین‌شده (بعد از لود لیست) — حتی تک‌بازاری/بدون بازار؛
+    //    مهمان یا تا لود‌نشدن لیست → لینک ساده
+    const switchable = isAuthenticated && arms !== undefined;
 
     useEffect(() => {
         if (!open) return;
@@ -69,11 +73,11 @@ export default function ArmSwitcher({ variant = 'desktop' }: Props) {
         router.push(`/${slug}`); // push → back مرورگر به بازار قبلی برمی‌گردد
     };
 
-    // ─── حالت ساده: مهمان / تک‌بازار / هنوز لود نشده ───
+    // ─── حالت ساده: مهمان / هنوز لود نشده ───
     if (!switchable) {
         return (
             <Link
-                href={currentSlug ? `/${currentSlug}` : '/public'}
+                href={currentSlug ? `/${currentSlug}` : '/markets'}
                 className={cn('flex-shrink-0 flex items-center min-w-0', isMobile ? 'gap-1.5 px-1' : 'gap-2.5')}
             >
                 {logo ? (
@@ -156,6 +160,11 @@ export default function ArmSwitcher({ variant = 'desktop' }: Props) {
                         بازارهای شما
                     </div>
                     <div className="max-h-[50vh] overflow-y-auto scrollbar-slim">
+                        {(arms ?? []).length === 0 && (
+                            <div className="px-3 py-3 text-[11px] text-on-surface-variant/60 leading-5">
+                                هنوز عضو هیچ بازاری نشده‌اید — از فهرست پایین بازارها را ببینید.
+                            </div>
+                        )}
                         {(arms ?? []).map((a: any) => {
                             const isCurrent = a.slug === currentSlug;
                             const isActive = a.status === 'active';
@@ -208,18 +217,18 @@ export default function ArmSwitcher({ variant = 'desktop' }: Props) {
                         })}
                     </div>
 
-                    {/* اگر روت مرور/ساخت بازار متفاوت است فقط این href را عوض کن */}
-                    {/*<div className="border-t border-outline-variant/20 mt-1 pt-1">
+                    {/* ✅ اکسپلور بازارها — نقطهٔ دسترسی به لیست و جستجوی همهٔ بازارها */}
+                    <div className="border-t border-outline-variant/20 mt-1 pt-1">
                         <Link
-                            href="/arms"
+                            href="/markets"
                             role="menuitem"
                             onClick={() => setOpen(false)}
-                            className="w-full flex items-center gap-2.5 h-10 px-2.5 rounded-xl text-[13px] text-on-surface-variant hover:text-primary hover:bg-primary/5 transition-colors"
+                            className="w-full flex items-center gap-2.5 h-10 px-2.5 rounded-xl text-[13px] font-bold text-on-surface-variant hover:text-primary hover:bg-primary/5 transition-colors"
                         >
                             <Compass className="w-4 h-4" />
-                            مشاهده همه بازارها
+                            سایر بازارها
                         </Link>
-                    </div>*/}
+                    </div>
                 </div>
             )}
         </div>

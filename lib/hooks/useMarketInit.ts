@@ -22,7 +22,9 @@ export function useMarketInit(slug: string): UseMarketInitResult {
     const dispatch = useDispatch();
     const { currentSlug, currentArm } = useSelector((state: RootState) => state.arm);
 
-    const [loading, setLoading] = useState(false);
+    // ✅ پیش‌فرض true — در بارِ سرد (SSR/hydration) redux خالی است و تا fetch تمام نشده
+    //    نباید MarketContent رندر شود (فلشِ «بازار خالی» یا اسپینر دوبل نمی‌گیریم)
+    const [loading, setLoading] = useState(true);
     const [armNotFound, setArmNotFound] = useState(false);
 
     useEffect(() => {

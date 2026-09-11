@@ -3,13 +3,12 @@
 import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { useRouter, usePathname, useSearchParams } from 'next/navigation';
 import Link from 'next/link';
-import { useDispatch, useSelector } from 'react-redux';
+import { useSelector } from 'react-redux';
 import { RootState } from '@/lib/store/store';
 import { useQueryClient } from '@tanstack/react-query';
 import { AppHeader } from '@/app_/components';
 import { useArms, useVitrine, vitrineKeys, normalizeVitrineParams } from '@/lib/api/apiHooks';
 import { apiService } from '@/lib/api/apiService';
-import { setArm } from '@/lib/store/slices/armSlice';
 import { toast } from 'sonner';
 import { Package, RefreshCw, Archive, Clock, Wrench, Loader2, ShieldCheck } from 'lucide-react';
 import { useFilters } from '@/lib/hooks/useFilters';
@@ -31,7 +30,6 @@ export default function MarketContent({ search: searchProp }: { search?: string 
     const router = useRouter();
     const pathname = usePathname();
     const searchParams = useSearchParams();
-    const dispatch = useDispatch();
 
     const queryClient = useQueryClient();
     const { currentSlug, currentArm, isLoading: armLoading } = useSelector((state: RootState) => state.arm);
@@ -235,28 +233,16 @@ export default function MarketContent({ search: searchProp }: { search?: string 
     }, [isAuthenticated, isCalling, currentSlug, router, arms, refetchArms]);
 
     // ═══════════════════════════════════════════
-    // ✅ currentSlug از MarketShell (useMarketInit) ست شده
-    // اگه currentSlug نیست، اولین عضویت فعال رو انتخاب کن
+    // ✅ MarketContent فقط از MarketShell (/[slug]) رندر می‌شود و
+    //    currentSlug هم از useMarketInit همان‌جا ست شده.
+    //    ⚠️ هیچ‌وقت از اینجا به /market برنگرد — این ریدایرکت قبلاً کاربرِ
+    //    تازه‌واردِ بدون عضویت را که مستقیم به /tamino آمده بود بومرنگی به لیست می‌فرستاد.
+    //    اگر هنوز arm نیامده (فریم‌های اول رندر) فقط اسپینر می‌مانیم.
     // ═══════════════════════════════════════════
     useEffect(() => {
         if (armLoading) return;
-        if (!currentSlug || !currentArm) {
-            apiService.arm.getUserArms()
-                .then((userArms: any[]) => {
-                    const first = (userArms ?? []).find((a: any) => a.status === 'active');
-                    if (first?.slug) {
-                        dispatch(setArm({ arm: { ...first, slug: first.slug }, slug: first.slug }));
-                        localStorage.setItem('lastArmSlug', first.slug);
-                        setIsCheckingArm(false);
-                    } else {
-                        router.replace('/market');
-                    }
-                })
-                .catch(() => router.replace('/market'));
-            return;
-        }
-        setIsCheckingArm(false);
-    }, [currentSlug, currentArm, armLoading, dispatch, router]);
+        if (currentSlug && currentArm) setIsCheckingArm(false);
+    }, [currentSlug, currentArm, armLoading]);
 
     if (armLoading || isCheckingArm) {
         return <div className="min-h-screen flex items-center justify-center"><div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary mx-auto" /></div>;

@@ -14,7 +14,7 @@ export interface NavItemDef {
 
 // ✅ آیتم‌های دسکتاپ (برای هدر)
 export const DESKTOP_NAV_ITEMS: NavItemDef[] = [
-    { key: 'market', label: 'بازار', icon: Store, href: '/market' },
+    { key: 'market', label: 'بازار', icon: Store, href: '/markets' },
     { key: 'catalogs', label: 'کاتالوگ', icon: BookOpen, href: '/my-catalogs' },
     { key: 'profile', label: 'پروفایل', icon: User, href: '/profile' },
 ];
@@ -25,7 +25,7 @@ export const NAV: Record<NavMode, NavItemDef[]> = {
         { key: 'profile', label: 'پروفایل', icon: User, href: '/profile' },
     ],
     member: [
-        { key: 'market', label: 'بازار', icon: Store, href: '/market' },
+        { key: 'market', label: 'بازار', icon: Store, href: '/markets' },
         { key: 'catalogs', label: 'کاتالوگ', icon: BookOpen, href: '/my-catalogs' },
         { key: 'profile', label: 'پروفایل', icon: User, href: '/profile' },
     ],

@@ -32,7 +32,7 @@ import SearchBox from '@/app_/home/SearchBox';
  */
 
 const NON_MARKET_SEGMENTS = new Set([
-    'my-catalogs', 'market', 'notifications', 'profile', 'business', 'ad', 'ads',
+    'my-catalogs', 'market', 'markets', 'notifications', 'profile', 'business', 'ad', 'ads',
     'login', 'register', 'docs', 'feedback', 'credit', 'admin', 'arm-admin',
     'catalogs', 'api', 'c', '_a', 'no-arm', 'new-home', 'saved-ads',
 ]);
@@ -120,7 +120,7 @@ export default function NavTabs({ guestMarketSlug }: { guestMarketSlug?: string 
     const segs = (pathname ?? '').split('/').filter(Boolean);
 
     const isMarketActive =
-        (pathname ?? '') === '/market' ||
+        (pathname ?? '').startsWith('/market') || // /market و /markets — صفحهٔ لیست بازارها
         (segs.length === 1 &&
             !NON_MARKET_SEGMENTS.has(segs[0]) &&
             segs[0] === currentSlug);
@@ -176,7 +176,7 @@ export default function NavTabs({ guestMarketSlug }: { guestMarketSlug?: string 
                     <PostPriceButton size="desktop" />
 
                     {/* بازار */}
-                    <IconLink href={currentSlug ? `/${currentSlug}` : '/market'}
+                    <IconLink href={currentSlug ? `/${currentSlug}` : '/markets'}
                               title={currentArm?.name ? `تابلوی ${currentArm.name}` : 'بازارها'}
                               ariaLabel="بازار"
                               active={isMarketActive}>
@@ -242,7 +242,7 @@ function MobileBottomNav({ currentSlug, pathname }: { currentSlug: string | null
     const isActive = (item: NavItemDef) => {
         switch (item.key) {
             case 'market':
-                return pathname === '/market' ||
+                return pathname.startsWith('/market') || // /market و /markets
                     (!!seg && !NON_MARKET_SEGMENTS.has(seg) && seg === currentSlug);
             case 'catalogs':
                 return pathname.startsWith('/my-catalogs') ||

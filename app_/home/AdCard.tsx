@@ -125,23 +125,24 @@ export default function AdCard({ ad, onContact, onDetail, onJoinMarket }: AdCard
         </div>
     );
 
-    /** ✅ گیت قیمت — دکمهٔ عضویت (اگر handler باشد) یا متن ساده */
+    /** ✅ گیت قیمت — دکمهٔ عضویت (اگر handler باشد) یا متن ساده
+     *  تک‌خطیِ جمع‌وجور — شکستن به دو خط کارت را زشت می‌کند */
     const JoinGate = ({ className }: { className?: string }) => {
         if (!onJoinMarket) {
-            return <span className={cn('text-[11px] font-bold text-amber-600', className)}>برای دیدن قیمت عضو شوید</span>;
+            return <span className={cn('text-[10px] font-bold text-amber-600 whitespace-nowrap', className)}>برای دیدن قیمت عضو شوید</span>;
         }
         return (
             <button
                 type="button"
                 onClick={(e) => { e.stopPropagation(); onJoinMarket(); }}
                 className={cn(
-                    'inline-flex items-center gap-1 h-6 px-2 rounded-md bg-amber-50 dark:bg-amber-900/30',
+                    'inline-flex items-center gap-1 h-5 px-1.5 rounded-md bg-amber-50 dark:bg-amber-900/30 whitespace-nowrap',
                     'text-amber-700 dark:text-amber-300 border border-amber-200/70 dark:border-amber-800/60',
-                    'text-[10px] font-bold hover:bg-amber-100 dark:hover:bg-amber-900/50 active:scale-95 transition-all',
+                    'text-[9px] font-bold hover:bg-amber-100 dark:hover:bg-amber-900/50 active:scale-95 transition-all',
                     className,
                 )}
             >
-                <Lock className="w-2.5 h-2.5" />
+                <Lock className="w-2.5 h-2.5 flex-shrink-0" />
                 برای دیدن قیمت عضو شوید
             </button>
         );
