@@ -76,8 +76,8 @@ export function ArmForm({ initialData, onSubmit, isSubmitting = false, isEditMod
                 modules: {
                     priceTable: {
                         enabled: true,
-                        requireLoginToViewPrices: true,
-                        requireMembershipToViewPrices: false,
+                        // ✅ فلاگ‌های مردهٔ لگسی (requireLoginToViewPrices / requireMembershipToViewPrices)
+                        //    حذف شدند — گیت قیمت فقط با Arm.isPrivate در تب عضویت اداره می‌شود
                         requireMembershipToCall: true,
                         allowAnonymousPublishing: true,
                         autoApproveAds: true,
