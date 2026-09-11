@@ -5,6 +5,7 @@ import React, { useState } from 'react';
 import { X, Loader2 } from 'lucide-react';
 import { toast } from 'sonner';
 import { NumberInput } from "@/components/common";
+import { unitLabel } from '@/lib/utils/unitLabel';
 import { useCreateAd } from '@/lib/api/apiHooks';
 import { useSelector } from 'react-redux';
 import { RootState } from '@/lib/store/store';
@@ -103,7 +104,7 @@ export function CopyAdModal({ isOpen, onClose, ad, onSuccess }: CopyAdModalProps
                             <NumberInput
                                 value={minQuantity}
                                 onChange={(val) => setMinQuantity(val || 1)}
-                                unit={ad.unit?.shortCode || 'تن'}
+                                unit={unitLabel(ad.unit, 'تن')} // ✅ عنوان فارسی واحد
                                 className="h-10 bg-surface-container-lowest border border-gray-200 dark:border-gray-700 rounded-lg px-3 text-sm font-mono text-right"
                             />
                         </div>

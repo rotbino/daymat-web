@@ -8,6 +8,7 @@ import {
     ArrowUpCircle, Layers, Package, Lock, Store, Banknote, Loader2, Tag,
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
+import { unitLabel } from '@/lib/utils/unitLabel';
 import { useSelector } from 'react-redux';
 import { RootState } from '@/lib/store/store';
 import {useRouter} from "next/navigation";
@@ -48,7 +49,7 @@ export default function AdPriceCard({ ad, isOwner, isSaved, onSaveToggle, onCont
     const { currentArm } = useSelector((state: RootState) => state.arm);
     const brandColor = currentArm?.colorPrimary || '#a11f2c';
 
-    const unit = ad.unit?.shortCode || '';
+    const unit = unitLabel(ad.unit); // ✅ عنوان فارسی واحد، نه کد انگلیسی
     const unitBase = ad.unitBaseTitle || 'واحد';
     const unitQty = ad.unitQty;
     const router = useRouter();

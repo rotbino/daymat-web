@@ -3,6 +3,7 @@
 
 import React from 'react';
 import { X, Trash2 } from 'lucide-react';
+import { unitLabel } from '@/lib/utils/unitLabel';
 
 interface Props {
     ad: any;
@@ -18,7 +19,7 @@ export function AdDetailModal({ ad, isOpen, onClose, onStatusChange, onDelete }:
     const infoItems = [
         ['قیمت', `${ad.unitPrice?.toLocaleString()} تومان`],
         ['واحد', ad.unit?.title],
-        ['حداقل سفارش', `${ad.minQuantity} ${ad.unit?.shortCode}`],
+        ['حداقل سفارش', `${ad.minQuantity} ${unitLabel(ad.unit)}`],
         ['وضعیت', ad.status === 'active' ? 'فعال' : ad.status],
         ['بازار', ad.arm?.name],
         ['کسب‌وکار', ad.catalog?.name],

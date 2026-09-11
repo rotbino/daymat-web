@@ -5,6 +5,7 @@ import React from 'react';
 import Image from 'next/image';
 import { useRouter } from 'next/navigation';
 import { ChevronLeft, LayoutGrid, List, Loader2, Package, Search, X, Plus } from 'lucide-react';
+import { unitLabel } from '@/lib/utils/unitLabel';
 import { cn } from '@/lib/utils';
 
 const WRAP = 'max-w-xl sm:max-w-2xl lg:max-w-4xl xl:max-w-5xl mx-auto px-4';
@@ -105,7 +106,7 @@ export default function CatalogProductList({
                 ) : view === 'grid' ? (
                     <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-3">
                         {filteredAds.map((ad) => {
-                            const unit = ad.unit?.shortCode || '';
+                            const unit = unitLabel(ad.unit); // ✅ عنوان فارسی واحد
                             const imgUrl = getUrl(ad.files?.[0]);
                             const title = ad.productType || ad.title || '';
                             const persianSlug = title.replace(/\s+/g, '-').replace(/[^\u0600-\u06FF\w\-]/g, '').substring(0, 60);
@@ -130,7 +131,7 @@ export default function CatalogProductList({
                 ) : (
                     <div className="flex flex-col gap-2.5">
                         {filteredAds.map((ad) => {
-                            const unit = ad.unit?.shortCode || '';
+                            const unit = unitLabel(ad.unit); // ✅ عنوان فارسی واحد
                             const imgUrl = getUrl(ad.files?.[0]);
                             const title = ad.productType || ad.title || '';
                             const persianSlug = title.replace(/\s+/g, '-').replace(/[^\u0600-\u06FF\w\-]/g, '').substring(0, 60);

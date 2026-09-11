@@ -4,6 +4,7 @@
 import React, { useState } from 'react';
 import { X, Construction, Lock, TrendingUp, CheckCircle } from 'lucide-react';
 import { toast } from 'sonner';
+import { unitLabel } from '@/lib/utils/unitLabel';
 import { useSelector } from 'react-redux';
 import { RootState } from '@/lib/store/store';
 import { useExtendAd, useBumpAd } from '@/lib/api/apiHooks';
@@ -176,7 +177,7 @@ export function RefreshModal({ isOpen, onClose, ad, onSuccess }: RefreshModalPro
                                 <div className="flex items-center justify-between text-xs">
                                     <span className="text-on-surface-variant dark:text-gray-400">حداقل خرید</span>
                                     <span className="font-medium text-on-surface dark:text-gray-200">
-                                        {ad.minQuantity} {ad.unit?.shortCode || 'تن'}
+                                        {ad.minQuantity} {unitLabel(ad.unit, 'تن')}
                                     </span>
                                 </div>
                                 <div className="flex items-center justify-between text-xs mt-1">

@@ -3,6 +3,7 @@
 
 import { Zap, Banknote, Layers, CalendarClock } from 'lucide-react';
 import { cn } from '@/lib/utils';
+import { unitLabel } from '@/lib/utils/unitLabel';
 
 interface Props {
     ad: any;
@@ -13,7 +14,7 @@ function fmt(n: number | undefined) {
 }
 
 export default function AdPaymentTab({ ad }: Props) {
-    const unit = ad.unit?.shortCode || '';
+    const unit = unitLabel(ad.unit); // ✅ عنوان فارسی واحد، نه کد انگلیسی
     const pm = ad.paymentMethods || {};
     const chequeOptions = pm.cheque || [];
     const installmentOptions = pm.installment || [];

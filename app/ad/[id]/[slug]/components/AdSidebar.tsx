@@ -5,6 +5,7 @@ import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import { useSelector } from 'react-redux';
 import { RootState } from '@/lib/store/store';
+import { unitLabel } from '@/lib/utils/unitLabel';
 import { apiService } from '@/lib/api/apiService';
 import { toast } from 'sonner';
 import Image from 'next/image';
@@ -33,7 +34,7 @@ export default function AdSidebar({ ad, isOwner, isSaved, onSaveToggle }: AdSide
     const ownerAvatarThumb = ad?.catalog?.owner?.avatarFile?.thumbnailPath || ad?.catalog?.owner?.avatarUrl;
     const ownerAvatarFull = ad?.catalog?.owner?.avatarFile?.path || ownerAvatarThumb; // ✅ عکس اصلی
 
-    const unit = ad?.unit?.shortCode || 'تن';
+    const unit = unitLabel(ad?.unit, 'تن'); // ✅ عنوان فارسی واحد، نه کد انگلیسی
     const expiry = timeLeft(ad?.expiresAt);
 
     const hasCheque = ad?.paymentMethods?.cheque?.length > 0;

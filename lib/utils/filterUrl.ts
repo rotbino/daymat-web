@@ -1,4 +1,5 @@
 // lib/utils/filterUrl.ts
+import { nodeUnitLabel } from './unitLabel';
 
 export interface CategoryNode {
     id: string;
@@ -173,7 +174,7 @@ export function buildActiveChips(
     const minq = searchParams.get('minq');
     if (minq) {
         const node = category ? findNodeById(tree, category) : null;
-        const unit = node?.unitShortCode || '';
+        const unit = nodeUnitLabel(node, ''); // ✅ عنوان فارسی واحد
         chips.push({
             key: 'minq',
             label: `حداقل خرید: ${faNum(minq)}${unit ? ' ' + unit : ''}`,
@@ -184,7 +185,7 @@ export function buildActiveChips(
     const minstock = searchParams.get('minstock');
     if (minstock) {
         const node = category ? findNodeById(tree, category) : null;
-        const unit = node?.unitShortCode || '';
+        const unit = nodeUnitLabel(node, ''); // ✅ عنوان فارسی واحد
         chips.push({
             key: 'minstock',
             label: `حداقل موجودی: ${faNum(minstock)}${unit ? ' ' + unit : ''}`,

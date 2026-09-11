@@ -5,6 +5,7 @@ import React, { useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { useSelector } from 'react-redux';
 import { RootState } from '@/lib/store/store';
+import { unitLabel } from '@/lib/utils/unitLabel';
 import {
     PlusCircle, Package, ClipboardList, AlertCircle, X, Archive, Trash2,
     ChevronRight, ChevronLeft, Loader2, BookOpen,
@@ -457,7 +458,7 @@ export default function CatalogAdsList({
                         </div>
                         <div className="overflow-y-auto p-4 space-y-3">
                             {ads.map(ad => {
-                                const unit = ad.unit?.shortCode || 'تن';
+                                const unit = unitLabel(ad.unit, 'تن'); // ✅ عنوان فارسی واحد
                                 return (
                                     <div key={ad.id} className="flex flex-wrap items-center gap-x-2 gap-y-1 text-sm">
                                         <span className="flex-1 min-w-[120px] truncate text-on-surface dark:text-gray-200 text-xs sm:text-sm">

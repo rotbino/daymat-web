@@ -4,6 +4,7 @@
 import React from 'react';
 import { Eye } from 'lucide-react';
 import { cn } from '@/lib/utils';
+import { unitLabel } from '@/lib/utils/unitLabel';
 import { SortField } from './types';
 
 interface Props {
@@ -66,7 +67,7 @@ export function AdsTable({ ads, pagination, page, sortField, sortOrder, onSort, 
                                     </div>
                                 </td>
                                 <td className="px-3 py-2.5 text-sm font-bold text-on-surface whitespace-nowrap">
-                                    {ad.unitPrice?.toLocaleString()} <span className="text-[10px] font-normal text-on-surface-variant">/{ad.unit?.shortCode}</span>
+                                    {ad.unitPrice?.toLocaleString()} <span className="text-[10px] font-normal text-on-surface-variant">/{unitLabel(ad.unit)}</span>
                                 </td>
                                 <td className="px-3 py-2.5 text-xs">
                                     <span className="inline-flex items-center gap-1">
@@ -116,7 +117,7 @@ export function AdsTable({ ads, pagination, page, sortField, sortOrder, onSort, 
                         {/* اطلاعات کلیدی */}
                         <div className="flex items-center justify-between text-xs text-on-surface-variant mb-2">
                             <span className="font-bold text-on-surface">
-                                {ad.unitPrice?.toLocaleString()} <span className="font-normal text-[10px]">/{ad.unit?.shortCode}</span>
+                                {ad.unitPrice?.toLocaleString()} <span className="font-normal text-[10px]">/{unitLabel(ad.unit)}</span>
                             </span>
                             <span className="inline-flex items-center gap-1">
                                 <Eye className="w-3.5 h-3.5" />

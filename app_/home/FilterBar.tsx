@@ -4,6 +4,7 @@ import React, { useState, useEffect, useMemo, useCallback, cloneElement, ReactEl
 import { useRouter, useSearchParams, usePathname } from 'next/navigation';
 import Link from 'next/link';
 import { ChevronLeft, ArrowRight, X, Check } from 'lucide-react';
+import { nodeUnitLabel } from '@/lib/utils/unitLabel';
 import { cn } from '@/lib/utils';
 import { NumberInput } from '@/components/common';
 import { LocationFilter } from '@/app/components/LocationFilter';
@@ -166,7 +167,7 @@ export default function FilterBar({ categoryTree, resultCount }: Props) {
     );
     const currentNode = path.length ? path[path.length - 1] : null;
     const isLeaf = !!currentNode && (!currentNode.children || currentNode.children.length === 0);
-    const selectedUnit = currentNode?.unitShortCode || 'تن';
+    const selectedUnit = nodeUnitLabel(currentNode, 'تن'); // ✅ عنوان فارسی واحد، نه کد انگلیسی
     const currentLevel = path.length ? (path[path.length - 1].children ?? []) : categoryTree;
 
     /**

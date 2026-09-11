@@ -5,6 +5,7 @@ import React, { useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { useSelector } from 'react-redux';
 import { RootState } from '@/lib/store/store';
+import { unitLabel } from '@/lib/utils/unitLabel';
 import { AppHeader, AppFooter } from '@/app_/components';
 import { useSavedAds } from '@/lib/api/apiHooks';
 import { Bookmark, Package, Loader2, Trash2 } from 'lucide-react';
@@ -105,7 +106,7 @@ export default function SavedAdsPage() {
                 ) : (
                     <div className="space-y-3">
                         {ads.map((ad: any) => {
-                            const unit = ad.unit?.shortCode || '';
+                            const unit = unitLabel(ad.unit); // ✅ عنوان فارسی واحد
                             const file = ad.files?.[0];
                             const imgUrl = file?.path || file?.thumbnailPath || '/images/no_product_image.jpg';
                             const isExternal = imgUrl.startsWith('https://');

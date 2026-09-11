@@ -7,6 +7,7 @@ import {
     Banknote, Layers, Store, TrendingUp
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
+import { unitLabel } from '@/lib/utils/unitLabel';
 import { useRouter } from 'next/navigation';
 
 interface AdCardProps {
@@ -64,7 +65,7 @@ function getProfitInfo(ad: any) {
 export default function AdCard({ ad, onContact, onDetail }: AdCardProps) {
     const router = useRouter();
     const [imgLoading, setImgLoading] = useState(true);
-    const unit = ad.unit?.shortCode || '';
+    const unit = unitLabel(ad.unit); // ✅ عنوان فارسی واحد، نه کد انگلیسی
 
     const unitBaseTitle = ad.unitBaseTitle || 'واحد';
 

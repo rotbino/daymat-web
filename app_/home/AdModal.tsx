@@ -7,6 +7,7 @@ import {
     Zap, Layers, FileText, BarChart3, Truck,
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
+import { unitLabel } from '@/lib/utils/unitLabel';
 
 interface AdModalProps {
     ad: any;
@@ -182,7 +183,7 @@ function PaymentCard({
    مودال اصلی
    ═══════════════════════════════════════════════════ */
 export default function AdModal({ ad, onClose, onContact }: AdModalProps) {
-    const unit = ad.unit?.shortCode || 'تن';
+    const unit = unitLabel(ad.unit, 'تن'); // ✅ عنوان فارسی واحد، نه کد انگلیسی
     const tier = ad.catalog?.verificationTier;
     const adImages =
         ad.files?.filter((f: any) => f.fieldKey?.startsWith('ad-image')) || [];

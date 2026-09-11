@@ -5,6 +5,7 @@ import React, { useState, useEffect, useMemo } from 'react';
 import { useRouter } from 'next/navigation';
 import { useSelector } from 'react-redux';
 import { RootState } from '@/lib/store/store';
+import { unitLabel } from '@/lib/utils/unitLabel';
 import {
     Loader2, Search, Filter, CheckCircle, XCircle, Clock,
     Eye, RefreshCw, ChevronLeft, ChevronRight,
@@ -304,7 +305,7 @@ export default function ArmAdminAdsPage() {
                                             </div>
                                             <div className="flex items-center gap-1.5 mt-0.5 flex-wrap">
                                                 <span className="text-[10px] text-on-surface-variant/60 dark:text-gray-500">
-                                                    {ad.unit?.shortCode} · {ad.category?.title || 'بدون دسته'}
+                                                    {unitLabel(ad.unit)} · {ad.category?.title || 'بدون دسته'}
                                                 </span>
                                                 <span className="text-[10px] text-on-surface-variant/60 dark:text-gray-500">
                                                     {ad.city || 'نامشخص'}
@@ -430,7 +431,7 @@ export default function ArmAdminAdsPage() {
                                 </div>
                                 <div>
                                     <p className="text-[10px] text-on-surface-variant/60 dark:text-gray-500">حداقل خرید</p>
-                                    <p className="text-sm font-medium">{selectedAd.minQuantity} {selectedAd.unit?.shortCode}</p>
+                                    <p className="text-sm font-medium">{selectedAd.minQuantity} {unitLabel(selectedAd.unit)}</p>
                                 </div>
                                 <div>
                                     <p className="text-[10px] text-on-surface-variant/60 dark:text-gray-500">فروشنده</p>

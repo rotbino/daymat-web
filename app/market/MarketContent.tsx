@@ -15,6 +15,7 @@ import { Package, RefreshCw, Archive, Clock, Wrench, Loader2 } from 'lucide-reac
 import { useFilters } from '@/lib/hooks/useFilters';
 import { cn } from '@/lib/utils';
 import { buildFilterHref, findNodeById } from '@/lib/utils/filterUrl';
+import { unitLabel, nodeUnitLabel } from '@/lib/utils/unitLabel';
 import type { VitrineFacets } from '@/lib/api/apiTypes';
 import SearchBox from '../../app_/home/SearchBox';
 import CategorySidebar from '../../app_/home/CategorySidebar';
@@ -102,12 +103,13 @@ export default function MarketContent({ search: searchProp }: { search?: string 
     const showQuantityFilters = isLeaf || hasSearch;
 
     // واحد نمایشی: برگ → واحد دسته | فقط سرچ → غالب‌ترین واحد نتایج صفحه اول
+    // ✅ همیشه عنوان فارسی واحد («کیلوگرم»)، نه کد انگلیسی («kg»)
     const quantityUnit = useMemo(() => {
-        if (isLeaf) return selectedNode?.unitShortCode || 'تن';
+        if (isLeaf) return nodeUnitLabel(selectedNode, 'تن');
         if (!hasSearch) return '';
         const counts = new Map<string, number>();
         for (const ad of data?.pages?.[0]?.ads ?? []) {
-            const u = ad?.unit?.shortCode;
+            const u = unitLabel(ad?.unit);
             if (u) counts.set(u, (counts.get(u) || 0) + 1);
         }
         let best = '', bestCount = 0;
