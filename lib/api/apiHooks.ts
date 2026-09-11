@@ -891,10 +891,21 @@ export const useArmCatalogReferrals = (slug?: string, enabled = true) => {
 export const useAddCatalogToArm = (slug?: string) => {
     const invalidate = useInvalidateArmCatalogs();
     return useMutation({
-        mutationFn: (catalogId: string) =>
-            apiService.armAdmin.catalogs.addCatalog(slug!, catalogId),
+        // ✅ مسیر زندهٔ بک: POST /arm-admin/:slug/memberships/sellers
+        //    (مسیر قدیمی /catalogs هرگز در بک وجود نداشت — دکمهٔ افزودن 404 می‌داد)
+        //    ✅ confirmSelfRemoved: افزودن مجددِ فروشنده‌ای که خودش خارج شده فقط با تایید صریح مدیر
+        mutationFn: (vars: { catalogId: string; confirmSelfRemoved?: boolean }) =>
+            apiRequest(`/arm-admin/${slug}/memberships/sellers`, {
+                method: 'POST',
+                data: { catalogId: vars.catalogId, confirmSelfRemoved: vars.confirmSelfRemoved === true },
+            }),
         onSuccess: () => invalidate(slug!),
-        onError: (error: ApiError) => toast.error(error.message || 'خطا در افزودن کاتالوگ'),
+        onError: (error: ApiError) => {
+            // SELF_REMOVED_CONFLICT در صفحه با confirm مدیریت می‌شود — اینجا پیام تکراری نده
+            if ((error as any)?.data?.errorCode !== 'SELF_REMOVED_CONFLICT') {
+                toast.error(error.message || 'خطا در افزودن کاتالوگ');
+            }
+        },
     });
 };
 

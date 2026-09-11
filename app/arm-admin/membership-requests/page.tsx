@@ -101,7 +101,7 @@ function RequestsContent({ slug, armName }: { slug: string; armName: string }) {
                         درخواست‌های عضویت
                     </h1>
                     <p className="text-[11px] text-on-surface-variant mt-0.5">
-                        بازار {armName} — درخواست‌های عضویت در بازار خصوصی
+                        بازار {armName} — درخواست‌های خریدار (بازار خصوصی) و فروشنده (همهٔ بازارها)
                     </p>
                 </div>
                 {pendingCount > 0 && tab !== 'pending' && (

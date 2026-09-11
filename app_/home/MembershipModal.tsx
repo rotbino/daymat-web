@@ -2,15 +2,16 @@
 'use client';
 import React, { useEffect, useState } from 'react';
 import Link from 'next/link';
-import { useQuery } from '@tanstack/react-query';
+import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { useSelector } from 'react-redux';
 import {
     X, ShieldCheck, ShoppingBag, Store, Building2, BookOpen, Loader2,
-    CheckCircle2, LogIn, Info, AlertCircle,
+    CheckCircle2, LogIn, Info, AlertCircle, Calendar, LogOut,
 } from 'lucide-react';
 import { RootState } from '@/lib/store/store';
 import { apiService } from '@/lib/api/apiService';
 import { useMyBusinesses } from '@/lib/api/apiHooks';
+import { toast } from 'sonner';
 import { cn } from '@/lib/utils';
 
 interface Props {
@@ -19,30 +20,41 @@ interface Props {
     slug: string;
     /** بازار فعلی — برای نام و شرایط عضویت (از redux یا getDetail) */
     arm?: any;
+    /** ✅ نقشِ اولیه — برای «فرصت فروشندگی»ِ بازای عمومی؛ مودال مستقیم روی انتخاب کاتالوگ باز می‌شود */
+    initialRole?: 'buyer' | 'seller';
 }
 
 type Step = 'terms' | 'role' | 'buyer' | 'seller' | 'done' | 'member' | 'pending';
 
+const fmtDate = (v?: string | null) =>
+    v ? new Date(v).toLocaleDateString('fa-IR', { year: 'numeric', month: 'long', day: 'numeric' }) : null;
+
 /**
- * مدال درخواست عضویت در بازار خصوصی — ویزارد سه‌مرحله‌ای:
- *   ۱) شرایط عضویت (از تنظیمات بازار) + تیک پذیرش
- *   ۲) نقش: خریدارم / فروشنده‌ام
- *   ۳) خریدار → انتخاب کسب‌وکار (یا لینک ثبت) | فروشنده → انتخاب کاتالوگ (یا لینک ثبت)
- *   ثبت درخواست → صفحهٔ «در انتظار تایید» — نتیجه در اعلان‌ها می‌آید
+ * مدال عضویت بازار — مدل سه‌لِینی:
+ *   بازار خصوصی: ویزارد شرایط → نقش → کسب‌وکار/کاتالوگ → درخواست pending → تایید مدیر
+ *   بازار عمومی: فقط «فرصت فروشندگی» (خریدار نیازی به عضویت ندارد — قیمت‌ها آزاد است)
+ *   عضو: تاریخ عضویت + خروج (خریدار از همین‌جا؛ فروشنده از پنل کاتالوگ با تایید دومرحله‌ای)
+ *   فروشنده شدن همیشه نیاز به تایید و افزودن کاتالوگ توسط مدیر دارد (عمومی و خصوصی)
  */
-export default function MembershipModal({ open, onClose, slug, arm }: Props) {
+export default function MembershipModal({ open, onClose, slug, arm, initialRole }: Props) {
     const { isAuthenticated } = useSelector((s: RootState) => s.auth);
+    const queryClient = useQueryClient();
 
     const [loading, setLoading] = useState(false);
     const [submitting, setSubmitting] = useState(false);
+    const [leaving, setLeaving] = useState(false);
+    const [confirmLeave, setConfirmLeave] = useState(false);
     const [step, setStep] = useState<Step>('terms');
     const [termsAccepted, setTermsAccepted] = useState(false);
-    const [roleType, setRoleType] = useState<'buyer' | 'seller'>('buyer');
+    const [roleType, setRoleType] = useState<'buyer' | 'seller'>(initialRole || 'buyer');
     const [businessId, setBusinessId] = useState<string>('');
     const [catalogId, setCatalogId] = useState<string>('');
     const [rejectInfo, setRejectInfo] = useState<string | null>(null);
-    // ✅ عضویت شخصیِ بدون کسب‌وکار (مثل عضویت قدیمی) — کاربر عضو است اما کسب‌وکارش به بازار اضافه نشده
-    const [personalMember, setPersonalMember] = useState(false);
+    // ✅ بازار خصوصی است؟ — از پاسخ بک می‌آید (undefined = عمومی، هم‌راستا با گیت قیمت)
+    const [marketPrivate, setMarketPrivate] = useState(true);
+    // ✅ خلاصهٔ عضویت برای حالت «عضو» — تاریخ‌ها و لِین‌ها
+    const [memberInfo, setMemberInfo] = useState<any>(null);
+    const [pendingSince, setPendingSince] = useState<string | null>(null);
 
     // کسب‌وکارها و کاتالوگ‌های کاربر — فقط وقتی مودال باز است
     const { data: bizData, isLoading: bizLoading } = useMyBusinesses(open && isAuthenticated);
@@ -60,35 +72,42 @@ export default function MembershipModal({ open, onClose, slug, arm }: Props) {
     // هر بار باز شدن — وضعیت فعلی را از بک بگیر (عضو / درخواست در انتظار / ردشده / هیچ‌کدام)
     useEffect(() => {
         if (!open) return;
+        setConfirmLeave(false);
         if (!isAuthenticated) return; // مهمان: همان‌جا CTA ورود می‌بیند
         setLoading(true);
         apiService.arm.getMyMembershipRequest(slug)
             .then((res: any) => {
                 const membership = res?.membership;
                 const request = res?.request;
+                setMarketPrivate(res?.arm?.isPrivate === true);
+                if (initialRole) setRoleType(initialRole);
                 // ✅ آینهٔ گیت قیمت بک (canViewVitrinePrices): عضو واقعی یعنی
-                //    عضویتِ کسب‌وکاری فعال (businessId دارد) — یا مالکِ بازار.
-                //    عضویتِ شخصیِ بدون کسب‌وکار (businessId=null) برای دیدن قیمت کافی نیست
-                //    → ویزارد راهنما (شرایط → نقش → کسب‌وکار/کاتالوگ) ادامه دارد
+                //    عضویتِ لِین‌دار فعال (businessId/catalogId) — یا مالک/ادمین بازار
                 const isRealMember =
                     membership?.status === 'active' &&
                     membership.businessStatus === 'active' &&
-                    (!!membership.businessId || ['arm_owner', 'arm_admin'].includes(membership.role));
+                    (!!membership.businessId || !!membership.catalogId ||
+                     ['arm_owner', 'arm_admin'].includes(membership.role));
                 if (isRealMember) {
+                    setMemberInfo(membership);
                     setStep('member');
                 } else if (request?.status === 'pending') {
+                    setPendingSince(request?.createdAt || null);
                     setStep('pending');
                 } else {
                     if (request?.status === 'rejected') {
                         setRejectInfo(request.rejectReason || null);
                     }
-                    setPersonalMember(membership?.status === 'active' && !membership.businessId);
-                    setStep('terms');
+                    // ✅ بازار خصوصی → ویزارد کامل با شرایط؛ عمومی → مستقیم فرصت فروشندگی
+                    setStep(marketPrivatePreview(res) ? 'terms' : 'role');
                 }
             })
             .catch(() => setStep('terms'))
             .finally(() => setLoading(false));
-    }, [open, slug, isAuthenticated]);
+    }, [open, slug, isAuthenticated, initialRole]);
+
+    // بازار خصوصی؟ — قبل از ست‌شدن state در همان پاسخ چک می‌شود
+    const marketPrivatePreview = (res: any) => res?.arm?.isPrivate === true;
 
     if (!open) return null;
 
@@ -109,6 +128,21 @@ export default function MembershipModal({ open, onClose, slug, arm }: Props) {
             else toast.error(e?.data?.message || e?.message || 'خطا در ثبت درخواست');
         } finally {
             setSubmitting(false);
+        }
+    };
+
+    // ✅ خروجِ خریدار از بازار — از همین مودال (فروشنده باید از پنل کاتالوگ خارج شود)
+    const leaveAsBuyer = async () => {
+        setLeaving(true);
+        try {
+            await apiService.arm.leave(slug);
+            toast.success('از بازار خارج شدی');
+            queryClient.invalidateQueries({ queryKey: ['arms'] });
+            onClose();
+        } catch (e: any) {
+            toast.error(e?.data?.message || e?.message || 'خطا در خروج از بازار');
+        } finally {
+            setLeaving(false);
         }
     };
 
@@ -133,7 +167,9 @@ export default function MembershipModal({ open, onClose, slug, arm }: Props) {
                         </div>
                         <div className="min-w-0">
                             <h3 className="font-extrabold text-[15px] text-on-surface truncate">عضویت در {armName}</h3>
-                            <p className="text-[10px] text-on-surface-variant">بازار خصوصی — عضویت با تایید مدیر</p>
+                            <p className="text-[10px] text-on-surface-variant">
+                                {marketPrivate ? 'بازار خصوصی — عضویت با تایید مدیر' : 'فرصت فروشندگی — افزودن کاتالوگ با تایید مدیر'}
+                            </p>
                         </div>
                     </div>
                     <button onClick={onClose} aria-label="بستن"
@@ -168,10 +204,57 @@ export default function MembershipModal({ open, onClose, slug, arm }: Props) {
                             <p className="text-xs text-on-surface-variant">در حال بررسی وضعیت عضویت…</p>
                         </div>
                     ) : step === 'member' ? (
-                        <div className="text-center py-8">
-                            <CheckCircle2 className="w-14 h-14 text-emerald-500 mx-auto mb-4" />
+                        <div className="text-center py-6">
+                            <CheckCircle2 className="w-14 h-14 text-emerald-500 mx-auto mb-3" />
                             <p className="text-sm font-bold text-on-surface mb-1">شما عضو {armName} هستید</p>
                             <p className="text-xs text-on-surface-variant">قیمت‌ها و امکانات این بازار برای شما باز است.</p>
+
+                            {/* ✅ تاریخ دقیق عضویت — برای پروندهٔ عضویت/لغو عضویت */}
+                            {memberInfo?.joinedAt && (
+                                <div className="mt-4 mx-auto max-w-xs flex items-center justify-center gap-1.5 px-3 py-2 rounded-xl
+                                    bg-surface-container-low border border-outline-variant/20 text-[11px] text-on-surface-variant">
+                                    <Calendar className="w-3.5 h-3.5 flex-shrink-0" />
+                                    عضو شده‌اید از: {fmtDate(memberInfo.joinedAt)}
+                                </div>
+                            )}
+
+                            {/* ✅ خروج — خریدار از همین‌جا؛ فروشنده فقط از پنل کاتالوگ (ردِ خروج + تایید دومرحله‌ای) */}
+                            {memberInfo?.catalogId ? (
+                                <div className="mt-4 mx-2 flex items-start gap-2 p-3 rounded-xl bg-surface-container-low
+                                    border border-outline-variant/20 text-right">
+                                    <Info className="w-4 h-4 text-on-surface-variant/70 mt-0.5 flex-shrink-0" />
+                                    <p className="text-[11px] text-on-surface-variant leading-5">
+                                        فروشندهٔ این بازار هستی؛ برای خروج، از بخش «انتشار در بازارها» در{' '}
+                                        <Link href="/my-catalogs" className="font-bold text-primary hover:underline">پنل کاتالوگ</Link>{' '}
+                                        اقدام کن — ردِ خروجت ثبت می‌شود.
+                                    </p>
+                                </div>
+                            ) : !['arm_owner', 'arm_admin'].includes(memberInfo?.role) ? (
+                                <div className="mt-5">
+                                    {!confirmLeave ? (
+                                        <button type="button" onClick={() => setConfirmLeave(true)}
+                                                className="inline-flex items-center gap-1.5 h-9 px-4 rounded-xl border border-rose-200 dark:border-rose-800/60
+                                                    text-rose-600 dark:text-rose-400 text-[12px] font-bold hover:bg-rose-50 dark:hover:bg-rose-900/20 transition-colors">
+                                            <LogOut className="w-3.5 h-3.5" />
+                                            خروج از بازار
+                                        </button>
+                                    ) : (
+                                        <div className="inline-flex items-center gap-2">
+                                            <span className="text-[11px] text-on-surface-variant">مطمئنی؟</span>
+                                            <button type="button" disabled={leaving} onClick={leaveAsBuyer}
+                                                    className="h-9 px-4 rounded-xl bg-rose-600 text-white text-[12px] font-bold
+                                                        hover:bg-rose-700 disabled:opacity-50 flex items-center gap-1.5">
+                                                {leaving && <Loader2 className="w-3.5 h-3.5 animate-spin" />}
+                                                بله، خارج شو
+                                            </button>
+                                            <button type="button" onClick={() => setConfirmLeave(false)}
+                                                    className="h-9 px-3 rounded-xl text-[12px] font-bold text-on-surface-variant hover:bg-surface-container-high">
+                                                انصراف
+                                            </button>
+                                        </div>
+                                    )}
+                                </div>
+                            ) : null}
                         </div>
                     ) : step === 'pending' ? (
                         <div className="text-center py-8">
@@ -179,6 +262,12 @@ export default function MembershipModal({ open, onClose, slug, arm }: Props) {
                                 <Loader2 className="w-7 h-7 text-amber-500" />
                             </div>
                             <p className="text-sm font-bold text-on-surface mb-1">درخواست شما در انتظار بررسی است</p>
+                            {pendingSince && (
+                                <p className="text-[11px] text-on-surface-variant mb-1.5 flex items-center justify-center gap-1">
+                                    <Calendar className="w-3 h-3" />
+                                    ثبت‌شده در: {fmtDate(pendingSince)}
+                                </p>
+                            )}
                             <p className="text-xs text-on-surface-variant leading-6 px-4">
                                 به‌محض بررسی توسط مدیر بازار، نتیجه در اعلان‌هایتان اعلام می‌شود.
                             </p>
@@ -192,16 +281,6 @@ export default function MembershipModal({ open, onClose, slug, arm }: Props) {
                                     <p className="text-[11px] text-rose-700 dark:text-rose-300 leading-5">
                                         درخواست قبلی شما رد شد{rejectInfo ? ` — دلیل: ${rejectInfo}` : ''}.
                                         می‌توانید پس از رفع مشکل دوباره درخواست بدهید.
-                                    </p>
-                                </div>
-                            )}
-                            {personalMember && (
-                                <div className="mb-3 flex items-start gap-2 p-3 rounded-xl bg-amber-50 dark:bg-amber-900/20
-                                    border border-amber-200/70 dark:border-amber-800/60">
-                                    <Info className="w-4 h-4 text-amber-600 dark:text-amber-400 mt-0.5 flex-shrink-0" />
-                                    <p className="text-[11px] text-amber-800 dark:text-amber-300 leading-5">
-                                        حساب شما در این بازار عضو است؛ اما برای دیدن قیمت‌ها، کسب‌وکار
-                                        (خریدار) یا کاتالوگ (فروشنده) شما باید به بازار اضافه شود و مدیر تایید کند.
                                     </p>
                                 </div>
                             )}
@@ -230,32 +309,40 @@ export default function MembershipModal({ open, onClose, slug, arm }: Props) {
                         </>
                     ) : step === 'role' ? (
                         <>
-                            <p className="text-xs font-bold text-on-surface mb-3">با چه نقشی می‌خواهید عضو شوید؟</p>
+                            <p className="text-xs font-bold text-on-surface mb-3">
+                                {marketPrivate ? 'با چه نقشی می‌خواهید عضو شوید؟' : 'کالاهایت را در این بازار عرضه کن'}
+                            </p>
                             <div className="space-y-2.5 mb-4">
-                                <button type="button" onClick={() => setRoleType('buyer')} className={optionCard(roleType === 'buyer')}>
-                                    <ShoppingBag className={cn('w-5 h-5 mt-0.5 flex-shrink-0', roleType === 'buyer' ? 'text-primary' : 'text-on-surface-variant/50')} />
-                                    <span className="min-w-0">
-                                        <span className="block text-[13px] font-bold text-on-surface">خریدارم</span>
-                                        <span className="block text-[11px] text-on-surface-variant leading-5 mt-0.5">
-                                            قیمت‌ها را می‌بینم، مقایسه می‌کنم و تماس می‌گیرم
+                                {/* ✅ خریدار فقط در بازار خصوصی — در عمومی قیمت‌ها آزاد است و عضویتِ خریدار موضوعیت ندارد */}
+                                {marketPrivate && (
+                                    <button type="button" onClick={() => setRoleType('buyer')} className={optionCard(roleType === 'buyer')}>
+                                        <ShoppingBag className={cn('w-5 h-5 mt-0.5 flex-shrink-0', roleType === 'buyer' ? 'text-primary' : 'text-on-surface-variant/50')} />
+                                        <span className="min-w-0">
+                                            <span className="block text-[13px] font-bold text-on-surface">خریدارم</span>
+                                            <span className="block text-[11px] text-on-surface-variant leading-5 mt-0.5">
+                                                قیمت‌ها را می‌بینم، مقایسه می‌کنم و تماس می‌گیرم
+                                            </span>
                                         </span>
-                                    </span>
-                                </button>
+                                    </button>
+                                )}
                                 <button type="button" onClick={() => setRoleType('seller')} className={optionCard(roleType === 'seller')}>
                                     <Store className={cn('w-5 h-5 mt-0.5 flex-shrink-0', roleType === 'seller' ? 'text-primary' : 'text-on-surface-variant/50')} />
                                     <span className="min-w-0">
                                         <span className="block text-[13px] font-bold text-on-surface">فروشنده‌ام</span>
                                         <span className="block text-[11px] text-on-surface-variant leading-5 mt-0.5">
                                             قیمت‌های کاتالوگم روی تابلوی این بازار منتشر می‌شود
+                                            — با تایید و افزودنِ کاتالوگ توسط مدیر بازار
                                         </span>
                                     </span>
                                 </button>
                             </div>
                             <div className="flex gap-2">
-                                <button type="button" onClick={() => setStep('terms')}
-                                        className="h-11 px-4 rounded-xl border border-outline-variant text-on-surface text-sm font-bold hover:bg-surface-container-high">
-                                    برگشت
-                                </button>
+                                {marketPrivate && (
+                                    <button type="button" onClick={() => setStep('terms')}
+                                            className="h-11 px-4 rounded-xl border border-outline-variant text-on-surface text-sm font-bold hover:bg-surface-container-high">
+                                        برگشت
+                                    </button>
+                                )}
                                 <button type="button" onClick={() => setStep(roleType === 'buyer' ? 'buyer' : 'seller')}
                                         className="flex-1 h-11 rounded-xl bg-primary text-on-primary text-sm font-bold hover:bg-primary/90">
                                     ادامه
@@ -378,7 +465,9 @@ export default function MembershipModal({ open, onClose, slug, arm }: Props) {
                     <div className="px-5 py-3 border-t border-outline-variant/20 flex items-start gap-2">
                         <Info className="w-3.5 h-3.5 text-on-surface-variant/60 mt-0.5 flex-shrink-0" />
                         <p className="text-[10.5px] text-on-surface-variant leading-5">
-                            عضویت در بازار خصوصی رایگان است؛ فقط باید شرایط را داشته باشی و مدیر تایید کند.
+                            {marketPrivate
+                                ? 'عضویت در بازار خصوصی رایگان است؛ فقط باید شرایط را داشته باشی و مدیر تایید کند.'
+                                : 'فروشنده شدن نیاز به تایید مدیر دارد؛ کاتالوگت توسط مدیر به بازار افزوده می‌شود.'}
                         </p>
                     </div>
                 )}

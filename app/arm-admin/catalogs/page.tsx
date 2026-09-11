@@ -18,6 +18,7 @@ import {
     useArmCatalogReferrals, useAddCatalogToArm, useToggleCatalogPaused,
     useRemoveCatalogFromArm, useSetAdMarketCategory, armCatalogKeys,
 } from '@/lib/api/apiHooks';
+import { toast } from 'sonner'; // ✅ ایمپورت جامانده بود — toast در handleAdd/handleAssign استفاده می‌شد
 
 // ═══════════════════════════════════════════
 // تایپ‌ها
@@ -34,6 +35,8 @@ interface MemberCatalog {
 }
 interface Candidate extends CatalogCatalog {
     _count: { ads: number }; isMember: boolean;
+    /** ✅ این فروشنده خودش قبلاً از بازار خارج شده — اددِ مجدد نیاز به تایید صریح دارد */
+    selfRemoved?: boolean;
 }
 interface NeedsItem {
     id: string; title: string; productType: string | null;
@@ -157,17 +160,31 @@ export default function ArmAdminCatalogsPage() {
     const categoryTree = useMemo<any[]>(() => (currentArm as any)?.categoryTree || [], [currentArm]);
 
     // ═══ اکشن‌ها ═══
-    const handleAdd = (c: Candidate) => {
-        addMut.mutate(c.id, {
-            onSuccess: (res: any) => {
-                setAddResult({
-                    name: c.name,
-                    stamped: res?.stamped ?? 0,
-                    needs: res?.needsCategory?.length ?? 0,
-                });
-                toast.success(res?.message || 'کاتالوگ به بازار اضافه شد');
+    const handleAdd = (c: Candidate, confirmSelfRemoved = false) => {
+        addMut.mutate(
+            { catalogId: c.id, confirmSelfRemoved },
+            {
+                onSuccess: (res: any) => {
+                    setAddResult({
+                        name: c.name,
+                        stamped: res?.stamped ?? 0,
+                        needs: res?.needsCategory?.length ?? 0,
+                    });
+                    toast.success(res?.message || 'کاتالوگ به بازار اضافه شد');
+                },
+                onError: (error: any) => {
+                    // ✅ فروشنده‌ای که خودش خارج شده را نباید اشتباهی دوباره ادد کرد
+                    if (error?.data?.errorCode === 'SELF_REMOVED_CONFLICT') {
+                        const ok = window.confirm(
+                            `${c.name} خودش قبلاً از این بازار خارج شده است.\nآیا از افزودن مجدد مطمئنی؟ (فقط پس از هماهنگی با فروشنده)`,
+                        );
+                        if (ok) handleAdd(c, true);
+                        return;
+                    }
+                    toast.error(error?.data?.message || error?.message || 'خطا در افزودن کاتالوگ');
+                },
             },
-        });
+        );
     };
 
     const handleAssign = (item: NeedsItem, categoryId: string) => {
@@ -476,15 +493,22 @@ export default function ArmAdminCatalogsPage() {
         ) : (
             <div className={cn('space-y-2.5', candidatesQ.isPlaceholderData && 'opacity-60 pointer-events-none')}>
                 {candidates.map((c) => {
-                    const busy = addMut.isPending && addMut.variables === c.id;
+                    const busy = addMut.isPending && (addMut.variables as any)?.catalogId === c.id;
                     return (
                         <div key={c.id}
-                             className="bg-white dark:bg-gray-900 rounded-2xl border border-outline-variant/40 p-3.5 flex items-center gap-3.5 hover:shadow-sm transition-all">
+                             className={cn('bg-white dark:bg-gray-900 rounded-2xl border p-3.5 flex items-center gap-3.5 hover:shadow-sm transition-all',
+                                 c.selfRemoved ? 'border-amber-300/70 dark:border-amber-700/50' : 'border-outline-variant/40')}>
                             <Logo url={c.logoUrl} size={40} />
                             <div className="flex-1 min-w-0">
                                 <div className="flex items-center gap-2 flex-wrap">
                                     <p className="text-[13px] font-extrabold text-on-surface truncate">{c.name}</p>
                                     <SalesBadge salesType={c.salesType} />
+                                    {c.selfRemoved && (
+                                        <span className="inline-flex items-center gap-1 text-[9.5px] font-bold px-2 py-0.5 rounded-full
+                                            bg-amber-50 text-amber-700 dark:bg-amber-900/30 dark:text-amber-300 flex-shrink-0">
+                                            <AlertTriangle className="w-3 h-3" /> خروج اختیاری — اددِ مجدد با هماهنگی
+                                        </span>
+                                    )}
                                 </div>
                                 <div className="flex items-center gap-2 text-[10px] text-on-surface-variant/70 mt-0.5 flex-wrap">
                                     {c.owner?.fullName && <span>{c.owner.fullName}</span>}

@@ -11,6 +11,7 @@ import { LocationFilter } from './LocationFilter';
 import HeaderMenu from './HeaderMenu';
 import ArmSwitcher from '@/app_/components/ArmSwitcher';
 import PostPriceButton from '@/app_/components/PostPriceButton';
+import SaveArmButton from './SaveArmButton';
 import { useUnreadNotifications } from '@/app/home/nav/useUnreadNotifications';
 
 interface MobileHeaderProps {
@@ -46,6 +47,9 @@ export default function MobileHeader({ showLocation = false, fixed = true, showB
                 )}
 
                 <ArmSwitcher variant="mobile" />
+
+                {/* ✅ دکمهٔ ذخیره (فالو) کنار عنوان بازار — فقط برای غیرعضوها رندر می‌شود */}
+                <SaveArmButton variant="mobile" />
 
                 <div className="flex-1" />
 

@@ -10,6 +10,7 @@ import { LocationFilter } from './LocationFilter';
 import HeaderMenu from './HeaderMenu';
 import SearchBox from '@/app_/home/SearchBox';
 import ArmSwitcher from '@/app_/components/ArmSwitcher';
+import SaveArmButton from './SaveArmButton';
 import { useUnreadNotifications } from '@/app/home/nav/useUnreadNotifications';
 
 interface DesktopHeaderProps {
@@ -38,6 +39,9 @@ export default function DesktopHeader({ showLocation = false, fixed = true, show
         <header className={cn('hidden lg:block w-full bg-white dark:bg-gray-900 border-b border-outline-variant/20 dark:border-gray-800', fixed && 'sticky top-0 z-40')}>
             <div className="px-4 xl:px-6 h-16 flex items-center gap-3">
                 <ArmSwitcher variant="mobile" />
+
+                {/* ✅ دکمهٔ ذخیره (فالو) کنار عنوان بازار — فقط برای غیرعضوها رندر می‌شود */}
+                <SaveArmButton variant="desktop" />
 
                 {!slim && showSearch ? (
                     <Suspense fallback={<div className="flex-1 max-w-2xl mx-auto h-10 rounded-xl bg-surface-container-high/70 animate-pulse" />}>

@@ -7,7 +7,7 @@ import { useRouter } from 'next/navigation';
 import { useSelector } from 'react-redux';
 import { RootState } from '@/lib/store/store';
 import { useArms } from '@/lib/api/apiHooks';
-import { Check, ChevronDown, Compass, Store } from 'lucide-react';
+import { BookmarkCheck, Check, ChevronDown, Compass, Store } from 'lucide-react';
 import { cn } from '@/lib/utils';
 
 const STATUS_LABEL: Record<string, string> = {
@@ -15,6 +15,7 @@ const STATUS_LABEL: Record<string, string> = {
     paused: 'موقتاً غیرفعال',
     banned: 'مسدود',
     rejected: 'رد شده',
+    saved: 'ذخیره‌شده',
 };
 
 interface Props {
@@ -27,6 +28,8 @@ interface Props {
  * ✅ برای کاربرِ لاگین‌شده همیشه دراپ‌داون باز می‌شود (حتی تک‌بازاری/بدون بازار) —
  *    چون نقطهٔ دسترسیِ «سایر بازارها» (لیست و جستجوی بازارها) همین‌جاست.
  * عضویت غیرفعال نمایش داده می‌شود ولی قابل انتخاب نیست.
+ * ✅ بازارهای «ذخیره‌شده» (فالوِ غیرعضو) هم در لیست‌اند و کلیک‌پذیر؛
+ *    عضویت‌های removed/banned (خروج/مسدودی) از لیست حذف می‌شوند.
  * مهمان → Link ساده به بازار فعلی.
  */
 export default function ArmSwitcher({ variant = 'desktop' }: Props) {
@@ -160,19 +163,22 @@ export default function ArmSwitcher({ variant = 'desktop' }: Props) {
                         بازارهای شما
                     </div>
                     <div className="max-h-[50vh] overflow-y-auto scrollbar-slim">
-                        {(arms ?? []).length === 0 && (
+                        {(arms ?? []).filter((a: any) => a.status !== 'removed' && a.status !== 'banned').length === 0 && (
                             <div className="px-3 py-3 text-[11px] text-on-surface-variant/60 leading-5">
-                                هنوز عضو هیچ بازاری نشده‌اید — از فهرست پایین بازارها را ببینید.
+                                هنوز عضو یا ذخیره‌شده‌ای ندارید — از فهرست پایین بازارها را ببینید.
                             </div>
                         )}
-                        {(arms ?? []).map((a: any) => {
+                        {(arms ?? []).filter((a: any) => a.status !== 'removed' && a.status !== 'banned').map((a: any) => {
                             const isCurrent = a.slug === currentSlug;
                             const isActive = a.status === 'active';
+                            const isSaved = a.status === 'saved';
+                            // ✅ عضوِ فعال و بازارِ ذخیره‌شده هر دو کلیک‌پذیرند
+                            const selectable = isActive || isSaved;
                             const statusLabel = !isActive ? (STATUS_LABEL[a.status] ?? 'غیرفعال') : null;
                             const rowLogo = a.logoUrl || (a.arm?.logoUrl) || undefined;
                             const rowName = a.name || a.arm?.name || a.slug;
 
-                            return isActive ? (
+                            return selectable ? (
                                 <button
                                     key={a.slug}
                                     type="button"
@@ -197,6 +203,8 @@ export default function ArmSwitcher({ variant = 'desktop' }: Props) {
                                             {rowName}
                                         </span>
                                     </span>
+                                    {/* ✅ بج «فقط ذخیره‌شده» — متمایز از عضویت واقعی */}
+                                    {isSaved && !isCurrent && <BookmarkCheck className="w-4 h-4 text-amber-500 flex-shrink-0" />}
                                     {isCurrent && <Check className="w-4 h-4 text-primary flex-shrink-0" />}
                                 </button>
                             ) : (

@@ -10,7 +10,7 @@ import { AppHeader } from '@/app_/components';
 import { useArms, useVitrine, vitrineKeys, normalizeVitrineParams } from '@/lib/api/apiHooks';
 import { apiService } from '@/lib/api/apiService';
 import { toast } from 'sonner';
-import { Package, RefreshCw, Archive, Clock, Wrench, Loader2, ShieldCheck } from 'lucide-react';
+import { Package, RefreshCw, Archive, Clock, Wrench, Loader2, ShieldCheck, Store } from 'lucide-react';
 import { useFilters } from '@/lib/hooks/useFilters';
 import { cn } from '@/lib/utils';
 import { buildFilterHref, findNodeById } from '@/lib/utils/filterUrl';
@@ -42,7 +42,10 @@ export default function MarketContent({ search: searchProp }: { search?: string 
     const [isCalling, setIsCalling] = useState(false);
     const [sheetOpen, setSheetOpen] = useState(false);
     const [membershipOpen, setMembershipOpen] = useState(false);
-    const openMembership = useCallback(() => setMembershipOpen(true), []);
+    // ✅ نقش اولیهٔ مودال عضویت — «فرصت فروشندگی» بازار عمومی مودال را روی فروشنده باز می‌کند
+    const [membershipInitialRole, setMembershipInitialRole] = useState<'buyer' | 'seller' | undefined>(undefined);
+    const openMembership = useCallback(() => { setMembershipInitialRole(undefined); setMembershipOpen(true); }, []);
+    const openSellerMembership = useCallback(() => { setMembershipInitialRole('seller'); setMembershipOpen(true); }, []);
     const loadMoreRef = useRef<HTMLDivElement>(null);
 
     const vitrineSlug = currentSlug || '';
@@ -210,10 +213,17 @@ export default function MarketContent({ search: searchProp }: { search?: string 
                     await apiService.arm.join(currentSlug || '');
                     await refetchArms();
                 } catch (joinError: any) {
-                    if (joinError?.data?.errorCode !== 'ALREADY_MEMBER') {
-                        toast.error('برای مشاهده شماره تماس، ابتدا به بازار بپیوندید');
-                        setIsCalling(false);
-                        return;
+                    const code = joinError?.data?.errorCode;
+                    if (code !== 'ALREADY_MEMBER') {
+                        // ✅ عضویت بدون کسب‌وکار معنا ندارد — ولی در بازارِ عمومیِ بدون گیتِ تماس،
+                        //    شماره تماس آزاد است؛ تلاش ادامه پیدا می‌کند
+                        if (code === 'BUSINESS_REQUIRED') {
+                            toast.info('برای عضویت، اول کسب‌وکارت را ثبت کن — فعلاً اگر تماس آزاد باشد شماره نمایش داده می‌شود');
+                        } else if (code !== 'USE_MEMBERSHIP_REQUEST') {
+                            toast.error('برای مشاهده شماره تماس، ابتدا به بازار بپیوندید');
+                            setIsCalling(false);
+                            return;
+                        }
                     }
                 }
             }
@@ -340,6 +350,27 @@ export default function MarketContent({ search: searchProp }: { search?: string 
                                 </button>
                             </div>
                         )}
+                        {/* ✅ فرصت فروشندگی — فقط بازارِ عمومی برای غیرعضوها؛ فروشنده همیشه تایید مدیر می‌خواهد */}
+                        {!isPending && canViewPrices !== false && isAuthenticated &&
+                            !(arms ?? []).some((a: any) => a.slug === vitrineSlug && a.isMember) && (
+                            <div className="mb-4 flex items-center gap-3 flex-wrap p-4 rounded-2xl
+                                bg-emerald-50 dark:bg-emerald-900/15 border border-emerald-200/60 dark:border-emerald-800/50">
+                                <div className="w-10 h-10 rounded-xl bg-emerald-100 dark:bg-emerald-900/30 flex items-center justify-center flex-shrink-0">
+                                    <Store className="w-5 h-5 text-emerald-600 dark:text-emerald-400" />
+                                </div>
+                                <div className="flex-1 min-w-[200px]">
+                                    <p className="text-[13px] font-extrabold text-emerald-900 dark:text-emerald-200">فرصت فروشندگی در این بازار</p>
+                                    <p className="text-[11px] text-emerald-800/80 dark:text-emerald-300/80 leading-5">
+                                        کاتالوگت را عرضه کن — پس از تایید مدیر، کاتالوگت به بازار افزوده و روی تابلو منتشر می‌شود.
+                                    </p>
+                                </div>
+                                <button type="button" onClick={openSellerMembership}
+                                        className="h-9 px-4 rounded-lg bg-emerald-600 hover:bg-emerald-700 text-white
+                                            text-[12px] font-bold shadow-sm transition-colors flex-shrink-0">
+                                    درخواست فروشندگی
+                                </button>
+                            </div>
+                        )}
                         {isPending ? (
                             <div className="text-center py-20">
                                 <div className="animate-spin rounded-full h-10 w-10 border-2 border-primary border-t-transparent mx-auto mb-4" />
@@ -403,8 +434,8 @@ export default function MarketContent({ search: searchProp }: { search?: string 
 
             <FilterSheet open={sheetOpen} onClose={() => setSheetOpen(false)} categoryTree={categoryTree} />
 
-            {/* ✅ ویزارد درخواست عضویت بازار خصوصی */}
-            <MembershipModal open={membershipOpen} onClose={() => setMembershipOpen(false)} slug={vitrineSlug} arm={currentArm} />
+            {/* ✅ ویزارد عضویت/فرصت فروشندگی — مدل سه‌لِینی (ذخیره از هدر است، اینجا عضویت است) */}
+            <MembershipModal open={membershipOpen} onClose={() => setMembershipOpen(false)} slug={vitrineSlug} arm={currentArm} initialRole={membershipInitialRole} />
         </div>
     );
 }

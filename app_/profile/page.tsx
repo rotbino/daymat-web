@@ -255,14 +255,16 @@ export default function ProfilePage() {
         if (!currentSlug || !selectedCatalogId) return;
         setReapplying(true);
         try {
-            await apiService.arm.join(currentSlug, {
-                catalogId: selectedCatalogId,
+            // ✅ فروشنده شدن همیشه از مسیر درخواست است — تایید و افزودن کاتالوگ با مدیر بازار
+            await apiService.arm.requestMembership(currentSlug, {
                 roleType: 'seller',
+                catalogId: selectedCatalogId,
+                termsAccepted: true,
             });
             await refetchArms();
-            toast.success('درخواست پیوستن مجدد ثبت شد');
+            toast.success('درخواست فروشندگی مجدد ثبت شد — منتظر تایید مدیر بازار');
         } catch (error: any) {
-            toast.error(error?.message || 'خطا در ارسال درخواست');
+            toast.error(error?.data?.message || error?.message || 'خطا در ارسال درخواست');
         } finally {
             setReapplying(false);
         }
@@ -319,18 +321,20 @@ export default function ProfilePage() {
     const handleJoinArm = async () => {
         if (!currentSlug || !selectedCatalogId) return;
         try {
-            await apiService.arm.join(currentSlug, {
-                catalogId: selectedCatalogId,
+            // ✅ فروشنده شدن همیشه از مسیر درخواست است — در هر دو نوع بازار
+            await apiService.arm.requestMembership(currentSlug, {
                 roleType: 'seller',
+                catalogId: selectedCatalogId,
+                termsAccepted: true,
             });
             await refetchArms();
-            toast.success('درخواست پیوستن ثبت شد');
+            toast.success('درخواست فروشندگی ثبت شد — منتظر تایید مدیر بازار');
         } catch (error: any) {
             if (error?.data?.errorCode === 'ALREADY_MEMBER') {
-                toast.info('این کسب‌وکار قبلاً عضو شده است');
+                toast.info('این کاتالوگ قبلاً در این بازار منتشر شده است');
                 await refetchArms();
             } else {
-                toast.error(error?.message || 'خطا در پیوستن به بازار');
+                toast.error(error?.data?.message || error?.message || 'خطا در ثبت درخواست');
             }
         }
     };

@@ -308,6 +308,21 @@ export const apiService = {
         leave: (slug: string): Promise<any> =>
             apiRequest(`/arm/${slug}/leave`, { method: 'DELETE' }),
 
+        // ✅ ذخیره/فالو بازار — برای غیرعضوها؛ بازار در سوییچر می‌ماند (عضوها ذخیره ندارند)
+        save: (slug: string): Promise<any> =>
+            apiRequest(`/arm/${slug}/save`, { method: 'POST' }),
+
+        unsave: (slug: string): Promise<any> =>
+            apiRequest(`/arm/${slug}/save`, { method: 'DELETE' }),
+
+        // ✅ وضعیت کامل من در بازار — عضویت + تاریخ‌ها + ذخیره + تاریخچهٔ رویدادها
+        getMyMembership: (slug: string): Promise<any> =>
+            apiRequest(`/arm/${slug}/my-membership`),
+
+        // ✅ خروج اختیاریِ فروشنده از بازار — از پنل کاتالوگ با تایید دومرحله‌ای؛ ردِ خروج ثبت می‌شود
+        leaveAsSeller: (slug: string, catalogId: string): Promise<any> =>
+            apiRequest(`/arm/${slug}/leave-seller`, { method: 'POST', data: { catalogId } }),
+
         getUserArms: (): Promise<any[]> =>
             apiRequest('/arm/user/my-arms'),
 

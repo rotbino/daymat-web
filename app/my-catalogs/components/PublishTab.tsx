@@ -1,8 +1,8 @@
 // app/my-catalogs/components/PublishTab.tsx
 'use client';
 
-import React from 'react';
-import { ExternalLink, Globe, IdCard, Share2 } from 'lucide-react';
+import React, { useState } from 'react';
+import { ExternalLink, Globe, IdCard, Share2, LogOut, X, Calendar, Loader2 } from 'lucide-react';
 import { apiService } from '@/lib/api/apiService';
 import { useQueryClient } from '@tanstack/react-query';
 import { toast } from 'sonner';
@@ -24,6 +24,35 @@ interface Props {
 /** تب انتشار — اشتراک‌گذاری، کارت ویزیت و مدیریت عضویت‌ها در بازارها */
 export default function PublishTab({ currentCatalog, memberships, onShare, onEditCatalog, onRefreshAll, onOpenCard, savedCard }: Props) {
     const queryClient = useQueryClient();
+
+    // ✅ خروج اختیاری فروشنده — تایید دومرحله‌ای با تایپ عنوان یا اسلاگ کاتالوگ؛
+    //    خروج در بک به‌عنوان selfRemovedCatalog ثبت می‌شود تا مدیر اشتباهی دوباره اددش نکند
+    const [leaveTarget, setLeaveTarget] = useState<any>(null);
+    const [leaveConfirmText, setLeaveConfirmText] = useState('');
+    const [leaving, setLeaving] = useState(false);
+
+    const leaveValid =
+        !!leaveTarget &&
+        (leaveConfirmText.trim() === currentCatalog?.name ||
+         leaveConfirmText.trim() === currentCatalog?.slug);
+
+    const confirmLeave = async () => {
+        if (!leaveTarget) return;
+        setLeaving(true);
+        try {
+            await apiService.arm.leaveAsSeller(leaveTarget.slug, currentCatalog.id);
+            toast.success(`کاتالوگت از ${(leaveTarget.armName || leaveTarget.name || 'بازار')} خارج شد`);
+            queryClient.invalidateQueries({ queryKey: ['arms'] });
+            queryClient.invalidateQueries({ queryKey: ['notifications-derived'] });
+            setLeaveTarget(null);
+            setLeaveConfirmText('');
+            onRefreshAll();
+        } catch (e: any) {
+            toast.error(e?.data?.message || e?.message || 'خطا در خروج از بازار');
+        } finally {
+            setLeaving(false);
+        }
+    };
 
     const togglePublish = async (m: any, isOn: boolean) => {
         try {
@@ -145,32 +174,95 @@ export default function PublishTab({ currentCatalog, memberships, onShare, onEdi
                             const effectiveState = m.publishState ?? (m.status === 'active' ? 'published' : null);
                             const chip = PUB_CHIP[effectiveState ?? m.status] ?? PUB_CHIP.paused;
                             const isOn = effectiveState === 'published';
+                            const joinedLabel = m.joinedAt
+                                ? new Date(m.joinedAt).toLocaleDateString('fa-IR', { year: 'numeric', month: 'long', day: 'numeric' })
+                                : null;
                             return (
-                                <div key={m.slug} className="rounded-lg border border-outline-variant/40 dark:border-gray-700 p-3 flex items-center gap-3">
-                                    <span className={cn('inline-flex items-center gap-1 text-[10px] font-bold px-2 py-1 rounded-full flex-shrink-0', chip.cls)}>
-                                        <chip.icon className="w-3 h-3" /> {chip.label}
-                                    </span>
-                                    <span className="text-xs font-bold text-on-surface flex-1 min-w-0 truncate">
-                                        {m.armName || m.arm?.name || m.slug}
-                                    </span>
-                                    {m.status === 'pending' ? (
-                                        <span className="text-[10px] text-amber-600 dark:text-amber-400 font-bold flex-shrink-0">⏳ تایید مدیر</span>
-                                    ) : m.status === 'paused' && m.publishState !== 'published' ? (
-                                        <span className="text-[10px] font-bold text-amber-600 dark:text-amber-400 flex-shrink-0">عضویت متوقف شده</span>
-                                    ) : (
-                                        <button onClick={() => togglePublish(m, isOn)}
-                                                className={cn('relative w-11 h-6 rounded-full transition-colors flex-shrink-0',
-                                                    isOn ? 'bg-primary' : 'bg-outline-variant/50')}>
-                                            <span className={cn('absolute top-0.5 w-5 h-5 rounded-full bg-white shadow transition-all',
-                                                isOn ? 'right-0.5' : 'right-[1.375rem]')} />
-                                        </button>
-                                    )}
+                                <div key={m.slug} className="rounded-lg border border-outline-variant/40 dark:border-gray-700 p-3">
+                                    <div className="flex items-center gap-3">
+                                        <span className={cn('inline-flex items-center gap-1 text-[10px] font-bold px-2 py-1 rounded-full flex-shrink-0', chip.cls)}>
+                                            <chip.icon className="w-3 h-3" /> {chip.label}
+                                        </span>
+                                        <span className="text-xs font-bold text-on-surface flex-1 min-w-0 truncate">
+                                            {m.armName || m.name || m.arm?.name || m.slug}
+                                        </span>
+                                        {m.status === 'pending' ? (
+                                            <span className="text-[10px] text-amber-600 dark:text-amber-400 font-bold flex-shrink-0">⏳ تایید مدیر</span>
+                                        ) : m.status === 'paused' && m.publishState !== 'published' ? (
+                                            <span className="text-[10px] font-bold text-amber-600 dark:text-amber-400 flex-shrink-0">عضویت متوقف شده</span>
+                                        ) : (
+                                            <button onClick={() => togglePublish(m, isOn)}
+                                                    className={cn('relative w-11 h-6 rounded-full transition-colors flex-shrink-0',
+                                                        isOn ? 'bg-primary' : 'bg-outline-variant/50')}>
+                                                <span className={cn('absolute top-0.5 w-5 h-5 rounded-full bg-white shadow transition-all',
+                                                    isOn ? 'right-0.5' : 'right-[1.375rem]')} />
+                                            </button>
+                                        )}
+                                    </div>
+                                    {/* ✅ تاریخ عضویت + خروج اختیاری — ردِ خروج در بک ثبت می‌شود */}
+                                    <div className="mt-2 pt-2 border-t border-outline-variant/20 dark:border-gray-700/60 flex items-center justify-between gap-2">
+                                        <span className="text-[10px] text-on-surface-variant/70 flex items-center gap-1 min-w-0">
+                                            {joinedLabel && (<><Calendar className="w-3 h-3 flex-shrink-0" />عضو از {joinedLabel}</>)}
+                                        </span>
+                                        {(m.status === 'active' || m.status === 'paused') && (
+                                            <button type="button" onClick={() => { setLeaveTarget(m); setLeaveConfirmText(''); }}
+                                                    className="text-[10px] font-bold text-rose-500/90 hover:text-rose-600
+                                                        flex items-center gap-1 flex-shrink-0 transition-colors">
+                                                <LogOut className="w-3 h-3" /> خروج از بازار
+                                            </button>
+                                        )}
+                                    </div>
                                 </div>
                             );
                         })}
                     </div>
                 )}
             </div>
+
+            {/* ✅ مودال خروج اختیاری فروشنده — تایید دومرحله‌ای: تایپ عنوان یا اسلاگ کاتالوگ */}
+            {leaveTarget && (
+                <div className="fixed inset-0 z-[80] flex items-end lg:items-center justify-center">
+                    <div className="absolute inset-0 bg-black/40 backdrop-blur-[2px]" onClick={() => !leaving && setLeaveTarget(null)} />
+                    <div className="relative w-full max-w-md bg-white dark:bg-gray-900 z-10 rounded-t-3xl lg:rounded-2xl shadow-2xl p-5">
+                        <div className="flex items-center justify-between mb-3">
+                            <h3 className="text-sm font-extrabold text-on-surface">خروج از {(leaveTarget.armName || leaveTarget.name || leaveTarget.arm?.name)}</h3>
+                            <button type="button" onClick={() => setLeaveTarget(null)} aria-label="بستن"
+                                    className="p-1.5 rounded-lg hover:bg-surface-container-high">
+                                <X className="w-4 h-4 text-on-surface-variant" />
+                            </button>
+                        </div>
+                        <p className="text-[11.5px] text-on-surface-variant leading-6 mb-3">
+                            با خروج، کالاهایت از تابلوی این بازار برداشته می‌شود و خروجت
+                            {' '}<b className="text-on-surface">به‌عنوان خروجِ اختیاریِ خودت ثبت می‌شود</b>{' '}
+                            تا مدیر اشتباهی دوباره کاتالوگت را اضافه نکند. برای خروج مجدد باید هماهنگ کنی.
+                        </p>
+                        <p className="text-[11px] text-on-surface mb-1.5">
+                            برای تایید، عنوان یا آدرس اختصاصی کاتالوگت را تایپ کن:
+                        </p>
+                        <input
+                            value={leaveConfirmText}
+                            onChange={(e) => setLeaveConfirmText(e.target.value)}
+                            placeholder={currentCatalog?.name || currentCatalog?.slug || ''}
+                            dir="auto"
+                            className="w-full h-10 px-3 rounded-xl border border-outline-variant/50 dark:border-gray-700 bg-white dark:bg-gray-800
+                                text-[12.5px] text-on-surface outline-none focus:border-rose-400/60 transition-colors mb-4"
+                        />
+                        <div className="flex gap-2">
+                            <button type="button" onClick={() => setLeaveTarget(null)} disabled={leaving}
+                                    className="h-10 px-4 rounded-xl border border-outline-variant text-on-surface text-[12.5px] font-bold
+                                        hover:bg-surface-container-high disabled:opacity-50">
+                                انصراف
+                            </button>
+                            <button type="button" disabled={!leaveValid || leaving} onClick={confirmLeave}
+                                    className="flex-1 h-10 rounded-xl bg-rose-600 text-white text-[12.5px] font-bold
+                                        hover:bg-rose-700 disabled:opacity-40 disabled:cursor-not-allowed flex items-center justify-center gap-1.5">
+                                {leaving && <Loader2 className="w-4 h-4 animate-spin" />}
+                                خروج از بازار
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            )}
         </div>
     );
 }
