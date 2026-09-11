@@ -26,15 +26,23 @@ const PUB_STATUS_LABEL: Record<string, { label: string; cls: string }> = {
     rejected:       { label: 'رد شده',         cls: 'bg-red-50 text-red-700 dark:bg-red-900/30 dark:text-red-300' },
 };
 
-// ✅ گارد نوع بازار — همسو با بک: آگهیِ تک‌فروشی در بازار عمده ثبت نمی‌شود و بالعکس
-function marketTypeMismatch(arm: any, catalogSalesType?: string | null): boolean {
-    if (!catalogSalesType) return false;
-    const visible = arm?.arm?.config?.modules?.priceTable?.visibleSalesTypes
+// ✅ گارد نوع بازار — همسو با بک: ملاک واحد acceptedCatalogTypes (fallback لگسی: visibleSalesTypes جدول قیمت)
+// خروجی: null = مجاز | آرایهٔ انواع پذیرفته‌شدهٔ بازار = ناهم‌خوان (برای پیام دقیق‌تر)
+function marketAcceptedTypes(arm: any): string[] {
+    const own = arm?.arm?.acceptedCatalogTypes ?? arm?.acceptedCatalogTypes;
+    if (Array.isArray(own) && own.length) return own;
+    const legacy = arm?.arm?.config?.modules?.priceTable?.visibleSalesTypes
         ?? arm?.config?.modules?.priceTable?.visibleSalesTypes;
-    if (!Array.isArray(visible) || visible.length === 0) return false;
-    return !visible.includes(catalogSalesType);
+    return Array.isArray(legacy) ? legacy : [];
+}
+function marketTypeMismatch(arm: any, catalogSalesType?: string | null): string[] | null {
+    if (!catalogSalesType) return null;
+    const accepted = marketAcceptedTypes(arm);
+    if (!accepted.length) return null;
+    return accepted.includes(catalogSalesType) ? null : accepted;
 }
 const SALES_TYPE_LABEL: Record<string, string> = { wholesale: 'عمده‌فروشی', retail: 'تک‌فروشی', service: 'خدماتی' };
+const acceptedListLabel = (types: string[]): string => types.map((t) => SALES_TYPE_LABEL[t] || t).join(' / ');
 
 export default function PublishToMarketModal({ isOpen, onClose, ad, catalogSalesType, onPublished }: Props) {
     const queryClient = useQueryClient();
@@ -67,7 +75,9 @@ export default function PublishToMarketModal({ isOpen, onClose, ad, catalogSales
         !publishedArmIds.has(arm.id)  // ← ولی این آگهی هنوز در این بازار منتشر نشده
     );
     const availableArms = memberArms.filter((arm: any) => !marketTypeMismatch(arm, catalogSalesType));
-    const mismatchedArms = memberArms.filter((arm: any) => marketTypeMismatch(arm, catalogSalesType));
+    const mismatchedArms = memberArms
+        .map((arm: any) => ({ arm, accepted: marketTypeMismatch(arm, catalogSalesType) }))
+        .filter((x: any) => x.accepted);
 
     useEffect(() => {
         if (!isOpen) {
@@ -289,8 +299,8 @@ export default function PublishToMarketModal({ isOpen, onClose, ad, catalogSales
                                         </button>
                                     );
                                 })}
-                                {mismatchedArms.map((arm: any) => {
-                                    const label = SALES_TYPE_LABEL[catalogSalesType || ''] || catalogSalesType;
+                                {mismatchedArms.map(({ arm, accepted }: any) => {
+                                    const catalogLabel = SALES_TYPE_LABEL[catalogSalesType || ''] || catalogSalesType;
                                     return (
                                         <div
                                             key={arm.id}
@@ -311,7 +321,7 @@ export default function PublishToMarketModal({ isOpen, onClose, ad, catalogSales
                                                 <p className="text-xs font-bold text-on-surface-variant truncate">{arm.name}</p>
                                                 <p className="text-[10px] text-amber-600 dark:text-amber-400 mt-0.5 flex items-center gap-1">
                                                     <AlertTriangle className="w-3 h-3" />
-                                                    این بازار {label === 'عمده‌فروشی' ? 'تک‌فروشی' : 'عمده‌فروشی'} است — کاتالوگ {label} شما نمی‌تواند اینجا منتشر شود
+                                                    این بازار فقط {acceptedListLabel(accepted)} می‌پذیرد — کاتالوگ {catalogLabel} شما نمی‌تواند اینجا منتشر شود
                                                 </p>
                                             </div>
                                             <X className="w-4 h-4 text-on-surface-variant/40 flex-shrink-0" />

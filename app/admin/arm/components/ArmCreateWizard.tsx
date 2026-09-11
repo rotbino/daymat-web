@@ -78,6 +78,7 @@ export function ArmCreateWizard() {
         visibility: 'public',
         geoScopeType: 'multi_city',
         featuresEnabled: [],
+        acceptedCatalogTypes: [],
         rankingAlgorithm: 'simple',
         categoryTree: [],
         allowedCategoryScopeTree: [],
@@ -243,6 +244,7 @@ export function ArmCreateWizard() {
                 geoScopeType: data.geoScopeType,
                 status: 'draft',
                 visibility: data.visibility,
+                acceptedCatalogTypes: data.acceptedCatalogTypes || [],
                 config: { ...data.config, wizardStep: 'categories' },
                 categoryTree: data.categoryTree || [],
                 allowedCategoryScopeTree: data.allowedCategoryScopeTree || [],
@@ -288,6 +290,7 @@ export function ArmCreateWizard() {
         try {
             await apiService.arm.update(armId, {
                 config: updatedConfig,
+                acceptedCatalogTypes: watch('acceptedCatalogTypes') || [],
                 categoryTree,
                 allowedCategoryScopeTree,
             });

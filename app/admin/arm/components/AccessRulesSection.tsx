@@ -3,8 +3,15 @@
 
 import React, { useState } from 'react';
 import { UseFormWatch, UseFormSetValue } from 'react-hook-form';
-import { Save, Loader2, Check, Shield, Users, Lock, Phone, MapPin, AlertTriangle, Zap, Building2 } from 'lucide-react';
+import { Save, Loader2, Check, Shield, Users, Lock, Phone, MapPin, AlertTriangle, Zap, Building2, Layers } from 'lucide-react';
 import { cn } from '@/lib/utils';
+
+// انواع کاتالوگ پذیرفته‌شدهٔ بازار — هم‌راستا با فیلد درجه‌یک Arm.acceptedCatalogTypes در بک
+const CATALOG_TYPE_OPTIONS = [
+    { value: 'retail', label: 'تک‌فروشی', hint: 'کاتالوگ‌های خرده‌فروشی' },
+    { value: 'wholesale', label: 'عمده‌فروشی', hint: 'کاتالوگ‌های عمده و پخش' },
+    { value: 'service', label: 'خدماتی', hint: 'کاتالوگ‌های خدمات' },
+] as const;
 
 interface AccessRulesSectionProps {
     watch: UseFormWatch<any>;
@@ -28,6 +35,16 @@ export function AccessRulesSection({ watch, setValue, onSave, isSaving, isAdmin 
         if (!canEdit) return;
         const updated = { ...rules, [key]: value };
         setValue('config.accessRules', updated);
+    };
+
+    // انواع کاتالوگ پذیرفته‌شده — فیلد روت بازار (نه داخل config)
+    const acceptedTypes: string[] = watch('acceptedCatalogTypes') || [];
+    const toggleAcceptedType = (value: string) => {
+        if (!canEdit) return;
+        const next = acceptedTypes.includes(value)
+            ? acceptedTypes.filter((t) => t !== value)
+            : [...acceptedTypes, value];
+        setValue('acceptedCatalogTypes', next, { shouldDirty: true });
     };
 
     const handleSave = () => {
@@ -183,6 +200,60 @@ export function AccessRulesSection({ watch, setValue, onSave, isSaving, isAdmin 
                     <div className="space-y-2">{group.rules.map(renderRule)}</div>
                 </div>
             ))}
+
+            {/* ✅ انواع کاتالوگ پذیرفته‌شده — ملاک گارد عضویت و فیلتر تابلوی بازار */}
+            <div className="bg-surface-container-low p-5 border border-outline-variant rounded-xl">
+                <div className="flex items-center gap-2 mb-1">
+                    <Layers className="w-4 h-4 text-primary" />
+                    <h4 className="text-sm font-semibold">انواع کاتالوگ پذیرفته‌شده</h4>
+                    {isOwnerWithNoAccess && (
+                        <span className="text-[9px] text-on-surface-variant/40 mr-auto">فقط مشاهده</span>
+                    )}
+                </div>
+                <p className="text-[10px] text-on-surface-variant mb-4 leading-5">
+                    مشخص می‌کند چه نوع کاتالوگ‌هایی می‌توانند در این بازار عضو شوند و آگهی بگذارند.
+                    اگر هیچ نوعی انتخاب نشود، بازار همهٔ انواع را می‌پذیرد.
+                </p>
+                <div className="grid grid-cols-1 sm:grid-cols-3 gap-2">
+                    {CATALOG_TYPE_OPTIONS.map(opt => {
+                        const active = acceptedTypes.includes(opt.value);
+                        return (
+                            <button
+                                key={opt.value}
+                                type="button"
+                                onClick={() => toggleAcceptedType(opt.value)}
+                                disabled={!canEdit}
+                                className={cn(
+                                    "text-right border rounded-xl p-3 transition-all disabled:opacity-60",
+                                    active
+                                        ? 'border-primary/50 bg-primary/5' 
+                                        : 'border-outline-variant/30 bg-surface-container-lowest hover:border-outline-variant/60',
+                                )}
+                            >
+                                <div className="flex items-center justify-between gap-2">
+                                    <span className={cn(
+                                        "text-sm font-bold",
+                                        active ? 'text-primary' : 'text-on-surface-variant',
+                                    )}>{opt.label}</span>
+                                    <span className={cn(
+                                        "w-5 h-5 rounded-md border flex items-center justify-center flex-shrink-0 transition-all",
+                                        active ? 'bg-primary border-primary' : 'border-outline-variant/60',
+                                    )}>
+                                        {active && <Check className="w-3.5 h-3.5 text-on-primary" />}
+                                    </span>
+                                </div>
+                                <p className="text-[10px] text-on-surface-variant/70 mt-1">{opt.hint}</p>
+                            </button>
+                        );
+                    })}
+                </div>
+                {acceptedTypes.length === 0 && (
+                    <p className="text-[10px] text-amber-600 dark:text-amber-400 mt-3 flex items-center gap-1">
+                        <AlertTriangle className="w-3 h-3" />
+                        هیچ نوعی انتخاب نشده — بازار بدون محدودیت است و همهٔ کاتالوگ‌ها می‌توانند عضو شوند.
+                    </p>
+                )}
+            </div>
         </div>
     );
 }

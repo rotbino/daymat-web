@@ -109,6 +109,8 @@ export default function ArmAdminSettings() {
                 logoFileId: cfg.general?.logoFileId || arm.logoUrl || undefined,
                 mission: arm.mission || '',
                 config: cfg,
+                // ✅ انواع کاتالوگ پذیرفته‌شده (فیلد روت بازار)
+                acceptedCatalogTypes: Array.isArray(arm.acceptedCatalogTypes) ? arm.acceptedCatalogTypes : [],
                 // ✅ درخت‌ها
                 categoryTree: arm.categoryTree || [],
                 allowedCategoryScopeTree: arm.allowedCategoryScopeTree || [],
@@ -140,6 +142,9 @@ export default function ArmAdminSettings() {
                 colorPrimary: formData.colorPrimary || settings.colorPrimary,
                 colorSecondary: formData.colorSecondary || settings.colorSecondary,
                 config: formData.config || settings.config,
+                acceptedCatalogTypes: Array.isArray(formData.acceptedCatalogTypes)
+                    ? formData.acceptedCatalogTypes
+                    : (settings.acceptedCatalogTypes || []),
                 categoryTree: formData.categoryTree || settings.categoryTree || [],
                 allowedCategoryScopeTree: formData.allowedCategoryScopeTree || settings.allowedCategoryScopeTree || [],
             };
