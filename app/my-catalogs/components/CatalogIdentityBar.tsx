@@ -37,10 +37,14 @@ export default function CatalogIdentityBar({ catalogs, currentCatalog, canShare,
             <span className="min-w-0">
                 <span className="flex items-center gap-1 max-w-full">
                     <span className="text-[15px] font-black text-on-surface truncate">{currentCatalog?.name}</span>
+                    {currentCatalog?.isDelegatedToMe && (
+                        <span className="text-[9px] font-extrabold text-emerald-700 dark:text-emerald-300 bg-emerald-500/10
+                                px-1.5 py-0.5 rounded-full flex-shrink-0">به‌نیابت</span>
+                    )}
                     {multi && <ChevronDown className={cn('w-4 h-4 text-on-surface-variant/60 flex-shrink-0 transition-transform', open && 'rotate-180')} />}
                 </span>
                 <span className="block text-[10px] text-on-surface-variant/70">
-                    {multi ? 'برای تغییر کاتالوگ لمس کن' : 'کاتالوگ شما'}
+                    {currentCatalog?.isDelegatedToMe ? 'واگذارشده به شما — کارِ کاتالوگ' : multi ? 'برای تغییر کاتالوگ لمس کن' : 'کاتالوگ شما'}
                 </span>
             </span>
         </span>
@@ -113,7 +117,7 @@ export default function CatalogIdentityBar({ catalogs, currentCatalog, canShare,
                     <div role="menu" className="absolute top-full start-0 mt-1.5 z-50 w-72 max-w-[calc(100vw-2rem)] p-1.5
                             rounded-xl bg-white dark:bg-gray-900 border border-outline-variant/30 dark:border-gray-700
                             shadow-xl animate-in fade-in zoom-in-95 duration-150">
-                        <p className="px-3 pt-1.5 pb-1 text-[10px] font-bold text-on-surface-variant/70">کاتالوگ‌های من</p>
+                        <p className="px-3 pt-1.5 pb-1 text-[10px] font-bold text-on-surface-variant/70">کاتالوگ‌ها</p>
                         {catalogs.map((c) => {
                             const active = c.id === currentCatalog?.id;
                             const src = c.logoFile?.path || c.logoUrl;
@@ -131,6 +135,10 @@ export default function CatalogIdentityBar({ catalogs, currentCatalog, canShare,
                                     <span className={cn('flex-1 text-[13px] font-bold truncate', active ? 'text-primary' : 'text-on-surface')}>
                                         {c.name}
                                     </span>
+                                    {c.isDelegatedToMe && (
+                                        <span className="text-[9px] font-extrabold text-emerald-700 dark:text-emerald-300
+                                                bg-emerald-500/10 px-1.5 py-0.5 rounded-full flex-shrink-0">به‌نیابت</span>
+                                    )}
                                     {active && <Check className="w-4 h-4 text-primary flex-shrink-0" />}
                                 </button>
                             );

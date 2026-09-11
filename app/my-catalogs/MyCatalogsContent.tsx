@@ -17,7 +17,7 @@ import {
     useArms, useMyUncategorized, useSetOwnAdCategory,
 } from '@/lib/api/apiHooks';
 import { toast } from 'sonner';
-import { BarChart3, Globe, IdCard, Loader2, Package } from 'lucide-react';
+import { BarChart3, Globe, IdCard, Loader2, Package, Handshake } from 'lucide-react';
 
 import UnitSettingsModal from '@/app/ad/components/UnitSettingsModal';
 import CategorySettingsModal from '@/app/ad/components/CategorySettingsModal';
@@ -80,26 +80,42 @@ export default function MyCatalogsContent() {
         [catalogsRaw],
     );
 
+    // ✅ کاتالوگ‌های واگذارشده به من (مالک/ادمین بازار) — کارشان را به‌نیابت از فروشنده انجام می‌دهیم
+    const { data: delegatedRaw } = useQuery({
+        queryKey: ['delegated-catalogs'],
+        queryFn: () => apiService.arm.getDelegatedCatalogs(),
+        staleTime: 60_000,
+    });
+    const delegatedCatalogs = useMemo(
+        () => (delegatedRaw ?? []).map((d: any) => d?.catalog).filter(Boolean),
+        [delegatedRaw],
+    );
+    // کنسول با هر دو کار می‌کند — کاتالوگ‌های خودم + واگذارشده‌ها (بج متمایز در سوییچر)
+    const allCatalogs = useMemo(
+        () => [...catalogs, ...delegatedCatalogs],
+        [catalogs, delegatedCatalogs],
+    );
+
     const [currentId, setCurrentId] = useState<string | null>(null);
     // ── انتخاب اولیه با اولویت: ۱) لینک عمیق ?catalog= (مثلاً بعد از ساخت کاتالوگ جدید)
     // ۲) کاتالوگ کارنت پرسیست  ۳) اولین کاتالوگ
     // نکته: کش ممکن است کهنه باشد و کاتالوگ جدید هنوز در آن نباشد → قبل از fallback
     // صبر می‌کنیم رفetch تازه برسد (همان باگی که کاربر گزارش کرد)
     useEffect(() => {
-        if (currentId && catalogs.some((c) => c.id === currentId)) return; // انتخاب معتبر — کاری نکن
+        if (currentId && allCatalogs.some((c) => c.id === currentId)) return; // انتخاب معتبر — کاری نکن
         const params = new URLSearchParams(window.location.search);
         const fromUrl = params.get('catalog');
         const updatePriceParam = params.get('updatePrice'); // ✅ دیپ‌لینک اعلان «آپدیت قیمت» — با پاک‌سازی URL از بین نمی‌رود
 
-        // ۱) لینک عمیق صریح — ارادهٔ کاربر/مسیرِ فرستنده
-        if (fromUrl && catalogs.some((c) => c.id === fromUrl)) {
+        // ۱) لینک عمیق صریح — ارادهٔ کاربر/مسیرِ فرستنده (کاتالوگ خودم یا واگذارشده)
+        if (fromUrl && allCatalogs.some((c) => c.id === fromUrl)) {
             setCurrentId(fromUrl);
             // انتخاب ماندگار شد (پرسیست پایین‌تر می‌نویسد) → پارامتر تمیز شود
             // تا رفرش بعدی، انتخابِ دستیِ آیندهٔ کاربر را بازنویسی نکند
             window.history.replaceState({}, '', '/my-catalogs' + (updatePriceParam ? `?updatePrice=${updatePriceParam}` : ''));
             return;
         }
-        // ۲) کاتالوگ کارنت پرسیست — ادامهٔ کارِ قبلی
+        // ۲) کاتالوگ کارنت پرسیست — ادامهٔ کارِ قبلی (فقط کاتالوگِ خودم؛ واگذاری با لینک صریح باز می‌شود)
         if (!fromUrl && persistedCatalogId && catalogs.some((c) => c.id === persistedCatalogId)) {
             setCurrentId(persistedCatalogId);
             return;
@@ -107,13 +123,15 @@ export default function MyCatalogsContent() {
         // هنوز درخواست در جریان است (کش کهنه + رفetch) → قبل از تصمیم، دادهٔ تازه را ببین
         if (isFetching) return;
         // ۳) fallback نهایی: اولین کاتالوگ
-        if (catalogs.length > 0) setCurrentId(catalogs[0].id);
-    }, [catalogs, currentId, persistedCatalogId, isFetching]);
+        if (allCatalogs.length > 0) setCurrentId(allCatalogs[0].id);
+    }, [allCatalogs, catalogs, currentId, persistedCatalogId, isFetching]);
 
     const currentCatalog = useMemo(
-        () => catalogs.find((c) => c.id === currentId) ?? null,
-        [catalogs, currentId],
+        () => allCatalogs.find((c) => c.id === currentId) ?? null,
+        [allCatalogs, currentId],
     );
+    // ✅ حالت به‌نیابت — کاتالوگِ فعلی مالِ من نیست؛ تیمِ بازاری که کارش به آن واگذار شده
+    const isDelegateMode = !!currentCatalog && !catalogs.some((c) => c.id === currentId);
 
     // ── نگه‌داری snapshot «کاتالوگ کارنت» همیشه تازه — برای مصرف در جای دیگر برنامه ──
     useEffect(() => {
@@ -212,6 +230,11 @@ export default function MyCatalogsContent() {
         }
     }, []);
 
+    // ✅ در حالت به‌نیابت فقط تب محصولات معنا دارد — اگر تب دیگری باز بود، برگرد به محصولات
+    useEffect(() => {
+        if (isDelegateMode && tab !== 'products') setTab('products');
+    }, [isDelegateMode, tab]);
+
     const checklist = useMemo(() => ({
         hasName: !!currentCatalog?.name,
         hasSlug: !!currentCatalog?.slug,
@@ -276,7 +299,7 @@ export default function MyCatalogsContent() {
     };
 
     // ─── گاردها ───
-    if (!isLoading && catalogs.length === 0) {
+    if (!isLoading && allCatalogs.length === 0) {
         return <EmptyCatalogState hasTemporaryPassword={hasTemporaryPassword} user={user} />;
     }
     if (!currentCatalog) {
@@ -291,7 +314,10 @@ export default function MyCatalogsContent() {
     const userHasName = !!user?.fullName?.trim();
 
     // ─── تب‌های بخش‌های کاتالوگ (RTL: مشخصات در راست) ───
-    const tabItems = [
+    // ✅ حالت به‌نیابت: فقط کارِ کاتالوگ (محصولات) — مشخصات/آمار/انتشار مالِ مالکِ کاتالوگ است
+    const tabItems = isDelegateMode ? [
+        { key: 'products' as Tab, label: 'محصولات', icon: Package, count: products.length },
+    ] : [
         { key: 'products' as Tab, label: 'محصولات', icon: Package, count: products.length },
         { key: 'profile' as Tab, label: 'مشخصات', icon: IdCard },
         { key: 'stats' as Tab, label: 'آمار', icon: BarChart3 },
@@ -312,7 +338,7 @@ export default function MyCatalogsContent() {
                     shadow-[0_6px_16px_-8px_rgba(15,23,42,0.28)] dark:shadow-[0_6px_16px_-8px_rgba(0,0,0,0.7)]">
                 <div className="pb-4 pt-2">
                     <CatalogIdentityBar
-                        catalogs={catalogs}
+                        catalogs={allCatalogs}
                         currentCatalog={currentCatalog}
                         canShare={canShare}
                         onSelect={selectCatalog}
@@ -324,6 +350,28 @@ export default function MyCatalogsContent() {
                 </div>
                 <ConsoleTabs items={tabItems} active={tab} onChange={setTab} />
             </div>
+
+            {/* 🤝 نوارِ حالت به‌نیابت — این کاتالوگ مالِ من نیست؛ کارش به تیمِ من واگذار شده */}
+            {isDelegateMode && (() => {
+                const deleg = (delegatedRaw ?? []).find((d: any) => d?.catalog?.id === currentId);
+                return (
+                    <div className="rounded-xl border border-emerald-500/30 bg-emerald-500/5 dark:bg-emerald-500/10 px-4 py-3
+                            flex items-center gap-3">
+                        <span className="w-9 h-9 rounded-xl bg-emerald-500/15 flex items-center justify-center flex-shrink-0">
+                            <Handshake className="w-4.5 h-4.5 text-emerald-600 dark:text-emerald-400" />
+                        </span>
+                        <div className="flex-1 min-w-0">
+                            <p className="text-xs font-extrabold text-emerald-700 dark:text-emerald-300">مدیریت به‌نیابت</p>
+                            <p className="text-[11px] text-on-surface-variant mt-0.5 leading-5">
+                                کارِ این کاتالوگ{deleg?.grantedAt ? ` (از ${new Date(deleg.grantedAt).toLocaleDateString('fa-IR')})` : ''}
+                                {deleg?.catalog?.ownerName ? ` توسط ${deleg.catalog.ownerName}` : ''}
+                                {deleg?.arm?.name ? ` در بازار ${deleg.arm.name}` : ''} به شما واگذار شده —
+                                ثبت کالا، آپدیت قیمت و دسته‌بندی را انجام دهید. مشخصات و هویت کاتالوگ با مالکش است.
+                            </p>
+                        </div>
+                    </div>
+                );
+})()}
 
             {/* 🎉 بنر جشن عضویت تازه — گذرا و قابل بستن (زیر هدر، در بدنه) */}
             {freshMembership && !celebrateDismissed && (

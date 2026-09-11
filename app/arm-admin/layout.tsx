@@ -23,6 +23,7 @@ import {
     UserPlus,
     UserMinus,
     ShieldCheck,
+    Handshake,
 } from 'lucide-react';
 import { toast } from 'sonner';
 import { apiService } from '@/lib/api/apiService';
@@ -38,6 +39,7 @@ const menuItems: { href: string; label: string; icon: any; exact?: boolean; owne
     { href: '/arm-admin/buyers', label: 'خریداران', icon: ShoppingCart },
     { href: '/arm-admin/membership-requests', label: 'درخواست‌های عضویت', icon: UserPlus },
     { href: '/arm-admin/leave-requests', label: 'درخواست‌های لغو عضویت', icon: UserMinus },
+    { href: '/arm-admin/delegated', label: 'کاتالوگ‌های واگذارشده', icon: Handshake },
     { href: '/arm-admin/admins', label: 'ادمین‌های بازار', icon: ShieldCheck, ownerOnly: true },
     { href: '/arm-admin/references', label: 'کالا و برندها', icon: Tag },
     { href: '/arm-admin/financial', label: 'مالی', icon: CreditCard },

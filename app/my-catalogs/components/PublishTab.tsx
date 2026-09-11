@@ -2,7 +2,7 @@
 'use client';
 
 import React, { useState } from 'react';
-import { ExternalLink, Globe, IdCard, Share2, LogOut, Undo2, X, Calendar, Loader2 } from 'lucide-react';
+import { ExternalLink, Globe, Handshake, IdCard, Loader2, Share2, LogOut, Undo2, X, Calendar, Users } from 'lucide-react';
 import { apiService } from '@/lib/api/apiService';
 import { useQueryClient } from '@tanstack/react-query';
 import { toast } from 'sonner';
@@ -32,6 +32,13 @@ export default function PublishTab({ currentCatalog, memberships, onShare, onEdi
     const [leaveReason, setLeaveReason] = useState('');
     const [leaving, setLeaving] = useState(false);
     const [withdrawingSlug, setWithdrawingSlug] = useState<string | null>(null);
+
+    // ✅ واگذاری کارِ کاتالوگ به تیمِ بازار — فروشنده کارهایش را به مالک + ادمین‌ها می‌سپارد
+    const [delegTarget, setDelegTarget] = useState<any>(null);
+    const [delegTeam, setDelegTeam] = useState<any[]>([]);
+    const [delegLoading, setDelegLoading] = useState(false);
+    const [delegating, setDelegating] = useState(false);
+    const [confirmRevokeSlug, setConfirmRevokeSlug] = useState<string | null>(null);
 
     const leaveValid =
         !!leaveTarget &&
@@ -85,6 +92,51 @@ export default function PublishTab({ currentCatalog, memberships, onShare, onEdi
             onRefreshAll();
         } catch (e: any) {
             toast.error(e?.data?.message || 'خطا');
+        }
+    };
+
+    // ─── واگذاری کارِ کاتالوگ ───
+    const openDelegationModal = async (m: any) => {
+        setDelegTarget(m);
+        setDelegTeam([]);
+        setDelegLoading(true);
+        try {
+            const res = await apiService.arm.getDelegationTeam(m.slug);
+            setDelegTeam(res?.team ?? []);
+        } catch {
+            setDelegTeam([]);
+        } finally {
+            setDelegLoading(false);
+        }
+    };
+
+    const submitGrantDelegation = async () => {
+        if (!delegTarget) return;
+        setDelegating(true);
+        try {
+            const res = await apiService.arm.grantDelegation(delegTarget.slug, currentCatalog.id);
+            toast.success(res?.message || 'کارِ کاتالوگ به تیم بازار واگذار شد');
+            queryClient.invalidateQueries({ queryKey: ['arms'] });
+            queryClient.invalidateQueries({ queryKey: ['notifications-derived'] });
+            setDelegTarget(null);
+            onRefreshAll();
+        } catch (e: any) {
+            toast.error(e?.data?.message || e?.message || 'خطا در واگذاری کارِ کاتالوگ');
+        } finally {
+            setDelegating(false);
+        }
+    };
+
+    const revokeDelegation = async (m: any) => {
+        setConfirmRevokeSlug(null);
+        try {
+            const res = await apiService.arm.revokeDelegation(m.slug, currentCatalog.id);
+            toast.success(res?.message || 'دسترسی تیم بازار پس گرفته شد');
+            queryClient.invalidateQueries({ queryKey: ['arms'] });
+            queryClient.invalidateQueries({ queryKey: ['notifications-derived'] });
+            onRefreshAll();
+        } catch (e: any) {
+            toast.error(e?.data?.message || 'خطا در پس‌گرفتن واگذاری');
         }
     };
 
@@ -246,12 +298,116 @@ export default function PublishTab({ currentCatalog, memberships, onShare, onEdi
                                             </button>
                                         )}
                                     </div>
+                                    {/* ✅ واگذاری کارِ کاتالوگ به تیمِ بازار — برای وقت‌هایی که خودت وقت نداری */}
+                                    {m.status === 'active' && (
+                                        <div className="mt-1.5 flex items-center justify-between gap-2">
+                                            {m.delegation?.status === 'active' ? (
+                                                <>
+                                                    <span className="text-[10px] font-bold text-emerald-600 dark:text-emerald-400
+                                                            flex items-center gap-1 min-w-0">
+                                                        <Handshake className="w-3 h-3 flex-shrink-0" />
+                                                        کارِ کاتالوگ به تیمِ بازار واگذار شده
+                                                        {m.delegation.grantedAt && (
+                                                            <span className="text-on-surface-variant/70 font-normal flex-shrink-0">
+                                                                ({new Date(m.delegation.grantedAt).toLocaleDateString('fa-IR')})
+                                                            </span>
+                                                        )}
+                                                    </span>
+                                                    {confirmRevokeSlug === m.slug ? (
+                                                        <span className="flex items-center gap-1.5 flex-shrink-0">
+                                                            <button type="button" onClick={() => revokeDelegation(m)}
+                                                                    className="text-[10px] font-bold text-rose-600 hover:text-rose-700">تایید پس‌گیری</button>
+                                                            <button type="button" onClick={() => setConfirmRevokeSlug(null)}
+                                                                    className="text-[10px] font-bold text-on-surface-variant hover:text-on-surface">انصراف</button>
+                                                        </span>
+                                                    ) : (
+                                                        <button type="button" onClick={() => setConfirmRevokeSlug(m.slug)}
+                                                                className="text-[10px] font-bold text-on-surface-variant hover:text-rose-600
+                                                                    flex items-center gap-1 flex-shrink-0 transition-colors">
+                                                            <Undo2 className="w-3 h-3" /> پس گرفتن
+                                                        </button>
+                                                    )}
+                                                </>
+                                            ) : (
+                                                <>
+                                                    <span className="text-[10px] text-on-surface-variant/70 min-w-0 truncate">
+                                                        وقت نداری؟ کارهای کاتالوگت را به تیمِ بازار بسپار
+                                                    </span>
+                                                    <button type="button" onClick={() => openDelegationModal(m)}
+                                                            className="text-[10px] font-bold text-primary hover:text-primary/80
+                                                                flex items-center gap-1 flex-shrink-0 transition-colors">
+                                                        <Handshake className="w-3 h-3" /> واگذاری کار
+                                                    </button>
+                                                </>
+                                            )}
+                                        </div>
+                                    )}
                                 </div>
                             );
                         })}
                     </div>
                 )}
             </div>
+
+            {/* ✅ مودال واگذاری کارِ کاتالوگ به تیمِ بازار — با نمایش اعضای تیم برای شفافیت */}
+            {delegTarget && (
+                <div className="fixed inset-0 z-[80] flex items-end lg:items-center justify-center">
+                    <div className="absolute inset-0 bg-black/40 backdrop-blur-[2px]" onClick={() => !delegating && setDelegTarget(null)} />
+                    <div className="relative w-full max-w-md bg-white dark:bg-gray-900 z-10 rounded-t-3xl lg:rounded-2xl shadow-2xl p-5">
+                        <div className="flex items-center justify-between mb-3">
+                            <h3 className="text-sm font-extrabold text-on-surface flex items-center gap-1.5">
+                                <Handshake className="w-4 h-4 text-primary" /> واگذاری کارِ کاتالوگ به {(delegTarget.armName || delegTarget.name || delegTarget.arm?.name)}
+                            </h3>
+                            <button type="button" onClick={() => setDelegTarget(null)} aria-label="بستن"
+                                    className="p-1.5 rounded-lg hover:bg-surface-container-high">
+                                <X className="w-4 h-4 text-on-surface-variant" />
+                            </button>
+                        </div>
+                        <p className="text-[11.5px] text-on-surface-variant leading-6 mb-3">
+                            مالک و ادمین‌های این بازار می‌توانند <b className="text-on-surface">محصول‌ها و قیمت‌های کاتالوگت را به‌جایت مدیریت کنند</b>
+                            {' '}— ثبت کالا، آپدیت قیمت، انتشار و دسته‌بندی. هر وقت خواستی از همین‌جا پس بگیر.
+                            مدیریتِ خودِ کاتالوگ (مشخصات و هویت) همیشه با خودت می‌ماند.
+                        </p>
+                        <div className="rounded-xl border border-outline-variant/40 dark:border-gray-700 p-3 mb-4">
+                            <p className="text-[11px] font-extrabold text-on-surface flex items-center gap-1.5 mb-2">
+                                <Users className="w-3.5 h-3.5 text-primary" /> تیمی که بهشان دسترسی می‌دهی:
+                            </p>
+                            {delegLoading ? (
+                                <div className="py-2 flex justify-center"><Loader2 className="w-4 h-4 animate-spin text-primary" /></div>
+                            ) : delegTeam.length === 0 ? (
+                                <p className="text-[11px] text-on-surface-variant">این بازار هنوز تیمی ندارد — فقط مالک بازار دسترسی خواهد داشت.</p>
+                            ) : (
+                                <div className="space-y-1.5">
+                                    {delegTeam.map((t: any) => (
+                                        <div key={t.userId} className="flex items-center gap-2">
+                                            <span className="w-6 h-6 rounded-full bg-primary/10 text-primary flex items-center justify-center text-[10px] font-extrabold flex-shrink-0">
+                                                {(t.fullName || '؟').trim().charAt(0)}
+                                            </span>
+                                            <span className="text-[11px] font-bold text-on-surface truncate">{t.fullName}</span>
+                                            <span className="text-[10px] text-on-surface-variant flex-shrink-0">
+                                                {t.role === 'arm_owner' ? '(مالک بازار)' : '(ادمین بازار)'}
+                                            </span>
+                                        </div>
+                                    ))}
+                                </div>
+                            )}
+                        </div>
+                        <div className="flex gap-2">
+                            <button type="button" onClick={() => setDelegTarget(null)} disabled={delegating}
+                                    className="h-10 px-4 rounded-xl border border-outline-variant text-on-surface text-[12.5px] font-bold
+                                        hover:bg-surface-container-high disabled:opacity-50">
+                                انصراف
+                            </button>
+                            <button type="button" disabled={delegating} onClick={submitGrantDelegation}
+                                    className="flex-1 h-10 rounded-xl bg-primary text-white text-[12.5px] font-bold
+                                        hover:bg-primary/90 disabled:opacity-40 disabled:cursor-not-allowed flex items-center justify-center gap-1.5">
+                                {delegating && <Loader2 className="w-4 h-4 animate-spin" />}
+                                واگذاری می‌کنم
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            )}
 
             {/* ✅ مودال درخواست لغو عضویت — تایید دومرحله‌ای: تایپ عنوان یا اسلاگ کاتالوگ؛
                 درخواست به پنل مالک می‌رود و فقط با تاییدِ او لغو می‌شود */}
