@@ -4,25 +4,28 @@
 import React from 'react';
 import Link from 'next/link';
 import Image from 'next/image';
-import { Clock, EyeOff, Layers, Package, Pencil, RefreshCw, Store, Unlink } from 'lucide-react';
+import { Clock, EyeOff, Layers, Package, Pencil, RefreshCw, Store, TrendingUp, Unlink } from 'lucide-react';
 import { cn } from '@/lib/utils';
-import { fmt, inMarket, isAdExpired, isUncategorized } from '../constants';
+import { fmt, inMarket, isAdExpired, isPriceExpired, isUncategorized } from '../constants';
 
 /**
  * ردیف کالا — پرکاربردترین المان پنل مدیریت.
  * ✅ React.memo: با تغییر statusFilter رندر مجدد لیست ارزان می‌ماند.
  * چیدمان: بالای ردیف (عکس + هویت + قیمت) و ردیف اکشن افقی پایین — خوانا در موبایل.
  */
-function ProductRowBase({ ad, onEdit, onCategory, onRefresh, onPublish }: {
+function ProductRowBase({ ad, onEdit, onCategory, onRefresh, onPublish, onPriceUpdate }: {
     ad: any;
     onEdit: (ad: any) => void;
     onCategory: (ad: any) => void;
     onRefresh: (ad: any) => void;
     onPublish: (ad: any) => void;
+    onPriceUpdate: (ad: any) => void;
 }) {
     const expired = isAdExpired(ad);
+    const priceExpired = isPriceExpired(ad);
     const market = inMarket(ad) && !!ad.armId;
-    const onTable = ad.status === 'active' && !expired && market;
+    // ✅ اعتبار قیمت دیگر آگهی را از تابلو برنمی‌دارد — فقط یادآوری است
+    const onTable = ad.status === 'active' && market;
     const uncat = isUncategorized(ad);
     const unit = ad.unit?.title || ad.unit?.shortCode || '';
     const logoSrc = ad.files?.[0]?.thumbnailPath || ad.files?.[0]?.path;
@@ -78,6 +81,13 @@ function ProductRowBase({ ad, onEdit, onCategory, onRefresh, onPublish }: {
                                 <Unlink className="w-2.5 h-2.5" /> لینک دسته شکسته
                             </span>
                         )}
+                        {priceExpired && (
+                            <span title="مدت اعتباری که خودت تعیین کرده بودی تمام شده — قیمت رو تازه کن"
+                                  className="inline-flex items-center gap-1 text-[9px] font-bold px-2 py-0.5 rounded-full
+                                      bg-red-100 text-red-700 dark:bg-red-900/40 dark:text-red-300">
+                                <Clock className="w-2.5 h-2.5" /> اعتبار قیمت تمام شد
+                            </span>
+                        )}
                     </div>
                     <p className="text-xs font-extrabold text-primary mt-1">
                         {fmt(ad.unitPrice)} <span className="text-[9px] font-normal text-on-surface-variant">تومان/{unit}</span>
@@ -92,6 +102,14 @@ function ProductRowBase({ ad, onEdit, onCategory, onRefresh, onPublish }: {
                             className="h-8 px-3 rounded-md bg-amber-500 text-white text-[10px] font-bold flex items-center gap-1
                                 hover:bg-amber-600 active:scale-95 transition-transform">
                         <Layers className="w-3 h-3" /> دسته بازار
+                    </button>
+                )}
+                {priceExpired && (
+                    <button onClick={() => onPriceUpdate(ad)}
+                            title="قیمت جدید را ثبت کن — اعتبار قیمت از نو شروع می‌شود"
+                            className="h-8 px-3 rounded-lg bg-red-600 text-white text-[10px] font-bold flex items-center gap-1
+                                hover:bg-red-700 active:scale-95 transition-transform shadow-sm">
+                        <TrendingUp className="w-3 h-3" /> آپدیت قیمت
                     </button>
                 )}
                 {expired && market && (

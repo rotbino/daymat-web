@@ -4,13 +4,13 @@
 'use client';
 
 import React from 'react';
-import { AlertTriangle, ChevronDown, Gift, Info, TrendingUp, Wallet, X, Plus } from 'lucide-react';
+import { AlertTriangle, ChevronDown, Gift, Info, Timer, TrendingUp, Wallet, X, Plus } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { NumberInput } from '@/components/common/NumberInput';
 import { useAdForm } from './AdFormStore';
 import { ChequeSection } from './ChequeSection';
 import { SectionTitle, StepBadge } from './ui-bits';
-import { CURRENCY } from './constants';
+import { CURRENCY, VALIDITY_OPTIONS } from './constants';
 
 export function StepPricing() {
     const {
@@ -208,6 +208,36 @@ function AdvancedAccordion() {
                 </section>
             </div>
             )}
+
+            {/* ✅ مدت اعتبار قیمت — یادآوری آپدیت قیمت به خودت (آگهی در بازار می‌ماند) */}
+            <section className="rounded-2xl bg-surface-container-low/60 border border-outline-variant/30 p-4 space-y-2.5">
+                <SectionTitle icon={Timer} text="مدت اعتبار قیمت" />
+                <p className="text-[10px] text-on-surface-variant/60 -mt-1.5">
+                    بعد از این مدت یادت میاریم که قیمت رو تازه کنی — خریدار باید قیمت روز ببینه
+                </p>
+                <div className="grid grid-cols-5 gap-1.5">
+                    {VALIDITY_OPTIONS.map((opt) => {
+                        const active = formData.validityHours === opt.hours;
+                        return (
+                            <button key={opt.hours} type="button"
+                                    onClick={() => patchForm({ validityHours: opt.hours })}
+                                    aria-pressed={active}
+                                    className={cn('h-10 rounded-xl text-[11px] font-bold transition-colors border',
+                                        active
+                                            ? 'bg-primary text-on-primary border-primary'
+                                            : 'bg-surface text-on-surface-variant border-outline-variant/40 hover:border-primary/40')}>
+                                {opt.label}
+                            </button>
+                        );
+                    })}
+                </div>
+                {formData.validityHours > 0 && (
+                    <p className="text-[10px] text-on-surface-variant/50 flex items-center gap-1">
+                        <Info className="w-3 h-3" />
+                        بعد از {formData.validityHours >= 24 ? `${formData.validityHours / 24} روز` : `${formData.validityHours} ساعت`} اعلان «آپدیت قیمت» می‌گیری
+                    </p>
+                )}
+            </section>
         </div>
     );
 }

@@ -38,6 +38,7 @@ import StatsTab from './components/StatsTab';
 import CatalogCategoryModal from './components/CatalogCategoryModal';
 import CatalogEditModal from './CatalogEditModal';
 import PublishToMarketModal from './PublishToMarketModal';
+import UpdatePriceModal from './components/UpdatePriceModal';
 import {
     CelebrationBanner, TemporaryPasswordBanner, UncategorizedBanner,
 } from './components/AlertBanners';
@@ -62,6 +63,7 @@ export default function MyCatalogsContent() {
     const [refreshAd, setRefreshAd] = useState<any>(null);
     const [catModalAd, setCatModalAd] = useState<any>(null);
     const [publishModalAd, setPublishModalAd] = useState<any>(null);
+    const [updatePriceAd, setUpdatePriceAd] = useState<any>(null);
     const [verifyOpen, setVerifyOpen] = useState(false);
     const [passwordOpen, setPasswordOpen] = useState(false);
     const [celebrateDismissed, setCelebrateDismissed] = useState(false);
@@ -85,14 +87,16 @@ export default function MyCatalogsContent() {
     // صبر می‌کنیم رفetch تازه برسد (همان باگی که کاربر گزارش کرد)
     useEffect(() => {
         if (currentId && catalogs.some((c) => c.id === currentId)) return; // انتخاب معتبر — کاری نکن
-        const fromUrl = new URLSearchParams(window.location.search).get('catalog');
+        const params = new URLSearchParams(window.location.search);
+        const fromUrl = params.get('catalog');
+        const updatePriceParam = params.get('updatePrice'); // ✅ دیپ‌لینک اعلان «آپدیت قیمت» — با پاک‌سازی URL از بین نمی‌رود
 
         // ۱) لینک عمیق صریح — ارادهٔ کاربر/مسیرِ فرستنده
         if (fromUrl && catalogs.some((c) => c.id === fromUrl)) {
             setCurrentId(fromUrl);
             // انتخاب ماندگار شد (پرسیست پایین‌تر می‌نویسد) → پارامتر تمیز شود
             // تا رفرش بعدی، انتخابِ دستیِ آیندهٔ کاربر را بازنویسی نکند
-            window.history.replaceState({}, '', '/my-catalogs');
+            window.history.replaceState({}, '', '/my-catalogs' + (updatePriceParam ? `?updatePrice=${updatePriceParam}` : ''));
             return;
         }
         // ۲) کاتالوگ کارنت پرسیست — ادامهٔ کارِ قبلی
@@ -150,6 +154,17 @@ export default function MyCatalogsContent() {
         const d: any = adsRaw;
         return d?.ads ?? d?.items ?? (Array.isArray(d) ? d : []);
     }, [adsRaw]);
+
+    // ✅ دیپ‌لینک اعلان «آپدیت قیمت» — ?updatePrice=ADID → مودال آپدیت سریع قیمت باز می‌شود
+    useEffect(() => {
+        const wanted = new URLSearchParams(window.location.search).get('updatePrice');
+        if (!wanted || products.length === 0) return;
+        const ad = products.find((p) => p.id === wanted);
+        if (ad) {
+            setUpdatePriceAd(ad);
+            window.history.replaceState({}, '', '/my-catalogs');
+        }
+    }, [products]);
 
     const { data: stats } = useQuery({
         queryKey: ['catalog-stats', currentId],
@@ -358,6 +373,7 @@ export default function MyCatalogsContent() {
                             onCategory={openCategoryModal}
                             onRefresh={setRefreshAd}
                             onPublish={setPublishModalAd}
+                            onPriceUpdate={setUpdatePriceAd}
                         />
                     </div>
                 )}
@@ -432,10 +448,15 @@ export default function MyCatalogsContent() {
                 <RefreshModal isOpen={!!refreshAd} onClose={() => setRefreshAd(null)} ad={refreshAd}
                               onSuccess={() => { setRefreshAd(null); refreshAll(); }} />
             )}
+            {updatePriceAd && (
+                <UpdatePriceModal isOpen={!!updatePriceAd} onClose={() => setUpdatePriceAd(null)} ad={updatePriceAd}
+                                  onSuccess={() => refreshAll()} />
+            )}
             <PublishToMarketModal
                 isOpen={!!publishModalAd}
                 onClose={() => setPublishModalAd(null)}
                 ad={publishModalAd}
+                catalogSalesType={(currentCatalog as any)?.salesType}
                 onPublished={() => refreshAll()}
             />
         </div>

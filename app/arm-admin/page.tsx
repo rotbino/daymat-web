@@ -74,7 +74,7 @@ export default function ArmAdminDashboard() {
             icon: Users,
             color: 'text-blue-600 dark:text-blue-400',
             bg: 'bg-blue-50 dark:bg-blue-900/30',
-            href: '/arm-admin/members',
+            href: '/arm-admin/sellers',
             hoverColor: 'hover:border-blue-300 dark:hover:border-blue-700'
         },
         {
@@ -83,7 +83,7 @@ export default function ArmAdminDashboard() {
             icon: Users,
             color: 'text-emerald-600 dark:text-emerald-400',
             bg: 'bg-emerald-50 dark:bg-emerald-900/30',
-            href: '/arm-admin/members?status=active',
+            href: '/arm-admin/sellers',
             hoverColor: 'hover:border-emerald-300 dark:hover:border-emerald-700'
         },
         {
@@ -137,7 +137,7 @@ export default function ArmAdminDashboard() {
             {/* ✅ باکس هشدار پیوستن های در انتظار تأیید */}
             {stats && stats.pendingMembers > 0 && (
                 <Link
-                    href="/arm-admin/members?status=pending"
+                    href="/arm-admin/sellers"
                     className="flex items-center justify-between bg-purple-50 dark:bg-purple-900/20 border border-purple-300 dark:border-purple-700 rounded-xl p-4 hover:shadow-md transition-all group"
                 >
                     <div className="flex items-center gap-3">

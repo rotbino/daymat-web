@@ -15,6 +15,7 @@ interface Props {
     isOpen: boolean;
     onClose: () => void;
     ad: any;
+    catalogSalesType?: string | null;
     onPublished?: () => void;
 }
 
@@ -25,7 +26,17 @@ const PUB_STATUS_LABEL: Record<string, { label: string; cls: string }> = {
     rejected:       { label: 'رد شده',         cls: 'bg-red-50 text-red-700 dark:bg-red-900/30 dark:text-red-300' },
 };
 
-export default function PublishToMarketModal({ isOpen, onClose, ad, onPublished }: Props) {
+// ✅ گارد نوع بازار — همسو با بک: آگهیِ تک‌فروشی در بازار عمده ثبت نمی‌شود و بالعکس
+function marketTypeMismatch(arm: any, catalogSalesType?: string | null): boolean {
+    if (!catalogSalesType) return false;
+    const visible = arm?.arm?.config?.modules?.priceTable?.visibleSalesTypes
+        ?? arm?.config?.modules?.priceTable?.visibleSalesTypes;
+    if (!Array.isArray(visible) || visible.length === 0) return false;
+    return !visible.includes(catalogSalesType);
+}
+const SALES_TYPE_LABEL: Record<string, string> = { wholesale: 'عمده‌فروشی', retail: 'تک‌فروشی', service: 'خدماتی' };
+
+export default function PublishToMarketModal({ isOpen, onClose, ad, catalogSalesType, onPublished }: Props) {
     const queryClient = useQueryClient();
     const [publishing, setPublishing] = useState<string | null>(null);
     const [unpublishing, setUnpublishing] = useState<string | null>(null);
@@ -44,15 +55,19 @@ export default function PublishToMarketModal({ isOpen, onClose, ad, onPublished 
         staleTime: 60_000,
     });
 
-    const publishedArmIds = new Set(publications.map((p: any) => p.armId));
+    // ✅ publicationهای غیرمنتشر (حذف‌شدهٔ تک‌آگهی) دیگر «بازار فعلی» نیستند — ولی رکوردشان با دسته حفظ است
+    const activePublications = publications.filter((p: any) => p.status !== 'unpublished');
+    const publishedArmIds = new Set(activePublications.map((p: any) => p.armId));
     // ✅ فقط بازارهایی که کاربر در اون‌ها seller فعال هست (catalogId داره و publishState=published)
     // رو به‌عنوان «بازارهای فعلی» نشون بده
-    const availableArms = userArms.filter((arm: any) =>
+    const memberArms = userArms.filter((arm: any) =>
         arm.status === 'active' &&
         arm.catalogId &&  // ← این یعنی کاربر با این کاتالوگش در این بازار seller هست
         arm.publishState === 'published' &&  // ← و منتشر شده
         !publishedArmIds.has(arm.id)  // ← ولی این آگهی هنوز در این بازار منتشر نشده
     );
+    const availableArms = memberArms.filter((arm: any) => !marketTypeMismatch(arm, catalogSalesType));
+    const mismatchedArms = memberArms.filter((arm: any) => marketTypeMismatch(arm, catalogSalesType));
 
     useEffect(() => {
         if (!isOpen) {
@@ -81,6 +96,8 @@ export default function PublishToMarketModal({ isOpen, onClose, ad, onPublished 
                 toast.error('آگهی فعال نیست');
             } else if (code === 'ARM_NOT_ACTIVE') {
                 toast.error('بازار فعال نیست');
+            } else if (code === 'MARKET_TYPE_MISMATCH') {
+                toast.error(err?.data?.message || 'نوع کاتالوگ شما با نوع این بازار هم‌خوان نیست');
             } else {
                 toast.error(err?.data?.message || err?.message || 'خطا در انتشار');
             }
@@ -149,7 +166,7 @@ export default function PublishToMarketModal({ isOpen, onClose, ad, onPublished 
                         <p className="text-[11px] font-bold text-on-surface-variant mb-2 flex items-center gap-1.5">
                             <Check className="w-3.5 h-3.5 text-emerald-500" />
                             بازارهای فعلی این آگهی
-                            <span className="text-on-surface-variant/50">({publications.length})</span>
+                            <span className="text-on-surface-variant/50">({activePublications.length})</span>
                         </p>
 
                         {pubLoading ? (
@@ -158,14 +175,14 @@ export default function PublishToMarketModal({ isOpen, onClose, ad, onPublished 
                                     <div key={i} className="h-14 rounded-xl bg-surface-container-high/50 animate-pulse" />
                                 ))}
                             </div>
-                        ) : publications.length === 0 ? (
+                        ) : activePublications.length === 0 ? (
                             <div className="rounded-xl border border-dashed border-outline-variant/40 p-4 text-center">
                                 <EyeOff className="w-6 h-6 text-on-surface-variant/30 mx-auto mb-2" />
                                 <p className="text-xs text-on-surface-variant">این آگهی هنوز در هیچ بازاری منتشر نشده</p>
                             </div>
                         ) : (
                             <div className="space-y-2">
-                                {publications.map((pub: any) => {
+                                {activePublications.map((pub: any) => {
                                     const statusInfo = PUB_STATUS_LABEL[pub.status] || PUB_STATUS_LABEL.published;
                                     const isUnpublishing = unpublishing === pub.arm.slug;
                                     return (
@@ -224,7 +241,7 @@ export default function PublishToMarketModal({ isOpen, onClose, ad, onPublished 
                             افزودن به بازار دیگر
                         </p>
 
-                        {availableArms.length === 0 ? (
+                        {availableArms.length === 0 && mismatchedArms.length === 0 ? (
                             <div className="rounded-xl border border-dashed border-outline-variant/40 p-4 text-center">
                                 <AlertTriangle className="w-5 h-5 text-amber-500 mx-auto mb-2" />
                                 <p className="text-xs text-on-surface-variant leading-5">
@@ -270,6 +287,35 @@ export default function PublishToMarketModal({ isOpen, onClose, ad, onPublished 
                                                 <Plus className="w-4 h-4 text-primary flex-shrink-0" />
                                             )}
                                         </button>
+                                    );
+                                })}
+                                {mismatchedArms.map((arm: any) => {
+                                    const label = SALES_TYPE_LABEL[catalogSalesType || ''] || catalogSalesType;
+                                    return (
+                                        <div
+                                            key={arm.id}
+                                            className="w-full flex items-center gap-3 p-3 rounded-xl border border-outline-variant/30
+                                                bg-surface-container-low/40 opacity-70 text-right cursor-not-allowed"
+                                            title="نوع این بازار با نوع کاتالوگ شما هم‌خوان نیست"
+                                        >
+                                            <span
+                                                className="w-9 h-9 rounded-lg flex items-center justify-center flex-shrink-0"
+                                                style={{ backgroundColor: (arm.colorPrimary || '#a11f2c') + '20' }}
+                                            >
+                                                <Store
+                                                    className="w-4 h-4"
+                                                    style={{ color: arm.colorPrimary || '#a11f2c' }}
+                                                />
+                                            </span>
+                                            <div className="flex-1 min-w-0">
+                                                <p className="text-xs font-bold text-on-surface-variant truncate">{arm.name}</p>
+                                                <p className="text-[10px] text-amber-600 dark:text-amber-400 mt-0.5 flex items-center gap-1">
+                                                    <AlertTriangle className="w-3 h-3" />
+                                                    این بازار {label === 'عمده‌فروشی' ? 'تک‌فروشی' : 'عمده‌فروشی'} است — کاتالوگ {label} شما نمی‌تواند اینجا منتشر شود
+                                                </p>
+                                            </div>
+                                            <X className="w-4 h-4 text-on-surface-variant/40 flex-shrink-0" />
+                                        </div>
                                     );
                                 })}
                             </div>

@@ -8,8 +8,12 @@ export type Tab = 'profile' | 'products' | 'publish' | 'stats';
 export type StatusFilter = 'all' | 'table' | 'catalog' | 'stale' | 'uncat';
 
 // ─── هلپرهای وضعیت آگهی ───
-export const isAdExpired = (ad: any) =>
-    ad.status === 'expired' || new Date(ad.expiresAt).getTime() < Date.now();
+// ✅ اعتبار قیمت — فقط یادآوری آپدیت قیمت به خود فروشنده است؛ آگهی همچنان روی تابلو دیده می‌شود
+export const isPriceExpired = (ad: any) =>
+    !!ad.expiresAt && new Date(ad.expiresAt).getTime() < Date.now();
+
+// سازگاری با مصرف‌کنندگان قبلی — آگهی بدون expiresAt هرگز منقضی نیست
+export const isAdExpired = (ad: any) => ad.status === 'expired' || isPriceExpired(ad);
 
 export const inMarket = (ad: any) => ad.publishToMarket !== false;
 

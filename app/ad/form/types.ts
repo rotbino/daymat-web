@@ -33,6 +33,8 @@ export interface AdFormValues {
     volumeTiers: { minQty: number; price: number }[];
     productReferenceId: string;
     brandId: string;
+    /** مدت اعتبار قیمت (ساعت) — ۰ = بدون مهلت؛ فقط برای یادآوری آپدیت قیمت */
+    validityHours: number;
 }
 
 /** سررسید چک */

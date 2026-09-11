@@ -6,7 +6,7 @@ import { useRouter } from 'next/navigation';
 import { BookOpen, Layers, Package, Plus } from 'lucide-react';
 import { ProductRow } from './ProductRow';
 import { cn } from '@/lib/utils';
-import { fmt, isAdExpired, inMarket, isUncategorized, StatusFilter } from '../constants';
+import { fmt, isAdExpired, inMarket, isPriceExpired, isUncategorized, StatusFilter } from '../constants';
 
 function RowSkeleton() {
     return <div style={{ height: 116 }} className="rounded-lg bg-surface-container-high/50 dark:bg-gray-800/60 animate-pulse" />;
@@ -23,28 +23,30 @@ interface Props {
     onCategory: (ad: any) => void;
     onRefresh: (ad: any) => void;
     onPublish: (ad: any) => void;
+    onPriceUpdate: (ad: any) => void;
 }
 
 /** تب محصولات — قلب پنل مدیریت کاتالوگ */
 export default function ProductsTab({
     products, adsLoading, statusFilter, onFilterChange, currentCatalog,
-    onOpenCategorySettings, onOpenUnitSettings, onCategory, onRefresh, onPublish,
+    onOpenCategorySettings, onOpenUnitSettings, onCategory, onRefresh, onPublish, onPriceUpdate,
 }: Props) {
     const router = useRouter();
     const isService = currentCatalog.salesType === 'service';
 
     const counts = useMemo(() => ({
         all: products.length,
-        table: products.filter((a) => a.status === 'active' && !isAdExpired(a) && inMarket(a) && !!a.armId).length,
+        table: products.filter((a) => a.status === 'active' && inMarket(a) && !!a.armId).length,
         catalog: products.filter((a) => !inMarket(a)).length,
-        stale: products.filter((a) => isAdExpired(a) && inMarket(a)).length,
+        stale: products.filter((a) => isPriceExpired(a) && inMarket(a)).length,
         uncat: products.filter(isUncategorized).length,
     }), [products]);
 
     const filtered = useMemo(() => products.filter((ad) => {
-        if (statusFilter === 'table') return ad.status === 'active' && !isAdExpired(ad) && inMarket(ad) && !!ad.armId;
+        // ✅ اعتبار قیمت مانع «روی تابلو» بودن نیست — فقط فیلتر «نیازمند قیمت تازه» است
+        if (statusFilter === 'table') return ad.status === 'active' && inMarket(ad) && !!ad.armId;
         if (statusFilter === 'catalog') return !inMarket(ad);
-        if (statusFilter === 'stale') return isAdExpired(ad) && inMarket(ad);
+        if (statusFilter === 'stale') return isPriceExpired(ad) && inMarket(ad);
         if (statusFilter === 'uncat') return isUncategorized(ad);
         return true;
     }), [products, statusFilter]);
@@ -121,6 +123,7 @@ export default function ProductsTab({
                             onCategory={onCategory}
                             onRefresh={onRefresh}
                             onPublish={onPublish}
+                            onPriceUpdate={onPriceUpdate}
                         />
                     ))}
                 </div>

@@ -32,6 +32,7 @@ function initialFormValues(): AdFormValues {
         volumeTiers: [],
         productReferenceId: '',
         brandId: '',
+        validityHours: 72,
     };
 }
 
@@ -414,6 +415,16 @@ export function AdFormProvider({ adId, onSuccess, children }: { adId?: string; o
         setImages((p) => [...p, { file, previewUrl: URL.createObjectURL(file) }]);
     };
 
+    // ═══ پیش‌پرکردن اعتبار قیمت در ویرایش ═══
+    useEffect(() => {
+        if (!isEditMode || !existingAd) return;
+        const vh = (existingAd as any).validityHours;
+        const exp = (existingAd as any).expiresAt;
+        // آگهی قدیمی که expiresAt ندارد → بدون مهلت؛ اگه expiresAt دارد ولی validityHours ثبت نشده → ۷۲
+        const effective = typeof vh === 'number' && vh > 0 ? vh : (exp ? 72 : 0);
+        setFormData((p) => ({ ...p, validityHours: effective }));
+    }, [isEditMode, existingAd]);
+
     // ═══ پیش‌فرض شهر — از کسب‌وکار ═══
     useEffect(() => {
         if (isEditMode || !selectedCatalog) return;
@@ -604,6 +615,7 @@ export function AdFormProvider({ adId, onSuccess, children }: { adId?: string; o
                         giftPrice: formData.giftPrice || null,
                         volumeTiers: formData.volumeTiers.length > 0 ? formData.volumeTiers : null,
                         paymentMethods: paymentData,
+                        validityHours: formData.validityHours,
                     },
                 });
                 adResultId = adId;
@@ -636,6 +648,7 @@ export function AdFormProvider({ adId, onSuccess, children }: { adId?: string; o
                     giftPrice: formData.giftPrice || null,
                     volumeTiers: formData.volumeTiers.length > 0 ? formData.volumeTiers : null,
                     paymentMethods: paymentData,
+                    validityHours: formData.validityHours,
                 });
                 if (!created?.id) throw new Error('پاسخ سرور ناقص است — آگهی ساخته نشد');
                 adResultId = created.id;
@@ -645,7 +658,9 @@ export function AdFormProvider({ adId, onSuccess, children }: { adId?: string; o
                         file: newFiles[i], model: 'Ad', modelId: adResultId, fieldKey: `ad-image-${i}`,
                     });
                 }
-                toast.success('محصول اضافه شد — تا ۲۴ ساعت معتبر است');
+                toast.success(formData.validityHours > 0
+                    ? `محصول اضافه شد — بعد از ${formData.validityHours >= 24 ? `${formData.validityHours / 24} روز` : `${formData.validityHours} ساعت`} یادآوری تازه‌سازی قیمت می‌گیری`
+                    : 'محصول اضافه شد');
             }
 
             queryClient.invalidateQueries({ queryKey: ['catalog', 'by-id', catalogId] });
