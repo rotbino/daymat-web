@@ -21,6 +21,7 @@ import {
     Package, BookOpen,
     Tag,
     UserPlus,
+    UserMinus,
     ShieldCheck,
 } from 'lucide-react';
 import { toast } from 'sonner';
@@ -36,6 +37,7 @@ const menuItems: { href: string; label: string; icon: any; exact?: boolean; owne
     { href: '/arm-admin/sellers', label: 'فروشندگان', icon: Store },
     { href: '/arm-admin/buyers', label: 'خریداران', icon: ShoppingCart },
     { href: '/arm-admin/membership-requests', label: 'درخواست‌های عضویت', icon: UserPlus },
+    { href: '/arm-admin/leave-requests', label: 'درخواست‌های لغو عضویت', icon: UserMinus },
     { href: '/arm-admin/admins', label: 'ادمین‌های بازار', icon: ShieldCheck, ownerOnly: true },
     { href: '/arm-admin/references', label: 'کالا و برندها', icon: Tag },
     { href: '/arm-admin/financial', label: 'مالی', icon: CreditCard },
@@ -71,6 +73,15 @@ export default function ArmAdminLayout({ children }: { children: React.ReactNode
         staleTime: 1000 * 30,
     });
     const membershipReqCount: number = mreqData?.pendingCount ?? 0;
+
+    // ✅ بج درخواست‌های لغو عضویت — تعداد pending
+    const { data: lreqData } = useQuery({
+        queryKey: ['arm-leave-requests', currentSlug, 'pending'],
+        queryFn: () => apiService.armAdmin.getLeaveRequests(currentSlug as string, { status: 'pending', limit: 1 }),
+        enabled: !!(currentSlug && isAuthorized === true),
+        staleTime: 1000 * 30,
+    });
+    const leaveReqCount: number = lreqData?.pendingCount ?? 0;
 
     // ✅ نقش کاربر در بازار فعلی — آیتم «ادمین‌های بازار» فقط برای مالک
     const currentRole = (userArms as any[] | undefined)?.find((a) => a.slug === currentSlug)?.role;
@@ -215,6 +226,8 @@ export default function ArmAdminLayout({ children }: { children: React.ReactNode
                     if (item.href === '/arm-admin/sellers' || item.href === '/arm-admin/buyers') badgeCount = stats?.pendingMembers || 0;
                     // ✅ بج درخواست‌های عضویت — count از endpoint خودش
                     if (item.href === '/arm-admin/membership-requests') badgeCount = membershipReqCount;
+                    // ✅ بج درخواست‌های لغو عضویت
+                    if (item.href === '/arm-admin/leave-requests') badgeCount = leaveReqCount;
 
                     return (
                         <React.Fragment key={item.href}>
@@ -340,6 +353,7 @@ export default function ArmAdminLayout({ children }: { children: React.ReactNode
                                 if (item.href === '/arm-admin/financial') badgeCount = stats?.pendingPayments || 0;
                                 if (item.href === '/arm-admin/sellers' || item.href === '/arm-admin/buyers') badgeCount = stats?.pendingMembers || 0;
                                 if (item.href === '/arm-admin/membership-requests') badgeCount = membershipReqCount;
+                                if (item.href === '/arm-admin/leave-requests') badgeCount = leaveReqCount;
 
                                 return (
                                     <Link

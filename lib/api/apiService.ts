@@ -305,8 +305,20 @@ export const apiService = {
         getMyMembershipRequest: (slug: string): Promise<any> =>
             apiRequest(`/arm/${slug}/membership-request/my`),
 
-        leave: (slug: string): Promise<any> =>
-            apiRequest(`/arm/${slug}/leave`, { method: 'DELETE' }),
+        // ✅ درخواست لغو عضویت — خروجِ عضو فقط با تایید مالک بازار؛ درخواست به پنل مالک می‌رود
+        requestLeave: (
+            slug: string,
+            body: { roleType: 'buyer' | 'seller'; catalogId?: string; businessId?: string; reason?: string },
+        ): Promise<any> =>
+            apiRequest(`/arm/${slug}/leave-request`, { method: 'POST', data: body }),
+
+        // ✅ وضعیت آخرین درخواست لغوی من در این بازار
+        getMyLeaveRequest: (slug: string): Promise<any> =>
+            apiRequest(`/arm/${slug}/leave-request/my`),
+
+        // ✅ پس‌گرفتن درخواست لغوِ در انتظار
+        withdrawLeave: (slug: string): Promise<any> =>
+            apiRequest(`/arm/${slug}/leave-request`, { method: 'DELETE' }),
 
         // ✅ ذخیره/فالو بازار — برای غیرعضوها؛ بازار در سوییچر می‌ماند (عضوها ذخیره ندارند)
         save: (slug: string): Promise<any> =>
@@ -319,9 +331,8 @@ export const apiService = {
         getMyMembership: (slug: string): Promise<any> =>
             apiRequest(`/arm/${slug}/my-membership`),
 
-        // ✅ خروج اختیاریِ فروشنده از بازار — از پنل کاتالوگ با تایید دومرحله‌ای؛ ردِ خروج ثبت می‌شود
-        leaveAsSeller: (slug: string, catalogId: string): Promise<any> =>
-            apiRequest(`/arm/${slug}/leave-seller`, { method: 'POST', data: { catalogId } }),
+        // ✅ درخواست لغو عضویت فروشنده — از پنل کاتالوگ؛ به پنل مالک می‌رود (خروجِ آنی حذف شد)
+        // (مستقیم از requestLeave با roleType:'seller' استفاده کنید)
 
         getUserArms: (): Promise<any[]> =>
             apiRequest('/arm/user/my-arms'),
@@ -895,6 +906,16 @@ export const apiService = {
 
         rejectMembershipRequest: (slug: string, requestId: string, reason: string): Promise<any> =>
             apiRequest(`/arm-admin/${slug}/members/membership-requests/${requestId}/reject`, { method: 'POST', data: { reason } }),
+
+        // ✅ درخواست‌های لغو عضویت — پنل مالک: تایید = لغوِ عضویت، رد = عضو می‌ماند
+        getLeaveRequests: (slug: string, params?: { status?: string; page?: number; limit?: number }): Promise<any> =>
+            apiRequest(`/arm-admin/${slug}/members/leave-requests`, { params }),
+
+        approveLeaveRequest: (slug: string, requestId: string): Promise<any> =>
+            apiRequest(`/arm-admin/${slug}/members/leave-requests/${requestId}/approve`, { method: 'POST' }),
+
+        rejectLeaveRequest: (slug: string, requestId: string, reason: string): Promise<any> =>
+            apiRequest(`/arm-admin/${slug}/members/leave-requests/${requestId}/reject`, { method: 'POST', data: { reason } }),
 
         // ✅ ادمین‌های بازار — منصوبِ مالک؛ انتصاب/عزل فقط مالک
         getAdmins: (slug: string): Promise<any> =>

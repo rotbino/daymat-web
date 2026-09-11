@@ -2,7 +2,7 @@
 'use client';
 
 import React, { useState } from 'react';
-import { ExternalLink, Globe, IdCard, Share2, LogOut, X, Calendar, Loader2 } from 'lucide-react';
+import { ExternalLink, Globe, IdCard, Share2, LogOut, Undo2, X, Calendar, Loader2 } from 'lucide-react';
 import { apiService } from '@/lib/api/apiService';
 import { useQueryClient } from '@tanstack/react-query';
 import { toast } from 'sonner';
@@ -25,32 +25,54 @@ interface Props {
 export default function PublishTab({ currentCatalog, memberships, onShare, onEditCatalog, onRefreshAll, onOpenCard, savedCard }: Props) {
     const queryClient = useQueryClient();
 
-    // ✅ خروج اختیاری فروشنده — تایید دومرحله‌ای با تایپ عنوان یا اسلاگ کاتالوگ؛
-    //    خروج در بک به‌عنوان selfRemovedCatalog ثبت می‌شود تا مدیر اشتباهی دوباره اددش نکند
+    // ✅ لغوِ عضویت فقط با تصمیمِ مالکِ بازار — تایید دومرحله‌ای با تایپ عنوان یا اسلاگ کاتالوگ؛
+    //    درخواست به پنل مالک می‌رود و تا تاییدِ او، عضویت و مزایایش برقرار است
     const [leaveTarget, setLeaveTarget] = useState<any>(null);
     const [leaveConfirmText, setLeaveConfirmText] = useState('');
+    const [leaveReason, setLeaveReason] = useState('');
     const [leaving, setLeaving] = useState(false);
+    const [withdrawingSlug, setWithdrawingSlug] = useState<string | null>(null);
 
     const leaveValid =
         !!leaveTarget &&
         (leaveConfirmText.trim() === currentCatalog?.name ||
          leaveConfirmText.trim() === currentCatalog?.slug);
 
-    const confirmLeave = async () => {
+    const submitLeaveRequest = async () => {
         if (!leaveTarget) return;
         setLeaving(true);
         try {
-            await apiService.arm.leaveAsSeller(leaveTarget.slug, currentCatalog.id);
-            toast.success(`کاتالوگت از ${(leaveTarget.armName || leaveTarget.name || 'بازار')} خارج شد`);
+            await apiService.arm.requestLeave(leaveTarget.slug, {
+                roleType: 'seller',
+                catalogId: currentCatalog.id,
+                reason: leaveReason.trim() || undefined,
+            });
+            toast.success(`درخواست لغو عضویت در ${(leaveTarget.armName || leaveTarget.name || 'بازار')} ثبت شد — تا تایید مالک، عضویتتان برقرار است`);
             queryClient.invalidateQueries({ queryKey: ['arms'] });
             queryClient.invalidateQueries({ queryKey: ['notifications-derived'] });
             setLeaveTarget(null);
             setLeaveConfirmText('');
+            setLeaveReason('');
             onRefreshAll();
         } catch (e: any) {
-            toast.error(e?.data?.message || e?.message || 'خطا در خروج از بازار');
+            toast.error(e?.data?.message || e?.message || 'خطا در ثبت درخواست لغو عضویت');
         } finally {
             setLeaving(false);
+        }
+    };
+
+    const withdrawLeaveRequest = async (m: any) => {
+        setWithdrawingSlug(m.slug);
+        try {
+            await apiService.arm.withdrawLeave(m.slug);
+            toast.success('درخواست لغو برداشته شد — عضویتتان مثل قبل برقرار است');
+            queryClient.invalidateQueries({ queryKey: ['arms'] });
+            queryClient.invalidateQueries({ queryKey: ['notifications-derived'] });
+            onRefreshAll();
+        } catch (e: any) {
+            toast.error(e?.data?.message || 'خطا در پس‌گرفتن درخواست');
+        } finally {
+            setWithdrawingSlug(null);
         }
     };
 
@@ -199,16 +221,28 @@ export default function PublishTab({ currentCatalog, memberships, onShare, onEdi
                                             </button>
                                         )}
                                     </div>
-                                    {/* ✅ تاریخ عضویت + خروج اختیاری — ردِ خروج در بک ثبت می‌شود */}
+                                    {/* ✅ تاریخ عضویت + درخواست لغو — لغو فقط با تایید مالک بازار */}
                                     <div className="mt-2 pt-2 border-t border-outline-variant/20 dark:border-gray-700/60 flex items-center justify-between gap-2">
                                         <span className="text-[10px] text-on-surface-variant/70 flex items-center gap-1 min-w-0">
                                             {joinedLabel && (<><Calendar className="w-3 h-3 flex-shrink-0" />عضو از {joinedLabel}</>)}
                                         </span>
-                                        {(m.status === 'active' || m.status === 'paused') && (
-                                            <button type="button" onClick={() => { setLeaveTarget(m); setLeaveConfirmText(''); }}
+                                        {m.pendingLeaveRequest ? (
+                                            // ✅ درخواست لغوی در انتظار — پس‌گرفتنِ درخواست
+                                            <button type="button" disabled={withdrawingSlug === m.slug}
+                                                    onClick={() => withdrawLeaveRequest(m)}
+                                                    className="text-[10px] font-bold text-amber-600 dark:text-amber-400
+                                                        hover:text-amber-700 flex items-center gap-1 flex-shrink-0
+                                                        transition-colors disabled:opacity-50">
+                                                {withdrawingSlug === m.slug
+                                                    ? <Loader2 className="w-3 h-3 animate-spin" />
+                                                    : <Undo2 className="w-3 h-3" />}
+                                                درخواست لغو ثبت شده — پس گرفتن
+                                            </button>
+                                        ) : (m.status === 'active' || m.status === 'paused') && (
+                                            <button type="button" onClick={() => { setLeaveTarget(m); setLeaveConfirmText(''); setLeaveReason(''); }}
                                                     className="text-[10px] font-bold text-rose-500/90 hover:text-rose-600
                                                         flex items-center gap-1 flex-shrink-0 transition-colors">
-                                                <LogOut className="w-3 h-3" /> خروج از بازار
+                                                <LogOut className="w-3 h-3" /> درخواست لغو عضویت
                                             </button>
                                         )}
                                     </div>
@@ -219,22 +253,23 @@ export default function PublishTab({ currentCatalog, memberships, onShare, onEdi
                 )}
             </div>
 
-            {/* ✅ مودال خروج اختیاری فروشنده — تایید دومرحله‌ای: تایپ عنوان یا اسلاگ کاتالوگ */}
+            {/* ✅ مودال درخواست لغو عضویت — تایید دومرحله‌ای: تایپ عنوان یا اسلاگ کاتالوگ؛
+                درخواست به پنل مالک می‌رود و فقط با تاییدِ او لغو می‌شود */}
             {leaveTarget && (
                 <div className="fixed inset-0 z-[80] flex items-end lg:items-center justify-center">
                     <div className="absolute inset-0 bg-black/40 backdrop-blur-[2px]" onClick={() => !leaving && setLeaveTarget(null)} />
                     <div className="relative w-full max-w-md bg-white dark:bg-gray-900 z-10 rounded-t-3xl lg:rounded-2xl shadow-2xl p-5">
                         <div className="flex items-center justify-between mb-3">
-                            <h3 className="text-sm font-extrabold text-on-surface">خروج از {(leaveTarget.armName || leaveTarget.name || leaveTarget.arm?.name)}</h3>
+                            <h3 className="text-sm font-extrabold text-on-surface">درخواست لغو عضویت در {(leaveTarget.armName || leaveTarget.name || leaveTarget.arm?.name)}</h3>
                             <button type="button" onClick={() => setLeaveTarget(null)} aria-label="بستن"
                                     className="p-1.5 rounded-lg hover:bg-surface-container-high">
                                 <X className="w-4 h-4 text-on-surface-variant" />
                             </button>
                         </div>
                         <p className="text-[11.5px] text-on-surface-variant leading-6 mb-3">
-                            با خروج، کالاهایت از تابلوی این بازار برداشته می‌شود و خروجت
+                            با تاییدِ مالکِ بازار، کالاهایت از تابلوی این بازار برداشته می‌شود و خروجت
                             {' '}<b className="text-on-surface">به‌عنوان خروجِ اختیاریِ خودت ثبت می‌شود</b>{' '}
-                            تا مدیر اشتباهی دوباره کاتالوگت را اضافه نکند. برای خروج مجدد باید هماهنگ کنی.
+                            تا مدیر اشتباهی دوباره کاتالوگت را اضافه نکند. تا قبل از تایید، عضویت و مزایایش برقرار است.
                         </p>
                         <p className="text-[11px] text-on-surface mb-1.5">
                             برای تایید، عنوان یا آدرس اختصاصی کاتالوگت را تایپ کن:
@@ -245,19 +280,28 @@ export default function PublishTab({ currentCatalog, memberships, onShare, onEdi
                             placeholder={currentCatalog?.name || currentCatalog?.slug || ''}
                             dir="auto"
                             className="w-full h-10 px-3 rounded-xl border border-outline-variant/50 dark:border-gray-700 bg-white dark:bg-gray-800
-                                text-[12.5px] text-on-surface outline-none focus:border-rose-400/60 transition-colors mb-4"
+                                text-[12.5px] text-on-surface outline-none focus:border-rose-400/60 transition-colors"
                         />
-                        <div className="flex gap-2">
+                        <textarea
+                            value={leaveReason}
+                            onChange={(e) => setLeaveReason(e.target.value)}
+                            rows={2}
+                            maxLength={300}
+                            placeholder="دلیل خروجت را بنویس (اختیاری) — به مالک بازار کمک می‌کند تصمیم بهتری بگیرد"
+                            className="w-full mt-2 rounded-xl border border-outline-variant/50 dark:border-gray-700 bg-white dark:bg-gray-800
+                                p-3 text-[11.5px] text-on-surface leading-6 outline-none focus:border-primary/50 resize-y"
+                        />
+                        <div className="flex gap-2 mt-4">
                             <button type="button" onClick={() => setLeaveTarget(null)} disabled={leaving}
                                     className="h-10 px-4 rounded-xl border border-outline-variant text-on-surface text-[12.5px] font-bold
                                         hover:bg-surface-container-high disabled:opacity-50">
                                 انصراف
                             </button>
-                            <button type="button" disabled={!leaveValid || leaving} onClick={confirmLeave}
+                            <button type="button" disabled={!leaveValid || leaving} onClick={submitLeaveRequest}
                                     className="flex-1 h-10 rounded-xl bg-rose-600 text-white text-[12.5px] font-bold
                                         hover:bg-rose-700 disabled:opacity-40 disabled:cursor-not-allowed flex items-center justify-center gap-1.5">
                                 {leaving && <Loader2 className="w-4 h-4 animate-spin" />}
-                                خروج از بازار
+                                ثبت درخواست لغو
                             </button>
                         </div>
                     </div>

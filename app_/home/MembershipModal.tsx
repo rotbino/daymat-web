@@ -6,7 +6,7 @@ import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { useSelector } from 'react-redux';
 import {
     X, ShieldCheck, ShoppingBag, Store, Building2, BookOpen, Loader2,
-    CheckCircle2, LogIn, Info, AlertCircle, Calendar, LogOut,
+    CheckCircle2, LogIn, Info, AlertCircle, Calendar, LogOut, Undo2,
 } from 'lucide-react';
 import { RootState } from '@/lib/store/store';
 import { apiService } from '@/lib/api/apiService';
@@ -54,6 +54,8 @@ export default function MembershipModal({ open, onClose, slug, arm, initialRole 
     const [marketPrivate, setMarketPrivate] = useState(true);
     // ✅ خلاصهٔ عضویت برای حالت «عضو» — تاریخ‌ها و لِین‌ها
     const [memberInfo, setMemberInfo] = useState<any>(null);
+    // ✅ درخواست لغویِ در انتظارِ تاییدِ مالک — بج + پس‌گرفتنِ درخواست
+    const [pendingLeave, setPendingLeave] = useState<any>(null);
     const [pendingSince, setPendingSince] = useState<string | null>(null);
 
     // کسب‌وکارها و کاتالوگ‌های کاربر — فقط وقتی مودال باز است
@@ -80,6 +82,8 @@ export default function MembershipModal({ open, onClose, slug, arm, initialRole 
                 const membership = res?.membership;
                 const request = res?.request;
                 setMarketPrivate(res?.arm?.isPrivate === true);
+                // ✅ درخواست لغویِ در انتظارِ تاییدِ مالک (پنل مالک بررسی می‌کند)
+                setPendingLeave(res?.leaveRequest?.status === 'pending' ? res.leaveRequest : null);
                 if (initialRole) setRoleType(initialRole);
                 // ✅ آینهٔ گیت قیمت بک (canViewVitrinePrices): عضو واقعی یعنی
                 //    عضویتِ لِین‌دار فعال (businessId/catalogId) — یا مالک/ادمین بازار
@@ -131,16 +135,42 @@ export default function MembershipModal({ open, onClose, slug, arm, initialRole 
         }
     };
 
-    // ✅ خروجِ خریدار از بازار — از همین مودال (فروشنده باید از پنل کاتالوگ خارج شود)
-    const leaveAsBuyer = async () => {
+    // ✅ لغوِ عضویتِ خریدار — درخواست به پنل مالک بازار می‌رود؛ خروج فقط با تاییدِ او (تاریخ و عاملِ لغو ثبت می‌شود)
+    const requestLeaveAsBuyer = async () => {
         setLeaving(true);
         try {
-            await apiService.arm.leave(slug);
-            toast.success('از بازار خارج شدی');
+            await apiService.arm.requestLeave(slug, { roleType: 'buyer', businessId: memberInfo?.businessId || undefined });
+            toast.success('درخواست لغو عضویت ثبت شد — تا تایید مالک، عضویتتان برقرار است');
+            setPendingLeave({ status: 'pending', roleType: 'buyer', createdAt: new Date().toISOString() });
+            setConfirmLeave(false);
             queryClient.invalidateQueries({ queryKey: ['arms'] });
-            onClose();
+            queryClient.invalidateQueries({ queryKey: ['notifications-derived'] });
         } catch (e: any) {
-            toast.error(e?.data?.message || e?.message || 'خطا در خروج از بازار');
+            const code = e?.data?.errorCode;
+            if (code === 'LEAVE_REQUEST_ALREADY_PENDING') {
+                setPendingLeave({ status: 'pending', roleType: 'buyer', createdAt: new Date().toISOString() });
+                setConfirmLeave(false);
+            } else if (code === 'NOT_BUYER') {
+                toast.info('شما به‌عنوان خریدار در این بازار عضو نیستید');
+            } else {
+                toast.error(e?.data?.message || e?.message || 'خطا در ثبت درخواست لغو');
+            }
+        } finally {
+            setLeaving(false);
+        }
+    };
+
+    // ✅ پس‌گرفتنِ درخواست لغویِ در انتظار
+    const withdrawLeaveRequest = async () => {
+        setLeaving(true);
+        try {
+            await apiService.arm.withdrawLeave(slug);
+            toast.success('درخواست لغو برداشته شد — عضویتتان مثل قبل برقرار است');
+            setPendingLeave(null);
+            queryClient.invalidateQueries({ queryKey: ['arms'] });
+            queryClient.invalidateQueries({ queryKey: ['notifications-derived'] });
+        } catch (e: any) {
+            toast.error(e?.data?.message || e?.message || 'خطا در پس‌گرفتن درخواست');
         } finally {
             setLeaving(false);
         }
@@ -218,34 +248,52 @@ export default function MembershipModal({ open, onClose, slug, arm, initialRole 
                                 </div>
                             )}
 
-                            {/* ✅ خروج — خریدار از همین‌جا؛ فروشنده فقط از پنل کاتالوگ (ردِ خروج + تایید دومرحله‌ای) */}
+                            {/* ✅ لغو عضویت — خریدار از همین‌جا درخواست می‌دهد؛ فروشنده از پنل کاتالوگ.
+                                خروج فقط با تایید مالک بازار انجام می‌شود (تاریخ و عاملِ لغو ثبت می‌شود) */}
                             {memberInfo?.catalogId ? (
                                 <div className="mt-4 mx-2 flex items-start gap-2 p-3 rounded-xl bg-surface-container-low
                                     border border-outline-variant/20 text-right">
                                     <Info className="w-4 h-4 text-on-surface-variant/70 mt-0.5 flex-shrink-0" />
                                     <p className="text-[11px] text-on-surface-variant leading-5">
-                                        فروشندهٔ این بازار هستی؛ برای خروج، از بخش «انتشار در بازارها» در{' '}
+                                        فروشندهٔ این بازار هستی؛ برای لغو عضویت، از بخش «انتشار در بازارها» در{' '}
                                         <Link href="/my-catalogs" className="font-bold text-primary hover:underline">پنل کاتالوگ</Link>{' '}
-                                        اقدام کن — ردِ خروجت ثبت می‌شود.
+                                        درخواست بده — لغو با تایید مالک بازار انجام می‌شود.
                                     </p>
                                 </div>
                             ) : !['arm_owner', 'arm_admin'].includes(memberInfo?.role) ? (
                                 <div className="mt-5">
-                                    {!confirmLeave ? (
+                                    {pendingLeave ? (
+                                        // ✅ درخواست لغویِ در انتظار — بج + پس‌گرفتن
+                                        <div className="mx-2 flex items-center justify-between gap-2 p-3 rounded-xl
+                                            bg-amber-50 dark:bg-amber-900/20 border border-amber-200/70 dark:border-amber-800/50">
+                                            <p className="text-[11px] text-amber-700 dark:text-amber-300 leading-5 text-right">
+                                                درخواست لغو عضویتت ثبت شده و در انتظار بررسی مالک بازار است —
+                                                تا تاییدِ او عضویتتان برقرار است.
+                                            </p>
+                                            <button type="button" disabled={leaving} onClick={withdrawLeaveRequest}
+                                                    className="flex-shrink-0 h-8 px-3 rounded-lg border border-amber-300 dark:border-amber-700
+                                                        text-amber-700 dark:text-amber-300 text-[11px] font-bold
+                                                        hover:bg-amber-100 dark:hover:bg-amber-900/40 disabled:opacity-50
+                                                        flex items-center gap-1 transition-colors">
+                                                {leaving ? <Loader2 className="w-3 h-3 animate-spin" /> : <Undo2 className="w-3 h-3" />}
+                                                پس گرفتن
+                                            </button>
+                                        </div>
+                                    ) : !confirmLeave ? (
                                         <button type="button" onClick={() => setConfirmLeave(true)}
                                                 className="inline-flex items-center gap-1.5 h-9 px-4 rounded-xl border border-rose-200 dark:border-rose-800/60
                                                     text-rose-600 dark:text-rose-400 text-[12px] font-bold hover:bg-rose-50 dark:hover:bg-rose-900/20 transition-colors">
                                             <LogOut className="w-3.5 h-3.5" />
-                                            خروج از بازار
+                                            درخواست لغو عضویت
                                         </button>
                                     ) : (
                                         <div className="inline-flex items-center gap-2">
-                                            <span className="text-[11px] text-on-surface-variant">مطمئنی؟</span>
-                                            <button type="button" disabled={leaving} onClick={leaveAsBuyer}
+                                            <span className="text-[11px] text-on-surface-variant">درخواست به مالک بازار می‌رود — مطمئنی؟</span>
+                                            <button type="button" disabled={leaving} onClick={requestLeaveAsBuyer}
                                                     className="h-9 px-4 rounded-xl bg-rose-600 text-white text-[12px] font-bold
                                                         hover:bg-rose-700 disabled:opacity-50 flex items-center gap-1.5">
                                                 {leaving && <Loader2 className="w-3.5 h-3.5 animate-spin" />}
-                                                بله، خارج شو
+                                                بله، ثبت کن
                                             </button>
                                             <button type="button" onClick={() => setConfirmLeave(false)}
                                                     className="h-9 px-3 rounded-xl text-[12px] font-bold text-on-surface-variant hover:bg-surface-container-high">

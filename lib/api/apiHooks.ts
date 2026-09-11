@@ -318,13 +318,14 @@ export const useJoinArm = () => {
 export const useLeaveArm = () => {
     const queryClient = useQueryClient();
     return useMutation({
-        mutationFn: (slug: string) => apiService.arm.leave(slug),
+        // ✅ خروجِ عضو فقط با تایید مالک — این هوک درخواست لغو ثبت می‌کند (نه خروجِ آنی)
+        mutationFn: (slug: string) => apiService.arm.requestLeave(slug, { roleType: 'buyer' }),
         onSuccess: (_, slug) => {
             queryClient.invalidateQueries({ queryKey: ['arm', slug] });
             queryClient.invalidateQueries({ queryKey: ['arms'] });
-            toast.success('خروج با موفقیت انجام شد');
+            toast.success('درخواست لغو عضویت ثبت شد و در پنل مالک بازار رفت');
         },
-        onError: (error: ApiError) => toast.error(error.message || 'خطا در خروج'),
+        onError: (error: ApiError) => toast.error(error.message || 'خطا در ثبت درخواست لغو'),
     });
 };
 
