@@ -137,7 +137,7 @@ export default function CatalogHeader({
                         className,
                     )}>
                 <Handshake className={compact ? 'w-3.5 h-3.5' : 'w-[18px] h-[18px]'} />
-                ارتباط تجاری
+               درخواست ارتباط
             </button>
         );
     };

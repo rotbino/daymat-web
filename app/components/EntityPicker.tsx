@@ -672,7 +672,7 @@ function EntityPickerModal({
                                             className="mt-4 h-10 px-4 rounded-xl bg-primary text-on-primary text-xs font-bold inline-flex items-center gap-1.5 hover:bg-primary/90 active:scale-95 transition-all"
                                         >
                                             <Plus className="w-4 h-4" />
-                                            افزودن «{trimmedSearch}»
+                                            افزودن «{trimmedSearch}» به لیست اصناف
                                         </button>
                                     ) : (
                                         <p className="text-[11px] text-on-surface-variant/60 leading-5 mt-1">

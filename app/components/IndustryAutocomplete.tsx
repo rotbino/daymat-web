@@ -51,11 +51,11 @@ export default function IndustryAutocomplete({
             }
             queryKey="industries-picker"
             createLabel="ایجاد صنف جدید"
-            createTitle="ثبت صنف جدید"
+            createTitle="اضافه کردن صنف جدید به لیست اصناف"
             addButtonLabel="ثبت صنف جدید"
             createFieldLabel="عنوان صنف"
             createFieldPlaceholder="مثلاً: پخش مواد غذایی، لوازم یدکی خودرو…"
-            createHint="صنف خودت رو پیدا نکردی؟ همین‌جا ثبتش کن — بعد از تأیید ادمین، همه‌جا قابل استفاده می‌شه."
+            createHint="صنف خودت رو پیدا نکردی؟ همین‌جا ثبتش کن تا هم خودت و هم بقیه استفاده کنن."
             duplicateMessage="این صنف قبلاً ثبت شده — از لیست بالا انتخابش کن."
             minSearchChars={2}
             pageSize={10}
