@@ -1,5 +1,5 @@
 // app/[slug]/components/CoopRequestModal.tsx
-// مودال «درخواست همکاری» با کاتالوگ — یک در برای هر سه نقش بیزینسی:
+// مودال «درخواست ارتباط تجاری» با کاتالوگ — یک در برای هر سه نقش بیزینسی:
 //   خریدار (انتخاب کسب‌وکار) | تامین‌کننده (انتخاب کاتالوگِ خود) | همکار فروش (فروشنده/ویزیتور)
 // الگوی تعاملی: همان «پیوستن به بازار» — انتخاب نوع → گام شرطی → ارسال → در انتظار تایید مدیر
 'use client';
@@ -84,7 +84,7 @@ export default function CoopRequestModal({ open, onClose, catalogId, catalogName
                 businessId: type !== 'supplier' ? businessId || undefined : undefined,
                 supplierCatalogId: type === 'supplier' ? supplierCatalogId : undefined,
             });
-            toast.success(res?.message || 'درخواست همکاری ثبت شد — در انتظار تایید مدیر (مالک کاتالوگ)');
+            toast.success(res?.message || 'درخواست ارتباط تجاری ثبت شد — در انتظار تایید مدیر (مالک کاتالوگ)');
             onSuccess?.();
             close();
         } catch (error: any) {
@@ -106,9 +106,9 @@ export default function CoopRequestModal({ open, onClose, catalogId, catalogName
                 {/* سربرگ */}
                 <div className="flex items-start justify-between gap-3 mb-4">
                     <div>
-                        <p className="font-bold text-gray-900 dark:text-gray-100">درخواست همکاری</p>
+                        <p className="font-bold text-gray-900 dark:text-gray-100">درخواست ارتباط تجاری</p>
                         <p className="text-[11px] text-gray-500 dark:text-gray-400 mt-0.5">
-                            همکاری تجاری با کاتالوگ «{catalogName}» — پس از تایید مدیر (مالک کاتالوگ) فعال می‌شود
+                            ارتباط تجاری با کاتالوگ «{catalogName}» — پس از تایید مدیر (مالک کاتالوگ) فعال می‌شود
                         </p>
                     </div>
                     <button onClick={close} className="p-2 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-800 flex-shrink-0">
@@ -277,7 +277,7 @@ export default function CoopRequestModal({ open, onClose, catalogId, catalogName
                                 className="flex-1 h-11 rounded-xl bg-primary text-on-primary font-bold text-sm flex items-center justify-center gap-2 disabled:opacity-50"
                             >
                                 {submitting && <Loader2 className="w-4 h-4 animate-spin" />}
-                                ارسال درخواست همکاری
+                                ارسال درخواست ارتباط تجاری
                             </button>
                         </div>
                     </div>

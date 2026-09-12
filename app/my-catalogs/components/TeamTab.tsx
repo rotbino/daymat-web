@@ -27,7 +27,7 @@ const faDate = (d?: string | null) =>
 const badgeBase = 'text-[10px] font-bold px-2 py-0.5 rounded-full whitespace-nowrap text-center';
 
 const EVENT_LABEL: Record<string, string> = {
-    coop_requested: 'درخواست همکاری داد',
+    coop_requested: 'درخواست ارتباط تجاری داد',
     seller_requested: 'درخواست همکاری در فروش داد',
     seller_approved: 'به‌عنوان همکار فروش تایید شد',
     seller_rejected: 'درخواستش رد شد',
@@ -245,7 +245,7 @@ export default function TeamTab({ catalogId }: Props) {
                                             <p className="text-[11px] text-amber-600 dark:text-amber-400">در انتظار تایید صاحب کسب‌وکار (ثبت‌شده توسط مسئول فروش)</p>
                                         ) : (
                                             <p className="text-[11px] text-amber-600 dark:text-amber-400">
-                                                درخواست همکاری: {isSellerReq ? 'همکار فروش' : isBuyerSelf ? 'خریدار' : 'تامین‌کننده'} — در انتظار تایید مدیر (مالک کاتالوگ)
+                                                درخواست ارتباط تجاری: {isSellerReq ? 'همکار فروش' : isBuyerSelf ? 'خریدار' : 'تامین‌کننده'} — در انتظار تایید مدیر (مالک کاتالوگ)
                                             </p>
                                         )}
                                     </div>
@@ -267,7 +267,7 @@ export default function TeamTab({ catalogId }: Props) {
                                                 <button
                                                     onClick={() => setApproveFor(approveFor === s.id ? null : s.id)}
                                                     className="h-8 px-2.5 rounded-xl bg-emerald-600 text-white text-[11px] font-bold flex items-center gap-1"
-                                                    title={isSellerReq ? 'تایید با تعیین نقش بیزینسی' : 'تایید درخواست همکاری'}
+                                                    title={isSellerReq ? 'تایید با تعیین نقش بیزینسی' : 'تایید درخواست ارتباط تجاری'}
                                                 >
                                                     <Check className="w-3.5 h-3.5" />تایید
                                                 </button>
@@ -301,7 +301,7 @@ export default function TeamTab({ catalogId }: Props) {
                                                                     )}
                                                                     className="w-full px-3 py-2.5 hover:bg-gray-100 dark:hover:bg-gray-800 text-right"
                                                                 >
-                                                                    تایید درخواست همکاری
+                                                                    تایید درخواست ارتباط تجاری
                                                                 </button>
                                                             )}
                                                         </div>

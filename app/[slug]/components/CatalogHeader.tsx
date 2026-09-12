@@ -7,7 +7,7 @@ import { useRouter } from 'next/navigation';
 import {
     BadgeCheck, Building2, Package, Phone, User,
     ArrowRight, Share2, Bookmark, Eye, ChevronDown, Handshake, Clock,
-    Settings, PenLine, Pencil, X, Sparkles,
+    Settings, PenLine, Pencil, X, Sparkles, Check,
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { useSavedCatalogs } from '@/lib/api/apiHooks';
@@ -35,7 +35,7 @@ interface CatalogHeaderProps {
     isSaved: boolean;
     isOwner: boolean;
     shares: number;
-    /** ✅ درخواست همکاری — وضعیت من با این کاتالوگ */
+    /** ✅ درخواست ارتباط تجاری — وضعیت من با این کاتالوگ */
     coopState?: 'none' | 'pending' | 'member';
     onCoopRequest?: () => void;
     onContact: () => void;
@@ -98,6 +98,49 @@ export default function CatalogHeader({
             <Pencil className="w-5 h-5" />
         </button>
     );
+
+    // ✅ دکمهٔ «ارتباط تجاری» — تنها دکمهٔ رابطه روی خود کاتالوگ (مثل کانکتِ لینکدین):
+    //     none → دکمه | pending → چیپ «در انتظار تایید» | member → چیپ «متصل»
+    //     compact: باکس هویتِ دسکتاپ | full: تمام‌عرضِ موبایل
+    const CoopAction = ({ className, compact = false }: { className?: string; compact?: boolean }) => {
+        if (isOwner || !onCoopRequest) return null;
+        if (coopState === 'member') return (
+            <span aria-label="ارتباط تجاری شما با این کاتالوگ برقرار است"
+                  className={cn(
+                      'inline-flex items-center justify-center gap-1.5 bg-emerald-50 dark:bg-emerald-950/40 border border-emerald-200/70 dark:border-emerald-800/50 text-emerald-700 dark:text-emerald-300',
+                      compact ? 'h-8 px-3 rounded-lg text-[11px]' : 'w-full h-11 rounded-xl text-sm font-bold',
+                      className,
+                  )}>
+                <Check className={compact ? 'w-3.5 h-3.5' : 'w-4 h-4'} />
+                {compact ? 'متصل' : 'متصل به این کاتالوگ'}
+            </span>
+        );
+        if (coopState === 'pending') return (
+            <span aria-label="درخواست ارتباط تجاری در انتظار تایید مدیر است"
+                  className={cn(
+                      'inline-flex items-center justify-center gap-1.5 bg-amber-50 dark:bg-amber-950/40 border border-amber-200/70 dark:border-amber-800/50 text-amber-700 dark:text-amber-300',
+                      compact ? 'h-8 px-3 rounded-lg text-[11px]' : 'w-full h-11 rounded-xl text-sm font-bold',
+                      className,
+                  )}>
+                <Clock className={compact ? 'w-3.5 h-3.5' : 'w-4 h-4'} />
+                {compact ? 'در انتظار تایید' : 'در انتظار تایید مدیر'}
+            </span>
+        );
+        return (
+            <button onClick={onCoopRequest} aria-label="درخواست ارتباط تجاری"
+                    title="ارسال درخواست ارتباط تجاری با این کاتالوگ"
+                    className={cn(
+                        'font-bold transition-all',
+                        compact
+                            ? 'h-8 px-3 rounded-lg border border-primary/40 bg-primary/5 dark:bg-primary/15 text-primary text-[11px] inline-flex items-center gap-1 hover:bg-primary/10 hover:scale-[1.03] active:scale-95'
+                            : 'w-full h-11 rounded-xl bg-primary text-on-primary text-sm flex items-center justify-center gap-2 shadow-lg shadow-primary/25 hover:scale-[1.01] active:scale-95',
+                        className,
+                    )}>
+                <Handshake className={compact ? 'w-3.5 h-3.5' : 'w-[18px] h-[18px]'} />
+                ارتباط تجاری
+            </button>
+        );
+    };
 
     return (
         <header className={cn('relative pb-3', isEditMode ? 'pt-1' : 'pt-14')}>
@@ -203,25 +246,7 @@ export default function CatalogHeader({
                             </button>
                         )}
 
-                        {/* ✅ درخواست همکاری — فقط غیرعضوها؛ در انتظار = وضعیت */}
-                        {!isOwner && coopState !== 'member' && onCoopRequest && (
-                            coopState === 'pending' ? (
-                                <span aria-label="درخواست همکاری در انتظار تایید"
-                                      className="h-10 pl-3 pr-2.5 rounded-full backdrop-blur border shadow-md flex items-center gap-1.5
-                                          bg-amber-50/90 dark:bg-amber-950/40 border-amber-200/70 dark:border-amber-800/50">
-                                    <Clock className="w-4 h-4 text-amber-500 flex-shrink-0" />
-                                    <span className="text-[11px] font-bold text-amber-700 dark:text-amber-300 hidden sm:inline">در انتظار تایید</span>
-                                </span>
-                            ) : (
-                                <button onClick={onCoopRequest} aria-label="درخواست همکاری"
-                                        title="درخواست همکاری با این کاتالوگ"
-                                        className="h-10 pl-3 pr-2.5 rounded-full backdrop-blur border shadow-md hover:scale-105 active:scale-95 transition-transform flex items-center gap-1.5
-                                            bg-primary/10 dark:bg-primary/20 border-primary/30 text-primary">
-                                    <Handshake className="w-4 h-4 flex-shrink-0" />
-                                    <span className="text-[11px] font-bold hidden sm:inline">همکاری</span>
-                                </button>
-                            )
-                        )}
+                        {/* ✅ دکمهٔ «ارتباط تجاری» حذف شد از ردیف شناور — تنها و زیبا در باکس هویت کاتالوگ رندر می‌شود (مثل کانکتِ لینکدین) */}
 
                         {/* ✅ ذخیره */}
                         <button onClick={onSaveToggle}
@@ -329,7 +354,8 @@ export default function CatalogHeader({
                                             )}
                                         </div>
 
-                                        <div className="flex gap-1.5 mt-.5">
+                                        <div className="flex gap-1.5 mt-.5 items-center">
+                                            <CoopAction compact />
                                             <button onClick={onContact}
                                                     className="inline-flex items-center gap-1 px-3 py-1.5 rounded-lg bg-primary text-white text-[11px] font-bold active:scale-95 transition">
                                                 <Phone className="w-3 h-3" />تماس
@@ -411,6 +437,9 @@ export default function CatalogHeader({
                                     <p className="text-[9px] text-gray-400">ذخیره</p>
                                 </div>
                             </div>
+
+                            {/* ✅ ارتباط تجاری — تنها دکمهٔ رابطه روی خود کاتالوگ؛ تمام‌عرض و در جای درست (زیر آمار، بالای باکس فروشنده) */}
+                            <CoopAction className="mt-3" />
 
                             {/* ✅ موبایل: باکس فروشنده — همیشه رندر؛ مداد amber جلوی نام کاربر */}
                             <div className="flex items-center gap-2.5 mt-3">
