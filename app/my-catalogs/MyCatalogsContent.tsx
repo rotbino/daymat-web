@@ -119,7 +119,7 @@ export default function MyCatalogsContent() {
         () => allCatalogs.find((c) => c.id === currentId) ?? null,
         [allCatalogs, currentId],
     );
-    // ✅ حالت تیم کاتالوگ — بازاریاب/ادمین کاتالوگ دیگری (سناریوی بازار پخش)
+    // ✅ حالت اعضای کاتالوگ — بازاریاب/مدیر کاتالوگ دیگری (سناریوی بازار پخش)
     //    کاتالوگ‌های تیمی از قبل داخل پاسخِ getAll ادغام شده‌اند (isTeamEntry) و جزو catalogs هستند
     const teamMode = (currentCatalog as any)?.teamMode as string | undefined;
     const isTeamEntry = !!(currentCatalog as any)?.isTeamEntry;
@@ -221,7 +221,7 @@ export default function MyCatalogsContent() {
         }
     }, []);
 
-    // ✅ حالت تیم — بازاریاب/درانتظار فقط تب تیم؛ ادمین محصولات+تیم
+    // ✅ حالت اعضا — بازاریاب/درانتظار فقط تب اعضا؛ مدیر محصولات+اعضا
     useEffect(() => {
         if (!isTeamEntry) return;
         if (teamMode !== 'admin' && tab !== 'team') setTab('team');
@@ -319,14 +319,14 @@ export default function MyCatalogsContent() {
         ? teamMode === 'admin'
             ? [
                   { key: 'products' as Tab, label: 'محصولات', icon: Package, count: products.length },
-                  { key: 'team' as Tab, label: 'تیم', icon: Users },
+                  { key: 'team' as Tab, label: 'اعضا', icon: Users },
               ]
             : [
-                  { key: 'team' as Tab, label: 'تیم', icon: Users },
+                  { key: 'team' as Tab, label: 'اعضا', icon: Users },
               ]
         : [
               { key: 'products' as Tab, label: 'محصولات', icon: Package, count: products.length },
-              { key: 'team' as Tab, label: 'تیم', icon: Users },
+              { key: 'team' as Tab, label: 'اعضا', icon: Users },
               { key: 'profile' as Tab, label: 'مشخصات', icon: IdCard },
               { key: 'stats' as Tab, label: 'آمار', icon: BarChart3 },
               { key: 'publish' as Tab, label: 'انتشار', icon: Globe, count: memberships.length > 0 ? memberships.length : undefined },
@@ -337,6 +337,16 @@ export default function MyCatalogsContent() {
             {/* 🔴 هشدار رمز موقت */}
             {hasTemporaryPassword && (
                 <TemporaryPasswordBanner phone={user?.phone} onClick={() => setPasswordOpen(true)} />
+            )}
+
+            {/* 🎉 بنر جشن عضویت تازه — بالای تب‌ها؛ هدر و بدنهٔ کاتالوگ یکپارچه بمانند (درخواست کاربر) */}
+            {freshMembership && !celebrateDismissed && (
+                <CelebrationBanner
+                    membership={freshMembership}
+                    uncatCount={uncatItems.length}
+                    onDismiss={() => setCelebrateDismissed(true)}
+                    onSetCategories={() => { setTab('products'); setStatusFilter('uncat'); }}
+                />
             )}
 
             {/* 🧭 هدر کنسول — هویت + تب‌ها در یک نوار سفید سایه‌دار، جدا از بدنه (درخواست کاربر) */}
@@ -359,7 +369,7 @@ export default function MyCatalogsContent() {
                 <ConsoleTabs items={tabItems} active={tab} onChange={setTab} />
             </div>
 
-            {/* 🏪 نوارِ حالت تیم کاتالوگ — بازاریاب/ادمین کاتالوگ دیگری (بازار پخش) */}
+            {/* 🏪 نوارِ حالت اعضای کاتالوگ — بازاریاب/مدیر کاتالوگ دیگری (بازار پخش) */}
             {isTeamEntry && (() => {
                 const cfg: Record<string, { title: string; desc: string; cls: string }> = {
                     seller: {
@@ -368,8 +378,8 @@ export default function MyCatalogsContent() {
                         cls: 'border-sky-500/30 bg-sky-500/5 dark:bg-sky-500/10',
                     },
                     admin: {
-                        title: 'ادمین این کاتالوگ',
-                        desc: 'اونر کاتالوگ به شما دسترسی ویرایش داده — محصولات و قیمت‌ها را مدیریت کنید و در مدیریت تیم کمک کنید',
+                        title: 'مدیر این کاتالوگ',
+                        desc: 'اونر کاتالوگ به شما دسترسی ویرایش داده — محصولات و قیمت‌ها را مدیریت کنید و در مدیریت اعضا کمک کنید',
                         cls: 'border-indigo-500/30 bg-indigo-500/5 dark:bg-indigo-500/10',
                     },
                     pending: {
@@ -391,16 +401,6 @@ export default function MyCatalogsContent() {
                     </div>
                 );
 })()}
-
-            {/* 🎉 بنر جشن عضویت تازه — گذرا و قابل بستن (زیر هدر، در بدنه) */}
-            {freshMembership && !celebrateDismissed && (
-                <CelebrationBanner
-                    membership={freshMembership}
-                    uncatCount={uncatItems.length}
-                    onDismiss={() => setCelebrateDismissed(true)}
-                    onSetCategories={() => { setTab('products'); setStatusFilter('uncat'); }}
-                />
-            )}
 
             {/* ── محتوای تب فعال — بدون قاب اضافه، فلت ── */}
             <div className="pt-0.5 pb-2">
@@ -450,7 +450,7 @@ export default function MyCatalogsContent() {
                     <StatsTab currentCatalog={currentCatalog} stats={stats} productsCount={products.length} />
                 )}
 
-                {/* تب تیم کاتالوگ — اونر/ادمین/بازاریاب (بازار پخش) */}
+                {/* تب اعضا — اونر/مدیر/بازاریاب (بازار پخش) */}
                 {tab === 'team' && (
                     <TeamTab catalogId={currentCatalog.id} />
                 )}

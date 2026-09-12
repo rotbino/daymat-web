@@ -25,8 +25,8 @@ const STATUS_CHIP: Record<string, { label: string; cls: string }> = {
     removed: { label: 'حذف‌شده', cls: 'text-red-700 dark:text-red-300 bg-red-50 dark:bg-red-900/25' },
 };
 
-/** تب تیم کاتالوگ — بازاریاب‌ها (فروشنده) و مشتری‌ها (سوپرمارکت‌ها) و ادمین‌ها
- *  سناریوی بازار پخش: اونر کاتالوگ تیم شرکت را می‌دهد؛ هر مشتری به بازاریابِ خودش منتسب است
+/** تب اعضای کاتالوگ — فروشنده‌ها (بازاریاب) و مشتری‌ها (سوپرمارکت‌ها) و مدیرها
+ *  سناریوی بازار پخش: اونر کاتالوگ اعضای شرکت را می‌دهد؛ هر مشتری به بازاریابِ خودش منتسب است
  *  تا تماسش از آگهی به همان بازاریاب برسد. */
 export default function TeamTab({ catalogId }: Props) {
     const queryClient = useQueryClient();
@@ -41,7 +41,7 @@ export default function TeamTab({ catalogId }: Props) {
     const [search, setSearch] = useState('');
     const [results, setResults] = useState<any[]>([]);
     const [searching, setSearching] = useState(false);
-    const [assignTo, setAssignTo] = useState(''); // sellerUserId برای افزودن (اونر/ادمین)
+    const [assignTo, setAssignTo] = useState(''); // sellerUserId برای افزودن (اونر/مدیر)
     const [reassignTarget, setReassignTarget] = useState<any>(null);
 
     const team = data || null;
@@ -116,7 +116,7 @@ export default function TeamTab({ catalogId }: Props) {
                     <Users className="w-5 h-5 text-primary" />
                 </span>
                 <div className="flex-1 min-w-0">
-                    <p className="font-bold text-gray-900 dark:text-gray-100">تیم کاتالوگ</p>
+                    <p className="font-bold text-gray-900 dark:text-gray-100">اعضای کاتالوگ</p>
                     <p className="text-xs text-gray-500 dark:text-gray-400">
                         {sellers.length.toLocaleString('fa-IR')} بازاریاب · {activeCustomers.length.toLocaleString('fa-IR')} مشتری فعال
                         {pendingSellers.length > 0 && ` · ${pendingSellers.length.toLocaleString('fa-IR')} درخواست فروشندگی جدید`}
@@ -133,7 +133,7 @@ export default function TeamTab({ catalogId }: Props) {
                 )}
             </div>
 
-            {/* درخواست‌های فروشندگی — اونر/ادمین */}
+            {/* درخواست‌های فروشندگی — اونر/مدیر */}
             {canManage && pendingSellers.length > 0 && (
                 <div className={cn(CARD_CLS, 'p-4 border-amber-400/40')}>
                     <p className="font-bold text-sm text-amber-700 dark:text-amber-300 mb-3 flex items-center gap-2">
@@ -153,7 +153,7 @@ export default function TeamTab({ catalogId }: Props) {
                                 {busy === `apr-${s.id}` ? <Loader2 className="w-4 h-4 animate-spin" /> : (
                                     <>
                                         <button
-                                            onClick={() => run(`apr-${s.id}`, () => apiService.catalog.team.approveSeller(catalogId, s.id), 'بازاریاب به تیم اضافه شد')}
+                                            onClick={() => run(`apr-${s.id}`, () => apiService.catalog.team.approveSeller(catalogId, s.id), 'به اعضا اضافه شد')}
                                             className="p-2 rounded-lg bg-emerald-500/15 text-emerald-600 dark:text-emerald-400 hover:bg-emerald-500/25"
                                             title="تایید"
                                         >
@@ -190,7 +190,7 @@ export default function TeamTab({ catalogId }: Props) {
                                             <p className="font-bold text-sm text-gray-900 dark:text-gray-100 truncate">{s.fullName || 'بدون نام'}</p>
                                             {s.isOwner && <span className="text-[10px] px-2 py-0.5 rounded-full bg-primary/10 text-primary font-bold">اونر</span>}
                                             {s.isAdmin && !s.isOwner && (
-                                                <span className="text-[10px] px-2 py-0.5 rounded-full bg-sky-500/10 text-sky-600 dark:text-sky-400 font-bold">ادمین</span>
+                                                <span className="text-[10px] px-2 py-0.5 rounded-full bg-sky-500/10 text-sky-600 dark:text-sky-400 font-bold">مدیر</span>
                                             )}
                                             {s.position && <span className="text-[10px] px-2 py-0.5 rounded-full bg-gray-100 dark:bg-gray-800 text-gray-500">{s.position}</span>}
                                         </div>
@@ -207,30 +207,30 @@ export default function TeamTab({ catalogId }: Props) {
                                                 <>
                                                     {isOwner && !s.isAdmin && (
                                                         <button
-                                                            onClick={() => run(`adm-${s.id}`, () => apiService.catalog.team.promoteToAdmin(catalogId, s.id), 'ادمین کاتالوگ شد')}
+                                                            onClick={() => run(`adm-${s.id}`, () => apiService.catalog.team.promoteToAdmin(catalogId, s.id), 'مدیر کاتالوگ شد')}
                                                             className="p-2 rounded-lg bg-sky-500/10 text-sky-600 dark:text-sky-400 hover:bg-sky-500/20"
-                                                            title="ادمین کن — دسترسی ویرایش کاتالوگ"
+                                                            title="مدیر کن — دسترسی ویرایش کاتالوگ"
                                                         >
                                                             <ShieldCheck className="w-4 h-4" />
                                                         </button>
                                                     )}
                                                     {isOwner && s.isAdmin && (
                                                         <button
-                                                            onClick={() => run(`dem-${s.id}`, () => apiService.catalog.team.demoteToMember(catalogId, s.id), 'نقش ادمین گرفته شد')}
+                                                            onClick={() => run(`dem-${s.id}`, () => apiService.catalog.team.demoteToMember(catalogId, s.id), 'نقش مدیر گرفته شد')}
                                                             className="p-2 rounded-lg bg-gray-500/10 text-gray-500 hover:bg-gray-500/20"
-                                                            title="گرفتن نقش ادمین"
+                                                            title="گرفتن نقش مدیر"
                                                         >
                                                             <ShieldOff className="w-4 h-4" />
                                                         </button>
                                                     )}
                                                     <button
                                                         onClick={() => {
-                                                            if (window.confirm(`«${s.fullName}» از تیم حذف شود؟ مشتری‌هایش بی‌مسئول می‌شوند.`)) {
+                                                            if (window.confirm(`«${s.fullName}» از اعضا حذف شود؟ مشتری‌هایش بی‌مسئول می‌شوند.`)) {
                                                                 run(`rm-${s.id}`, () => apiService.catalog.team.removeSeller(catalogId, s.id), 'بازاریاب حذف شد');
                                                             }
                                                         }}
                                                         className="p-2 rounded-lg bg-red-500/10 text-red-500 hover:bg-red-500/20"
-                                                        title="حذف از تیم"
+                                                        title="حذف از اعضا"
                                                     >
                                                         <Trash2 className="w-4 h-4" />
                                                     </button>
@@ -356,23 +356,23 @@ export default function TeamTab({ catalogId }: Props) {
             {team.myRole?.isSeller && !isOwner && (
                 <button
                     onClick={() => {
-                        if (window.confirm('از تیم فروش این کاتالوگ خارج شوید؟ مشتری‌هایتان بی‌مسئول می‌شوند.')) {
-                            run('leave', () => apiService.catalog.team.leaveAsSeller(catalogId), 'از تیم خارج شدید');
+                        if (window.confirm('از اعضای فروشندهٔ این کاتالوگ خارج شوید؟ مشتری‌هایتان بی‌مسئول می‌شوند.')) {
+                            run('leave', () => apiService.catalog.team.leaveAsSeller(catalogId), 'از اعضا خارج شدید');
                         }
                     }}
                     className="w-full py-3 rounded-xl border border-red-300/50 dark:border-red-800/50 text-red-600 dark:text-red-400 text-sm font-bold hover:bg-red-500/5 flex items-center justify-center gap-2"
                 >
                     <LogOut className="w-4 h-4" />
-                    خروج از تیم فروش این کاتالوگ
+                    خروج از اعضای فروشندهٔ این کاتالوگ
                 </button>
             )}
 
-            {/* تاریخچه رویدادها — اونر/ادمین */}
+            {/* تاریخچه رویدادها — اونر/مدیر */}
             {canManage && events.length > 0 && (
                 <div className={cn(CARD_CLS, 'p-4')}>
                     <p className="font-bold text-sm text-gray-900 dark:text-gray-100 mb-3 flex items-center gap-2">
                         <History className="w-4 h-4 text-primary" />
-                        تاریخچهٔ تیم
+                        تاریخچهٔ اعضا
                     </p>
                     <div className="space-y-1.5">
                         {events.slice(0, 15).map((e) => (
@@ -573,10 +573,10 @@ const EVENT_LABEL: Record<string, string> = {
     seller_requested: 'درخواست فروشندگی داد',
     seller_approved: 'به‌عنوان بازاریاب تایید شد',
     seller_rejected: 'درخواست فروشندگی‌اش رد شد',
-    seller_removed: 'از تیم حذف شد',
-    seller_left: 'خودش از تیم خارج شد',
-    admin_promoted: 'ادمین کاتالوگ شد',
-    admin_demoted: 'نقش ادمینش گرفته شد',
+    seller_removed: 'از اعضا حذف شد',
+    seller_left: 'خودش از اعضا خارج شد',
+    admin_promoted: 'مدیر کاتالوگ شد',
+    admin_demoted: 'نقش مدیرش گرفته شد',
     customer_added: 'به‌عنوان مشتری ثبت شد',
     customer_confirmed: 'مشتری‌بودنش را تایید کرد',
     customer_declined: 'ثبت مشتری‌بودنش را رد کرد',
@@ -585,6 +585,6 @@ const EVENT_LABEL: Record<string, string> = {
     customer_reassigned: 'به بازاریاب دیگری منتسب شد',
     customer_unassigned: 'بی‌مسئول شد',
     region_set: 'منطقه‌اش تغییر کرد',
-    joined: 'به تیم کاتالوگ اضافه شد',
-    migrated: 'به مدل تیم کاتالوگ منتقل شد',
+    joined: 'به اعضای کاتالوگ اضافه شد',
+    migrated: 'به مدل اعضای کاتالوگ منتقل شد',
 };

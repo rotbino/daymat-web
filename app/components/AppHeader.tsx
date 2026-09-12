@@ -21,3 +21,5 @@ export function AppHeader({ showLocation = false, fixed = true, showBack = true,
         </Fragment>
     );
 }
+
+export default AppHeader;
