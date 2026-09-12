@@ -4,7 +4,7 @@
 import { BadgeCheck, Hourglass, PauseCircle, Store, Package, Wrench, XCircle } from 'lucide-react';
 
 // ─── انواع ───
-export type Tab = 'profile' | 'products' | 'publish' | 'stats';
+export type Tab = 'profile' | 'products' | 'publish' | 'stats' | 'team';
 export type StatusFilter = 'all' | 'table' | 'catalog' | 'stale' | 'uncat';
 
 // ─── هلپرهای وضعیت آگهی ───

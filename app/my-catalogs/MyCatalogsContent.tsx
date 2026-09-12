@@ -17,7 +17,8 @@ import {
     useArms, useMyUncategorized, useSetOwnAdCategory,
 } from '@/lib/api/apiHooks';
 import { toast } from 'sonner';
-import { BarChart3, Globe, IdCard, Loader2, Package, Handshake } from 'lucide-react';
+import { cn } from '@/lib/utils';
+import { BarChart3, Globe, IdCard, Loader2, Package, Handshake, Users } from 'lucide-react';
 
 import UnitSettingsModal from '@/app/ad/components/UnitSettingsModal';
 import CategorySettingsModal from '@/app/ad/components/CategorySettingsModal';
@@ -35,6 +36,7 @@ import ProfileTab from './components/ProfileTab';
 import ProductsTab from './components/ProductsTab';
 import PublishTab from './components/PublishTab';
 import StatsTab from './components/StatsTab';
+import TeamTab from './components/TeamTab';
 import CatalogCategoryModal from './components/CatalogCategoryModal';
 import CatalogEditModal from './CatalogEditModal';
 import PublishToMarketModal from './PublishToMarketModal';
@@ -132,6 +134,10 @@ export default function MyCatalogsContent() {
     );
     // ✅ حالت به‌نیابت — کاتالوگِ فعلی مالِ من نیست؛ تیمِ بازاری که کارش به آن واگذار شده
     const isDelegateMode = !!currentCatalog && !catalogs.some((c) => c.id === currentId);
+    // ✅ حالت تیم کاتالوگ — بازاریاب/ادمین کاتالوگ دیگری (سناریوی بازار پخش)
+    //    کاتالوگ‌های تیمی از قبل داخل پاسخِ getAll ادغام شده‌اند (isTeamEntry) و جزو catalogs هستند
+    const teamMode = (currentCatalog as any)?.teamMode as string | undefined;
+    const isTeamEntry = !!(currentCatalog as any)?.isTeamEntry;
 
     // ── نگه‌داری snapshot «کاتالوگ کارنت» همیشه تازه — برای مصرف در جای دیگر برنامه ──
     useEffect(() => {
@@ -235,6 +241,21 @@ export default function MyCatalogsContent() {
         if (isDelegateMode && tab !== 'products') setTab('products');
     }, [isDelegateMode, tab]);
 
+    // ✅ حالت تیم — بازاریاب/درانتظار فقط تب تیم؛ ادمین محصولات+تیم
+    useEffect(() => {
+        if (!isTeamEntry) return;
+        if (teamMode !== 'admin' && tab !== 'team') setTab('team');
+        if (tab === 'profile' || tab === 'publish' || tab === 'stats') setTab('team');
+    }, [isTeamEntry, teamMode, tab]);
+
+    // ✅ دیپ‌لینک اعلان‌ها — ?tab=team (مثلاً «بررسی درخواست‌های فروشندگی»)
+    useEffect(() => {
+        if (new URLSearchParams(window.location.search).get('tab') === 'team') {
+            setTab('team');
+            window.history.replaceState({}, '', '/my-catalogs');
+        }
+    }, []);
+
     const checklist = useMemo(() => ({
         hasName: !!currentCatalog?.name,
         hasSlug: !!currentCatalog?.slug,
@@ -315,14 +336,26 @@ export default function MyCatalogsContent() {
 
     // ─── تب‌های بخش‌های کاتالوگ (RTL: مشخصات در راست) ───
     // ✅ حالت به‌نیابت: فقط کارِ کاتالوگ (محصولات) — مشخصات/آمار/انتشار مالِ مالکِ کاتالوگ است
-    const tabItems = isDelegateMode ? [
-        { key: 'products' as Tab, label: 'محصولات', icon: Package, count: products.length },
-    ] : [
-        { key: 'products' as Tab, label: 'محصولات', icon: Package, count: products.length },
-        { key: 'profile' as Tab, label: 'مشخصات', icon: IdCard },
-        { key: 'stats' as Tab, label: 'آمار', icon: BarChart3 },
-        { key: 'publish' as Tab, label: 'انتشار', icon: Globe, count: memberships.length > 0 ? memberships.length : undefined },
-    ];
+    const tabItems = isDelegateMode
+        ? [
+              { key: 'products' as Tab, label: 'محصولات', icon: Package, count: products.length },
+          ]
+        : isTeamEntry
+        ? teamMode === 'admin'
+            ? [
+                  { key: 'products' as Tab, label: 'محصولات', icon: Package, count: products.length },
+                  { key: 'team' as Tab, label: 'تیم', icon: Users },
+              ]
+            : [
+                  { key: 'team' as Tab, label: 'تیم', icon: Users },
+              ]
+        : [
+              { key: 'products' as Tab, label: 'محصولات', icon: Package, count: products.length },
+              { key: 'team' as Tab, label: 'تیم', icon: Users },
+              { key: 'profile' as Tab, label: 'مشخصات', icon: IdCard },
+              { key: 'stats' as Tab, label: 'آمار', icon: BarChart3 },
+              { key: 'publish' as Tab, label: 'انتشار', icon: Globe, count: memberships.length > 0 ? memberships.length : undefined },
+          ];
 
     return (
         <div className="space-y-4">
@@ -368,6 +401,39 @@ export default function MyCatalogsContent() {
                                 {deleg?.arm?.name ? ` در بازار ${deleg.arm.name}` : ''} به شما واگذار شده —
                                 ثبت کالا، آپدیت قیمت و دسته‌بندی را انجام دهید. مشخصات و هویت کاتالوگ با مالکش است.
                             </p>
+                        </div>
+                    </div>
+                );
+})()}
+
+            {/* 🏪 نوارِ حالت تیم کاتالوگ — بازاریاب/ادمین کاتالوگ دیگری (بازار پخش) */}
+            {isTeamEntry && (() => {
+                const cfg: Record<string, { title: string; desc: string; cls: string }> = {
+                    seller: {
+                        title: 'بازاریاب این کاتالوگ',
+                        desc: 'این کاتالوگ مالِ اونر کاتالوگ است — شما فروشندهٔ آن هستید؛ مشتری‌های منطقهٔ خودتان را ثبت کنید تا تماسشان به شما برسد',
+                        cls: 'border-sky-500/30 bg-sky-500/5 dark:bg-sky-500/10',
+                    },
+                    admin: {
+                        title: 'ادمین این کاتالوگ',
+                        desc: 'اونر کاتالوگ به شما دسترسی ویرایش داده — محصولات و قیمت‌ها را مدیریت کنید و در مدیریت تیم کمک کنید',
+                        cls: 'border-indigo-500/30 bg-indigo-500/5 dark:bg-indigo-500/10',
+                    },
+                    pending: {
+                        title: 'درخواست فروشندگی در انتظار تایید',
+                        desc: 'تا تایید اونر کاتالوگ، امکان ثبت مشتری ندارید',
+                        cls: 'border-amber-500/30 bg-amber-500/5 dark:bg-amber-500/10',
+                    },
+                };
+                const info = cfg[teamMode || 'seller'] || cfg.seller;
+                return (
+                    <div className={cn('rounded-xl border px-4 py-3 flex items-center gap-3', info.cls)}>
+                        <span className="w-9 h-9 rounded-xl bg-white/60 dark:bg-black/20 flex items-center justify-center flex-shrink-0">
+                            <Users className="w-4.5 h-4.5" />
+                        </span>
+                        <div className="flex-1 min-w-0">
+                            <p className="text-xs font-extrabold">{info.title}</p>
+                            <p className="text-[11px] text-on-surface-variant mt-0.5 leading-5">{info.desc}</p>
                         </div>
                     </div>
                 );
@@ -429,6 +495,11 @@ export default function MyCatalogsContent() {
                 {/* تب آمار */}
                 {tab === 'stats' && (
                     <StatsTab currentCatalog={currentCatalog} stats={stats} productsCount={products.length} />
+                )}
+
+                {/* تب تیم کاتالوگ — اونر/ادمین/بازاریاب (بازار پخش) */}
+                {tab === 'team' && (
+                    <TeamTab catalogId={currentCatalog.id} />
                 )}
 
                 {/* تب انتشار */}

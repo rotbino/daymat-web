@@ -87,7 +87,8 @@ export default function AdDetailClient({ adId, initialData }: Props) {
 
         try {
             const info = await apiService.ad.getContact(adId);
-            const phone = info.ownerPhone || info.phone;
+            // ✅ مسیریابی تیم کاتالوگ: اگر مشتریِ کاتالوگ با بازاریابِ منتسب باشیم، شمارهٔ بازاریاب می‌آید
+            const phone = info.seller?.phone || info.ownerPhone || info.phone;
 
             if (!phone) {
                 toast.error('شماره تماس ثبت نشده است');
@@ -97,7 +98,10 @@ export default function AdDetailClient({ adId, initialData }: Props) {
             if (window.innerWidth < 768) {
                 window.location.href = `tel:${phone}`;
             } else {
-                toast.info(`${info.catalogName}\n${phone}`, { duration: 8000 });
+                const sellerNote = info.routedToSeller && info.seller
+                    ? `بازاریاب شما: ${info.seller.name || info.seller.businessName}\n`
+                    : '';
+                toast.info(`${sellerNote}${info.catalogName}\n${phone}`, { duration: 8000 });
                 navigator.clipboard.writeText(phone).catch(() => {});
             }
         } catch (error: any) {

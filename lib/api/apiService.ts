@@ -140,6 +140,63 @@ export const apiService = {
 
         getCatalogAds: (catalogId: string, page: number = 1, limit: number = 24, search?: string) =>
             apiRequest(`/ad/catalog/${catalogId}?page=${page}&limit=${limit}${search ? `&search=${encodeURIComponent(search)}` : ''}`),
+
+        // ─── تیم کاتالوگ (اونر/ادمین/بازاریاب/مشتری) ───
+        team: {
+            getTeam: (catalogId: string): Promise<any> =>
+                apiRequest(`/catalog/${catalogId}/team`),
+
+            getMyMembership: (catalogId: string): Promise<any> =>
+                apiRequest(`/catalog/${catalogId}/team/my`),
+
+            getMyMemberships: (): Promise<any[]> =>
+                apiRequest('/catalog/team/memberships'),
+
+            joinAsSeller: (catalogId: string, data?: { sellerBusinessId?: string; note?: string }): Promise<any> =>
+                apiRequest(`/catalog/${catalogId}/team/join-seller`, { method: 'POST', data: data || {} }),
+
+            approveSeller: (catalogId: string, memberId: string): Promise<any> =>
+                apiRequest(`/catalog/${catalogId}/team/sellers/${memberId}/approve`, { method: 'POST' }),
+
+            rejectSeller: (catalogId: string, memberId: string, reason?: string): Promise<any> =>
+                apiRequest(`/catalog/${catalogId}/team/sellers/${memberId}/reject`, { method: 'POST', data: { reason } }),
+
+            removeSeller: (catalogId: string, memberId: string, note?: string): Promise<any> =>
+                apiRequest(`/catalog/${catalogId}/team/sellers/${memberId}${note ? `?note=${encodeURIComponent(note)}` : ''}`, { method: 'DELETE' }),
+
+            leaveAsSeller: (catalogId: string): Promise<any> =>
+                apiRequest(`/catalog/${catalogId}/team/leave-seller`, { method: 'POST' }),
+
+            setSellerRegion: (catalogId: string, memberId: string, region?: string): Promise<any> =>
+                apiRequest(`/catalog/${catalogId}/team/sellers/${memberId}/region`, { method: 'PATCH', data: { region } }),
+
+            promoteToAdmin: (catalogId: string, memberId: string): Promise<any> =>
+                apiRequest(`/catalog/${catalogId}/team/members/${memberId}/promote-admin`, { method: 'POST' }),
+
+            demoteToMember: (catalogId: string, memberId: string): Promise<any> =>
+                apiRequest(`/catalog/${catalogId}/team/members/${memberId}/demote-admin`, { method: 'POST' }),
+
+            customerCandidates: (catalogId: string, q: string): Promise<{ items: any[] }> =>
+                apiRequest(`/catalog/${catalogId}/team/customer-candidates?q=${encodeURIComponent(q)}`),
+
+            addCustomer: (catalogId: string, data: { businessId: string; sellerUserId?: string; note?: string }): Promise<any> =>
+                apiRequest(`/catalog/${catalogId}/team/customers`, { method: 'POST', data }),
+
+            confirmCustomer: (catalogId: string, memberId: string): Promise<any> =>
+                apiRequest(`/catalog/${catalogId}/team/customers/${memberId}/confirm`, { method: 'POST' }),
+
+            declineCustomer: (catalogId: string, memberId: string, reason?: string): Promise<any> =>
+                apiRequest(`/catalog/${catalogId}/team/customers/${memberId}/decline`, { method: 'POST', data: { reason } }),
+
+            assignCustomer: (catalogId: string, memberId: string, sellerUserId: string): Promise<any> =>
+                apiRequest(`/catalog/${catalogId}/team/customers/${memberId}/assign`, { method: 'PATCH', data: { sellerUserId } }),
+
+            removeCustomer: (catalogId: string, memberId: string, note?: string): Promise<any> =>
+                apiRequest(`/catalog/${catalogId}/team/customers/${memberId}${note ? `?note=${encodeURIComponent(note)}` : ''}`, { method: 'DELETE' }),
+
+            leaveAsCustomer: (catalogId: string): Promise<any> =>
+                apiRequest(`/catalog/${catalogId}/team/leave-customer`, { method: 'POST' }),
+        },
     },
    
 
@@ -443,6 +500,9 @@ export const apiService = {
         getContact: (id: string): Promise<{
             catalogName: string;
             phone: string;
+            ownerPhone?: string | null;
+            seller?: { userId: string; name: string | null; businessName: string | null; region: string | null; phone: string } | null;
+            routedToSeller?: boolean;
             remainingCalls: number;
             dailyLimit: number;
         }> =>

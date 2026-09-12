@@ -41,6 +41,12 @@ export default function CatalogIdentityBar({ catalogs, currentCatalog, canShare,
                         <span className="text-[9px] font-extrabold text-emerald-700 dark:text-emerald-300 bg-emerald-500/10
                                 px-1.5 py-0.5 rounded-full flex-shrink-0">به‌نیابت</span>
                     )}
+                    {currentCatalog?.isTeamEntry && (
+                        <span className="text-[9px] font-extrabold text-sky-700 dark:text-sky-300 bg-sky-500/10
+                                px-1.5 py-0.5 rounded-full flex-shrink-0">
+                            {currentCatalog?.teamMode === 'admin' ? 'ادمین' : currentCatalog?.teamMode === 'pending' ? 'در انتظار' : 'بازاریاب'}
+                        </span>
+                    )}
                     {multi && <ChevronDown className={cn('w-4 h-4 text-on-surface-variant/60 flex-shrink-0 transition-transform', open && 'rotate-180')} />}
                 </span>
                 <span className="block text-[10px] text-on-surface-variant/70">
@@ -138,6 +144,12 @@ export default function CatalogIdentityBar({ catalogs, currentCatalog, canShare,
                                     {c.isDelegatedToMe && (
                                         <span className="text-[9px] font-extrabold text-emerald-700 dark:text-emerald-300
                                                 bg-emerald-500/10 px-1.5 py-0.5 rounded-full flex-shrink-0">به‌نیابت</span>
+                                    )}
+                                    {c.isTeamEntry && (
+                                        <span className="text-[9px] font-extrabold text-sky-700 dark:text-sky-300
+                                                bg-sky-500/10 px-1.5 py-0.5 rounded-full flex-shrink-0">
+                                            {c.teamMode === 'admin' ? 'ادمین' : c.teamMode === 'pending' ? 'در انتظار' : 'بازاریاب'}
+                                        </span>
                                     )}
                                     {active && <Check className="w-4 h-4 text-primary flex-shrink-0" />}
                                 </button>

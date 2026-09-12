@@ -53,7 +53,8 @@ export default function AdSidebar({ ad, isOwner, isSaved, onSaveToggle }: AdSide
 
         try {
             const info = await apiService.ad.getContact(ad.id);
-            const phoneToUse = info.ownerPhone || info.phone;
+            // ✅ مسیریابی تیم کاتالوگ: شمارهٔ بازاریابِ منتسبِ مشتری، اولویت دارد
+            const phoneToUse = info.seller?.phone || info.ownerPhone || info.phone;
             if (!phoneToUse) {
                 toast.error('شماره تماس برای این آگهی ثبت نشده است.');
                 return;
@@ -61,7 +62,10 @@ export default function AdSidebar({ ad, isOwner, isSaved, onSaveToggle }: AdSide
             if (window.innerWidth < 768) {
                 window.location.href = `tel:${phoneToUse}`;
             } else {
-                toast.info(`${info.catalogName}\n${phoneToUse}`, { duration: 8000 });
+                const sellerNote = info.routedToSeller && info.seller
+                    ? `بازاریاب شما: ${info.seller.name || info.seller.businessName}\n`
+                    : '';
+                toast.info(`${sellerNote}${info.catalogName}\n${phoneToUse}`, { duration: 8000 });
                 navigator.clipboard.writeText(phoneToUse).catch(() => {});
             }
         } catch (e: any) {

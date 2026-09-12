@@ -16,6 +16,7 @@ import { toast } from 'sonner';
 import { VerificationModal } from '../../app/business/VerificationModal';
 import { cn } from '@/lib/utils';
 import { ManagedArmsList } from "@/app_/profile/components/ManagedArmsList";
+import CatalogTeamsList from "@/app_/profile/components/CatalogTeamsList";
 import { apiService } from '@/lib/api/apiService';
 
 import ProfileHeader from '@/app_/profile/components/ProfileHeader';
@@ -478,6 +479,7 @@ export default function ProfilePage() {
                             </>
                         )}
                         <ManagedArmsList onRefresh={() => refetch()} />
+                        <CatalogTeamsList />
                     </div>
                 </div>
 
@@ -522,6 +524,7 @@ export default function ProfilePage() {
                         </>
                     )}
                     <ManagedArmsList onRefresh={() => refetch()} />
+                    <CatalogTeamsList />
                     {hasCatalog && (
                         <TipsList />
                     )}

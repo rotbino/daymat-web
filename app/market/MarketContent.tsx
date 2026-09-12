@@ -228,11 +228,15 @@ export default function MarketContent({ search: searchProp }: { search?: string 
                 }
             }
             const contactInfo = await apiService.ad.getContact(adId);
-            const phoneToUse = contactInfo.ownerPhone || contactInfo.phone;
+            // ✅ مسیریابی تیم کاتالوگ: شمارهٔ بازاریابِ منتسبِ مشتری، اولویت دارد
+            const phoneToUse = contactInfo.seller?.phone || contactInfo.ownerPhone || contactInfo.phone;
             if (!phoneToUse) { toast.error('شماره تماس برای این آگهی ثبت نشده است.'); return; }
             if (window.innerWidth < 768) window.location.href = `tel:${phoneToUse}`;
             else {
-                toast.info(`${contactInfo.catalogName}\nشماره: ${phoneToUse}`, { duration: 8000 });
+                const sellerNote = contactInfo.routedToSeller && contactInfo.seller
+                    ? `بازاریاب شما: ${contactInfo.seller.name || contactInfo.seller.businessName}\n`
+                    : '';
+                toast.info(`${sellerNote}${contactInfo.catalogName}\nشماره: ${phoneToUse}`, { duration: 8000 });
                 navigator.clipboard.writeText(phoneToUse).catch(() => {});
             }
         } catch (error: any) {
