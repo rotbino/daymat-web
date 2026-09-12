@@ -62,7 +62,7 @@ export function StepReview() {
                         <span className="text-on-surface-variant">{isWholesale ? 'قیمت عمده (نقدی)' : 'قیمت (نقدی)'}</span>
                         <span className="font-extrabold text-primary text-sm tabular-nums">{formData.unitPrice.toLocaleString('fa-IR')} {CURRENCY}</span>
                     </div>
-                    {isWholesale && formData.singleUnitPrice > 0 && (
+                    {(isWholesale || (formData.unitQty != null && formData.unitQty > 1)) && formData.singleUnitPrice > 0 && (
                         <div className="flex justify-between text-xs">
                             <span className="text-on-surface-variant">قیمت تکی</span>
                             <span className="font-medium text-on-surface tabular-nums">{formData.singleUnitPrice.toLocaleString('fa-IR')} {CURRENCY} / {baseUnitTitle}</span>

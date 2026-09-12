@@ -67,16 +67,33 @@ export default function ProductReferencePicker({
                 const res = await apiService.product.search(params.q, category, params.page, params.limit, params.mine);
                 return { items: res.items, hasMore: res.hasMore };
             }}
-            createFn={(data) => apiService.product.create({
-                title: data.title,
-                brandId: data.brandId,
-                category,
-                imageUrl: data.imageUrl,
-                thumbnailUrl: data.imageUrl,
-                specs: data.specs,
-                armSlug,
-            })}
-            updateFn={(id, data) => apiService.product.update(id, data)}
+            createFn={async (data) => {
+                const created: any = await apiService.product.create({
+                    title: data.title,
+                    brandId: data.brandId,
+                    category,
+                    imageUrl: data.imageUrl,
+                    thumbnailUrl: data.imageUrl,
+                    specs: data.specs,
+                    armSlug,
+                });
+                // ✅ برخی مسیرهای سرور (مثل برگشتِ کالای تکراری) برند را کامل برنمی‌گردانند
+                // — از دادهٔ فرم تکمیل می‌کنیم تا «بدون برند» کاذب نبینیم
+                return {
+                    ...created,
+                    brandId: created?.brandId ?? data.brandId,
+                    brandTitle: created?.brandTitle ?? created?.brand?.title ?? data.brandTitle,
+                };
+            }}
+            updateFn={async (id, data) => {
+                const updated: any = await apiService.product.update(id, data);
+                // ✅ همان تکمیلِ برند از دادهٔ فرم
+                return {
+                    ...updated,
+                    brandId: updated?.brandId ?? (data as any).brandId,
+                    brandTitle: updated?.brandTitle ?? updated?.brand?.title ?? (data as any).brandTitle,
+                };
+            }}
             deleteFn={(id) => apiService.product.delete(id)}
             renderCreateFields={({ dataRef }) => (
                 <CreateProductExtraFields dataRef={dataRef} category={category} armSlug={armSlug} />
@@ -108,16 +125,15 @@ export default function ProductReferencePicker({
                     )}
                     <div className="flex-1 min-w-0">
                         <p className="text-sm font-bold text-on-surface truncate">{v.title}</p>
-                        <div className="mt-1">
-                            {(v as ProductValue).brandTitle ? (
+                        {/* ✅ برند فقط وقتی واقعاً هست نشان داده می‌شود — «بدون برند» کاذب ممنوع */}
+                        {(v as ProductValue).brandTitle && (
+                            <div className="mt-1">
                                 <span className="inline-flex items-center gap-1 rounded-full bg-primary/[0.07] border border-primary/15 px-1.5 py-0.5">
                                     <Tag className="w-2.5 h-2.5 text-primary" />
                                     <span className="text-[9px] font-bold text-primary">{(v as ProductValue).brandTitle}</span>
                                 </span>
-                            ) : (
-                                <span className="text-[9px] text-on-surface-variant/60">بدون برند</span>
-                            )}
-                        </div>
+                            </div>
+                        )}
                     </div>
                 </>
             )}
@@ -185,6 +201,7 @@ function CreateProductExtraFields({
             ...dataRef.current,
             imageUrl: imageUrl || undefined,
             brandId: brandValue?.id || undefined,
+            brandTitle: brandValue?.title || undefined,
         };
     }, [imageUrl, brandValue, dataRef]);
 

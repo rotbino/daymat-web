@@ -50,7 +50,7 @@ export function StepPricing() {
                             <StepBadge n={2} /> قیمت تکی (هر {baseUnitTitle}) <span className="text-error">*</span>
                         </label>
                         <p className="text-[10px] text-on-surface-variant/60">
-                            قیمت عمده هر {baseUnitTitle} برای خرید {formData.minQuantity.toLocaleString('fa-IR')} {unitName}
+                            قیمت واحد خرید مصرف‌کننده — با پر کردن قیمت {unitName} خودکار حساب می‌شود
                         </p>
                         <NumberInput value={formData.singleUnitPrice || undefined}
                                      onChange={handleSingleUnitPriceChange}
@@ -94,12 +94,34 @@ export function StepPricing() {
                             <StepBadge n={1} /> قیمت هر {unitName} <span className="text-error">*</span>
                         </label>
                         <NumberInput value={formData.unitPrice || undefined}
-                                     onChange={(v) => patchForm({ unitPrice: v })}
+                                     onChange={handleUnitPriceChange}
                                      unit={CURRENCY} className="w-full h-14 text-xl font-extrabold" />
+                        {formData.singleUnitPrice > 0 && formData.unitQty != null && formData.unitQty > 1 && (
+                            <div className="flex items-center gap-2 text-[11px] text-primary bg-primary/[0.05] border border-primary/15 rounded-lg px-3 py-2">
+                                <Info className="w-3.5 h-3.5 flex-shrink-0" />
+                                <span>
+                                    {formData.unitPrice.toLocaleString('fa-IR')} ÷ {formData.unitQty.toLocaleString('fa-IR')} = <b>{formData.singleUnitPrice.toLocaleString('fa-IR')}</b> {CURRENCY}/{baseUnitTitle}
+                                </span>
+                            </div>
+                        )}
                     </section>
+                    {/* ✅ قیمت تکی در تک‌فروشی — وقتی واحد فروش بسته/کارتن است، الزامی می‌شود */}
+                    {formData.unitQty != null && formData.unitQty > 1 && (
+                        <section className="rounded-2xl bg-surface-container-low/60 border border-outline-variant/30 p-4 space-y-2.5">
+                            <label className="text-xs font-bold text-on-surface flex items-center gap-1.5">
+                                <StepBadge n={2} /> قیمت تکی (هر {baseUnitTitle}) <span className="text-error">*</span>
+                            </label>
+                            <p className="text-[10px] text-on-surface-variant/60">
+                                قیمت واحد خرید مصرف‌کننده — مبنای فیلتر قیمت در بازار
+                            </p>
+                            <NumberInput value={formData.singleUnitPrice || undefined}
+                                         onChange={handleSingleUnitPriceChange}
+                                         unit={`${CURRENCY}/${baseUnitTitle}`} className="w-full h-12" />
+                        </section>
+                    )}
                     <section className="rounded-2xl bg-surface-container-low/60 border border-outline-variant/30 p-4 space-y-2.5">
                         <label className="text-xs font-bold text-on-surface flex items-center gap-1.5">
-                            <StepBadge n={2} /> موجودی ({unitName}) <span className="text-on-surface-variant/50 text-[10px]">(اختیاری)</span>
+                            <StepBadge n={formData.unitQty != null && formData.unitQty > 1 ? 3 : 2} /> موجودی ({unitName}) <span className="text-on-surface-variant/50 text-[10px]">(اختیاری)</span>
                         </label>
                         <NumberInput value={formData.availableQuantity || undefined}
                                      onChange={(val) => patchForm({ availableQuantity: val || 0 })}

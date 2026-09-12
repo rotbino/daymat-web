@@ -14,7 +14,6 @@ import { DropSelector } from '@/components/common/DropSelector';
 import ProductReferencePicker from '@/app/components/ProductReferencePicker';
 import CategoryPicker from '@/app/ad/components/CategoryPicker';
 import { useAdForm } from './AdFormStore';
-import BrandPicker, { BrandValue } from '@/app/components/BrandPicker';
 import { SectionTitle, inputCls } from './ui-bits';
 import { MAX_IMAGES } from './constants';
 
@@ -23,7 +22,6 @@ export function StepProduct() {
         selectedCatalog, isWholesale,
         categoryTree, hasCategoryTree, formData, patchForm,
         selectedProduct, selectProduct, unitName, baseUnitTitle,
-        selectedBrand, brandMode, setSelectedBrand, setBrandMode,
         localUnitSettings, suggestedUnitIds, allUnits, unitOptions,
         selectUnit, handleUnitQtyChange,
         images, openImagePicker, removeImage,
@@ -66,7 +64,7 @@ export function StepProduct() {
                         error={!selectedProduct && !formData.productType.trim() ? 'کالا را انتخاب کن' : undefined}
                         armSlug={currentSlug || undefined}
                     />
-                    {/* ✅ عنوان آگهی قابل ویرایش + برند زیرش — با فاصله از سلکتور */}
+                    {/* ✅ عنوان آگهی قابل ویرایش — با فاصله از سلکتور */}
                     {selectedProduct && (
                         <div className="space-y-1.5 mt-3.5">
                             <label className="text-[10px] text-on-surface-variant block flex items-center gap-1">
@@ -82,21 +80,6 @@ export function StepProduct() {
                                     {(formData.productType || '').length}/۶۰
                                 </span>
                             </div>
-                            {/* ✅ برند — قابل انتخاب/تغییر (پیش‌فرض از کالای مرجع) */}
-                            {selectedProduct && (
-                                <div className="pt-1">
-                                    <BrandPicker
-                                        value={selectedBrand}
-                                        onChange={(b: BrandValue | null) => {
-                                            setSelectedBrand(b);
-                                            if (b) setBrandMode(true);
-                                        }}
-                                        mode={brandMode}
-                                        onModeChange={setBrandMode}
-                                        armSlug={currentSlug || undefined}
-                                    />
-                                </div>
-                            )}
                         </div>
                     )}
                 </div>

@@ -12,7 +12,6 @@ import { apiService } from '@/lib/api/apiService';
 import { useCreateAd, useUpdateAd, useAd, useUploadFile, useDeleteFile } from '@/lib/api/apiHooks';
 import { toast } from 'sonner';
 import type { ProductValue } from '@/app/components/ProductReferencePicker';
-import type { BrandValue } from '@/app/components/BrandPicker';
 import { TOTAL_STEPS, MAX_IMAGES } from './constants';
 import { findNodeInTree, getAvailableUnits, getCategoryConstraints } from './tree-utils';
 import type { AdFormValues, ImageSlot, PaymentState, UnitSettingEntry } from './types';
@@ -32,10 +31,12 @@ function initialFormValues(): AdFormValues {
         giftPrice: 0,
         volumeTiers: [],
         productReferenceId: '',
-        brandId: '',
         validityHours: 72,
     };
 }
+
+// ✅ هویت داخلی ردیف‌های چک — روز قابل ویرایش است پس کلید باید ثابت بماند
+const termUid = () => `t${Date.now().toString(36)}${Math.random().toString(36).slice(2, 7)}`;
 
 const initialPayment: PaymentState = {
     chequeOn: false, terms: [], note: '', installment: [], installmentDescription: '',
@@ -60,11 +61,6 @@ export interface AdFormStore {
     // مقادیر فرم
     formData: AdFormValues;
     selectedProduct: ProductValue | null;
-    // ✅ برند آگهی — مستقل از کالای مرجع (پیش‌فرض از مرجع ارث می‌برد)
-    selectedBrand: BrandValue | null;
-    brandMode: boolean | null; // null=دست‌نخورده (ارث از مرجع) | true=دارای برند | false=بدون برند
-    setSelectedBrand: (b: BrandValue | null) => void;
-    setBrandMode: (m: boolean | null) => void;
     images: ImageSlot[];
     payment: PaymentState;
     showAdvanced: boolean;
@@ -103,7 +99,11 @@ export interface AdFormStore {
     // پرداخت چک
     setChequeOn: (on: boolean) => void;
     toggleChequeTerm: (days: number) => void;
-    setTermPrice: (days: number, price: number) => void;
+    /** سررسید دلخواه — ردیف با روزِ قابل ویرایش */
+    addCustomTerm: () => void;
+    setTermDays: (uid: string, days: number) => void;
+    setTermPrice: (uid: string, price: number) => void;
+    removeTerm: (uid: string) => void;
     setChequeNote: (note: string) => void;
 
     // آکاردئون گزینه‌های پیشرفته
@@ -215,9 +215,6 @@ export function AdFormProvider({ adId, onSuccess, children }: { adId?: string; o
     const [currentStep, setCurrentStep] = useState(1);
     const [formData, setFormData] = useState<AdFormValues>(initialFormValues);
     const [selectedProduct, setSelectedProduct] = useState<ProductValue | null>(null);
-    // ✅ برند آگهی — انتخابگر مستقل؛ پیش‌فرض از کالای مرجع
-    const [selectedBrand, setSelectedBrand] = useState<BrandValue | null>(null);
-    const [brandMode, setBrandMode] = useState<boolean | null>(null);
     const [images, setImages] = useState<ImageSlot[]>([]);
     const [submitting, setSubmitting] = useState(false);
     const [unitModalOpen, setUnitModalOpen] = useState(false);
@@ -321,18 +318,11 @@ export function AdFormProvider({ adId, onSuccess, children }: { adId?: string; o
         (formData.consumerPrice > 0 ? 1 : 0) + formData.volumeTiers.length + (formData.giftPrice > 0 ? 1 : 0);
 
     // ═══ انتخاب کالا از مرجع + ارث‌بری عکس ═══
+    // ✅ برند جزء ویژگی‌های کالای مرجع است — در فرم آگهی تعیین تکلیف نمی‌شود
     const selectProduct = (product: ProductValue | null) => {
         setSelectedProduct(product);
         if (product) {
             setFormData((p) => ({ ...p, productType: product.title }));
-            // ✅ برند از کالای مرجع ارث می‌برد (کاربر بعداً می‌تواند عوضش کند)
-            if (product.brandId) {
-                setBrandMode(true);
-                setSelectedBrand({ id: product.brandId, title: (product as any).brandTitle || '' });
-            } else {
-                setBrandMode(null);
-                setSelectedBrand(null);
-            }
             // ✅ عکس کالای مرجع رو فقط اگه عکس موجود نباشه اضافه کن
             const imgUrl = product.thumbnailUrl || product.imageUrl;
             if (imgUrl) {
@@ -360,14 +350,23 @@ export function AdFormProvider({ adId, onSuccess, children }: { adId?: string; o
         setPayment((p) => {
             if (p.terms.some((t) => t.days === days))
                 return { ...p, terms: p.terms.filter((t) => t.days !== days) };
-            return { ...p, terms: [...p.terms, { days, price: 0 }].sort((a, b) => a.days - b.days) };
+            return { ...p, terms: [...p.terms, { _uid: termUid(), days, price: 0 }].sort((a, b) => a.days - b.days) };
         });
     };
-    const setTermPrice = (days: number, price: number) => {
-        setPayment((p) => ({
-            ...p,
-            terms: p.terms.map((x) => x.days === days ? { ...x, price: price || 0 } : x),
-        }));
+    // ✅ سررسید دلخواه — چک از ۲ روزه تا چند ماهه؛ روزش در ردیف قابل ویرایش است
+    const addCustomTerm = () => {
+        setPayment((p) => p.terms.some((t) => t.days === 0)
+            ? p
+            : { ...p, terms: [...p.terms, { _uid: termUid(), days: 0, price: 0 }] });
+    };
+    const setTermDays = (uid: string, days: number) => {
+        setPayment((p) => ({ ...p, terms: p.terms.map((t) => t._uid === uid ? { ...t, days } : t) }));
+    };
+    const setTermPrice = (uid: string, price: number) => {
+        setPayment((p) => ({ ...p, terms: p.terms.map((t) => t._uid === uid ? { ...t, price: price || 0 } : t) }));
+    };
+    const removeTerm = (uid: string) => {
+        setPayment((p) => ({ ...p, terms: p.terms.filter((t) => t._uid !== uid) }));
     };
     const setChequeNote = (note: string) => setPayment((p) => ({ ...p, note }));
     const toggleAdvanced = () => setShowAdvanced((v) => !v);
@@ -468,7 +467,8 @@ export function AdFormProvider({ adId, onSuccess, children }: { adId?: string; o
                 ...p,
                 categoryId: ad.categoryId || '',
                 productType: ad.productType || ad.title || '',
-                singleUnitPrice: ad.singleUnitPrice || 0,
+                // ✅ قیمت تکی قدیمیِ خالی — از روی واحد فروش محاسبه می‌شود (الزام جدید)
+                singleUnitPrice: ad.singleUnitPrice || (ad.unitPrice ? Math.round(ad.unitPrice / (ad.unitQty || 1)) : 0),
                 unitPrice: ad.unitPrice || 0,
                 consumerPrice: ad.consumerPrice || 0,
                 minQuantity: ad.minQuantity || 1,
@@ -482,29 +482,25 @@ export function AdFormProvider({ adId, onSuccess, children }: { adId?: string; o
                 giftPrice: ad.giftPrice || 0,
                 volumeTiers: ad.volumeTiers || [],
                 productReferenceId: ad.productReferenceId || '',
-                brandId: ad.brandId || '',
             }));
-            // ✅ برند آگهی موجود — تصمیم قبلی فروشنده بازگردانی می‌شود
-            setBrandMode(ad.brandId ? true : false);
-            setSelectedBrand(ad.brandId ? { id: ad.brandId, title: ad.brand?.title || '' } : null);
-            // ✅ اگه آگهی کالای مرجع داره، اون رو نمایش بده (برند هم از مرجع ارث می‌بره)
+            // ✅ کالای مرجع آگهی — برند هم از مرجع می‌آید (فرم آگهی انتخابگر برند ندارد)
             if (ad.productReferenceId) {
                 setSelectedProduct({
                     id: ad.productReferenceId,
                     title: ad.productRef?.title || ad.productType || ad.title || '',
-                    brandId: ad.brandId,
-                    brandTitle: ad.brand?.title,
+                    brandId: ad.productRef?.brandId ?? ad.brandId ?? undefined,
+                    brandTitle: ad.productRef?.brand?.title ?? ad.brand?.title ?? undefined,
                     imageUrl: ad.productRef?.imageUrl,
                     thumbnailUrl: ad.productRef?.thumbnailUrl,
                 });
             }
-            // ✅ شرایط پرداخت چکی — از مدل قدیمی paymentMethods
+            // ✅ شرایط پرداخت چکی — از مدل قدیمی paymentMethods (سررسیدها الان قابل ویرایش‌اند)
             const pmOld = ad.paymentMethods;
             if (pmOld?.cheque?.length > 0) {
                 setPayment({
                     chequeOn: true,
                     terms: (pmOld.cheque as any[])
-                        .map((c) => ({ days: c.days || 30, price: c.price || 0 }))
+                        .map((c) => ({ _uid: termUid(), days: c.days || 30, price: c.price || 0 }))
                         .sort((a: any, b: any) => a.days - b.days),
                     note: pmOld.chequeDescription || '',
                     installment: pmOld.installment || [],
@@ -539,8 +535,12 @@ export function AdFormProvider({ adId, onSuccess, children }: { adId?: string; o
                 if (!formData.unitId) errs.push('واحد فروش را انتخاب کن.');
             }
         } else if (step === 2) {
+            // ✅ سررسید چک دلخواه — ردیف بدون روزِ معتبر اجازهٔ عبور ندارد
+            if (payment.chequeOn && payment.terms.some((t) => t.days <= 0))
+                errs.push('تعداد روز سررسید چک را وارد کن.');
             if (isWholesale) {
                 if (formData.minQuantity <= 0) errs.push('حداقل حجم فروش را وارد کن.');
+                // ✅ قیمت تکی (قیمت واحد خرید مصرف‌کننده) اجباری — مبنای فیلتر بازه قیمتی بازار
                 if (formData.singleUnitPrice <= 0) errs.push('قیمت تکی را وارد کن.');
                 if (formData.unitPrice <= 0) errs.push('قیمت عمده را وارد کن.');
                 if (formData.availableQuantity <= 0) errs.push('موجودی تضمینی را وارد کن.');
@@ -556,6 +556,8 @@ export function AdFormProvider({ adId, onSuccess, children }: { adId?: string; o
                     errs.push('قیمت مصرف‌کننده نمی‌تواند از قیمت عمده کمتر باشد.');
             } else {
                 if (formData.unitPrice <= 0) errs.push('قیمت را وارد کن.');
+                // ✅ قیمت تکی در تک‌فروشی هم اجباری — با پر کردن قیمت، از روی واحد محاسبه می‌شود
+                if (formData.singleUnitPrice <= 0) errs.push('قیمت تکی را وارد کن.');
             }
         } else if (step === 3) {
             if (!formData.cityCode) errs.push('محل کالا را انتخاب کن.');
@@ -597,10 +599,16 @@ export function AdFormProvider({ adId, onSuccess, children }: { adId?: string; o
             let adResultId: string = '';
 
             // ✅ شرایط پرداخت چکی — همان shape مدل قدیمی (سازگار با نمایش جزئیات آگهی)
-            // installment قدیمی حفظ می‌شه تا داده‌های اقساطی آگهی‌های قبلی موقع ویرایش از بین نره
-            const paymentData = payment.chequeOn && payment.terms.length > 0 ? {
+            // سررسید دلخواه مجاز؛ ردیف‌های بی‌روز حذف؛ روزهای تکراری ادغام (قیمتِ صریح مقدم است)
+            const chequeMap = new Map<number, number>();
+            for (const t of [...payment.terms].sort((a, b) => a.days - b.days)) {
+                if (t.days <= 0) continue;
+                const price = t.price > 0 ? t.price : formData.unitPrice;
+                if (!chequeMap.has(t.days) || t.price > 0) chequeMap.set(t.days, price);
+            }
+            const paymentData = payment.chequeOn && chequeMap.size > 0 ? {
                 description: '',
-                cheque: payment.terms.map((t) => ({ days: t.days, price: t.price > 0 ? t.price : formData.unitPrice })),
+                cheque: Array.from(chequeMap.entries()).map(([days, price]) => ({ days, price })),
                 chequeDescription: payment.note.trim() || '',
                 installment: payment.installment || [],
                 installmentDescription: payment.installmentDescription || '',
@@ -621,8 +629,7 @@ export function AdFormProvider({ adId, onSuccess, children }: { adId?: string; o
                         title: composedTitle,
                         productType: selectedProduct?.title || formData.productType,
                         productReferenceId: selectedProduct?.id || null,
-                        // ✅ برند: «بدون برند» صریح → null | انتخاب کاربر → ارث از مرجع
-                        brandId: brandMode === false ? null : (selectedBrand?.id || selectedProduct?.brandId || null),
+                        // ✅ برند در سطح کالای مرجع تعیین تکلیف می‌شود — سرور از مرجع می‌خواند
                         unitPrice: formData.unitPrice,
                         singleUnitPrice: formData.singleUnitPrice || null,
                         consumerPrice: formData.consumerPrice || null,
@@ -655,8 +662,7 @@ export function AdFormProvider({ adId, onSuccess, children }: { adId?: string; o
                     title: composedTitle,
                     productType: selectedProduct?.title || formData.productType,
                     productReferenceId: selectedProduct?.id || undefined,
-                    // ✅ برند: بدون برند → undefined | انتخاب کاربر → ارث از مرجع
-                    brandId: brandMode === false ? undefined : ((selectedBrand as any)?.id || selectedProduct?.brandId || undefined),
+                    // ✅ برند در سطح کالای مرجع تعیین تکلیف می‌شود — سرور از مرجع می‌خواند
                     unitPrice: formData.unitPrice,
                     singleUnitPrice: formData.singleUnitPrice || null,
                     consumerPrice: formData.consumerPrice || null,
@@ -704,7 +710,7 @@ export function AdFormProvider({ adId, onSuccess, children }: { adId?: string; o
         catalogId, hasCatalogId,
         currentStep, submitting,
         selectedCatalog, catalogLoading, adLoading, allUnits: allUnits as any[],
-        formData, selectedProduct, selectedBrand, brandMode, setSelectedBrand, setBrandMode,
+        formData, selectedProduct,
         images, payment, showAdvanced,
         localUnitSettings, localCategoryTree,
         salesType, isWholesale, categoryTree, hasCategoryTree,
@@ -714,7 +720,7 @@ export function AdFormProvider({ adId, onSuccess, children }: { adId?: string; o
         patchForm, selectProduct, selectUnit,
         handleSingleUnitPriceChange, handleUnitPriceChange, handleUnitQtyChange,
         openImagePicker, removeImage, addImageFile, imageInputRef,
-        setChequeOn, toggleChequeTerm, setTermPrice, setChequeNote,
+        setChequeOn, toggleChequeTerm, addCustomTerm, setTermDays, setTermPrice, removeTerm, setChequeNote,
         toggleAdvanced,
         nextStep, prevStep, goToStep, validateStep,
         unitModalOpen, setUnitModalOpen, catModalOpen, setCatModalOpen,

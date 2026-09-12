@@ -1,10 +1,11 @@
 // app/ad/form/ChequeSection.tsx
 // ✅ بخش شرایط پرداخت — چک (مشترک بین عمده و تک‌فروشی)
+// سررسیدهای قالبی چیپ میان‌برند؛ روزِ هر ردیف قابل ویرایش + سررسید دلخواه (از ۲ روزه تا چند ماهه)
 
 'use client';
 
 import React from 'react';
-import { Banknote, Zap } from 'lucide-react';
+import { Banknote, Plus, X, Zap } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { NumberInput } from '@/components/common/NumberInput';
 import { useAdForm } from './AdFormStore';
@@ -12,7 +13,7 @@ import { SectionTitle } from './ui-bits';
 import { CURRENCY, CHEQUE_TERMS } from './constants';
 
 export function ChequeSection() {
-    const { payment, setChequeOn, toggleChequeTerm, setTermPrice, setChequeNote, unitName, formData } = useAdForm();
+    const { payment, setChequeOn, toggleChequeTerm, addCustomTerm, setTermDays, setTermPrice, removeTerm, setChequeNote, unitName, formData } = useAdForm();
 
     return (
         <section className="rounded-2xl bg-surface-container-low/60 border border-outline-variant/30 p-4 space-y-3">
@@ -32,7 +33,7 @@ export function ChequeSection() {
             {payment.chequeOn && (
                 <div className="space-y-2.5 animate-in fade-in duration-200">
                     <p className="text-[10px] text-on-surface-variant/70 leading-4">
-                        سررسید چک‌هایی که قبول می‌کنی رو انتخاب کن — می‌تونی برای هر کدوم قیمت متفاوت بذاری.
+                        سررسید و قیمت هر چک را خودت تعیین کن — روزها قابل ویرایش‌اند.
                     </p>
                     <div className="flex flex-wrap gap-1.5">
                         {CHEQUE_TERMS.map((t) => {
@@ -45,17 +46,30 @@ export function ChequeSection() {
                                 </button>
                             );
                         })}
+                        {/* ✅ سررسید دلخواه — چک ۲ روزه تا چند ماهه */}
+                        <button type="button" onClick={addCustomTerm}
+                                className="h-8 px-3 rounded-full text-[11px] font-bold border border-dashed border-primary/45 text-primary
+                                    hover:bg-primary/[0.06] transition-colors flex items-center gap-1">
+                            <Plus className="w-3 h-3" /> سررسید دلخواه
+                        </button>
                     </div>
                     {payment.terms.map((term) => (
-                        <div key={term.days} className="flex items-center gap-2 rounded-xl bg-primary/[0.04] border border-primary/15 px-3 py-2">
-                            <span className="text-[11px] font-bold text-primary whitespace-nowrap flex-shrink-0">
-                                چک {CHEQUE_TERMS.find((c) => c.days === term.days)?.label || term.days + ' روزه'}
-                            </span>
+                        <div key={term._uid} className="flex items-center gap-2 rounded-xl bg-primary/[0.04] border border-primary/15 px-3 py-2">
+                            <span className="text-[11px] font-bold text-primary whitespace-nowrap flex-shrink-0">چک</span>
+                            {/* ✅ روزِ سررسید — قابل ویرایش، حتی برای قالبی‌ها */}
+                            <NumberInput value={term.days || undefined}
+                                         onChange={(v) => setTermDays(term._uid, v || 0)}
+                                         unit="روزه" placeholder="مثلاً ۴۵"
+                                         className="h-9 w-24 flex-shrink-0" />
                             <NumberInput value={term.price || undefined}
-                                         onChange={(v) => setTermPrice(term.days, v || 0)}
+                                         onChange={(v) => setTermPrice(term._uid, v || 0)}
                                          unit={`${CURRENCY}/${unitName}`}
                                          placeholder={formData.unitPrice ? formData.unitPrice.toLocaleString('fa-IR') : undefined}
                                          className="h-9 flex-1" />
+                            <button type="button" onClick={() => removeTerm(term._uid)} title="حذف"
+                                    className="w-7 h-7 rounded-lg text-error hover:bg-error/10 flex items-center justify-center flex-shrink-0">
+                                <X className="w-3.5 h-3.5" />
+                            </button>
                         </div>
                     ))}
                     {payment.terms.length > 0 && (

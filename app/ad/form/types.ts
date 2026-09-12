@@ -32,13 +32,13 @@ export interface AdFormValues {
     giftPrice: number;
     volumeTiers: { minQty: number; price: number }[];
     productReferenceId: string;
-    brandId: string;
     /** مدت اعتبار قیمت (ساعت) — ۰ = بدون مهلت؛ فقط برای یادآوری آپدیت قیمت */
     validityHours: number;
 }
 
-/** سررسید چک */
+/** سررسید چک — _uid فقط هویت داخلی فرم است (روز قابل ویرایش) و موقع ثبت حذف می‌شود */
 export interface ChequeTerm {
+    _uid: string;
     days: number;
     price: number;
 }
