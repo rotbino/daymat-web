@@ -15,6 +15,7 @@ import CatalogHeader from './components/CatalogHeader';
 import CatalogProductList from './components/CatalogProductList';
 import CatalogFooter from './components/CatalogFooter';
 import CatalogMembersTab from './components/CatalogMembersTab';
+import CoopRequestModal from './components/CoopRequestModal';
 import { LoginModal } from '@/components/LoginModal';
 import EditBusinessModal from "@/app/[slug]/components/EditBusinessModal";
 import EditProfileModal from "@/app/[slug]/components/EditProfileModal";
@@ -41,6 +42,9 @@ export default function CatalogClient({ slug, initialCatalog, initialSearch = ''
     const [localSaved, setLocalSaved] = useState<boolean | null>(null);
     const [showLogin, setShowLogin] = useState(false);
     const [pendingSave, setPendingSave] = useState(false);
+    // ✅ درخواست همکاری — وضعیت من در کاتالوگ + مودال
+    const [coopOpen, setCoopOpen] = useState(false);
+    const [pendingCoopAfterLogin, setPendingCoopAfterLogin] = useState(false);
     // ✅ ویرایش درجا: مدال پروفایل شخصی
     const [profileEditOpen, setProfileEditOpen] = useState(false);
     // ✅ برگه‌های کاتالوگ: کالاها / اعضا
@@ -58,6 +62,25 @@ export default function CatalogClient({ slug, initialCatalog, initialSearch = ''
     const { refetch: refetchSavedList } = useSavedCatalogs();
 
     const isSaved = localSaved !== null ? localSaved : (savedData?.isSaved || false);
+    // ✅ وضعیت همکاری من با این کاتالوگ — برای دکمهٔ هدر (none | pending | member)
+    const [coopState, setCoopState] = useState<'none' | 'pending' | 'member'>('none');
+    const refetchMyMembershipRef = React.useRef<(() => void) | null>(null);
+    React.useEffect(() => {
+        if (!isAuthenticated || !displayCatalog?.id) { setCoopState('none'); return; }
+        let alive = true;
+        const fetchState = () => apiService.catalog.team.getMyMembership(displayCatalog.id)
+            .then((res: any) => {
+                if (!alive) return;
+                const m = res?.member;
+                const active = !!m && (m.sellerStatus === 'active' || m.customerStatus === 'active' || m.supplierStatus === 'active');
+                const pending = !!m && (m.sellerStatus === 'pending' || m.customerStatus === 'pending' || m.supplierStatus === 'pending');
+                setCoopState(active ? 'member' : pending ? 'pending' : 'none');
+            })
+            .catch(() => { if (alive) setCoopState('none'); });
+        fetchState();
+        refetchMyMembershipRef.current = fetchState;
+        return () => { alive = false; };
+    }, [isAuthenticated, displayCatalog?.id]);
     // ✅ مالکیت
     const isOwner = useMemo(() => {
         if (!user?.id || !displayCatalog?.owner?.id) return false;
@@ -162,6 +185,12 @@ export default function CatalogClient({ slug, initialCatalog, initialSearch = ''
     const handleLoginSuccess = useCallback(() => {
         setShowLogin(false);
 
+        if (pendingCoopAfterLogin) {
+            setPendingCoopAfterLogin(false);
+            setTimeout(() => setCoopOpen(true), 400);
+            return;
+        }
+
         if (pendingSave) {
             setPendingSave(false);
             setTimeout(async () => {
@@ -193,7 +222,7 @@ export default function CatalogClient({ slug, initialCatalog, initialSearch = ''
                 }
             }, 500);
         }
-    }, [pendingSave, displayCatalog?.id, refetchSaved, refetchStats]);
+    }, [pendingSave, pendingCoopAfterLogin, displayCatalog?.id, refetchSaved, refetchStats]);
 
     const handleContact = useCallback(() => {
         const phone = displayCatalog?.owner?.phone || displayCatalog?.phone;
@@ -209,6 +238,17 @@ export default function CatalogClient({ slug, initialCatalog, initialSearch = ''
             else { await navigator.clipboard.writeText(url); toast.success('لینک کاتالوگ کپی شد'); }
         } catch {}
     };
+
+    // ✅ درخواست همکاری — بدون لاگین: اول ورود، بعد مودال
+    const handleCoopRequest = useCallback(() => {
+        const token = localStorage.getItem('accessToken');
+        if (!token) {
+            setPendingCoopAfterLogin(true);
+            setShowLogin(true);
+            return;
+        }
+        setCoopOpen(true);
+    }, []);
 
     // ═══════════════════════════════════════════
     // ✅ ویرایش درجا (فقط مالک)
@@ -251,6 +291,8 @@ export default function CatalogClient({ slug, initialCatalog, initialSearch = ''
                     onShare={handleShare}
                     onSaveToggle={handleSaveToggle}
                     isOwner={isOwner}
+                    coopState={isOwner ? 'member' : coopState}
+                    onCoopRequest={handleCoopRequest}
                     isEditMode={isEditMode}
                     onExitEditMode={exitEditMode}
                     onOpenDashboard={() => router.push(`/my-catalogs?catalog=${displayCatalog.id}`)}
@@ -335,9 +377,19 @@ export default function CatalogClient({ slug, initialCatalog, initialSearch = ''
                 onClose={() => {
                     setShowLogin(false);
                     setPendingSave(false);
+                    setPendingCoopAfterLogin(false);
                 }}
                 onSuccess={handleLoginSuccess}
                 armSlug={displayCatalog?.slug}
+            />
+
+            {/* ✅ درخواست همکاری — یک در برای خریدار/تامین‌کننده/همکار فروش */}
+            <CoopRequestModal
+                open={coopOpen}
+                onClose={() => setCoopOpen(false)}
+                catalogId={displayCatalog.id}
+                catalogName={displayCatalog.name}
+                onSuccess={() => { refetchMyMembershipRef.current?.(); }}
             />
 
             {/* ✅ ویرایش درجا — کسب‌وکار */}

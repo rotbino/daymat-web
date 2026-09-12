@@ -2,15 +2,15 @@
 'use client';
 
 /**
- * برگه «اعضا»ی کاتالوگ — مثل اعضای کانال تلگرام:
- *   همه در یک فهرست ساده: [آواتار] [نام + کسب‌وکار] [نقش بیزینسی] [نقش سیستمی]
- *   برچسب‌ها: فروشنده / ویزیتور / مشتری / مشتری من — مالک کاتالوگ / مدیر کاتالوگ / خودم
+ * برگه «اعضا»ی کاتالوگ — فهرست سادهٔ اعضا:
+ *   همه در یک فهرست: [آواتار] [نام + کسب‌وکار + شهر] [نقش بیزینسی] [نقش سیستمی]
+ *   نقش‌های بیزینسی: فروشنده / ویزیتور / خریدار / تامین‌کننده — سیستمی: مالک کاتالوگ / مدیر کاتالوگ / خودم
  *   • مدیرها: بخش «در انتظار تایید مدیر (مالک کاتالوگ)» + منوی مدیریت روی هر ردیف
- *   • عضوِ فروش: مشتری‌هایش با برچسب «مشتری من» بالای بقیهٔ مشتری‌ها
+ *   • عضوِ فروش: خریدارهایش با برچسب «خریدار من» بالای بقیهٔ خریدارها
  *   • تخصیصِ بقیه دیده نمی‌شود (ضد دزدی مشتری)
- *   • کلیک روی هر عضو → صفحهٔ شخصی (تابلوی کسب‌وکارش)
+ *   • کلیک روی هر عضو → صفحهٔ شخصی (تابلوی کسب‌وکارش)؛ تامین‌کننده → کاتالوگش
  *
- *   لایهٔ داده: موتور تیم کاتالوگ (GET /catalog/:id/team — مدل CatalogMember)
+ *   لایهٔ داده: موتور اعضای کاتالوگ (GET /catalog/:id/team — مدل CatalogMember)
  */
 
 import React, { useCallback, useMemo, useState } from 'react';
@@ -18,13 +18,15 @@ import { useRouter } from 'next/navigation';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import {
     Users, UserPlus, MoreVertical, ShieldCheck, ShieldOff,
-    Trash2, X, Check, Loader2, Search, ArrowLeftRight, MapPin,
+    Trash2, X, Check, Loader2, Search, ArrowLeftRight, MapPin, Handshake,
 } from 'lucide-react';
 import { toast } from 'sonner';
 import { apiService } from '@/lib/api/apiService';
 import { cn } from '@/lib/utils';
 
 // ─── تایپ‌ها — قرارداد getTeam ───
+type PendingRequestType = 'seller' | 'buyer' | 'supplier';
+
 interface TeamMemberCard {
     id: string;
     userId: string;
@@ -37,10 +39,17 @@ interface TeamMemberCard {
     sellerStatus: string | null;
     sellerRole?: 'seller' | 'visitor' | null;
     sellerRegion: string | null;
-    sellerBusiness: { id: string; name: string; slug?: string | null } | null;
+    sellerBusiness: { id: string; name: string; city?: string | null; slug?: string | null } | null;
     customerStatus: string | null;
     customerBusiness: { id: string; name: string; city?: string | null; slug?: string | null } | null;
+    supplierStatus?: string | null;
+    supplierCatalog?: { id: string; name: string; slug?: string | null; logoUrl?: string | null } | null;
+    memberCity?: string | null;
+    memberProvince?: string | null;
     assignedSellerUserId: string | null;
+    // فقط ردیف‌های در انتظار تایید:
+    requestType?: PendingRequestType;
+    pendingGate?: 'manager' | 'business_owner';
     // فروشندگان:
     isOwner?: boolean;
     isAdmin?: boolean;
@@ -64,9 +73,10 @@ interface TeamResponse {
     };
     staff?: TeamMemberCard[];
     sellers: TeamMemberCard[];
-    pendingSellers: TeamMemberCard[];
+    suppliers?: TeamMemberCard[];
+    pendingRequests?: TeamMemberCard[];
     customers: TeamMemberCard[];
-    stats: { sellers: number; activeCustomers?: number; pendingCustomers?: number };
+    stats: { sellers: number; suppliers?: number; activeCustomers?: number; pendingCustomers?: number };
     settings?: { enabled: boolean; freeAdLimit: number; multiSeller: boolean };
 }
 
@@ -280,7 +290,7 @@ function ReassignModal({
 // ردیف سادهٔ عضو — [آواتار] [نام + کسب‌وکار] [نقش بیزینسی] [نقش سیستمی]
 // ═══════════════════════════════════════════
 function MemberRow({
-    m, catalogId, canManage, sellers, onChanged, pending, onApproveRole, onReject,
+    m, catalogId, canManage, sellers, onChanged, pending, onApproveRole, onApprove, onReject,
 }: {
     m: TeamMemberCard;
     catalogId: string;
@@ -290,6 +300,7 @@ function MemberRow({
     /** ردیف‌های در انتظار تایید — دکمه‌های تایید/رد جای منو */
     pending?: boolean;
     onApproveRole?: (role: 'seller' | 'visitor') => void;
+    onApprove?: () => void;
     onReject?: () => void;
 }) {
     const router = useRouter();
@@ -316,20 +327,23 @@ function MemberRow({
     };
 
     const isOwnerMember = m.isOwner === true;
-    const isAdminMember = m.isAdmin === true || (m.role === 'catalog_admin' && (m.sellerStatus === 'active' || m.customerStatus === 'active'));
+    const isAdminMember = m.isAdmin === true || (m.role === 'catalog_admin' && (m.sellerStatus === 'active' || m.customerStatus === 'active' || m.supplierStatus === 'active'));
     const isSellerMember = m.sellerStatus === 'active';
     const isCustomerMember = m.customerStatus === 'active';
+    const isSupplierMember = m.supplierStatus === 'active';
 
     // نقش بیزینسی (ستون میانی)
     const bizBadge = m.__isMyCustomer
-        ? { text: 'مشتری من', cls: 'bg-primary text-on-primary' }
-        : isCustomerMember
-            ? { text: 'مشتری', cls: 'bg-gray-100 text-gray-600 dark:bg-gray-800 dark:text-gray-300' }
-            : isSellerMember
-                ? (m.sellerRole === 'visitor'
-                    ? { text: 'ویزیتور', cls: 'bg-violet-100 text-violet-700 dark:bg-violet-900/30 dark:text-violet-300' }
-                    : { text: 'فروشنده', cls: 'bg-emerald-50 text-emerald-700 dark:bg-emerald-900/30 dark:text-emerald-300' })
-                : null;
+        ? { text: 'خریدار من', cls: 'bg-primary text-on-primary' }
+        : isSupplierMember
+            ? { text: 'تامین‌کننده', cls: 'bg-sky-50 text-sky-700 dark:bg-sky-900/30 dark:text-sky-300' }
+            : isCustomerMember
+                ? { text: 'خریدار', cls: 'bg-gray-100 text-gray-600 dark:bg-gray-800 dark:text-gray-300' }
+                : isSellerMember
+                    ? (m.sellerRole === 'visitor'
+                        ? { text: 'ویزیتور', cls: 'bg-violet-100 text-violet-700 dark:bg-violet-900/30 dark:text-violet-300' }
+                        : { text: 'فروشنده', cls: 'bg-emerald-50 text-emerald-700 dark:bg-emerald-900/30 dark:text-emerald-300' })
+                    : null;
 
     // نقش سیستمی (ستون آخر): مالک کاتالوگ ← مدیر کاتالوگ ← خودم
     const sysBadge = isOwnerMember
@@ -340,26 +354,39 @@ function MemberRow({
                 ? { text: 'خودم', cls: 'border border-outline-variant/60 text-on-surface-variant bg-transparent' }
                 : null;
 
-    // صفحهٔ شخصی — تابلوی کسب‌وکار عضو
-    const personalSlug = m.customerBusiness?.slug || m.sellerBusiness?.slug || m.business?.slug || null;
+    // صفحهٔ شخصی — تابلوی کسب‌وکار عضو؛ تامین‌کننده → کاتالوگ خودش
+    const personalSlug = m.supplierCatalog?.slug || m.customerBusiness?.slug || m.sellerBusiness?.slug || m.business?.slug || null;
 
     const openPersonal = () => {
         if (personalSlug) router.push(`/${personalSlug}`);
     };
 
+    // شهر/منطقه — برای خریدار و فروشنده مهم است
+    const cityChip = m.sellerRegion
+        ? m.sellerRegion
+        : m.memberCity || (m.customerStatus === 'active' || m.customerStatus === 'pending' ? m.customerBusiness?.city : null) || null;
+
     const nameLine = (
         <div className="flex-1 min-w-0">
             <p className="text-sm font-bold truncate">{m.fullName || '—'}</p>
             <p className="text-[11px] text-on-surface-variant truncate mt-0.5 flex items-center gap-2">
-                {(m.customerBusiness?.name || m.sellerBusiness?.name || m.business?.name) && (
-                    <span className="truncate">{m.customerBusiness?.name || m.sellerBusiness?.name || m.business?.name}</span>
-                )}
-                {m.sellerRegion && (
-                    <span className="inline-flex items-center gap-0.5 text-on-surface-variant/70 flex-shrink-0">
-                        <MapPin className="w-3 h-3" />{m.sellerRegion}
+                {(m.customerBusiness?.name || m.sellerBusiness?.name || m.supplierCatalog?.name || m.business?.name) && (
+                    <span className="truncate">
+                        {m.supplierCatalog?.name && m.supplierCatalog?.slug ? 'کاتالوگ: ' : ''}
+                        {m.customerBusiness?.name || m.sellerBusiness?.name || m.supplierCatalog?.name || m.business?.name}
                     </span>
                 )}
-                {pending && <span className="text-amber-600 dark:text-amber-400 flex-shrink-0">در انتظار تایید مدیر (مالک کاتالوگ)</span>}
+                {cityChip && (
+                    <span className="inline-flex items-center gap-0.5 text-on-surface-variant/70 flex-shrink-0">
+                        <MapPin className="w-3 h-3" />{cityChip}
+                    </span>
+                )}
+                {pending && m.requestType === 'buyer' && m.pendingGate === 'business_owner' && !m.__isMe && (
+                    <span className="text-amber-600 dark:text-amber-400 flex-shrink-0">در انتظار تایید صاحب کسب‌وکار</span>
+                )}
+                {pending && (!m.requestType || m.pendingGate === 'manager') && (
+                    <span className="text-amber-600 dark:text-amber-400 flex-shrink-0">در انتظار تایید مدیر (مالک کاتالوگ)</span>
+                )}
             </p>
         </div>
     );
@@ -384,57 +411,76 @@ function MemberRow({
                 {bizBadge?.text || '—'}
             </span>
             {/* تایید/رد — فقط ردیف‌های در انتظار تایید */}
-            {pending ? (
-                <div className="flex items-center gap-1 flex-shrink-0" onClick={(e) => e.stopPropagation()}>
-                    {onApproveRole ? (
-                        <div className="relative">
-                            <button
-                                onClick={() => setApproveOpen((v) => !v)}
-                                disabled={busy}
-                                className="h-8 px-2.5 rounded-xl bg-emerald-600 text-white text-[11px] font-bold flex items-center gap-1 disabled:opacity-50"
-                            >
-                                {busy ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <Check className="w-3.5 h-3.5" />}
-                                تایید
-                            </button>
-                            {approveOpen && (
-                                <>
-                                    <div className="fixed inset-0 z-30" onClick={() => setApproveOpen(false)} />
-                                    <div className="absolute left-0 top-full mt-1 z-40 w-44 bg-white dark:bg-gray-900 rounded-xl shadow-lg border border-outline-variant/30 py-1.5 text-xs">
-                                        <button
-                                            onClick={() => onApproveRole?.('seller')}
-                                            className="w-full px-3 py-2.5 hover:bg-surface-container-high dark:hover:bg-gray-800 text-right"
-                                        >
-                                            به‌عنوان <b>فروشنده</b>
-                                        </button>
-                                        <button
-                                            onClick={() => onApproveRole?.('visitor')}
-                                            className="w-full px-3 py-2.5 hover:bg-surface-container-high dark:hover:bg-gray-800 text-right"
-                                        >
-                                            به‌عنوان <b>ویزیتور</b>
-                                        </button>
-                                    </div>
-                                </>
+            {pending && (
+                m.pendingGate === 'business_owner' && m.requestType === 'buyer' && !m.__isMe
+                    ? null /* خریدارِ ثبت‌شده توسط فروشنده — تایید با صاحبِ کسب‌وکار است، نه مدیر */
+                    : (
+                        <div className="flex items-center gap-1 flex-shrink-0" onClick={(e) => e.stopPropagation()}>
+                            {onApproveRole ? (
+                                /* همکار فروش — تایید با انتخاب نقش بیزینسی */
+                                <div className="relative">
+                                    <button
+                                        onClick={() => setApproveOpen((v) => !v)}
+                                        disabled={busy}
+                                        className="h-8 px-2.5 rounded-xl bg-emerald-600 text-white text-[11px] font-bold flex items-center gap-1 disabled:opacity-50"
+                                    >
+                                        {busy ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <Check className="w-3.5 h-3.5" />}
+                                        تایید
+                                    </button>
+                                    {approveOpen && (
+                                        <>
+                                            <div className="fixed inset-0 z-30" onClick={() => setApproveOpen(false)} />
+                                            <div className="absolute left-0 top-full mt-1 z-40 w-44 bg-white dark:bg-gray-900 rounded-xl shadow-lg border border-outline-variant/30 py-1.5 text-xs">
+                                                <button
+                                                    onClick={() => onApproveRole?.('seller')}
+                                                    className="w-full px-3 py-2.5 hover:bg-surface-container-high dark:hover:bg-gray-800 text-right"
+                                                >
+                                                    به‌عنوان <b>فروشنده</b>
+                                                </button>
+                                                <button
+                                                    onClick={() => onApproveRole?.('visitor')}
+                                                    className="w-full px-3 py-2.5 hover:bg-surface-container-high dark:hover:bg-gray-800 text-right"
+                                                >
+                                                    به‌عنوان <b>ویزیتور</b>
+                                                </button>
+                                            </div>
+                                        </>
+                                    )}
+                                </div>
+                            ) : m.requestType === 'buyer' && m.pendingGate === 'business_owner' && m.__isMe ? (
+                                /* خودِ صاحب کسب‌وکارِ خریدار — تایید ثبتِ فروشنده */
+                                <button
+                                    onClick={() => act(() => apiService.catalog.team.confirmCustomer(catalogId, m.id), 'خریدار تایید شد')}
+                                    disabled={busy}
+                                    className="h-8 px-2.5 rounded-xl bg-emerald-600 text-white text-[11px] font-bold flex items-center gap-1 disabled:opacity-50"
+                                >
+                                    {busy ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <Check className="w-3.5 h-3.5" />}
+                                    تایید
+                                </button>
+                            ) : (
+                                /* خریدارِ خودخواه / تامین‌کننده — تایید مستقیم مدیر */
+                                <button
+                                    onClick={() => onApprove?.()}
+                                    disabled={busy}
+                                    className="h-8 px-2.5 rounded-xl bg-emerald-600 text-white text-[11px] font-bold flex items-center gap-1 disabled:opacity-50"
+                                >
+                                    {busy ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <Check className="w-3.5 h-3.5" />}
+                                    تایید
+                                </button>
+                            )}
+                            {onReject && (
+                                <button
+                                    onClick={onReject}
+                                    disabled={busy}
+                                    className="h-8 px-2.5 rounded-xl bg-gray-200 dark:bg-gray-800 text-gray-700 dark:text-gray-300 text-[11px] font-bold disabled:opacity-50"
+                                >
+                                    <X className="w-3.5 h-3.5" />
+                                </button>
                             )}
                         </div>
-                    ) : (
-                        <button
-                            onClick={() => act(() => apiService.catalog.team.confirmCustomer(catalogId, m.id), 'مشتری تایید شد')}
-                            disabled={busy}
-                            className="h-8 px-2.5 rounded-xl bg-emerald-600 text-white text-[11px] font-bold flex items-center gap-1 disabled:opacity-50"
-                        >
-                            {busy ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <Check className="w-3.5 h-3.5" />}
-                            تایید
-                        </button>
-                    )}
-                    <button
-                        onClick={() => (onReject ? onReject() : act(() => apiService.catalog.team.declineCustomer(catalogId, m.id), 'درخواست رد شد'))}
-                        disabled={busy}
-                        className="h-8 px-2.5 rounded-xl bg-gray-200 dark:bg-gray-800 text-gray-700 dark:text-gray-300 text-[11px] font-bold disabled:opacity-50"
-                    >
-                        <X className="w-3.5 h-3.5" />
-                    </button>
-                </div>
-            ) : (
+                    )
+            )}
+            {!pending && (
                 <>
                     {/* منوی مدیریت — قبل از ستون نقش سیستمی */}
                     {canManage && !isOwnerMember && (
@@ -502,7 +548,9 @@ function MemberRow({
                                                 onClick={() => act(
                                                     () => isSellerMember
                                                         ? apiService.catalog.team.removeSeller(catalogId, m.id)
-                                                        : apiService.catalog.team.removeCustomer(catalogId, m.id),
+                                                        : isSupplierMember
+                                                            ? apiService.catalog.team.removeSupplier(catalogId, m.id)
+                                                            : apiService.catalog.team.removeCustomer(catalogId, m.id),
                                                     'عضو حذف شد',
                                                 )}
                                                 disabled={busy}
@@ -563,6 +611,7 @@ export default function CatalogMembersTab({ catalogId, onLoginNeeded }: { catalo
 
     const sellers = useMemo(() => data?.sellers || [], [data]);
     const staff = useMemo(() => data?.staff || [], [data]);
+    const suppliers = useMemo(() => data?.suppliers || [], [data]);
     const customers = useMemo(
         () => (data?.customers || []).map((c) => ({
             ...c,
@@ -570,28 +619,29 @@ export default function CatalogMembersTab({ catalogId, onLoginNeeded }: { catalo
         })),
         [data, myRole],
     );
-    const pendingSellers = useMemo(() => (canManage ? data?.pendingSellers || [] : []), [data, canManage]);
-    const pendingCustomers = useMemo(
-        () => customers.filter((c) => c.customerStatus === 'pending'),
-        [customers],
-    );
-    const pendingCount = pendingSellers.length + (canManage ? pendingCustomers.length : 0);
+    const pendingRequests = useMemo(() => (canManage ? data?.pendingRequests || [] : []), [data, canManage]);
+    const pendingCount = pendingRequests.length;
 
-    // فهرست ساده: کادر (مالک، مدیرها) → اعضای فروش (خودم اول) → مشتری‌ها (مشتری من اول)
+    // فهرست ساده: کادر (مالک، مدیرها) → همکاران فروش (خودم اول) → تامین‌کننده‌ها → خریدارها (خریدار من اول)
     const ordered = useMemo(() => {
         const rank = (m: TeamMemberCard) => {
             if (m.isOwner) return 0;
             if (m.isAdmin) return 1;
             if (m.userId === myRole?.userId) return 2;
             if (m.sellerStatus === 'active') return 3;
-            if (m.__isMyCustomer) return 4;
-            return 5;
+            if (m.supplierStatus === 'active') return 4;
+            if (m.__isMyCustomer) return 5;
+            return 6;
         };
         const activeCustomers = customers.filter((c) => c.customerStatus === 'active');
-        return [...staff, ...sellers, ...activeCustomers]
+        return [...staff, ...sellers, ...suppliers, ...activeCustomers]
             .map((m) => ({ ...m, __isMe: m.userId === myRole?.userId && !m.isOwner && !m.isAdmin }))
             .sort((a, b) => rank(a) - rank(b));
-    }, [staff, sellers, customers, myRole]);
+    }, [staff, sellers, suppliers, customers, myRole]);
+
+    const isCoopMember = canManage || myRole?.isSeller || myRole?.isPendingSeller ||
+        ordered.some((m) => m.__isMe) ||
+        customers.some((c) => c.userId === myRole?.userId);
 
     // ─── حالت‌های خاص ───
     if (error) {
@@ -627,12 +677,31 @@ export default function CatalogMembersTab({ catalogId, onLoginNeeded }: { catalo
 
     return (
         <div className="space-y-3">
-            {/* سربرگ: شمارنده‌ها + دکمه افزودن مشتری */}
+            {/* کارت دعوت به همکاری — فقط غیرعضوها */}
+            {!isCoopMember && (
+                <div className="rounded-2xl border border-primary/25 bg-primary/5 p-4 flex items-center gap-3">
+                    <span className="w-10 h-10 rounded-xl bg-primary/10 text-primary grid place-items-center flex-shrink-0">
+                        <Handshake className="w-5 h-5" />
+                    </span>
+                    <div className="flex-1 min-w-0">
+                        <p className="text-sm font-bold">با این کاتالوگ همکاری کنید</p>
+                        <p className="text-[11px] text-on-surface-variant mt-0.5">خریدار، تامین‌کننده یا همکار فروش — پس از تایید مدیر (مالک کاتالوگ)</p>
+                    </div>
+                    <button
+                        onClick={onLoginNeeded}
+                        className="h-9 px-4 rounded-xl bg-primary text-on-primary text-xs font-bold flex-shrink-0"
+                    >
+                        درخواست همکاری
+                    </button>
+                </div>
+            )}
+
+            {/* سربرگ: شمارنده‌ها + دکمه افزودن خریدار */}
             <div className="flex items-center justify-between gap-3 flex-wrap">
                 <div className="flex items-center gap-2 text-xs text-on-surface-variant">
                     <Users className="w-4 h-4" />
                     <span>
-                        {ordered.length.toLocaleString('fa-IR')} عضو · {(data?.stats?.activeCustomers || 0).toLocaleString('fa-IR')} مشتری
+                        {ordered.length.toLocaleString('fa-IR')} عضو · {(data?.stats?.activeCustomers || 0).toLocaleString('fa-IR')} خریدار
                     </span>
                 </div>
                 <div className="flex items-center gap-2">
@@ -641,7 +710,7 @@ export default function CatalogMembersTab({ catalogId, onLoginNeeded }: { catalo
                             onClick={() => setShowAddCustomer(true)}
                             className="h-9 px-3 rounded-xl bg-primary text-on-primary text-xs font-bold flex items-center gap-1.5"
                         >
-                            <UserPlus className="w-3.5 h-3.5" />افزودن مشتری
+                            <UserPlus className="w-3.5 h-3.5" />ثبت خریدار
                         </button>
                     )}
                 </div>
@@ -649,7 +718,7 @@ export default function CatalogMembersTab({ catalogId, onLoginNeeded }: { catalo
 
             {myRole?.isOwner && data?.settings && !data.settings.multiSeller && (
                 <p className="text-[11px] text-on-surface-variant bg-surface-container-low dark:bg-gray-900/40 rounded-xl px-3 py-2 leading-5">
-                    چندفروشندگی برای این کاتالوگ غیرفعال است (تنظیم بازار یا اورایت اختصاصی) — فقط خودتان فروشنده هستید.
+                    همکاری در فروش برای این کاتالوگ غیرفعال است (تنظیم بازار یا اورایت اختصاصی) — فقط خودتان فروشنده هستید.
                 </p>
             )}
 
@@ -659,24 +728,30 @@ export default function CatalogMembersTab({ catalogId, onLoginNeeded }: { catalo
                     <p className="text-[11px] font-bold text-amber-700 dark:text-amber-400 px-1">
                         در انتظار تایید مدیر (مالک کاتالوگ) — {pendingCount.toLocaleString('fa-IR')} درخواست
                     </p>
-                    {pendingSellers.map((m) => (
+                    {pendingRequests.map((m) => (
                         <MemberRow
                             key={m.id} m={m} catalogId={catalogId} pending
                             canManage={canManage} sellers={sellers} onChanged={refresh}
-                            onApproveRole={(role) => apiService.catalog.team
+                            onApproveRole={m.requestType === 'seller' ? (role) => apiService.catalog.team
                                 .approveSeller(catalogId, m.id, role)
                                 .then(refresh)
-                                .catch((e: any) => toast.error(e?.message || 'خطا در تایید'))}
-                            onReject={() => apiService.catalog.team
-                                .rejectSeller(catalogId, m.id)
-                                .then(refresh)
-                                .catch((e: any) => toast.error(e?.message || 'خطا در رد'))}
-                        />
-                    ))}
-                    {pendingCustomers.map((m) => (
-                        <MemberRow
-                            key={m.id} m={m} catalogId={catalogId} pending
-                            canManage={canManage} sellers={sellers} onChanged={refresh}
+                                .catch((e: any) => toast.error(e?.message || 'خطا در تایید')) : undefined}
+                            onApprove={m.requestType === 'buyer'
+                                ? () => apiService.catalog.team.approveBuyer(catalogId, m.id)
+                                    .then((r: any) => { toast.success(r?.message || 'به اعضا اضافه شد'); refresh(); })
+                                    .catch((e: any) => toast.error(e?.message || 'خطا در تایید'))
+                                : m.requestType === 'supplier'
+                                    ? () => apiService.catalog.team.approveSupplier(catalogId, m.id)
+                                        .then((r: any) => { toast.success(r?.message || 'به اعضا اضافه شد'); refresh(); })
+                                        .catch((e: any) => toast.error(e?.message || 'خطا در تایید'))
+                                    : undefined}
+                            onReject={m.requestType === 'seller'
+                                ? () => apiService.catalog.team.rejectSeller(catalogId, m.id).then(refresh).catch((e: any) => toast.error(e?.message || 'خطا در رد'))
+                                : m.requestType === 'buyer'
+                                    ? () => apiService.catalog.team.rejectBuyer(catalogId, m.id).then(refresh).catch((e: any) => toast.error(e?.message || 'خطا در رد'))
+                                    : m.requestType === 'supplier'
+                                        ? () => apiService.catalog.team.rejectSupplier(catalogId, m.id).then(refresh).catch((e: any) => toast.error(e?.message || 'خطا در رد'))
+                                        : undefined}
                         />
                     ))}
                 </div>

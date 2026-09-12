@@ -6,7 +6,7 @@ import Image from 'next/image';
 import { useRouter } from 'next/navigation';
 import {
     BadgeCheck, Building2, Package, Phone, User,
-    ArrowRight, Share2, Bookmark, Eye, ChevronDown,
+    ArrowRight, Share2, Bookmark, Eye, ChevronDown, Handshake, Clock,
     Settings, PenLine, Pencil, X, Sparkles,
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
@@ -35,6 +35,9 @@ interface CatalogHeaderProps {
     isSaved: boolean;
     isOwner: boolean;
     shares: number;
+    /** ✅ درخواست همکاری — وضعیت من با این کاتالوگ */
+    coopState?: 'none' | 'pending' | 'member';
+    onCoopRequest?: () => void;
     onContact: () => void;
     onBack: () => void;
     onShare: () => void;
@@ -52,6 +55,7 @@ export default function CatalogHeader({
                                           catalog, total, activeCount, views, saves, isSaved, isOwner,
                                           onContact, onBack, onShare, onSaveToggle, onOpenDashboard,
                                           onEditCatalog, onEditProfile, shares,
+                                          coopState = 'none', onCoopRequest,
                                           isEditMode, onExitEditMode,
                                       }: CatalogHeaderProps) {
     const router = useRouter();
@@ -197,6 +201,26 @@ export default function CatalogHeader({
                                     className="p-2.5 rounded-full bg-white/80 dark:bg-gray-900/70 backdrop-blur border border-gray-200/70 dark:border-white/10 shadow-md hover:scale-105 active:scale-95 transition-transform">
                                 <Settings className="w-5 h-5 text-gray-700 dark:text-gray-200" />
                             </button>
+                        )}
+
+                        {/* ✅ درخواست همکاری — فقط غیرعضوها؛ در انتظار = وضعیت */}
+                        {!isOwner && coopState !== 'member' && onCoopRequest && (
+                            coopState === 'pending' ? (
+                                <span aria-label="درخواست همکاری در انتظار تایید"
+                                      className="h-10 pl-3 pr-2.5 rounded-full backdrop-blur border shadow-md flex items-center gap-1.5
+                                          bg-amber-50/90 dark:bg-amber-950/40 border-amber-200/70 dark:border-amber-800/50">
+                                    <Clock className="w-4 h-4 text-amber-500 flex-shrink-0" />
+                                    <span className="text-[11px] font-bold text-amber-700 dark:text-amber-300 hidden sm:inline">در انتظار تایید</span>
+                                </span>
+                            ) : (
+                                <button onClick={onCoopRequest} aria-label="درخواست همکاری"
+                                        title="درخواست همکاری با این کاتالوگ"
+                                        className="h-10 pl-3 pr-2.5 rounded-full backdrop-blur border shadow-md hover:scale-105 active:scale-95 transition-transform flex items-center gap-1.5
+                                            bg-primary/10 dark:bg-primary/20 border-primary/30 text-primary">
+                                    <Handshake className="w-4 h-4 flex-shrink-0" />
+                                    <span className="text-[11px] font-bold hidden sm:inline">همکاری</span>
+                                </button>
+                            )
                         )}
 
                         {/* ✅ ذخیره */}

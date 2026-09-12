@@ -152,11 +152,26 @@ export const apiService = {
             getMyMemberships: (): Promise<any[]> =>
                 apiRequest('/catalog/team/memberships'),
 
-            joinAsSeller: (catalogId: string, data?: { sellerBusinessId?: string; note?: string }): Promise<any> =>
-                apiRequest(`/catalog/${catalogId}/team/join-seller`, { method: 'POST', data: data || {} }),
+            joinCoop: (catalogId: string, data: { type: 'seller' | 'buyer' | 'supplier'; sellerRole?: 'seller' | 'visitor'; businessId?: string; supplierCatalogId?: string; note?: string }): Promise<any> =>
+                apiRequest(`/catalog/${catalogId}/team/join`, { method: 'POST', data }),
 
             approveSeller: (catalogId: string, memberId: string, sellerRole?: 'seller' | 'visitor'): Promise<any> =>
                 apiRequest(`/catalog/${catalogId}/team/sellers/${memberId}/approve`, { method: 'POST', data: sellerRole ? { sellerRole } : {} }),
+
+            approveBuyer: (catalogId: string, memberId: string, sellerUserId?: string): Promise<any> =>
+                apiRequest(`/catalog/${catalogId}/team/buyers/${memberId}/approve`, { method: 'POST', data: sellerUserId ? { sellerUserId } : {} }),
+
+            rejectBuyer: (catalogId: string, memberId: string, reason?: string): Promise<any> =>
+                apiRequest(`/catalog/${catalogId}/team/buyers/${memberId}/reject`, { method: 'POST', data: { reason } }),
+
+            approveSupplier: (catalogId: string, memberId: string): Promise<any> =>
+                apiRequest(`/catalog/${catalogId}/team/suppliers/${memberId}/approve`, { method: 'POST' }),
+
+            rejectSupplier: (catalogId: string, memberId: string, reason?: string): Promise<any> =>
+                apiRequest(`/catalog/${catalogId}/team/suppliers/${memberId}/reject`, { method: 'POST', data: { reason } }),
+
+            removeSupplier: (catalogId: string, memberId: string, note?: string): Promise<any> =>
+                apiRequest(`/catalog/${catalogId}/team/suppliers/${memberId}${note ? `?note=${encodeURIComponent(note)}` : ''}`, { method: 'DELETE' }),
 
             setSellerRole: (catalogId: string, memberId: string, sellerRole: 'seller' | 'visitor'): Promise<any> =>
                 apiRequest(`/catalog/${catalogId}/team/sellers/${memberId}/role`, { method: 'PATCH', data: { sellerRole } }),
