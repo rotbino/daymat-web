@@ -199,13 +199,8 @@ export const useCreateCatalog = () => {
             queryClient.invalidateQueries({ queryKey: ['catalog', 'active'] });
             queryClient.invalidateQueries({ queryKey: ['catalogs'] }); // کش صفحهٔ «مدیریت کاتالوگ»
         },
-        onError: (error: ApiError) => {
-            if (error.data?.errorCode === 'DUPLICATE_CATALOG_NAME') {
-                toast.error('شما قبلاً یک کسب‌وکار با این نام ثبت کرده‌اید');
-            } else {
-                toast.error(error.message || 'خطا در ثبت کسب‌وکار');
-            }
-        },
+        // ✅ توست خطا اینجا نمی‌زنیم — صفحهٔ فراخوان (register) خطاها را با کد و پیام اختصاصی مدیریت می‌کند
+        //    (قبلاً اینجا + catchِ صفحه هر دو توست می‌زدند = دو پیام برای یک خطا)
     });
 };
 

@@ -96,6 +96,8 @@ export default function RegisterCatalogPage() {
     const [salesType, setSalesType] = useState<'wholesale' | 'retail' | 'service'>('wholesale');
     const [errors, setErrors] = useState<Record<string, string>>({});
     const createCatalogMutation = useCreateCatalog();
+    // ✅ گارد سینکرون دابل‌سابمیت — دو کلیک/Enter در یک تیک، قبل از رندرِ مجددِ دکمه، دو درخواست نمی‌زند
+    const submittingRef = React.useRef(false);
 
     const selectedBiz = useMemo(
         () => myBizList.find((b) => b.id === bizId) ?? null,
@@ -188,10 +190,12 @@ export default function RegisterCatalogPage() {
 
     const handleSubmit = async (ev: React.FormEvent) => {
         ev.preventDefault();
+        if (submittingRef.current) return; // ✅ ضد دابل‌کال — وسطِ یک submitِ درجریان هستیم
         if (nameDup) return;
         if (!validate()) return;
         if (!selectedBiz) return;
 
+        submittingRef.current = true;
         try {
             // ✅ صنف، لوگو و مشخصات اصلی هدر از کسب‌وکار ارث می‌رسد
             // ✅ نام کاتالوگ قابل ویرایش است تا کاتالوگ‌های هم‌نام اشتباه نشوند
@@ -233,9 +237,14 @@ export default function RegisterCatalogPage() {
                 setErrors((p) => ({ ...p, slug: 'reserved' }));
             } else if (error?.data?.errorCode === 'DUPLICATE_CATALOG_NAME') {
                 setErrors((p) => ({ ...p, name: 'dup' }));
+            } else if (error?.data?.errorCode === 'BUSINESS_HAS_OTHER_CATALOG') {
+                // ✅ تعارض عضویت بازار — پیامِ روشنِ خودِ سرور (با رفعِ ارجاعِ یتیم دیگر رخ نمی‌دهد مگر تعارض واقعی)
+                toast.error(error?.data?.message || 'شما در این بازار با کاتالوگ دیگری فعال هستید');
             } else {
-                toast.error(error?.message || 'خطا در ساخت کاتالوگ');
+                toast.error(error?.data?.message || error?.message || 'خطا در ساخت کاتالوگ');
             }
+        } finally {
+            submittingRef.current = false;
         }
     };
 
