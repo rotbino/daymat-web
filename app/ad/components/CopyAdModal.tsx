@@ -48,7 +48,7 @@ export function CopyAdModal({ isOpen, onClose, ad, onSuccess }: CopyAdModalProps
                 productType: ad.productType,
                 // ✅ کالای مرجع کپی می‌شه — ویژگی‌ها (specs) مال کالاست و خودکار همراهش میاد
                 productReferenceId: (ad as any).productReferenceId || (ad as any).productRef?.id || undefined,
-                brandId: (ad as any).brandId || (ad as any).brand?.id || undefined,
+                // ✅ برند از کالای مرجع می‌آید — در سطح آگهی ارسال نمی‌شود
                 unitPrice: unitPrice,
                 minQuantity: minQuantity,
                 availableQuantity: ad.availableQuantity,
