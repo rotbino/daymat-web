@@ -62,6 +62,8 @@ export default function CatalogHeader({
     const { isAuthenticated } = useSelector((state: RootState) => state.auth);
     const tier = catalog.verificationTier;
     const ownerAvatar = catalog.owner?.avatarUrl || catalog.owner?.avatarFile?.thumbnailPath;
+    // ✅ لوگوی کاتالوگ در نبودِ خودش از کسب‌وکار ارث می‌برد — هویتِ شرکت همیشه دیده شود
+    const catalogLogoSrc = catalog.logoUrl || catalog.business?.logoUrl || null;
 
     const [showSavedDropdown, setShowSavedDropdown] = useState(false);
     const dropdownRef = useRef<HTMLDivElement>(null);
@@ -285,8 +287,8 @@ export default function CatalogHeader({
                                 <div className="relative w-20 h-20 shrink-0">
                                     <div className="w-full h-full p-[2px]">
                                         <div className="w-full h-full overflow-hidden">
-                                            {catalog.logoUrl ? (
-                                                <Image src={catalog.logoUrl} alt={catalog.name} fill sizes="80px" className="object-cover rounded-lg" unoptimized />
+                                            {catalogLogoSrc ? (
+                                                <Image src={catalogLogoSrc} alt={catalog.name} fill sizes="80px" className="object-cover rounded-lg" unoptimized />
                                             ) : (
                                                 <div className="w-full h-full grid place-items-center bg-gray-50 dark:bg-gray-800 rounded-lg"><Building2 className="w-8 h-8 text-gray-300" /></div>
                                             )}
@@ -393,8 +395,8 @@ export default function CatalogHeader({
                                 <div className="relative w-14 h-14 shrink-0">
                                     <div className="w-full h-full">
                                         <div className="w-full h-full overflow-hidden">
-                                            {catalog.logoUrl ? (
-                                                <Image src={catalog.logoUrl} alt={catalog.name} fill sizes="56px" className="object-cover rounded-lg" unoptimized />
+                                            {catalogLogoSrc ? (
+                                                <Image src={catalogLogoSrc} alt={catalog.name} fill sizes="56px" className="object-cover rounded-lg" unoptimized />
                                             ) : (
                                                 <div className="w-full h-full grid place-items-center bg-gray-50 dark:bg-gray-800 rounded-lg"><Building2 className="w-6 h-6 text-gray-300" /></div>
                                             )}

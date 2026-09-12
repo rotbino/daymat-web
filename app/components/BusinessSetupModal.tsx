@@ -1,12 +1,13 @@
 // app/components/BusinessSetupModal.tsx
 'use client';
 
-import React, { useEffect, useState } from 'react';
-import { Building2, Loader2, X, Check, Layers } from 'lucide-react';
+import React, { useEffect, useRef, useState } from 'react';
+import { Building2, Camera, Loader2, X, Check, Layers } from 'lucide-react';
+import Image from 'next/image';
 import { createPortal } from 'react-dom';
 import { toast } from 'sonner';
 import { cn } from '@/lib/utils';
-import { useCreateBusinessEntity, useUpdateBusinessEntity } from '@/lib/api/apiHooks';
+import { useCreateBusinessEntity, useUpdateBusinessEntity, useUploadFile } from '@/lib/api/apiHooks';
 import { getLegacyTypeFromRole } from '@/lib/api/data-types';
 import { IranLocationSelector } from '@/app/components/IranLocationSelector';
 import IndustryAutocomplete from '@/app/components/IndustryAutocomplete';
@@ -40,6 +41,8 @@ export default function BusinessSetupModal({ isOpen, onClose, business, onSaved 
     const isEdit = !!business?.id;
     const createMut = useCreateBusinessEntity();
     const updateMut = useUpdateBusinessEntity();
+    const uploadMut = useUploadFile();
+    const logoInputRef = useRef<HTMLInputElement>(null);
 
     const [name, setName] = useState('');
     const [businessSector, setBusinessSector] = useState('');
@@ -49,6 +52,13 @@ export default function BusinessSetupModal({ isOpen, onClose, business, onSaved 
     const [provinceLabel, setProvinceLabel] = useState('');
     const [cityCode, setCityCode] = useState('');
     const [cityLabel, setCityLabel] = useState('');
+
+    // ─── لوگو (ویرایش) — آپلود با model=Business → بک‌اند Business.logoUrl را sync می‌کند ───
+    const [currentLogoUrl, setCurrentLogoUrl] = useState<string | null>(null);
+    const [pendingLogoFile, setPendingLogoFile] = useState<File | null>(null);
+    const [logoPreview, setLogoPreview] = useState<string | null>(null);
+    const uploadedLogoRef = useRef<{ id: string } | null>(null);
+    const isUploadingLogo = uploadMut.isPending;
     const [errors, setErrors] = useState<Record<string, string>>({});
 
     useEffect(() => {
@@ -64,10 +74,43 @@ export default function BusinessSetupModal({ isOpen, onClose, business, onSaved 
         setProvinceLabel(business?.province || '');
         setCityCode(business?.cityCode || '');
         setCityLabel(business?.city || '');
+        setCurrentLogoUrl(business?.logoUrl || null);
+        setPendingLogoFile(null);
+        setLogoPreview(null);
+        uploadedLogoRef.current = null;
         setErrors({});
     }, [isOpen, business]);
 
-    const busy = createMut.isPending || updateMut.isPending;
+    // پیش‌نمایش لوگوی تازه
+    useEffect(() => {
+        if (!pendingLogoFile) { setLogoPreview(null); return; }
+        const url = URL.createObjectURL(pendingLogoFile);
+        setLogoPreview(url);
+        return () => URL.revokeObjectURL(url);
+    }, [pendingLogoFile]);
+
+    const busy = createMut.isPending || updateMut.isPending || isUploadingLogo;
+
+    const handleLogoPick = (e: React.ChangeEvent<HTMLInputElement>) => {
+        const file = e.target.files?.[0];
+        if (file) setPendingLogoFile(file);
+        e.target.value = '';
+    };
+
+    // ✅ آپلود لوگو — sync سمت بک‌اند Business.logoUrl را می‌گذارد
+    const uploadLogo = async (): Promise<void> => {
+        if (!pendingLogoFile || !business?.id) return;
+        if (uploadedLogoRef.current) return;
+        const result: any = await uploadMut.mutateAsync({
+            file: pendingLogoFile,
+            model: 'Business',
+            modelId: business.id,
+            fieldKey: 'logo',
+        });
+        uploadedLogoRef.current = { id: result.id };
+        setCurrentLogoUrl(result.thumbnailPath || result.path || null);
+        setPendingLogoFile(null);
+    };
 
     const validate = () => {
         const e: Record<string, string> = {};
@@ -83,6 +126,8 @@ export default function BusinessSetupModal({ isOpen, onClose, business, onSaved 
     const handleSave = async () => {
         if (!validate()) return;
         try {
+            // ۱) لوگوی تازه — قبل از ذخیره آپلود شود (sync بک‌اند: Business.logoUrl)
+            if (pendingLogoFile && isEdit) await uploadLogo();
             const payload = {
                 name: name.trim(),
                 // ✅ فیلدهای اصلی جدید — درخت دو سطحی BUSINESS_TYPE (همسان با فرم ویرایش کاتالوگ)
@@ -170,6 +215,33 @@ export default function BusinessSetupModal({ isOpen, onClose, business, onSaved 
                         {errors.name && <p className="text-error text-[11px]">{errors.name}</p>}
                     </div>
 
+                    {/* لوگو — فقط در ویرایش (برای ساخت شناسهٔ بیزنس لازم است) */}
+                    {isEdit && (
+                        <div className="flex items-center gap-3">
+                            <button type="button" onClick={() => logoInputRef.current?.click()}
+                                    className="relative w-16 h-16 rounded-xl overflow-hidden flex-shrink-0
+                                        ring-1 ring-outline-variant/50 dark:ring-gray-700 hover:ring-primary/40
+                                        transition-all bg-surface-container-high dark:bg-gray-800 grid place-items-center group">
+                                {(logoPreview || currentLogoUrl)
+                                    ? <Image src={(logoPreview || currentLogoUrl)!} alt="لوگو" width={64} height={64} className="w-full h-full object-cover" unoptimized />
+                                    : (
+                                        <span className="flex flex-col items-center gap-0.5">
+                                            <Camera className="w-5 h-5 text-on-surface-variant/50 group-hover:text-primary transition-colors" />
+                                            <span className="text-[8px] text-on-surface-variant/50 group-hover:text-primary">لوگو</span>
+                                        </span>
+                                    )}
+                                <span className="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 transition-opacity grid place-items-center">
+                                    <Camera className="w-4 h-4 text-white" />
+                                </span>
+                            </button>
+                            <div className="min-w-0">
+                                <p className="text-xs font-medium text-on-surface">لوگوی کسب‌وکار</p>
+                                <p className="text-[10px] text-on-surface-variant/70 mt-0.5">کاتالوگ با لوگو اعتماد بیشتری می‌گیرد — مربع و واضح بهترین است</p>
+                            </div>
+                            <input ref={logoInputRef} type="file" accept="image/*" onChange={handleLogoPick} className="hidden" />
+                        </div>
+                    )}
+
                     {/* صنف — با autocomplete */}
                     <div className="space-y-1.5">
                         <label className="text-xs font-medium text-on-surface block">
@@ -213,7 +285,7 @@ export default function BusinessSetupModal({ isOpen, onClose, business, onSaved 
                     {/* نکته */}
                     {isEdit && (
                         <p className="text-[10px] text-on-surface-variant/60 leading-5 pt-2">
-                            برای افزودن لوگو، تلفن و معرفی کوتاه، از صفحه پروفایل استفاده کنید.
+                            برای تلفن، معرفی کوتاه و جزئیات بیشتر، مشخصات کاتالوگ را ویرایش کنید.
                         </p>
                     )}
                 </div>
