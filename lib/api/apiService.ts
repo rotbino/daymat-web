@@ -141,7 +141,7 @@ export const apiService = {
         getCatalogAds: (catalogId: string, page: number = 1, limit: number = 24, search?: string) =>
             apiRequest(`/ad/catalog/${catalogId}?page=${page}&limit=${limit}${search ? `&search=${encodeURIComponent(search)}` : ''}`),
 
-        // ─── تیم کاتالوگ (اونر/ادمین/بازاریاب/مشتری) ───
+        // ─── تیم کاتالوگ (اونر/مدیر/عضوِ فروش/مشتری) ───
         team: {
             getTeam: (catalogId: string): Promise<any> =>
                 apiRequest(`/catalog/${catalogId}/team`),
@@ -155,8 +155,11 @@ export const apiService = {
             joinAsSeller: (catalogId: string, data?: { sellerBusinessId?: string; note?: string }): Promise<any> =>
                 apiRequest(`/catalog/${catalogId}/team/join-seller`, { method: 'POST', data: data || {} }),
 
-            approveSeller: (catalogId: string, memberId: string): Promise<any> =>
-                apiRequest(`/catalog/${catalogId}/team/sellers/${memberId}/approve`, { method: 'POST' }),
+            approveSeller: (catalogId: string, memberId: string, sellerRole?: 'seller' | 'visitor'): Promise<any> =>
+                apiRequest(`/catalog/${catalogId}/team/sellers/${memberId}/approve`, { method: 'POST', data: sellerRole ? { sellerRole } : {} }),
+
+            setSellerRole: (catalogId: string, memberId: string, sellerRole: 'seller' | 'visitor'): Promise<any> =>
+                apiRequest(`/catalog/${catalogId}/team/sellers/${memberId}/role`, { method: 'PATCH', data: { sellerRole } }),
 
             rejectSeller: (catalogId: string, memberId: string, reason?: string): Promise<any> =>
                 apiRequest(`/catalog/${catalogId}/team/sellers/${memberId}/reject`, { method: 'POST', data: { reason } }),

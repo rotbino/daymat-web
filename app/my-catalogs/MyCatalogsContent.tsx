@@ -119,7 +119,7 @@ export default function MyCatalogsContent() {
         () => allCatalogs.find((c) => c.id === currentId) ?? null,
         [allCatalogs, currentId],
     );
-    // ✅ حالت اعضای کاتالوگ — بازاریاب/مدیر کاتالوگ دیگری (سناریوی بازار پخش)
+    // ✅ حالت اعضای کاتالوگ — عضوِ فروش/مدیر کاتالوگ دیگری (سناریوی بازار پخش)
     //    کاتالوگ‌های تیمی از قبل داخل پاسخِ getAll ادغام شده‌اند (isTeamEntry) و جزو catalogs هستند
     const teamMode = (currentCatalog as any)?.teamMode as string | undefined;
     const isTeamEntry = !!(currentCatalog as any)?.isTeamEntry;
@@ -221,7 +221,7 @@ export default function MyCatalogsContent() {
         }
     }, []);
 
-    // ✅ حالت اعضا — بازاریاب/درانتظار فقط تب اعضا؛ مدیر محصولات+اعضا
+    // ✅ حالت اعضا — عضوِ فروش/درانتظار فقط تب اعضا؛ مدیر محصولات+اعضا
     useEffect(() => {
         if (!isTeamEntry) return;
         if (teamMode !== 'admin' && tab !== 'team') setTab('team');
@@ -369,12 +369,12 @@ export default function MyCatalogsContent() {
                 <ConsoleTabs items={tabItems} active={tab} onChange={setTab} />
             </div>
 
-            {/* 🏪 نوارِ حالت اعضای کاتالوگ — بازاریاب/مدیر کاتالوگ دیگری (بازار پخش) */}
+            {/* 🏪 نوارِ حالت اعضای کاتالوگ — عضوِ فروش/مدیر کاتالوگ دیگری (بازار پخش) */}
             {isTeamEntry && (() => {
                 const cfg: Record<string, { title: string; desc: string; cls: string }> = {
                     seller: {
-                        title: 'بازاریاب این کاتالوگ',
-                        desc: 'این کاتالوگ مالِ اونر کاتالوگ است — شما فروشندهٔ آن هستید؛ مشتری‌های منطقهٔ خودتان را ثبت کنید تا تماسشان به شما برسد',
+                        title: 'عضوِ فروش این کاتالوگ',
+                        desc: 'این کاتالوگ مالِ اونر کاتالوگ است — شما عضوِ فروش آن هستید؛ مشتری‌های منطقهٔ خودتان را ثبت کنید تا تماسشان به شما برسد',
                         cls: 'border-sky-500/30 bg-sky-500/5 dark:bg-sky-500/10',
                     },
                     admin: {
@@ -450,7 +450,7 @@ export default function MyCatalogsContent() {
                     <StatsTab currentCatalog={currentCatalog} stats={stats} productsCount={products.length} />
                 )}
 
-                {/* تب اعضا — اونر/مدیر/بازاریاب (بازار پخش) */}
+                {/* تب اعضا — اونر/مدیر/عضوِ فروش (بازار پخش) */}
                 {tab === 'team' && (
                     <TeamTab catalogId={currentCatalog.id} />
                 )}

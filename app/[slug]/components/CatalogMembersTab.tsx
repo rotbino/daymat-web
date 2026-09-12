@@ -3,19 +3,22 @@
 
 /**
  * برگه «اعضا»ی کاتالوگ — مثل اعضای کانال تلگرام:
- *   همه (مالک/مدیر/فروشنده/مشتری) در یک لیست، با برچسب نقش.
- *   • مالک/مدیر: بخش «در انتظار تایید» + منوی مدیریت روی هر کارت
- *   • فروشنده: مشتری‌هایش بالای لیست با برچسب «مشتری من»
+ *   همه در یک فهرست ساده: [آواتار] [نام + کسب‌وکار] [نقش بیزینسی] [نقش سیستمی]
+ *   برچسب‌ها: فروشنده / ویزیتور / مشتری / مشتری من — مالک کاتالوگ / مدیر کاتالوگ / خودم
+ *   • مدیرها: بخش «در انتظار تایید مدیر (مالک کاتالوگ)» + منوی مدیریت روی هر ردیف
+ *   • عضوِ فروش: مشتری‌هایش با برچسب «مشتری من» بالای بقیهٔ مشتری‌ها
  *   • تخصیصِ بقیه دیده نمی‌شود (ضد دزدی مشتری)
+ *   • کلیک روی هر عضو → صفحهٔ شخصی (تابلوی کسب‌وکارش)
  *
  *   لایهٔ داده: موتور تیم کاتالوگ (GET /catalog/:id/team — مدل CatalogMember)
  */
 
 import React, { useCallback, useMemo, useState } from 'react';
+import { useRouter } from 'next/navigation';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import {
-    Users, UserPlus, Store, MapPin, MoreVertical, ShieldCheck, ShieldOff,
-    Trash2, UserCheck, X, Check, Loader2, Search, ArrowLeftRight, AlertCircle,
+    Users, UserPlus, MoreVertical, ShieldCheck, ShieldOff,
+    Trash2, X, Check, Loader2, Search, ArrowLeftRight, MapPin,
 } from 'lucide-react';
 import { toast } from 'sonner';
 import { apiService } from '@/lib/api/apiService';
@@ -28,23 +31,23 @@ interface TeamMemberCard {
     fullName: string | null;
     phone: string | null;
     avatarUrl: string | null;
-    business: { id: string; name: string; phone?: string } | null;
+    business: { id: string; name: string; phone?: string; slug?: string | null } | null;
     role: 'catalog_owner' | 'catalog_admin' | 'catalog_member';
     position: string | null;
     sellerStatus: string | null;
+    sellerRole?: 'seller' | 'visitor' | null;
     sellerRegion: string | null;
-    sellerBusiness: { id: string; name: string } | null;
+    sellerBusiness: { id: string; name: string; slug?: string | null } | null;
     customerStatus: string | null;
-    customerBusiness: { id: string; name: string; city?: string | null } | null;
+    customerBusiness: { id: string; name: string; city?: string | null; slug?: string | null } | null;
     assignedSellerUserId: string | null;
     // فروشندگان:
     isOwner?: boolean;
     isAdmin?: boolean;
     customersCount?: number;
-    // مشتری‌ها:
-    sellerName?: string | null;
     // تزریقی سمت UI:
     __isMyCustomer?: boolean;
+    __isMe?: boolean;
 }
 
 interface TeamResponse {
@@ -59,6 +62,7 @@ interface TeamResponse {
         memberId: string | null;
         sellerRegion: string | null;
     };
+    staff?: TeamMemberCard[];
     sellers: TeamMemberCard[];
     pendingSellers: TeamMemberCard[];
     customers: TeamMemberCard[];
@@ -75,9 +79,9 @@ interface CandidateItem {
 }
 
 // ─── برچسب نقش‌ها ───
-const badgeBase = 'text-[10px] font-bold px-2 py-0.5 rounded-full whitespace-nowrap';
+const badgeBase = 'text-[10px] font-bold px-2 py-0.5 rounded-full whitespace-nowrap text-center';
 
-function Avatar({ url, name, size = 44 }: { url?: string | null; name?: string | null; size?: number }) {
+function Avatar({ url, name, size = 40 }: { url?: string | null; name?: string | null; size?: number }) {
     const [broken, setBroken] = useState(false);
     if (url && !broken) {
         return (
@@ -201,7 +205,7 @@ function AddCustomerModal({ catalogId, onClose, onDone }: { catalogId: string; o
 }
 
 // ═══════════════════════════════════════════
-// مودال جابجایی مشتری به بازاریاب دیگر
+// مودال تغییر مسئولِ مشتری
 // ═══════════════════════════════════════════
 function ReassignModal({
     catalogId, member, sellers, currentSellerUserId, onClose, onDone,
@@ -219,21 +223,21 @@ function ReassignModal({
         setBusy(seller.userId);
         try {
             await apiService.catalog.team.assignCustomer(catalogId, member.id, seller.userId);
-            toast.success('مشتری جابجا شد (در تاریخچه ثبت شد)');
+            toast.success('مسئولِ مشتری تغییر کرد (در تاریخچه ثبت شد)');
             onDone();
             onClose();
         } catch (e: any) {
-            toast.error(e?.message || 'خطا در جابجایی');
+            toast.error(e?.message || 'خطا در تغییر مسئول');
         } finally {
             setBusy(null);
         }
     };
 
     return (
-        <Modal title={`جابجایی مشتری: ${member.fullName || ''}`} onClose={onClose}>
+        <Modal title={`تغییر مسئولِ مشتری: ${member.fullName || ''}`} onClose={onClose}>
             <div className="space-y-2">
                 {sellers.length === 0 && (
-                    <p className="text-xs text-on-surface-variant text-center py-4">هنوز بازاریابی در کاتالوگ نیست</p>
+                    <p className="text-xs text-on-surface-variant text-center py-4">هنوز عضوِ فروشنده‌ای در کاتالوگ نیست</p>
                 )}
                 {sellers.map((s) => {
                     const isCurrent = s.userId === currentSellerUserId;
@@ -252,10 +256,13 @@ function ReassignModal({
                             <Avatar url={s.avatarUrl} name={s.fullName} size={38} />
                             <div className="flex-1 min-w-0">
                                 <p className="text-xs font-bold truncate">{s.fullName || '—'}</p>
-                                <p className="text-[11px] text-on-surface-variant truncate">{s.sellerBusiness?.name || s.business?.name || ''}</p>
+                                <p className="text-[11px] text-on-surface-variant truncate">
+                                    {s.sellerRole === 'visitor' ? 'ویزیتور' : 'فروشنده'}
+                                    {s.sellerBusiness?.name || s.business?.name ? ` · ${s.sellerBusiness?.name || s.business?.name}` : ''}
+                                </p>
                             </div>
                             {isCurrent ? (
-                                <span className="text-[10px] font-bold text-primary">بازاریاب فعلی</span>
+                                <span className="text-[10px] font-bold text-primary">مسئول فعلی</span>
                             ) : busy === s.userId ? (
                                 <Loader2 className="w-4 h-4 animate-spin text-primary" />
                             ) : (
@@ -270,18 +277,24 @@ function ReassignModal({
 }
 
 // ═══════════════════════════════════════════
-// کارت عضو
+// ردیف سادهٔ عضو — [آواتار] [نام + کسب‌وکار] [نقش بیزینسی] [نقش سیستمی]
 // ═══════════════════════════════════════════
-function MemberCard({
-    m, catalogId, canManage, sellers, onChanged,
+function MemberRow({
+    m, catalogId, canManage, sellers, onChanged, pending, onApproveRole, onReject,
 }: {
     m: TeamMemberCard;
     catalogId: string;
     canManage: boolean;
     sellers: TeamMemberCard[];
     onChanged: () => void;
+    /** ردیف‌های در انتظار تایید — دکمه‌های تایید/رد جای منو */
+    pending?: boolean;
+    onApproveRole?: (role: 'seller' | 'visitor') => void;
+    onReject?: () => void;
 }) {
+    const router = useRouter();
     const [menuOpen, setMenuOpen] = useState(false);
+    const [approveOpen, setApproveOpen] = useState(false);
     const [confirmDelete, setConfirmDelete] = useState(false);
     const [showReassign, setShowReassign] = useState(false);
     const [busy, setBusy] = useState(false);
@@ -293,6 +306,7 @@ function MemberCard({
             toast.success(okMsg);
             setMenuOpen(false);
             setConfirmDelete(false);
+            setApproveOpen(false);
             onChanged();
         } catch (e: any) {
             toast.error(e?.message || 'خطا در انجام عملیات');
@@ -301,166 +315,214 @@ function MemberCard({
         }
     };
 
-    const isPending = m.sellerStatus === 'pending' || m.customerStatus === 'pending';
     const isOwnerMember = m.isOwner === true;
-    const isAdminMember = m.isAdmin === true || (m.role === 'catalog_admin' && m.sellerStatus === 'active');
+    const isAdminMember = m.isAdmin === true || (m.role === 'catalog_admin' && (m.sellerStatus === 'active' || m.customerStatus === 'active'));
     const isSellerMember = m.sellerStatus === 'active';
-    const isCustomerMember = m.customerStatus === 'active' || m.customerStatus === 'pending';
+    const isCustomerMember = m.customerStatus === 'active';
+
+    // نقش بیزینسی (ستون میانی)
+    const bizBadge = m.__isMyCustomer
+        ? { text: 'مشتری من', cls: 'bg-primary text-on-primary' }
+        : isCustomerMember
+            ? { text: 'مشتری', cls: 'bg-gray-100 text-gray-600 dark:bg-gray-800 dark:text-gray-300' }
+            : isSellerMember
+                ? (m.sellerRole === 'visitor'
+                    ? { text: 'ویزیتور', cls: 'bg-violet-100 text-violet-700 dark:bg-violet-900/30 dark:text-violet-300' }
+                    : { text: 'فروشنده', cls: 'bg-emerald-50 text-emerald-700 dark:bg-emerald-900/30 dark:text-emerald-300' })
+                : null;
+
+    // نقش سیستمی (ستون آخر): مالک کاتالوگ ← مدیر کاتالوگ ← خودم
+    const sysBadge = isOwnerMember
+        ? { text: 'مالک کاتالوگ', cls: 'bg-amber-100 text-amber-800 dark:bg-amber-900/40 dark:text-amber-300' }
+        : isAdminMember
+            ? { text: 'مدیر کاتالوگ', cls: 'bg-sky-100 text-sky-700 dark:bg-sky-900/30 dark:text-sky-300' }
+            : m.__isMe
+                ? { text: 'خودم', cls: 'border border-outline-variant/60 text-on-surface-variant bg-transparent' }
+                : null;
+
+    // صفحهٔ شخصی — تابلوی کسب‌وکار عضو
+    const personalSlug = m.customerBusiness?.slug || m.sellerBusiness?.slug || m.business?.slug || null;
+
+    const openPersonal = () => {
+        if (personalSlug) router.push(`/${personalSlug}`);
+    };
+
+    const nameLine = (
+        <div className="flex-1 min-w-0">
+            <p className="text-sm font-bold truncate">{m.fullName || '—'}</p>
+            <p className="text-[11px] text-on-surface-variant truncate mt-0.5 flex items-center gap-2">
+                {(m.customerBusiness?.name || m.sellerBusiness?.name || m.business?.name) && (
+                    <span className="truncate">{m.customerBusiness?.name || m.sellerBusiness?.name || m.business?.name}</span>
+                )}
+                {m.sellerRegion && (
+                    <span className="inline-flex items-center gap-0.5 text-on-surface-variant/70 flex-shrink-0">
+                        <MapPin className="w-3 h-3" />{m.sellerRegion}
+                    </span>
+                )}
+                {pending && <span className="text-amber-600 dark:text-amber-400 flex-shrink-0">در انتظار تایید مدیر (مالک کاتالوگ)</span>}
+            </p>
+        </div>
+    );
 
     return (
-        <div className={cn(
-            'relative flex items-center gap-3 p-3 rounded-2xl border transition-all',
-            m.__isMyCustomer
-                ? 'border-primary/30 bg-primary/5'
-                : 'border-outline-variant/25 bg-surface-container-lowest dark:bg-gray-900/40',
-            isPending && 'border-amber-300/50 bg-amber-50/50 dark:bg-amber-900/10',
-        )}>
-            <Avatar url={m.avatarUrl} name={m.fullName} />
-
-            <div className="flex-1 min-w-0">
-                <div className="flex items-center gap-2 flex-wrap">
-                    <p className="text-sm font-bold truncate">{m.fullName || '—'}</p>
-                    <div className="flex items-center gap-1 flex-wrap">
-                        {isOwnerMember && <span className={cn(badgeBase, 'bg-amber-100 text-amber-800 dark:bg-amber-900/40 dark:text-amber-300')}>مالک</span>}
-                        {isAdminMember && !isOwnerMember && <span className={cn(badgeBase, 'bg-primary/10 text-primary')}>مدیر</span>}
-                        {isSellerMember && !m.__isMyCustomer && (
-                            <span className={cn(badgeBase, 'bg-emerald-50 text-emerald-700 dark:bg-emerald-900/30 dark:text-emerald-300')}>فروشنده</span>
-                        )}
-                        {isCustomerMember && !m.__isMyCustomer && (
-                            <span className={cn(badgeBase, 'bg-gray-100 text-gray-600 dark:bg-gray-800 dark:text-gray-300')}>مشتری</span>
-                        )}
-                        {m.__isMyCustomer && (
-                            <span className={cn(badgeBase, 'bg-primary text-on-primary')}>مشتری من</span>
-                        )}
-                        {isPending && (
-                            <span className={cn(badgeBase, 'bg-amber-50 text-amber-700 dark:bg-amber-900/30 dark:text-amber-300')}>در انتظار تایید</span>
-                        )}
-                    </div>
-                </div>
-                <div className="flex items-center gap-2 mt-0.5 flex-wrap">
-                    {(m.customerBusiness?.name || m.sellerBusiness?.name || m.business?.name) && (
-                        <span className="text-[11px] text-on-surface-variant inline-flex items-center gap-1">
-                            <Store className="w-3 h-3" />{m.customerBusiness?.name || m.sellerBusiness?.name || m.business?.name}
-                        </span>
-                    )}
-                    {m.sellerRegion && (
-                        <span className="text-[11px] text-on-surface-variant inline-flex items-center gap-1">
-                            <MapPin className="w-3 h-3" />{m.sellerRegion}
-                        </span>
-                    )}
-                </div>
-            </div>
-
-            {/* تایید/رد درخواست — فقط مدیرها */}
-            {canManage && isPending && (
-                <div className="flex items-center gap-1.5 flex-shrink-0">
-                    {m.sellerStatus === 'pending' ? (
-                        <>
-                            <button
-                                onClick={() => act(() => apiService.catalog.team.approveSeller(catalogId, m.id), 'فروشنده تایید شد')}
-                                disabled={busy}
-                                className="h-9 px-3 rounded-xl bg-emerald-600 text-white text-xs font-bold flex items-center gap-1 disabled:opacity-50"
-                            >
-                                {busy ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <Check className="w-3.5 h-3.5" />}
-                                تایید
-                            </button>
-                            <button
-                                onClick={() => act(() => apiService.catalog.team.rejectSeller(catalogId, m.id), 'درخواست رد شد')}
-                                disabled={busy}
-                                className="h-9 px-3 rounded-xl bg-gray-200 dark:bg-gray-800 text-gray-700 dark:text-gray-300 text-xs font-bold flex items-center gap-1 disabled:opacity-50"
-                            >
-                                <X className="w-3.5 h-3.5" />
-                                رد
-                            </button>
-                        </>
-                    ) : (
-                        <>
-                            <button
-                                onClick={() => act(() => apiService.catalog.team.confirmCustomer(catalogId, m.id), 'مشتری تایید شد')}
-                                disabled={busy}
-                                className="h-9 px-3 rounded-xl bg-emerald-600 text-white text-xs font-bold flex items-center gap-1 disabled:opacity-50"
-                            >
-                                {busy ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <Check className="w-3.5 h-3.5" />}
-                                تایید
-                            </button>
-                            <button
-                                onClick={() => act(() => apiService.catalog.team.declineCustomer(catalogId, m.id), 'درخواست رد شد')}
-                                disabled={busy}
-                                className="h-9 px-3 rounded-xl bg-gray-200 dark:bg-gray-800 text-gray-700 dark:text-gray-300 text-xs font-bold flex items-center gap-1 disabled:opacity-50"
-                            >
-                                <X className="w-3.5 h-3.5" />
-                                رد
-                            </button>
-                        </>
-                    )}
-                </div>
+        <div
+            onClick={pending ? undefined : openPersonal}
+            className={cn(
+                'relative flex items-center gap-2.5 p-2.5 rounded-2xl border transition-all',
+                m.__isMyCustomer
+                    ? 'border-primary/30 bg-primary/5'
+                    : 'border-outline-variant/25 bg-surface-container-lowest dark:bg-gray-900/40',
+                pending && 'border-amber-300/50 bg-amber-50/50 dark:bg-amber-900/10',
+                personalSlug && !pending && 'cursor-pointer hover:border-primary/40 hover:shadow-sm',
             )}
+        >
+            <Avatar url={m.avatarUrl} name={m.fullName} />
+            {nameLine}
 
-            {/* منوی مدیریت */}
-            {canManage && !isPending && !isOwnerMember && (
-                <div className="relative flex-shrink-0">
-                    <button
-                        onClick={() => setMenuOpen((v) => !v)}
-                        className="p-2 rounded-full hover:bg-surface-container-high dark:hover:bg-gray-800"
-                    >
-                        <MoreVertical className="w-4 h-4" />
-                    </button>
-                    {menuOpen && (
-                        <>
-                            <div className="fixed inset-0 z-30" onClick={() => { setMenuOpen(false); setConfirmDelete(false); }} />
-                            <div className="absolute left-0 top-full mt-1 z-40 w-48 bg-white dark:bg-gray-900 rounded-xl shadow-lg border border-outline-variant/30 py-1.5 text-xs">
-                                {isCustomerMember && (
-                                    <button
-                                        onClick={() => { setMenuOpen(false); setShowReassign(true); }}
-                                        className="w-full flex items-center gap-2 px-3 py-2.5 hover:bg-surface-container-high dark:hover:bg-gray-800 text-right"
-                                    >
-                                        <ArrowLeftRight className="w-3.5 h-3.5" />جابجایی به بازاریاب دیگر
-                                    </button>
-                                )}
-                                {!isAdminMember && (
-                                    <button
-                                        onClick={() => act(() => apiService.catalog.team.promoteToAdmin(catalogId, m.id), 'به مدیر ارتقا یافت')}
-                                        disabled={busy}
-                                        className="w-full flex items-center gap-2 px-3 py-2.5 hover:bg-surface-container-high dark:hover:bg-gray-800 text-right"
-                                    >
-                                        <ShieldCheck className="w-3.5 h-3.5" />ارتقا به مدیر
-                                    </button>
-                                )}
-                                {isAdminMember && (
-                                    <button
-                                        onClick={() => act(() => apiService.catalog.team.demoteToMember(catalogId, m.id), 'مدیریتی سلب شد')}
-                                        disabled={busy}
-                                        className="w-full flex items-center gap-2 px-3 py-2.5 hover:bg-surface-container-high dark:hover:bg-gray-800 text-right"
-                                    >
-                                        <ShieldOff className="w-3.5 h-3.5" />سلب مدیریت
-                                    </button>
-                                )}
-                                {!confirmDelete ? (
-                                    <button
-                                        onClick={() => setConfirmDelete(true)}
-                                        className="w-full flex items-center gap-2 px-3 py-2.5 hover:bg-red-50 dark:hover:bg-red-900/20 text-red-600 dark:text-red-400 text-right"
-                                    >
-                                        <Trash2 className="w-3.5 h-3.5" />حذف عضو
-                                    </button>
-                                ) : (
-                                    <button
-                                        onClick={() => act(
-                                            () => isSellerMember
-                                                ? apiService.catalog.team.removeSeller(catalogId, m.id)
-                                                : apiService.catalog.team.removeCustomer(catalogId, m.id),
-                                            'عضو حذف شد',
-                                        )}
-                                        disabled={busy}
-                                        className="w-full flex items-center gap-2 px-3 py-2.5 bg-red-600 text-white font-bold text-right disabled:opacity-50"
-                                    >
-                                        {busy ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <Check className="w-3.5 h-3.5" />}
-                                        مطمئنم، حذف کن
-                                    </button>
-                                )}
-                            </div>
-                        </>
+            {/* نقش بیزینسی — ستون میانی */}
+            <span className={cn(badgeBase, 'w-16 flex-shrink-0', bizBadge?.cls || 'invisible')}>
+                {bizBadge?.text || '—'}
+            </span>
+            {/* تایید/رد — فقط ردیف‌های در انتظار تایید */}
+            {pending ? (
+                <div className="flex items-center gap-1 flex-shrink-0" onClick={(e) => e.stopPropagation()}>
+                    {onApproveRole ? (
+                        <div className="relative">
+                            <button
+                                onClick={() => setApproveOpen((v) => !v)}
+                                disabled={busy}
+                                className="h-8 px-2.5 rounded-xl bg-emerald-600 text-white text-[11px] font-bold flex items-center gap-1 disabled:opacity-50"
+                            >
+                                {busy ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <Check className="w-3.5 h-3.5" />}
+                                تایید
+                            </button>
+                            {approveOpen && (
+                                <>
+                                    <div className="fixed inset-0 z-30" onClick={() => setApproveOpen(false)} />
+                                    <div className="absolute left-0 top-full mt-1 z-40 w-44 bg-white dark:bg-gray-900 rounded-xl shadow-lg border border-outline-variant/30 py-1.5 text-xs">
+                                        <button
+                                            onClick={() => onApproveRole?.('seller')}
+                                            className="w-full px-3 py-2.5 hover:bg-surface-container-high dark:hover:bg-gray-800 text-right"
+                                        >
+                                            به‌عنوان <b>فروشنده</b>
+                                        </button>
+                                        <button
+                                            onClick={() => onApproveRole?.('visitor')}
+                                            className="w-full px-3 py-2.5 hover:bg-surface-container-high dark:hover:bg-gray-800 text-right"
+                                        >
+                                            به‌عنوان <b>ویزیتور</b>
+                                        </button>
+                                    </div>
+                                </>
+                            )}
+                        </div>
+                    ) : (
+                        <button
+                            onClick={() => act(() => apiService.catalog.team.confirmCustomer(catalogId, m.id), 'مشتری تایید شد')}
+                            disabled={busy}
+                            className="h-8 px-2.5 rounded-xl bg-emerald-600 text-white text-[11px] font-bold flex items-center gap-1 disabled:opacity-50"
+                        >
+                            {busy ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <Check className="w-3.5 h-3.5" />}
+                            تایید
+                        </button>
                     )}
+                    <button
+                        onClick={() => (onReject ? onReject() : act(() => apiService.catalog.team.declineCustomer(catalogId, m.id), 'درخواست رد شد'))}
+                        disabled={busy}
+                        className="h-8 px-2.5 rounded-xl bg-gray-200 dark:bg-gray-800 text-gray-700 dark:text-gray-300 text-[11px] font-bold disabled:opacity-50"
+                    >
+                        <X className="w-3.5 h-3.5" />
+                    </button>
                 </div>
+            ) : (
+                <>
+                    {/* منوی مدیریت — قبل از ستون نقش سیستمی */}
+                    {canManage && !isOwnerMember && (
+                        <div className="relative flex-shrink-0" onClick={(e) => e.stopPropagation()}>
+                            <button
+                                onClick={() => setMenuOpen((v) => !v)}
+                                className="p-2 rounded-full hover:bg-surface-container-high dark:hover:bg-gray-800"
+                            >
+                                <MoreVertical className="w-4 h-4" />
+                            </button>
+                            {menuOpen && (
+                                <>
+                                    <div className="fixed inset-0 z-30" onClick={() => { setMenuOpen(false); setConfirmDelete(false); }} />
+                                    <div className="absolute left-0 top-full mt-1 z-40 w-52 bg-white dark:bg-gray-900 rounded-xl shadow-lg border border-outline-variant/30 py-1.5 text-xs">
+                                        <span className={cn(badgeBase, 'mx-3 mb-1.5 inline-block', sysBadge?.cls || 'bg-gray-100 text-gray-500')}>
+                                            {sysBadge?.text || 'عضو کاتالوگ'}
+                                        </span>
+                                        {isSellerMember && (
+                                            <button
+                                                onClick={() => act(
+                                                    () => apiService.catalog.team.setSellerRole(catalogId, m.id, m.sellerRole === 'visitor' ? 'seller' : 'visitor'),
+                                                    m.sellerRole === 'visitor' ? 'نقش بیزینسی به «فروشنده» تغییر کرد' : 'نقش بیزینسی به «ویزیتور» تغییر کرد',
+                                                )}
+                                                className="w-full flex items-center gap-2 px-3 py-2.5 hover:bg-surface-container-high dark:hover:bg-gray-800 text-right"
+                                            >
+                                                <ArrowLeftRight className="w-3.5 h-3.5" />
+                                                تبدیل به {m.sellerRole === 'visitor' ? 'فروشنده' : 'ویزیتور'}
+                                            </button>
+                                        )}
+                                        {isCustomerMember && (
+                                            <button
+                                                onClick={() => { setMenuOpen(false); setShowReassign(true); }}
+                                                className="w-full flex items-center gap-2 px-3 py-2.5 hover:bg-surface-container-high dark:hover:bg-gray-800 text-right"
+                                            >
+                                                <ArrowLeftRight className="w-3.5 h-3.5" />تغییر مسئولِ مشتری
+                                            </button>
+                                        )}
+                                        {!isAdminMember && (
+                                            <button
+                                                onClick={() => act(() => apiService.catalog.team.promoteToAdmin(catalogId, m.id), 'به مدیر ارتقا یافت')}
+                                                disabled={busy}
+                                                className="w-full flex items-center gap-2 px-3 py-2.5 hover:bg-surface-container-high dark:hover:bg-gray-800 text-right"
+                                            >
+                                                <ShieldCheck className="w-3.5 h-3.5" />ارتقا به مدیر
+                                            </button>
+                                        )}
+                                        {isAdminMember && (
+                                            <button
+                                                onClick={() => act(() => apiService.catalog.team.demoteToMember(catalogId, m.id), 'مدیریتی سلب شد')}
+                                                disabled={busy}
+                                                className="w-full flex items-center gap-2 px-3 py-2.5 hover:bg-surface-container-high dark:hover:bg-gray-800 text-right"
+                                            >
+                                                <ShieldOff className="w-3.5 h-3.5" />سلب مدیریت
+                                            </button>
+                                        )}
+                                        {!confirmDelete ? (
+                                            <button
+                                                onClick={() => setConfirmDelete(true)}
+                                                className="w-full flex items-center gap-2 px-3 py-2.5 hover:bg-red-50 dark:hover:bg-red-900/20 text-red-600 dark:text-red-400 text-right"
+                                            >
+                                                <Trash2 className="w-3.5 h-3.5" />حذف عضو
+                                            </button>
+                                        ) : (
+                                            <button
+                                                onClick={() => act(
+                                                    () => isSellerMember
+                                                        ? apiService.catalog.team.removeSeller(catalogId, m.id)
+                                                        : apiService.catalog.team.removeCustomer(catalogId, m.id),
+                                                    'عضو حذف شد',
+                                                )}
+                                                disabled={busy}
+                                                className="w-full flex items-center gap-2 px-3 py-2.5 bg-red-600 text-white font-bold text-right disabled:opacity-50"
+                                            >
+                                                {busy ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <Check className="w-3.5 h-3.5" />}
+                                                مطمئنم، حذف کن
+                                            </button>
+                                        )}
+                                    </div>
+                                </>
+                            )}
+                        </div>
+                    )}
+
+                    {/* نقش سیستمی — ستون آخر */}
+                    <span className={cn(badgeBase, 'w-24 flex-shrink-0', sysBadge?.cls || 'invisible')}>
+                        {sysBadge?.text || '—'}
+                    </span>
+                </>
             )}
 
             {showReassign && (
@@ -500,6 +562,7 @@ export default function CatalogMembersTab({ catalogId, onLoginNeeded }: { catalo
     const canManage = !!myRole?.canManage;
 
     const sellers = useMemo(() => data?.sellers || [], [data]);
+    const staff = useMemo(() => data?.staff || [], [data]);
     const customers = useMemo(
         () => (data?.customers || []).map((c) => ({
             ...c,
@@ -514,18 +577,21 @@ export default function CatalogMembersTab({ catalogId, onLoginNeeded }: { catalo
     );
     const pendingCount = pendingSellers.length + (canManage ? pendingCustomers.length : 0);
 
-    // ترتیب لیست اصلی: مشتری‌های من → مالک → مدیرها → بازاریاب‌ها → بقیه مشتری‌ها
+    // فهرست ساده: کادر (مالک، مدیرها) → اعضای فروش (خودم اول) → مشتری‌ها (مشتری من اول)
     const ordered = useMemo(() => {
         const rank = (m: TeamMemberCard) => {
-            if (m.__isMyCustomer) return 0;
-            if (m.isOwner) return 1;
-            if (m.isAdmin) return 2;
+            if (m.isOwner) return 0;
+            if (m.isAdmin) return 1;
+            if (m.userId === myRole?.userId) return 2;
             if (m.sellerStatus === 'active') return 3;
-            return 4;
+            if (m.__isMyCustomer) return 4;
+            return 5;
         };
-        const list: TeamMemberCard[] = [...sellers, ...customers];
-        return list.filter((m) => m.sellerStatus === 'active' || m.customerStatus === 'active').sort((a, b) => rank(a) - rank(b));
-    }, [sellers, customers, canManage]);
+        const activeCustomers = customers.filter((c) => c.customerStatus === 'active');
+        return [...staff, ...sellers, ...activeCustomers]
+            .map((m) => ({ ...m, __isMe: m.userId === myRole?.userId && !m.isOwner && !m.isAdmin }))
+            .sort((a, b) => rank(a) - rank(b));
+    }, [staff, sellers, customers, myRole]);
 
     // ─── حالت‌های خاص ───
     if (error) {
@@ -566,7 +632,7 @@ export default function CatalogMembersTab({ catalogId, onLoginNeeded }: { catalo
                 <div className="flex items-center gap-2 text-xs text-on-surface-variant">
                     <Users className="w-4 h-4" />
                     <span>
-                        {data?.stats?.sellers || 0} فروشنده · {data?.stats?.activeCustomers || 0} مشتری
+                        {ordered.length.toLocaleString('fa-IR')} عضو · {(data?.stats?.activeCustomers || 0).toLocaleString('fa-IR')} مشتری
                     </span>
                 </div>
                 <div className="flex items-center gap-2">
@@ -587,29 +653,43 @@ export default function CatalogMembersTab({ catalogId, onLoginNeeded }: { catalo
                 </p>
             )}
 
-            {!canManage && !myRole?.isSeller && !myRole?.isPendingSeller && ordered.length === 0 && (
-                <p className="text-center text-xs text-on-surface-variant py-8">هنوز عضوی در کاتالوگ نیست</p>
-            )}
-
-            {/* بخش در انتظار تایید — فقط مدیرها */}
+            {/* بخش در انتظار تایید مدیر (مالک کاتالوگ) */}
             {canManage && pendingCount > 0 && (
                 <div className="space-y-1.5">
                     <p className="text-[11px] font-bold text-amber-700 dark:text-amber-400 px-1">
-                        در انتظار تایید ({pendingCount})
+                        در انتظار تایید مدیر (مالک کاتالوگ) — {pendingCount.toLocaleString('fa-IR')} درخواست
                     </p>
-                    {[...pendingSellers, ...pendingCustomers].map((m) => (
-                        <MemberCard
-                            key={m.id} m={m} catalogId={catalogId}
+                    {pendingSellers.map((m) => (
+                        <MemberRow
+                            key={m.id} m={m} catalogId={catalogId} pending
+                            canManage={canManage} sellers={sellers} onChanged={refresh}
+                            onApproveRole={(role) => apiService.catalog.team
+                                .approveSeller(catalogId, m.id, role)
+                                .then(refresh)
+                                .catch((e: any) => toast.error(e?.message || 'خطا در تایید'))}
+                            onReject={() => apiService.catalog.team
+                                .rejectSeller(catalogId, m.id)
+                                .then(refresh)
+                                .catch((e: any) => toast.error(e?.message || 'خطا در رد'))}
+                        />
+                    ))}
+                    {pendingCustomers.map((m) => (
+                        <MemberRow
+                            key={m.id} m={m} catalogId={catalogId} pending
                             canManage={canManage} sellers={sellers} onChanged={refresh}
                         />
                     ))}
                 </div>
             )}
 
-            {/* لیست اصلی اعضا */}
+            {!canManage && !myRole?.isSeller && !myRole?.isPendingSeller && ordered.length === 0 && (
+                <p className="text-center text-xs text-on-surface-variant py-8">هنوز عضوی در کاتالوگ نیست</p>
+            )}
+
+            {/* فهرست سادهٔ اعضا */}
             <div className="space-y-1.5">
                 {ordered.map((m) => (
-                    <MemberCard
+                    <MemberRow
                         key={m.id} m={m} catalogId={catalogId}
                         canManage={canManage} sellers={sellers} onChanged={refresh}
                     />

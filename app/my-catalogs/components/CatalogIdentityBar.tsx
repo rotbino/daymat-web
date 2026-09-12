@@ -40,7 +40,7 @@ export default function CatalogIdentityBar({ catalogs, currentCatalog, canShare,
                     {currentCatalog?.isTeamEntry && (
                         <span className="text-[9px] font-extrabold text-sky-700 dark:text-sky-300 bg-sky-500/10
                                 px-1.5 py-0.5 rounded-full flex-shrink-0">
-                            {currentCatalog?.teamMode === 'admin' ? 'مدیر' : currentCatalog?.teamMode === 'pending' ? 'در انتظار' : 'بازاریاب'}
+                            {currentCatalog?.teamMode === 'admin' ? 'مدیر' : currentCatalog?.teamMode === 'pending' ? 'در انتظار' : 'فروشنده'}
                         </span>
                     )}
                     {multi && <ChevronDown className={cn('w-4 h-4 text-on-surface-variant/60 flex-shrink-0 transition-transform', open && 'rotate-180')} />}
@@ -140,7 +140,7 @@ export default function CatalogIdentityBar({ catalogs, currentCatalog, canShare,
                                     {c.isTeamEntry && (
                                         <span className="text-[9px] font-extrabold text-sky-700 dark:text-sky-300
                                                 bg-sky-500/10 px-1.5 py-0.5 rounded-full flex-shrink-0">
-                                            {c.teamMode === 'admin' ? 'مدیر' : c.teamMode === 'pending' ? 'در انتظار' : 'بازاریاب'}
+                                            {c.teamMode === 'admin' ? 'مدیر' : c.teamMode === 'pending' ? 'در انتظار' : 'فروشنده'}
                                         </span>
                                     )}
                                     {active && <Check className="w-4 h-4 text-primary flex-shrink-0" />}

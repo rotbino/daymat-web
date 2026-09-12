@@ -87,7 +87,7 @@ export default function AdDetailClient({ adId, initialData }: Props) {
 
         try {
             const info = await apiService.ad.getContact(adId);
-            // ✅ مسیریابی تیم کاتالوگ: اگر مشتریِ کاتالوگ با بازاریابِ منتسب باشیم، شمارهٔ بازاریاب می‌آید
+            // ✅ مسیریابی تیم کاتالوگ: اگر مشتریِ کاتالوگ با مسئولِ فروشِ منتسب باشیم، شمارهٔ او می‌آید
             const phone = info.seller?.phone || info.ownerPhone || info.phone;
 
             if (!phone) {
@@ -99,7 +99,7 @@ export default function AdDetailClient({ adId, initialData }: Props) {
                 window.location.href = `tel:${phone}`;
             } else {
                 const sellerNote = info.routedToSeller && info.seller
-                    ? `بازاریاب شما: ${info.seller.name || info.seller.businessName}\n`
+                    ? `مسئول فروش شما: ${info.seller.name || info.seller.businessName}\n`
                     : '';
                 toast.info(`${sellerNote}${info.catalogName}\n${phone}`, { duration: 8000 });
                 navigator.clipboard.writeText(phone).catch(() => {});
