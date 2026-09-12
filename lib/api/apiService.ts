@@ -227,14 +227,15 @@ export const apiService = {
             const res: any = await apiRequest(`/industries/autocomplete?q=${encodeURIComponent(q.trim())}`);
             return { items: res?.items || res?.data || [] };
         },
-        // ✅ search با pagination
+        // ✅ endpoint عمومی — قبلاً /admin/industries/search بود که گارد ادمین داشت و
+        //    برای کاربر عادی 403 می‌داد → کمبوی صنف در فرم ثبت کسب‌وکار خالی می‌ماند
         search: async (q?: string, limit?: number, offset?: number): Promise<{ items: any[]; total?: number }> => {
             const params = new URLSearchParams();
             if (q && q.trim().length >= 2) params.set('q', q.trim());
             if (limit) params.set('limit', String(limit));
             if (offset) params.set('offset', String(offset));
             const qs = params.toString();
-            const res: any = await apiRequest(`/admin/industries/search${qs ? `?${qs}` : ''}`);
+            const res: any = await apiRequest(`/industries/search${qs ? `?${qs}` : ''}`);
             return { items: res?.data || res?.items || [], total: res?.total };
         },
         list: async (confirmedOnly = false): Promise<{ items: Array<{ id: string; title: string; isByUser?: boolean }> }> => {
