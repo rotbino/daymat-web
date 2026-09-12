@@ -9,9 +9,9 @@ import Image from 'next/image';
 
 // ✅ هویت ثابت برند دیمت — مستقل از بازار جاری
 const BRAND = {
-    logo: '/images/logo.png',
+    logo: '/images/logo4.png',
     name: 'دیمت',
-    slogan: 'بازار عمده‌فروشی ایران',
+    slogan: 'ساخت و انتشار کاتالوگ قیمت',
 } as const;
 
 export default function Loading() {

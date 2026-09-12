@@ -414,8 +414,8 @@ export default function MarketContent({ search: searchProp }: { search?: string 
                                 <h2 className="text-xl font-bold text-on-surface dark:text-gray-100 mb-2">
                                     {hasActiveFilters ? 'هیچ قیمتی با این فیلترها پیدا نشد' : 'هنوز قیمتی ثبت نشده است'}
                                 </h2>
-                                <p className="text-sm text-on-surface-variant dark:text-gray-400 mb-8 max-w-md mx-auto leading-relaxed">
-                                    {hasActiveFilters ? 'فیلترهای انتخاب‌شده را تغییر دهید یا از دسته‌بندی‌های دیگر دیدن کنید.' : 'اگر فروشنده عمده هستید، کالا را در کاتالوگت اضافه کن — با عضویت فعال، خودکار اینجا نمایش داده می‌شود.'}
+                                <p className="text-sm text-on-surface-variant dark:text-gray-400 mb-8 max-w-xl mx-auto leading-relaxed">
+                                    {hasActiveFilters ? 'فیلترهای انتخاب‌شده را تغییر دهید یا از دسته‌بندی‌های دیگر دیدن کنید.' : 'اگر فروشنده هستی، کالا رو به کاتالوگت اضافه کن — بعد از تایید عضویت نمایش داده می شود.'}
                                 </p>
                                 <div className="flex items-center justify-center gap-3 flex-wrap">
                                     {hasActiveFilters && (
