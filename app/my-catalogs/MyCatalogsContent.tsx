@@ -374,17 +374,17 @@ export default function MyCatalogsContent() {
                 const cfg: Record<string, { title: string; desc: string; cls: string }> = {
                     seller: {
                         title: 'عضوِ فروش این کاتالوگ',
-                        desc: 'این کاتالوگ مالِ اونر کاتالوگ است — شما عضوِ فروش آن هستید؛ مشتری‌های منطقهٔ خودتان را ثبت کنید تا تماسشان به شما برسد',
+                        desc: 'این کاتالوگ مالِ مالک کاتالوگ است — شما عضوِ فروش آن هستید؛ مشتری‌های منطقهٔ خودتان را ثبت کنید تا تماسشان به شما برسد',
                         cls: 'border-sky-500/30 bg-sky-500/5 dark:bg-sky-500/10',
                     },
                     admin: {
                         title: 'مدیر این کاتالوگ',
-                        desc: 'اونر کاتالوگ به شما دسترسی ویرایش داده — محصولات و قیمت‌ها را مدیریت کنید و در مدیریت اعضا کمک کنید',
+                        desc: 'مالک کاتالوگ به شما دسترسی ویرایش داده — محصولات و قیمت‌ها را مدیریت کنید و در مدیریت اعضا کمک کنید',
                         cls: 'border-indigo-500/30 bg-indigo-500/5 dark:bg-indigo-500/10',
                     },
                     pending: {
                         title: 'درخواست فروشندگی در انتظار تایید',
-                        desc: 'تا تایید اونر کاتالوگ، امکان ثبت مشتری ندارید',
+                        desc: 'تا تایید مالک کاتالوگ، امکان ثبت مشتری ندارید',
                         cls: 'border-amber-500/30 bg-amber-500/5 dark:bg-amber-500/10',
                     },
                 };
@@ -450,7 +450,7 @@ export default function MyCatalogsContent() {
                     <StatsTab currentCatalog={currentCatalog} stats={stats} productsCount={products.length} />
                 )}
 
-                {/* تب اعضا — اونر/مدیر/عضوِ فروش (بازار پخش) */}
+                {/* تب اعضا — مالک/مدیر/عضوِ فروش (بازار پخش) */}
                 {tab === 'team' && (
                     <TeamTab catalogId={currentCatalog.id} />
                 )}

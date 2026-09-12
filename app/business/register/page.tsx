@@ -203,7 +203,9 @@ export default function RegisterCatalogPage() {
                     <BusinessSelector value={selectedBiz} onChange={handleBizChange} error={errors.biz} />
                     {!selectedBiz && (
                         <p className="mt-2.5 text-[11px] leading-5 text-on-surface-variant/70">
-                            شاید کسب‌وکارت قبلاً توسط خودت یا همکارانت ثبت شده باشه — اول جستجو کن؛ اگه پیدا نشد، خودت ثبتش کن.
+                            اگر کسب‌وکارت قبلاً توسط همکاران یا صاحب کسب‌وکار ثبت شده، فقط انتخابش کن.
+                            در غیر این صورت، خودت ثبتش کن. برای انتخاب یا ثبت کسب و کار لازم نیست مالکش باشی؛
+                            همین که در اون شاغل باشی کافیه.
                         </p>
                     )}
                 </section>
@@ -333,7 +335,7 @@ export default function RegisterCatalogPage() {
                                     <Globe className={cn('w-4 h-4', !isPrivate ? 'text-primary' : 'text-on-surface-variant/50')} />
                                     <span className={cn('text-xs font-bold', !isPrivate ? 'text-primary' : 'text-on-surface')}>عمومی</span>
                                 </span>
-                                <span className="block text-[10px] leading-4 text-on-surface-variant/70">قیمت‌ها برای همه نمایش داده می‌شود</span>
+                                <span className="block text-[10px] leading-4 text-on-surface-variant/70">نمایش قیمتها برای عموم</span>
                             </button>
                             <button type="button" onClick={() => setIsPrivate(true)}
                                     className={cn(
@@ -346,7 +348,7 @@ export default function RegisterCatalogPage() {
                                     <Lock className={cn('w-4 h-4', isPrivate ? 'text-primary' : 'text-on-surface-variant/50')} />
                                     <span className={cn('text-xs font-bold', isPrivate ? 'text-primary' : 'text-on-surface')}>خصوصی</span>
                                 </span>
-                                <span className="block text-[10px] leading-4 text-on-surface-variant/70">قیمت‌ها فقط برای اعضای پذیرفته‌شده</span>
+                                <span className="block text-[10px] leading-4 text-on-surface-variant/70">نمایش قیمت فقط برای همکاران تجاری</span>
                             </button>
                         </div>
                     </section>

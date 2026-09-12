@@ -85,7 +85,7 @@ export default function TeamTab({ catalogId }: Props) {
     const [search, setSearch] = useState('');
     const [results, setResults] = useState<any[]>([]);
     const [searching, setSearching] = useState(false);
-    const [assignTo, setAssignTo] = useState(''); // sellerUserId برای افزودن (اونر/مدیر)
+    const [assignTo, setAssignTo] = useState(''); // sellerUserId برای افزودن (مالک/مدیر)
     const [reassignTarget, setReassignTarget] = useState<any>(null);
     const [menuFor, setMenuFor] = useState<string | null>(null);
     const [approveFor, setApproveFor] = useState<string | null>(null);
@@ -470,7 +470,7 @@ export default function TeamTab({ catalogId }: Props) {
                 </button>
             )}
 
-            {/* تاریخچه رویدادها — اونر/مدیر */}
+            {/* تاریخچه رویدادها — مالک/مدیر */}
             {canManage && events.length > 0 && (
                 <div className={cn(CARD_CLS, 'p-4')}>
                     <p className="font-bold text-sm text-gray-900 dark:text-gray-100 mb-3 flex items-center gap-2">
@@ -641,7 +641,7 @@ export default function TeamTab({ catalogId }: Props) {
                                     </span>
                                     <div className="flex-1 min-w-0">
                                         <p className="font-bold text-sm text-gray-900 dark:text-gray-100 truncate">
-                                            {s.fullName || '—'} {s.isOwner && '(اونر)'}
+                                            {s.fullName || '—'} {s.isOwner && '(مالک)'}
                                         </p>
                                         <p className="text-xs text-gray-500 truncate">
                                             {s.sellerRole === 'visitor' ? 'ویزیتور' : 'فروشنده'}

@@ -414,9 +414,7 @@ export default function MarketContent({ search: searchProp }: { search?: string 
                                 <h2 className="text-xl font-bold text-on-surface dark:text-gray-100 mb-2">
                                     {hasActiveFilters ? 'هیچ قیمتی با این فیلترها پیدا نشد' : 'هنوز قیمتی ثبت نشده است'}
                                 </h2>
-                                <p className="text-sm text-on-surface-variant dark:text-gray-400 mb-8 max-w-xl mx-auto leading-relaxed">
-                                    {hasActiveFilters ? 'فیلترهای انتخاب‌شده را تغییر دهید یا از دسته‌بندی‌های دیگر دیدن کنید.' : 'اگر فروشنده هستی، کالا رو به کاتالوگت اضافه کن — بعد از تایید عضویت نمایش داده می شود.'}
-                                </p>
+
                                 <div className="flex items-center justify-center gap-3 flex-wrap">
                                     {hasActiveFilters && (
                                         <Link href={buildFilterHref(pathname, searchParams, categoryTree, { resetAll: true })} scroll={false}
@@ -424,9 +422,7 @@ export default function MarketContent({ search: searchProp }: { search?: string 
                                             <RefreshCw className="w-4 h-4" /> پاک کردن فیلترها
                                         </Link>
                                     )}
-                                    {isAuthenticated && (
-                                        <button onClick={() => router.push('/my-catalogs')} className="h-10 px-5 bg-primary text-on-primary rounded-lg text-sm font-medium hover:bg-primary/90 shadow-sm">افزودن کالا از کاتالوگ من</button>
-                                    )}
+
                                 </div>
                             </div>
                         )}

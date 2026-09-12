@@ -149,7 +149,7 @@ export const apiService = {
         getCatalogAds: (catalogId: string, page: number = 1, limit: number = 24, search?: string) =>
             apiRequest(`/ad/catalog/${catalogId}?page=${page}&limit=${limit}${search ? `&search=${encodeURIComponent(search)}` : ''}`),
 
-        // ─── تیم کاتالوگ (اونر/مدیر/عضوِ فروش/مشتری) ───
+        // ─── تیم کاتالوگ (مالک/مدیر/عضوِ فروش/مشتری) ───
         team: {
             getTeam: (catalogId: string): Promise<any> =>
                 apiRequest(`/catalog/${catalogId}/team`),

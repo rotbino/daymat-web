@@ -43,7 +43,7 @@ export default function BusinessSelector({ value, onChange, error, disabled }: P
 
     return (
         <div className="space-y-1.5">
-            <p className="text-[12px] font-bold text-on-surface">ثبت یا انتخاب کسب و کار</p>
+            <p className="text-[12px] font-bold text-on-surface pb-1">ثبت یا انتخاب کسب و کاری که می خوای براش کاتالوگ بسازی</p>
 
             {value ? (
                 /* ── انتخاب‌شده — شکلیِ سلکت با لوگو و نام ── */
