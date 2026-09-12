@@ -3,7 +3,7 @@
 
 import React from 'react';
 import { ArmCreateWizard } from '../components/ArmCreateWizard';
-import { FormHeader } from '@/app_/components/FormHeader';
+import { FormHeader } from '@/components/FormHeader';
 
 export default function CreateArmPage() {
     return (

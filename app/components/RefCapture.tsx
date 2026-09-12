@@ -1,4 +1,4 @@
-// app_/components/RefCapture.tsx
+// app/components/RefCapture.tsx
 'use client';
 
 import { useEffect } from 'react';

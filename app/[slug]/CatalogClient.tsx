@@ -15,7 +15,7 @@ import CatalogHeader from './components/CatalogHeader';
 import CatalogProductList from './components/CatalogProductList';
 import CatalogFooter from './components/CatalogFooter';
 import CatalogMembersTab from './components/CatalogMembersTab';
-import { LoginModal } from '@/app_/components/LoginModal';
+import { LoginModal } from '@/components/LoginModal';
 import EditBusinessModal from "@/app/[slug]/components/EditBusinessModal";
 import EditProfileModal from "@/app/[slug]/components/EditProfileModal";
 

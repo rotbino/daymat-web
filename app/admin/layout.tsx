@@ -37,7 +37,7 @@ import {
     Tag,
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
-import { ThemeToggle } from '@/app_/components/ThemeToggle';
+import { ThemeToggle } from '@/components/ThemeToggle';
 import Image from "next/image";
 
 // ============================================================

@@ -10,14 +10,14 @@ import {
     Briefcase, User, AlertCircle, Loader2, Award, Tag, MapPinned,
     Shield, BadgeCheck, ArrowRight, Clock, XCircle,
 } from 'lucide-react';
-import { ArmLocationSelector } from '@/app_/components/ArmLocationSelector';
+import { ArmLocationSelector } from '@/components/ArmLocationSelector';
 import { FileUploader } from '@/components/common/FileUploader';
 import { RootState } from '@/lib/store/store';
 import { useCatalog, useUpdateCatalog, useUploadFile } from '@/lib/api/apiHooks';
 import { USER_POSITIONS, CATALOG_TYPES } from '@/lib/api/data-types';
 import { apiService } from '@/lib/api/apiService';
 import { cn } from '@/lib/utils';
-import { ActivitySelectorModal } from '@/app_/components/ActivitySelectorModal';
+import { ActivitySelectorModal } from '@/components/ActivitySelectorModal';
 import { VerificationModal } from '@/app/business/VerificationModal';
 import SlugPicker from "@/app/business/register/SlugPicker";
 

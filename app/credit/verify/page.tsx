@@ -5,7 +5,7 @@ import React, { Suspense, useEffect, useState } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { useSelector } from 'react-redux';
 import { RootState } from '@/lib/store/store';
-import { AppHeader } from '@/app_/components';
+import AppHeader from '@/app/components/AppHeader';
 import { useCreditBalance } from '@/lib/api/apiHooks';
 import { toast } from 'sonner';
 import { CheckCircle, XCircle, Loader2, Home, RefreshCw, CreditCard, ArrowLeft, ShoppingBag, TrendingUp, Wallet } from 'lucide-react';

@@ -17,7 +17,7 @@ import { apiService } from '@/lib/api/apiService';
 import { cn } from '@/lib/utils';
 import Image from 'next/image';
 import Link from 'next/link';
-import CategoryFilter from '@/app_/home/CategoryFilter';
+import CategoryFilter from '@/components/home/CategoryFilter';
 
 type AdStatus = 'pending' | 'approved' | 'rejected' | 'active' | 'inactive' | 'expired' | 'all';
 

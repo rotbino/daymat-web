@@ -9,8 +9,8 @@ import { ArrowRight, Bell } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { LocationFilter } from './LocationFilter';
 import HeaderMenu from './HeaderMenu';
-import ArmSwitcher from '@/app_/components/ArmSwitcher';
-import PostPriceButton from '@/app_/components/PostPriceButton';
+import ArmSwitcher from '@/components/ArmSwitcher';
+import PostPriceButton from '@/components/PostPriceButton';
 import SaveArmButton from './SaveArmButton';
 import { useUnreadNotifications } from '@/app/home/nav/useUnreadNotifications';
 

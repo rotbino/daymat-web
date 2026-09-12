@@ -9,7 +9,7 @@ import { Eye, EyeOff, ArrowLeft, Phone, Shield } from 'lucide-react';
 import { toast } from 'sonner';
 import { setUser, setAccessToken, clearUserSession } from '@/lib/store/slices/authSlice';
 import { useLogin, useRegister } from '@/lib/api/apiHooks';
-import { AppFooter } from '@/app_/components';
+import { AppFooter } from '@/components/AppFooter';
 import { apiService } from '@/lib/api/apiService';
 import { getApiUrl } from '@/lib/api/apiRequest';
 import { readStoredRef, clearStoredRef } from "@/app/components/RefCapture";

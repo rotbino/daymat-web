@@ -1,4 +1,4 @@
-// app_/profile/components/VisitCardModal.tsx
+// components/profile/components/VisitCardModal.tsx
 // استودیوی کارت ویزیت — مستقل از کیت اشتراک‌گذاری
 //   • ۳ قالب پس‌زمینهٔ آمادهٔ /public/visit-card/1..3.jpg + «عکس دلخواه» — کاشی‌های کوچک (بنا بر بازخورد)
 //   • پیش‌فرض: قالب ۱ — تاریکی عکس با اسلایدر (۰ تا ۸۵٪)

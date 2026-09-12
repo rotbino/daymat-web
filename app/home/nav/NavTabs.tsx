@@ -11,11 +11,11 @@ import { cn } from '@/lib/utils';
 import { useNavMode } from './useNavMode';
 import { useUnreadNotifications } from './useUnreadNotifications';
 import { NAV, NavItemDef } from './config';
-import ArmSwitcher from '@/app_/components/ArmSwitcher';
-import PostPriceButton from '@/app_/components/PostPriceButton';
+import ArmSwitcher from '@/components/ArmSwitcher';
+import PostPriceButton from '@/components/PostPriceButton';
 import { LocationFilter } from '@/app/components/LocationFilter';
 import HeaderMenu from '@/app/components/HeaderMenu';
-import SearchBox from '@/app_/home/SearchBox';
+import SearchBox from '@/components/home/SearchBox';
 
 /**
  * ناوبری دیمت (نسخهٔ ۵ — مهمان‌پذیر روی بازار):

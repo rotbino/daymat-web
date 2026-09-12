@@ -1,4 +1,4 @@
-// app_/my-catalogs/page.tsx
+// app/my-catalogs/page.tsx
 'use client';
 
 import React from 'react';

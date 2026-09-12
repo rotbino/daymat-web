@@ -6,7 +6,7 @@ import { useRouter } from 'next/navigation';
 import { useDispatch } from 'react-redux';
 import { setUser } from '@/lib/store/slices/authSlice';
 import { BookOpen, Key } from 'lucide-react';
-import { ChangePasswordModal } from '@/app_/register/ChangePasswordModal';
+import { ChangePasswordModal } from '@/components/register/ChangePasswordModal';
 
 /** گارد «هنوز کاتالوگ نداری» — با هشدار رمز موقت و CTA ساخت کاتالوگ */
 export default function EmptyCatalogState({ hasTemporaryPassword, user }: {

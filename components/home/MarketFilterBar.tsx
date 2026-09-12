@@ -1,4 +1,4 @@
-// app_/home/MarketFilterBar.tsx
+// components/home/MarketFilterBar.tsx
 // ✅ فیلتربار توسعه‌پذیر بازار (سبک دیوار) — چیپ برند + بازهٔ قیمت + چک
 // همهٔ چیپ‌ها URL-محورند (buildFilterHref) — بازهٔ قیمت/لیست برند از فاست‌های ویترین می‌آیند
 'use client';

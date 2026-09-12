@@ -17,7 +17,7 @@ import {
 import { cn } from '@/lib/utils';
 import NavTabs from '@/app/home/nav/NavTabs';
 import { PUB_META } from '@/app/home/nav/config';
-import ShareKitModal from '@/app_/profile/components/ShareKitModal';
+import ShareKitModal from '@/components/profile/ShareKitModal';
 
 const isAdExpired = (ad: any) =>
     ad.status === 'expired' || new Date(ad.expiresAt).getTime() < Date.now();

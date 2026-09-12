@@ -1,4 +1,4 @@
-// app_/profile/components/ShareKitModal.tsx
+// components/profile/components/ShareKitModal.tsx
 // کیت اشتراک‌گذاری کاتالوگ — لینک + پیام آماده + دو خروجی تصویری:
 //   ۱) «دانلود برای چاپ» — پوستر ویترین: متن راهنما + QR بزرگ + لوگو و نام کسب‌وکار
 //   ۲) «فقط تصویر QR» — خود QR با حاشیهٔ ساکت

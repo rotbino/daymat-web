@@ -30,7 +30,7 @@ const AdPriceCard = dynamic(() => import('./components/AdPriceCard'), {
 const AdTabs = dynamic(() => import('./components/AdTabs'), {
     loading: () => <div className="h-20 bg-gray-100 rounded-2xl animate-pulse" />,});
 
-const MembershipModal = dynamic(() => import('@/app_/home/MembershipModal'), { ssr: false });
+const MembershipModal = dynamic(() => import('@/components/home/MembershipModal'), { ssr: false });
 
 interface Props {
     adId: string;

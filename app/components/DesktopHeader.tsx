@@ -8,8 +8,8 @@ import { Bell, Plus } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { LocationFilter } from './LocationFilter';
 import HeaderMenu from './HeaderMenu';
-import SearchBox from '@/app_/home/SearchBox';
-import ArmSwitcher from '@/app_/components/ArmSwitcher';
+import SearchBox from '@/components/home/SearchBox';
+import ArmSwitcher from '@/components/ArmSwitcher';
 import SaveArmButton from './SaveArmButton';
 import { useUnreadNotifications } from '@/app/home/nav/useUnreadNotifications';
 

@@ -377,22 +377,6 @@ export const apiService = {
         withdrawLeave: (slug: string): Promise<any> =>
             apiRequest(`/arm/${slug}/leave-request`, { method: 'DELETE' }),
 
-        // ✅ واگذاری کارِ کاتالوگ به تیمِ بازار — فروشنده کارهایش را به مالک + ادمین‌ها می‌سپارد
-        grantDelegation: (slug: string, catalogId: string): Promise<any> =>
-            apiRequest(`/arm/${slug}/catalog-delegation`, { method: 'POST', data: { catalogId } }),
-
-        // ✅ پس‌گرفتن واگذاری (فروشنده) یا لغو (مالک بازار)
-        revokeDelegation: (slug: string, catalogId: string): Promise<any> =>
-            apiRequest(`/arm/${slug}/catalog-delegation`, { method: 'DELETE', params: { catalogId } }),
-
-        // ✅ تیمِ بازار (مالک + ادمین‌ها) — برای مودال تأییدِ واگذاری
-        getDelegationTeam: (slug: string): Promise<any> =>
-            apiRequest(`/arm/${slug}/catalog-delegation/team`),
-
-        // ✅ کاتالوگ‌های واگذارشده به من (مالک/ادمین بازار) — کنسولِ کارِ به‌نیابت
-        getDelegatedCatalogs: (): Promise<any[]> =>
-            apiRequest('/arm/delegated-catalogs'),
-
         // ✅ ذخیره/فالو بازار — برای غیرعضوها؛ بازار در سوییچر می‌ماند (عضوها ذخیره ندارند)
         save: (slug: string): Promise<any> =>
             apiRequest(`/arm/${slug}/save`, { method: 'POST' }),
@@ -986,10 +970,6 @@ export const apiService = {
         // ✅ درخواست‌های لغو عضویت — پنل مالک: تایید = لغوِ عضویت، رد = عضو می‌ماند
         getLeaveRequests: (slug: string, params?: { status?: string; page?: number; limit?: number }): Promise<any> =>
             apiRequest(`/arm-admin/${slug}/members/leave-requests`, { params }),
-
-        // ✅ کاتالوگ‌های واگذارشده به تیمِ بازار — کارشان را به‌جای فروشنده انجام می‌دهید
-        getDelegated: (slug: string, status: string = 'active'): Promise<any> =>
-            apiRequest(`/arm-admin/${slug}/memberships/delegated`, { params: { status } }),
 
         approveLeaveRequest: (slug: string, requestId: string): Promise<any> =>
             apiRequest(`/arm-admin/${slug}/members/leave-requests/${requestId}/approve`, { method: 'POST' }),

@@ -18,14 +18,14 @@ import {
 } from '@/lib/api/apiHooks';
 import { toast } from 'sonner';
 import { cn } from '@/lib/utils';
-import { BarChart3, Globe, IdCard, Loader2, Package, Handshake, Users } from 'lucide-react';
+import { BarChart3, Globe, IdCard, Loader2, Package, Users } from 'lucide-react';
 
 import UnitSettingsModal from '@/app/ad/components/UnitSettingsModal';
 import CategorySettingsModal from '@/app/ad/components/CategorySettingsModal';
-import ShareKitModal from '@/app_/profile/components/ShareKitModal';
-import VisitCardModal from '@/app_/profile/components/VisitCardModal';
+import ShareKitModal from '@/components/profile/ShareKitModal';
+import VisitCardModal from '@/components/profile/VisitCardModal';
 import { RefreshModal } from '@/app/ad/RefreshModal';
-import { ChangePasswordModal } from '@/app_/register/ChangePasswordModal';
+import { ChangePasswordModal } from '@/components/register/ChangePasswordModal';
 import { VerificationModal } from '@/app/business/VerificationModal';
 
 import { StatusFilter, Tab } from './constants';
@@ -82,21 +82,8 @@ export default function MyCatalogsContent() {
         [catalogsRaw],
     );
 
-    // ✅ کاتالوگ‌های واگذارشده به من (مالک/ادمین بازار) — کارشان را به‌نیابت از فروشنده انجام می‌دهیم
-    const { data: delegatedRaw } = useQuery({
-        queryKey: ['delegated-catalogs'],
-        queryFn: () => apiService.arm.getDelegatedCatalogs(),
-        staleTime: 60_000,
-    });
-    const delegatedCatalogs = useMemo(
-        () => (delegatedRaw ?? []).map((d: any) => d?.catalog).filter(Boolean),
-        [delegatedRaw],
-    );
-    // کنسول با هر دو کار می‌کند — کاتالوگ‌های خودم + واگذارشده‌ها (بج متمایز در سوییچر)
-    const allCatalogs = useMemo(
-        () => [...catalogs, ...delegatedCatalogs],
-        [catalogs, delegatedCatalogs],
-    );
+    // کاتالوگ‌های فعالِ من — کنسول با همین‌ها کار می‌کند (کاتالوگ‌های تیمی داخل پاسخِ getAll ادغام شده‌اند)
+    const allCatalogs = catalogs;
 
     const [currentId, setCurrentId] = useState<string | null>(null);
     // ── انتخاب اولیه با اولویت: ۱) لینک عمیق ?catalog= (مثلاً بعد از ساخت کاتالوگ جدید)
@@ -109,7 +96,7 @@ export default function MyCatalogsContent() {
         const fromUrl = params.get('catalog');
         const updatePriceParam = params.get('updatePrice'); // ✅ دیپ‌لینک اعلان «آپدیت قیمت» — با پاک‌سازی URL از بین نمی‌رود
 
-        // ۱) لینک عمیق صریح — ارادهٔ کاربر/مسیرِ فرستنده (کاتالوگ خودم یا واگذارشده)
+        // ۱) لینک عمیق صریح — ارادهٔ کاربر/مسیرِ فرستنده (کاتالوگ خودم)
         if (fromUrl && allCatalogs.some((c) => c.id === fromUrl)) {
             setCurrentId(fromUrl);
             // انتخاب ماندگار شد (پرسیست پایین‌تر می‌نویسد) → پارامتر تمیز شود
@@ -117,7 +104,7 @@ export default function MyCatalogsContent() {
             window.history.replaceState({}, '', '/my-catalogs' + (updatePriceParam ? `?updatePrice=${updatePriceParam}` : ''));
             return;
         }
-        // ۲) کاتالوگ کارنت پرسیست — ادامهٔ کارِ قبلی (فقط کاتالوگِ خودم؛ واگذاری با لینک صریح باز می‌شود)
+        // ۲) کاتالوگ کارنت پرسیست — ادامهٔ کارِ قبلی (فقط کاتالوگِ خودم)
         if (!fromUrl && persistedCatalogId && catalogs.some((c) => c.id === persistedCatalogId)) {
             setCurrentId(persistedCatalogId);
             return;
@@ -132,8 +119,6 @@ export default function MyCatalogsContent() {
         () => allCatalogs.find((c) => c.id === currentId) ?? null,
         [allCatalogs, currentId],
     );
-    // ✅ حالت به‌نیابت — کاتالوگِ فعلی مالِ من نیست؛ تیمِ بازاری که کارش به آن واگذار شده
-    const isDelegateMode = !!currentCatalog && !catalogs.some((c) => c.id === currentId);
     // ✅ حالت تیم کاتالوگ — بازاریاب/ادمین کاتالوگ دیگری (سناریوی بازار پخش)
     //    کاتالوگ‌های تیمی از قبل داخل پاسخِ getAll ادغام شده‌اند (isTeamEntry) و جزو catalogs هستند
     const teamMode = (currentCatalog as any)?.teamMode as string | undefined;
@@ -236,11 +221,6 @@ export default function MyCatalogsContent() {
         }
     }, []);
 
-    // ✅ در حالت به‌نیابت فقط تب محصولات معنا دارد — اگر تب دیگری باز بود، برگرد به محصولات
-    useEffect(() => {
-        if (isDelegateMode && tab !== 'products') setTab('products');
-    }, [isDelegateMode, tab]);
-
     // ✅ حالت تیم — بازاریاب/درانتظار فقط تب تیم؛ ادمین محصولات+تیم
     useEffect(() => {
         if (!isTeamEntry) return;
@@ -335,12 +315,7 @@ export default function MyCatalogsContent() {
     const userHasName = !!user?.fullName?.trim();
 
     // ─── تب‌های بخش‌های کاتالوگ (RTL: مشخصات در راست) ───
-    // ✅ حالت به‌نیابت: فقط کارِ کاتالوگ (محصولات) — مشخصات/آمار/انتشار مالِ مالکِ کاتالوگ است
-    const tabItems = isDelegateMode
-        ? [
-              { key: 'products' as Tab, label: 'محصولات', icon: Package, count: products.length },
-          ]
-        : isTeamEntry
+    const tabItems = isTeamEntry
         ? teamMode === 'admin'
             ? [
                   { key: 'products' as Tab, label: 'محصولات', icon: Package, count: products.length },
@@ -383,28 +358,6 @@ export default function MyCatalogsContent() {
                 </div>
                 <ConsoleTabs items={tabItems} active={tab} onChange={setTab} />
             </div>
-
-            {/* 🤝 نوارِ حالت به‌نیابت — این کاتالوگ مالِ من نیست؛ کارش به تیمِ من واگذار شده */}
-            {isDelegateMode && (() => {
-                const deleg = (delegatedRaw ?? []).find((d: any) => d?.catalog?.id === currentId);
-                return (
-                    <div className="rounded-xl border border-emerald-500/30 bg-emerald-500/5 dark:bg-emerald-500/10 px-4 py-3
-                            flex items-center gap-3">
-                        <span className="w-9 h-9 rounded-xl bg-emerald-500/15 flex items-center justify-center flex-shrink-0">
-                            <Handshake className="w-4.5 h-4.5 text-emerald-600 dark:text-emerald-400" />
-                        </span>
-                        <div className="flex-1 min-w-0">
-                            <p className="text-xs font-extrabold text-emerald-700 dark:text-emerald-300">مدیریت به‌نیابت</p>
-                            <p className="text-[11px] text-on-surface-variant mt-0.5 leading-5">
-                                کارِ این کاتالوگ{deleg?.grantedAt ? ` (از ${new Date(deleg.grantedAt).toLocaleDateString('fa-IR')})` : ''}
-                                {deleg?.catalog?.ownerName ? ` توسط ${deleg.catalog.ownerName}` : ''}
-                                {deleg?.arm?.name ? ` در بازار ${deleg.arm.name}` : ''} به شما واگذار شده —
-                                ثبت کالا، آپدیت قیمت و دسته‌بندی را انجام دهید. مشخصات و هویت کاتالوگ با مالکش است.
-                            </p>
-                        </div>
-                    </div>
-                );
-})()}
 
             {/* 🏪 نوارِ حالت تیم کاتالوگ — بازاریاب/ادمین کاتالوگ دیگری (بازار پخش) */}
             {isTeamEntry && (() => {

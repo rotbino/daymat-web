@@ -6,9 +6,9 @@ import { Vazirmatn } from "next/font/google";
 import "./globals.css";
 import { Providers } from "@/lib/providers/providers";
 import { ThemeProvider } from "@/lib/providers/ThemeProvider";
-import { FloatingAdminButton } from "@/app_/components/FloatingAdminButton";
-import { AuthSync } from "@/app_/components/AuthSync";
-import ClientLayout from "@/app_/ClientLayout";
+import { FloatingAdminButton } from "@/components/FloatingAdminButton";
+import { AuthSync } from "@/components/AuthSync";
+import ClientLayout from "@/components/ClientLayout";
 import RefCapture from "@/app/components/RefCapture";
 import { PwaInstaller } from "@/app/components/pwa/PwaInstaller";
 

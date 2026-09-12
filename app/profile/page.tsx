@@ -19,7 +19,7 @@ import {
 import { cn } from '@/lib/utils';
 import NavTabs from '@/app/home/nav/NavTabs';
 import EditProfileModal from '@/app/[slug]/components/EditProfileModal';
-import { ChangePasswordModal } from '@/app_/register/ChangePasswordModal';
+import { ChangePasswordModal } from '@/components/register/ChangePasswordModal';
 
 export default function ProfilePage() {
     const router = useRouter();

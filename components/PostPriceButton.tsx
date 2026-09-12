@@ -1,4 +1,4 @@
-// app_/components/PostPriceButton.tsx
+// components/PostPriceButton.tsx
 'use client';
 import React from 'react';
 import Link from 'next/link';

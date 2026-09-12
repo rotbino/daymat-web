@@ -1,4 +1,4 @@
-// app_/home/MembershipModal.tsx
+// components/home/MembershipModal.tsx
 'use client';
 import React, { useEffect, useState } from 'react';
 import Link from 'next/link';
