@@ -9,10 +9,12 @@ import { RootState } from '@/lib/store/store';
 import { useCatalogBySlug, useCatalogAds, useCatalogSaved, useCatalogStats, useSavedCatalogs } from '@/lib/api/apiHooks';
 import { apiService } from '@/lib/api/apiService';
 import { toast } from 'sonner';
+import { cn } from '@/lib/utils';
 import { Building2, Phone } from 'lucide-react';
 import CatalogHeader from './components/CatalogHeader';
 import CatalogProductList from './components/CatalogProductList';
 import CatalogFooter from './components/CatalogFooter';
+import CatalogMembersTab from './components/CatalogMembersTab';
 import { LoginModal } from '@/app_/components/LoginModal';
 import EditBusinessModal from "@/app/[slug]/components/EditBusinessModal";
 import EditProfileModal from "@/app/[slug]/components/EditProfileModal";
@@ -41,6 +43,8 @@ export default function CatalogClient({ slug, initialCatalog, initialSearch = ''
     const [pendingSave, setPendingSave] = useState(false);
     // ✅ ویرایش درجا: مدال پروفایل شخصی
     const [profileEditOpen, setProfileEditOpen] = useState(false);
+    // ✅ برگه‌های کاتالوگ: کالاها / اعضا
+    const [pageTab, setPageTab] = useState<'products' | 'members'>('products');
     const loadMoreRef = React.useRef<HTMLDivElement>(null);
 
     const { data: catalog, refetch: refetchCatalog } = useCatalogBySlug(slug);
@@ -254,24 +258,63 @@ export default function CatalogClient({ slug, initialCatalog, initialSearch = ''
                     onEditProfile={() => setProfileEditOpen(true)} // ✅ مداد باکس پروفایل شخصی
                 />
 
-                {/* لیست محصولات */}
-                <CatalogProductList
-                    ads={allAds}
-                    total={total}
-                    query={query}
-                    setQuery={setQuery}
-                    view={view}
-                    setView={(v) => {
-                        setView(v);
-                        localStorage.setItem('catalog-view', v);
-                    }}
-                    isLoading={adsLoading && allAds.length === 0}
-                    isFetching={isFetching}
-                    loadMoreRef={loadMoreRef}
-                    isLoadingMore={isLoadingMore}
-                    isOwner={isOwner}              // ✅
-                    onAddProduct={handleAddProduct} // ✅ افزودن محصول از خود کاتالوگ
-                />
+                {/* برگه‌ها: کالاها / اعضا */}
+                {!isEditMode && (
+                    <div className="px-4 pt-3">
+                        <div className="flex items-center gap-1 bg-white dark:bg-gray-900 rounded-xl p-1 border border-outline-variant/20 w-max max-w-full overflow-x-auto no-scrollbar">
+                            <button
+                                onClick={() => setPageTab('products')}
+                                className={cn(
+                                    'px-4 py-2 rounded-lg text-xs font-bold transition-all whitespace-nowrap',
+                                    pageTab === 'products'
+                                        ? 'bg-primary text-on-primary shadow-sm'
+                                        : 'text-on-surface-variant hover:bg-surface-container-high dark:hover:bg-gray-800',
+                                )}
+                            >
+                                کالاها
+                            </button>
+                            <button
+                                onClick={() => setPageTab('members')}
+                                className={cn(
+                                    'px-4 py-2 rounded-lg text-xs font-bold transition-all whitespace-nowrap',
+                                    pageTab === 'members'
+                                        ? 'bg-primary text-on-primary shadow-sm'
+                                        : 'text-on-surface-variant hover:bg-surface-container-high dark:hover:bg-gray-800',
+                                )}
+                            >
+                                اعضا
+                            </button>
+                        </div>
+                    </div>
+                )}
+
+                {/* محتوای برگه‌ها */}
+                {pageTab === 'products' ? (
+                    <CatalogProductList
+                        ads={allAds}
+                        total={total}
+                        query={query}
+                        setQuery={setQuery}
+                        view={view}
+                        setView={(v) => {
+                            setView(v);
+                            localStorage.setItem('catalog-view', v);
+                        }}
+                        isLoading={adsLoading && allAds.length === 0}
+                        isFetching={isFetching}
+                        loadMoreRef={loadMoreRef}
+                        isLoadingMore={isLoadingMore}
+                        isOwner={isOwner}              // ✅
+                        onAddProduct={handleAddProduct} // ✅ افزودن محصول از خود کاتالوگ
+                    />
+                ) : (
+                    <div className="px-4 py-4 pb-24">
+                        <CatalogMembersTab
+                            catalogId={displayCatalog.id}
+                            onLoginNeeded={() => setShowLogin(true)}
+                        />
+                    </div>
+                )}
 
                 {/* فوتر */}
                 <CatalogFooter catalog={displayCatalog} />

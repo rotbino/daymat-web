@@ -4,7 +4,8 @@ import React, { useEffect, useMemo, useState } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { useSelector } from 'react-redux';
 import { RootState } from '@/lib/store/store';
-import { useQueryClient } from '@tanstack/react-query';
+import { useQueryClient, useQuery, useMutation } from '@tanstack/react-query';
+import { apiService } from '@/lib/api/apiService';
 import {
     BookOpen, PlusCircle, Layers, UserPlus, Search, X,
     Eye, PauseCircle, PlayCircle, Trash2, Loader2, Package,
@@ -104,6 +105,61 @@ function SalesBadge({ salesType }: { salesType: string }) {
 
 function RowSkeleton({ h = 100 }: { h?: number }) {
     return <div style={{ height: h }} className="rounded-2xl bg-surface-container-high/50 animate-pulse" />;
+}
+// ═══════════════════════════════════════════
+// کنترل چندفروشندگی کاتالوگ — ارث‌بری از بازار + اورایت مالک بازار
+// ═══════════════════════════════════════════
+function MultiSellerControl({ slug, catalogId }: { slug: string; catalogId: string }) {
+    const queryClient = useQueryClient();
+    const qk = ['arm-admin', 'catalog-settings', slug, catalogId];
+
+    const { data, isLoading } = useQuery({
+        queryKey: qk,
+        queryFn: () => apiService.armAdmin.catalogs.getCatalogSettings(slug, catalogId),
+        staleTime: 30_000,
+        retry: false,
+    });
+
+    const mut = useMutation({
+        mutationFn: (value: boolean | 'inherit') =>
+            apiService.armAdmin.catalogs.setCatalogSettings(slug, catalogId, value),
+        onSuccess: (res: any) => {
+            queryClient.setQueryData(qk, res);
+            toast.success('تنظیم چندفروشندگی ذخیره شد');
+        },
+        onError: (e: any) => toast.error(e?.message || 'خطا در ذخیرهٔ تنظیم'),
+    });
+
+    const value: boolean | 'inherit' = data?.multiSeller?.override ?? 'inherit';
+    const effective = data?.multiSeller?.effective;
+
+    const optCls = (active: boolean) =>
+        cn('h-7 px-2 rounded-lg text-[10px] font-bold transition-colors',
+            active ? 'bg-primary text-on-primary' : 'text-on-surface-variant hover:bg-surface-container-high dark:hover:bg-gray-800');
+
+    return (
+        <div className="inline-flex items-center gap-1 bg-surface-container-low dark:bg-gray-800 rounded-lg p-0.5" title="چندفروشندگی: ارث از بازار یا اورایت برای همین کاتالوگ">
+            <span className="text-[9px] text-on-surface-variant px-1.5">چندفروشندگی</span>
+            {isLoading ? (
+                <Loader2 className="w-3 h-3 animate-spin text-on-surface-variant mx-1" />
+            ) : (
+                <>
+                    <button className={optCls(value === 'inherit')} onClick={() => mut.mutate('inherit')} disabled={mut.isPending}>
+                        ارث از بازار
+                    </button>
+                    <button className={optCls(value === true)} onClick={() => mut.mutate(true)} disabled={mut.isPending}>
+                        فعال
+                    </button>
+                    <button className={optCls(value === false)} onClick={() => mut.mutate(false)} disabled={mut.isPending}>
+                        غیرفعال
+                    </button>
+                    <span className={cn('text-[9px] font-bold px-1.5', effective ? 'text-emerald-600' : 'text-error')}>
+                        {effective ? 'مؤثر: بله' : 'مؤثر: خیر'}
+                    </span>
+                </>
+            )}
+        </div>
+    );
 }
 
 // ═══════════════════════════════════════════
@@ -385,6 +441,7 @@ export default function ArmAdminCatalogsPage() {
                         : isPaused ? <PlayCircle className="w-3.5 h-3.5" /> : <PauseCircle className="w-3.5 h-3.5" />}
                     {isPaused ? 'ادامه' : 'توقف'}
                 </button>
+                <MultiSellerControl slug={currentSlug!} catalogId={c.catalog.id} />
                 {confirming ? (
                     <div className="flex items-center gap-1.5">
                         <button onClick={() => handleRemove(c)} disabled={busy}

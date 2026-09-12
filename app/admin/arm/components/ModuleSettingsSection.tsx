@@ -6,7 +6,7 @@ import { UseFormWatch, UseFormSetValue } from 'react-hook-form';
 import {
     Save, Loader2, Check, Eye, Phone, Shield, Star, Clock,
     Package, TrendingUp, ShoppingCart, Lock, AlertCircle, Edit2,
-    CreditCard, Layers, LayoutGrid,
+    CreditCard, Layers, LayoutGrid, BookOpen,
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 
@@ -20,6 +20,7 @@ type RuleNode = {
     min?: number;
     max?: number;
     suffix?: string;
+    defaultValue?: boolean; // ✅ مقدار پیش‌فرض بولین (وقتی هنوز ست نشده)
     children?: RuleNode[];
     hasToggle?: boolean;
 };
@@ -46,6 +47,7 @@ const ICON_MAP: Record<string, any> = {
     CreditCard,
     Layers,
     LayoutGrid,
+    BookOpen,
 };
 
 // ─── تعریف تنظیمات هر ماژول (گروه‌بندی شده) ───
@@ -189,6 +191,35 @@ const moduleConfigs: Record<string, { title: string; icon: any; groups: RuleGrou
                     { key: 'requireMembershipToView', label: 'پیوستن به بازار برای مشاهده درخواست‌ها', hint: 'فقط اعضای بازار ببینند', icon: 'Shield' },
                     { key: 'requireMembershipToSubmit', label: 'پیوستن به بازار برای ثبت درخواست', hint: 'فقط اعضای بازار ثبت کنند', icon: 'Shield' },
                     { key: 'maxActiveRequestsPerUser', label: 'حداکثر درخواست فعال', icon: 'Package', isNumber: true, min: 1, max: 50, suffix: 'عدد' },
+                ],
+            },
+        ],
+    },
+    catalog: {
+        title: 'کاتالوگ',
+        icon: BookOpen,
+        groups: [
+            {
+                groupTitle: 'تنظیمات کاتالوگ',
+                groupIcon: 'Layers',
+                rules: [
+                    {
+                        key: 'freeAdLimit',
+                        label: 'تعداد آگهی رایگان',
+                        hint: 'سهمیه آگهی رایگان هر کاتالوگ در این بازار',
+                        icon: 'Star',
+                        isNumber: true,
+                        min: 0,
+                        max: 1000,
+                        suffix: 'عدد',
+                    },
+                    {
+                        key: 'multiSeller',
+                        label: 'چندفروشندگی',
+                        hint: 'امکان تعریف چند فروشنده برای یک کاتالوگ — همه کاتالوگ‌ها از بازار به ارث می‌برند (مالک بازار می‌تواند برای کاتالوگ خاص اورایت کند)',
+                        icon: 'Shield',
+                        defaultValue: true,
+                    },
                 ],
             },
         ],
@@ -354,7 +385,7 @@ export function ModuleSettingsSection({
         }
 
         // گره برگ
-        const isActive = node.isNumber ? (value > (node.min || 0)) : value === true;
+        const isActive = node.isNumber ? (value > (node.min || 0)) : (value ?? node.defaultValue ?? false);
 
         return (
             <div key={node.key} className={cn(
@@ -394,14 +425,14 @@ export function ModuleSettingsSection({
                     )}>
                         <input
                             type="checkbox"
-                            checked={value ?? false}
+                            checked={value ?? node.defaultValue ?? false}
                             onChange={(e) => setValueByPath(fullPath, e.target.checked)}
                             disabled={!canEdit}
                             className="sr-only peer"
                         />
                         <div className={cn(
                             "w-9 h-5 rounded-full relative transition-all duration-200",
-                            value ? 'bg-primary after:translate-x-4' : 'bg-outline-variant after:translate-x-0',
+                            (value ?? node.defaultValue ?? false) ? 'bg-primary after:translate-x-4' : 'bg-outline-variant after:translate-x-0',
                             "after:content-[''] after:absolute after:top-0.5 after:left-0.5 after:bg-white after:rounded-full after:h-4 after:w-4 after:transition-all after:duration-200 after:shadow-sm",
                             !canEdit && 'opacity-50'
                         )} />

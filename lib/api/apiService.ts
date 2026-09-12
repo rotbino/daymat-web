@@ -1110,11 +1110,11 @@ export const apiService = {
                 sortBy?: string;
                 sortOrder?: string;
             }): Promise<any> =>
-                apiRequest(`/arm-admin/${slug}/catalogs`, { params }),
+                apiRequest(`/arm-admin/${slug}/memberships/sellers`, { params }),
 
             // جستجوی کاتالوگ برای افزودن (myReferrals: فقط جذب‌شده‌های من)
             getCandidates: (slug: string, q?: string, onlyMyReferrals?: boolean): Promise<any> =>
-                apiRequest(`/arm-admin/${slug}/catalogs/candidates`, {
+                apiRequest(`/arm-admin/${slug}/memberships/sellers/candidates`, {
                     params: {
                         ...(q ? { q } : {}),
                         ...(onlyMyReferrals ? { myReferrals: '1' } : {}),
@@ -1123,27 +1123,34 @@ export const apiService = {
 
             // کالاهای منتشرشدهٔ بدون دستهٔ بازاری
             getNeedsCategory: (slug: string): Promise<any> =>
-                apiRequest(`/arm-admin/${slug}/catalogs/needs-category`),
+                apiRequest(`/arm-admin/${slug}/memberships/needs-category`),
 
             // آمار جذب مالک بازار (دعوت‌شدگان + کاتالوگ‌ها)
             getReferralStats: (slug: string): Promise<any> =>
-                apiRequest(`/arm-admin/${slug}/catalogs/referral-stats`),
+                apiRequest(`/arm-admin/${slug}/memberships/referral-stats`),
 
             // افزودن کاتالوگ به بازار + مهر انتشار
             addCatalog: (slug: string, catalogId: string): Promise<any> =>
-                apiRequest(`/arm-admin/${slug}/catalogs`, { method: 'POST', data: { catalogId } }),
+                apiRequest(`/arm-admin/${slug}/memberships/sellers`, { method: 'POST', data: { catalogId } }),
 
             // توقف / ادامهٔ عضو (توسط مالک بازار)
             setPaused: (slug: string, catalogId: string, paused: boolean): Promise<any> =>
-                apiRequest(`/arm-admin/${slug}/catalogs/${catalogId}`, { method: 'PATCH', data: { paused } }),
+                apiRequest(`/arm-admin/${slug}/memberships/sellers/${catalogId}`, { method: 'PATCH', data: { paused } }),
 
             // حذف کاتالوگ از بازار
             remove: (slug: string, catalogId: string): Promise<any> =>
-                apiRequest(`/arm-admin/${slug}/catalogs/${catalogId}`, { method: 'DELETE' }),
+                apiRequest(`/arm-admin/${slug}/memberships/sellers/${catalogId}`, { method: 'DELETE' }),
 
             // تعیین دستهٔ بازاری یک کالا
             setAdCategory: (slug: string, adId: string, categoryId: string): Promise<any> =>
-                apiRequest(`/arm-admin/${slug}/catalogs/ads/${adId}/category`, { method: 'PATCH', data: { categoryId } }),
+                apiRequest(`/arm-admin/${slug}/memberships/sellers/ads/${adId}/category`, { method: 'PATCH', data: { categoryId } }),
+
+            // تنظیمات اختصاصی کاتالوگ (ارث‌بری از بازار + اورایت مالک بازار)
+            getCatalogSettings: (slug: string, catalogId: string): Promise<any> =>
+                apiRequest(`/arm-admin/${slug}/memberships/sellers/${catalogId}/settings`),
+
+            setCatalogSettings: (slug: string, catalogId: string, multiSeller: boolean | 'inherit'): Promise<any> =>
+                apiRequest(`/arm-admin/${slug}/memberships/sellers/${catalogId}/settings`, { method: 'PATCH', data: { multiSeller } }),
         },
 
         // ============================================================

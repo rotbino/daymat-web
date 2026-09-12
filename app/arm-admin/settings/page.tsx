@@ -275,6 +275,15 @@ export default function ArmAdminSettings() {
                                 moduleName="تابلوی درخواست خرید"
                                 isAdmin={isSystemAdmin}
                             />
+                            <ModuleSettingsSection
+                                watch={watch}
+                                setValue={handleSetValue}
+                                onSave={() => {}}
+                                isSaving={saving}
+                                moduleKey="catalog"
+                                moduleName="کاتالوگ فروشگاهی"
+                                isAdmin={isSystemAdmin}
+                            />
                         </div>
                     )}
 
