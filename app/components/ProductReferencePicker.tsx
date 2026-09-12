@@ -2,10 +2,10 @@
 'use client';
 
 import React, { useState } from 'react';
-import EntityPicker from './EntityPicker';
+import EntityPicker, { EntityValue } from './EntityPicker';
 import { apiService } from '@/lib/api/apiService';
 import { useUploadFile } from '@/lib/api/apiHooks';
-import { Package, Camera, Tag, Loader2, Check, X, Plus } from 'lucide-react';
+import { Package, Camera, Tag, Ban, Loader2, Check, X, Plus } from 'lucide-react';
 
 export interface ProductValue extends EntityValue {
     brandId?: string;
@@ -40,8 +40,9 @@ function normalizeProductValue(v: any): ProductValue {
 /**
  * ProductReferencePicker — انتخابگر کالای مرجع
  *
- * ✅ برند جزء ویژگی‌های کالاست (نه فروش) — انتخاب/تغییر برند فقط در مدیریت کالای مرجع انجام می‌شود
- * ✅ فرم create/edit اینجا: عنوان + عکس + ویژگی‌ها — برندِ موجود کالا دست‌نخورده حفظ می‌شود
+ * ✅ برند جزء ویژگی‌های کالاست (نه فروش) — تکلیف برند فقط همین‌جا در مودال کالای مرجع روشن می‌شود
+ * ✅ انتخاب صریح «برند‌دار / بدون برند» — برند‌دار → انتخاب/ثبت برند اجباری
+ * ✅ فرم قیمت هیچ انتخاب/تغییر برندی ندارد — فقط نمایش برندِ کالای منتخب
  * ✅ سرچ روی عنوان، کلمات کلیدی و نام برند
  */
 export default function ProductReferencePicker({
@@ -68,35 +69,47 @@ export default function ProductReferencePicker({
                 return { items: res.items, hasMore: res.hasMore };
             }}
             createFn={async (data) => {
-                // ✅ بدون brandId — برند در سطح کالای مرجع تعیین تکلیف می‌شود، نه در فرم ثبت قیمت
+                // ✅ تکلیف برند در مودال کالای مرجع باید صریح روشن شده باشد
+                if (data.brandChoice !== 'branded' && data.brandChoice !== 'none') {
+                    throw new Error('تکلیف برند را روشن کن: کالا برند داره یا بدون برند است؟');
+                }
+                if (data.brandChoice === 'branded' && !data.brandId) {
+                    throw new Error('برند را انتخاب یا ثبت کن.');
+                }
                 const created: any = await apiService.product.create({
                     title: data.title,
+                    brandId: data.brandId,
                     category,
                     imageUrl: data.imageUrl,
                     thumbnailUrl: data.imageUrl,
                     specs: data.specs,
                     armSlug,
                 });
+                // ✅ برخی مسیرهای سرور (مثل برگشتِ کالای تکراری) برند را کامل برنمی‌گردانند
+                // — از دادهٔ فرم تکمیل می‌کنیم تا «بدون برند» کاذب نبینیم
                 return {
                     ...created,
-                    brandId: created?.brandId ?? created?.brand?.id ?? undefined,
-                    brandTitle: created?.brandTitle ?? created?.brand?.title ?? undefined,
+                    brandId: created?.brandId ?? created?.brand?.id ?? data.brandId,
+                    brandTitle: created?.brandTitle ?? created?.brand?.title ?? data.brandTitle,
                 };
             }}
             updateFn={async (id, data) => {
+                if ((data as any).brandChoice === 'branded' && !(data as any).brandId) {
+                    throw new Error('برند را انتخاب یا ثبت کن.');
+                }
                 const updated: any = await apiService.product.update(id, data);
                 return {
                     ...updated,
-                    brandId: updated?.brandId ?? updated?.brand?.id ?? undefined,
-                    brandTitle: updated?.brandTitle ?? updated?.brand?.title ?? undefined,
+                    brandId: updated?.brandId ?? updated?.brand?.id ?? (data as any).brandId,
+                    brandTitle: updated?.brandTitle ?? updated?.brand?.title ?? (data as any).brandTitle,
                 };
             }}
             deleteFn={(id) => apiService.product.delete(id)}
             renderCreateFields={({ dataRef }) => (
-                <CreateProductExtraFields dataRef={dataRef} />
+                <CreateProductExtraFields dataRef={dataRef} category={category} armSlug={armSlug} />
             )}
             renderEditFields={({ dataRef, initialData }) => (
-                <CreateProductExtraFields dataRef={dataRef} initialData={initialData} />
+                <CreateProductExtraFields dataRef={dataRef} initialData={initialData} category={category} armSlug={armSlug} />
             )}
             queryKey={`products-picker-${category || 'all'}`}
             createLabel="افزودن کالای جدید به مرجع"
@@ -161,17 +174,33 @@ export default function ProductReferencePicker({
 }
 
 // ═══════════════════════════════════════════════════════════
-// فرم create/edit کالا — عکس + ویژگی‌ها
-// ✅ برند اینجا انتخاب/تغییر نمی‌شود — در مدیریت کالای مرجع تعیین تکلیف می‌شود
+// فرم create/edit کالا — عکس + برند + ویژگی‌ها
+// ✅ برند جزء ویژگی‌های کالاست — تکلیفش همین‌جا صریح روشن می‌شود: «برند‌دار / بدون برند»
+// ✅ برند‌دار → انتخاب/ثبت برند اجباری؛ بدون برند → برندِ موجود صراحتاً null می‌شود
 // ═══════════════════════════════════════════════════════════
 function CreateProductExtraFields({
     dataRef,
     initialData,
+    category,
+    armSlug,
 }: {
     dataRef: React.MutableRefObject<{ [key: string]: any }>;
     initialData?: any;
+    category?: string;
+    armSlug?: string;
 }) {
     const [imageUrl, setImageUrl] = useState<string>(initialData?.imageUrl || initialData?.thumbnailUrl || '');
+    // ✅ تکلیف صریح برند — create: بدون پیش‌فرض (انتخاب اجباری)؛ edit: از برند موجود کالا
+    const [brandChoice, setBrandChoice] = useState<'branded' | 'none' | null>(() => {
+        if (!initialData) return null;
+        return (initialData.brand?.id || initialData.brandId) ? 'branded' : 'none';
+    });
+    const [brandValue, setBrandValue] = useState<EntityValue | null>(() => {
+        const b = initialData?.brand;
+        if (b?.id) return { id: b.id, title: b.title };
+        if (initialData?.brandId) return { id: initialData.brandId, title: initialData.brandTitle || '' };
+        return null;
+    });
     // ✅ ویژگی‌های کالا — مال کالاست نه آگهی (JSON روی ProductReference)
     // ✅ unit: ویژگی‌های واحد‌دار مثل وزن — مقدار نهایی «۲۵۰ گرم» ذخیره می‌شه
     const [specs, setSpecs] = useState<{ key: string; value: string; unitOn: boolean; unit: string }[]>(() => {
@@ -190,11 +219,14 @@ function CreateProductExtraFields({
         dataRef.current = {
             ...dataRef.current,
             imageUrl: imageUrl || undefined,
-            // ✅ برند انتخاب/تغییر نمی‌شود — برندِ موجود کالا عیناً حفظ می‌شود (بدون ارسال = بک‌اند هم دست نمی‌زند)
-            brandId: initialData?.brand?.id ?? initialData?.brandId ?? undefined,
-            brandTitle: initialData?.brand?.title ?? initialData?.brandTitle ?? undefined,
+            // ✅ تکلیف برند: «branded» → برندِ انتخابی (اجباری)؛ «none» → صراحتاً null (برند موجود پاک می‌شود)
+            brandChoice: brandChoice ?? undefined,
+            brandId: brandChoice === 'branded' ? (brandValue?.id || null)
+                : brandChoice === 'none' ? null
+                : undefined,
+            brandTitle: brandChoice === 'branded' ? (brandValue?.title || undefined) : undefined,
         };
-    }, [imageUrl, initialData, dataRef]);
+    }, [imageUrl, brandChoice, brandValue, dataRef]);
 
     // ✅ سینک specs به dataRef — فقط ردیف‌های کامل (کلید و مقدار هر دو پر)
     // ✅ ویژگی واحد‌دار: مقدار + واحد در یک رشته (مثل «۲۵۰ گرم») — سازگار با بک‌اند Record<string,string>
@@ -267,7 +299,79 @@ function CreateProductExtraFields({
                 </div>
             </div>
 
-            {/* ✅ برند اینجا نیست — انتخاب/تغییر برند فقط در مدیریت کالای مرجع؛ برندِ کالا از مرجع می‌آید */}
+            {/* برند — تکلیف صریح: کالا برند داره یا بدون برند؟ (ویژگی کالای مرجع) */}
+            <div className="space-y-1.5">
+                <label className="text-xs font-bold text-on-surface block">برند</label>
+                <div className="grid grid-cols-2 gap-2">
+                    <button
+                        type="button"
+                        onClick={() => setBrandChoice('branded')}
+                        className={`h-10 rounded-xl border text-xs font-bold flex items-center justify-center gap-1.5 transition-all ${
+                            brandChoice === 'branded'
+                                ? 'border-primary bg-primary/10 text-primary'
+                                : 'border-outline-variant/40 text-on-surface-variant hover:border-primary/40 hover:bg-primary/[0.04]'
+                        }`}
+                    >
+                        <Tag className="w-3.5 h-3.5" />
+                        برند‌دار
+                    </button>
+                    <button
+                        type="button"
+                        onClick={() => setBrandChoice('none')}
+                        className={`h-10 rounded-xl border text-xs font-bold flex items-center justify-center gap-1.5 transition-all ${
+                            brandChoice === 'none'
+                                ? 'border-primary bg-primary/10 text-primary'
+                                : 'border-outline-variant/40 text-on-surface-variant hover:border-primary/40 hover:bg-primary/[0.04]'
+                        }`}
+                    >
+                        <Ban className="w-3.5 h-3.5" />
+                        بدون برند
+                    </button>
+                </div>
+            </div>
+
+            {/* انتخاب/ثبت برند — فقط وقتی «برند‌دار» و اجباری */}
+            {brandChoice === 'branded' && (
+                <EntityPicker
+                    value={brandValue}
+                    onChange={setBrandValue}
+                    label="انتخاب یا ثبت برند *"
+                    placeholder="مثلاً: مکنزی"
+                    icon={<Tag className="w-3.5 h-3.5 text-on-surface-variant" />}
+                    fetchFn={async (params) => {
+                        const res = await apiService.brand.search(params.q, category, params.page, params.limit);
+                        return { items: res.items, hasMore: res.hasMore };
+                    }}
+                    createFn={async (data) => {
+                        return apiService.brand.create({ title: data.title, category, armSlug });
+                    }}
+                    deleteFn={(id) => apiService.brand.delete(id)}
+                    queryKey={`brands-in-product-${category || 'all'}`}
+                    createLabel="افزودن برند جدید"
+                    addButtonLabel="ثبت برند جدید"
+                    emptyHint="اگر این برند در لیست برندها وجود ندارد؟ یک بار آن را اضافه کنید تا همه از آن استفاده کنن."
+                    minSearchChars={2}
+                    pageSize={10}
+                    selectTitle="انتخاب برند"
+                    createTitle="افزودن برند جدید"
+                    editTitle="ویرایش برند"
+                    duplicateMessage="این برند قبلاً اضافه شده. با جستجو آن را پیدا و انتخاب کنید."
+                    createHint="اگر این برند در لیست برندها وجود ندارد؟ یک بار آن را اضافه کنید تا همه از آن استفاده کنن."
+                    renderItem={(item) => (
+                        <>
+                            {item.logoUrl ? (
+                                <img src={item.logoUrl} alt="" className="w-9 h-9 rounded-lg object-cover flex-shrink-0" />
+                            ) : (
+                                <span className="w-9 h-9 rounded-lg bg-surface-container-high flex items-center justify-center flex-shrink-0">
+                                    <Tag className="w-4 h-4 text-on-surface-variant/50" />
+                                </span>
+                            )}
+                            <span className="flex-1 text-sm font-medium text-on-surface truncate">{item.title}</span>
+                            {brandValue?.id === item.id && <Check className="w-4 h-4 text-primary flex-shrink-0" />}
+                        </>
+                    )}
+                />
+            )}
 
             {/* ✅ ویژگی‌های کالا — مال کالاست و همه‌جا استفاده می‌شه */}
             <div className="space-y-2">
@@ -296,12 +400,11 @@ function CreateProductExtraFields({
                             />
                             {/* ✅ تیک واحد — برای ویژگی‌های واحد‌دار مثل وزن */}
                             {row.unitOn ? (
-                                <div className="relative flex-shrink-0 w-[76px]">
+                                <div className="relative flex-shrink-0 w-28">
                                     <input
                                         value={row.unit}
                                         onChange={(e) => setSpecs((p) => p.map((r, j) => j === i ? { ...r, unit: e.target.value } : r))}
                                         placeholder="کیلوگرم"
-                                        list="daymat-spec-units"
                                         className="w-full h-9 pl-6 pr-2.5 rounded-lg bg-primary/[0.04] border border-primary/35 text-xs outline-none focus:ring-2 focus:ring-primary/25 focus:border-primary transition-all text-right"
                                     />
                                     <button
@@ -334,19 +437,6 @@ function CreateProductExtraFields({
                         </div>
                     </div>
                 ))}
-                {/* ✅ واحدهای پرکاربرد — پیشنهاد سریع */}
-                <datalist id="daymat-spec-units">
-                    <option value="گرم" />
-                    <option value="کیلوگرم" />
-                    <option value="تن" />
-                    <option value="لیتر" />
-                    <option value="میلی‌لیتر" />
-                    <option value="متر" />
-                    <option value="سانتی‌متر" />
-                    <option value="عدد" />
-                    <option value="بسته" />
-                    <option value="کارتن" />
-                </datalist>
                 <button
                     type="button"
                     onClick={() => setSpecs((p) => [...p, { key: '', value: '', unitOn: false, unit: '' }])}
