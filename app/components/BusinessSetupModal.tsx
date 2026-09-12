@@ -2,12 +2,13 @@
 'use client';
 
 import React, { useEffect, useRef, useState } from 'react';
-import { Building2, Camera, Loader2, X, Check, Layers } from 'lucide-react';
+import { Building2, Camera, Loader2, X, Check, Layers, AlertTriangle, SearchCheck } from 'lucide-react';
 import Image from 'next/image';
 import { createPortal } from 'react-dom';
 import { toast } from 'sonner';
 import { cn } from '@/lib/utils';
 import { useCreateBusinessEntity, useUpdateBusinessEntity, useUploadFile } from '@/lib/api/apiHooks';
+import { apiService } from '@/lib/api/apiService';
 import { getLegacyTypeFromRole } from '@/lib/api/data-types';
 import { IranLocationSelector } from '@/app/components/IranLocationSelector';
 import IndustryAutocomplete from '@/app/components/IndustryAutocomplete';
@@ -78,6 +79,8 @@ export default function BusinessSetupModal({ isOpen, onClose, business, onSaved 
         setPendingLogoFile(null);
         setLogoPreview(null);
         uploadedLogoRef.current = null;
+        setDupCandidates(null);
+        setDupChecking(false);
         setErrors({});
     }, [isOpen, business]);
 
@@ -90,6 +93,12 @@ export default function BusinessSetupModal({ isOpen, onClose, business, onSaved 
     }, [pendingLogoFile]);
 
     const busy = createMut.isPending || updateMut.isPending || isUploadingLogo;
+
+    // ─── هشدار تکراری‌ثبتی — «اول جستجو کن، دیتای تکراری نساز» ───
+    // فقط در حالتِ ساخت: قبل از ثبت، کسب‌وکارهای مشابه (نام + استان/شهر) نشان داده می‌شود؛
+    // کاربر یا یکی را انتخاب می‌کند (دیتای یکتا می‌ماند) یا صریحاً «ثبتِ جدید» را می‌زند (force=true)
+    const [dupChecking, setDupChecking] = useState(false);
+    const [dupCandidates, setDupCandidates] = useState<any[] | null>(null);
 
     const handleLogoPick = (e: React.ChangeEvent<HTMLInputElement>) => {
         const file = e.target.files?.[0];
@@ -126,9 +135,28 @@ export default function BusinessSetupModal({ isOpen, onClose, business, onSaved 
     const handleSave = async () => {
         if (!validate()) return;
         try {
+            // ۰) گارد تکراری‌ثبتی (فقط ساخت اول) — مشابه‌ها را بگیر و نشان بده
+            if (!isEdit && !dupCandidates) {
+                setDupChecking(true);
+                try {
+                    const res: any = await apiService.business.search({
+                        q: name.trim(), provinceCode: provinceCode || undefined, cityCode: cityCode || undefined, limit: 5,
+                    });
+                    const candidates: any[] = res?.items ?? [];
+                    if (candidates.length > 0) {
+                        setDupCandidates(candidates);
+                        setDupChecking(false);
+                        return; // منتظر تصمیم کاربر — انتخاب از لیست یا ثبتِ جدید
+                    }
+                } catch {
+                    // جستجو در دسترس نبود — همان مسیر عادی با گاردِ بک‌اند ادامه می‌دهد
+                }
+                setDupChecking(false);
+            }
+
             // ۱) لوگوی تازه — قبل از ذخیره آپلود شود (sync بک‌اند: Business.logoUrl)
             if (pendingLogoFile && isEdit) await uploadLogo();
-            const payload = {
+            const payload: any = {
                 name: name.trim(),
                 // ✅ فیلدهای اصلی جدید — درخت دو سطحی BUSINESS_TYPE (همسان با فرم ویرایش کاتالوگ)
                 businessSector: businessSector || undefined,
@@ -142,9 +170,16 @@ export default function BusinessSetupModal({ isOpen, onClose, business, onSaved 
                 city: cityLabel,
                 cityCode,
             };
+            if (!isEdit && dupCandidates) payload.force = true; // ✅ کاربر صریحاً ثبتِ جدید را انتخاب کرده
             const res = isEdit
                 ? await updateMut.mutateAsync({ id: business!.id!, data: payload })
                 : await createMut.mutateAsync(payload);
+            // اگر بک‌اند هم هشدار تکراری داد (بدون همگام‌سازی با UI) — لیست را نشان بده
+            if (!isEdit && (res as any)?.duplicateWarning) {
+                setDupCandidates((res as any).candidates ?? []);
+                toast.info('کسب‌وکارهای مشابه پیدا شد — اول بررسی کن');
+                return;
+            }
             toast.success(
                 isEdit
                     ? 'کسب‌وکار شما بروزرسانی شد'
@@ -156,6 +191,13 @@ export default function BusinessSetupModal({ isOpen, onClose, business, onSaved 
         } catch (e: any) {
             toast.error(e?.message || 'خطا در ذخیره');
         }
+    };
+
+    /** انتخاب یکی از کسب‌وکارهای مشابه — به‌جای ساختِ تکراری */
+    const pickExisting = (biz: any) => {
+        toast.success(`«${biz?.name ?? 'کسب‌وکار'}» انتخاب شد — دیتای تکراری ساخته نشد 👌`);
+        onSaved?.(biz);
+        onClose();
     };
 
     if (!isOpen) return null;
@@ -213,7 +255,50 @@ export default function BusinessSetupModal({ isOpen, onClose, business, onSaved 
                                onChange={(e) => { setName(e.target.value); setErrors((p) => ({ ...p, name: '' })); }}
                                placeholder="مثلا: پخش خوشگوار" className={inputCls(errors.name)} />
                         {errors.name && <p className="text-error text-[11px]">{errors.name}</p>}
+                        {!isEdit && !dupCandidates && (
+                            <p className="text-[10px] text-on-surface-variant/60 flex items-start gap-1.5">
+                                <SearchCheck className="w-3.5 h-3.5 flex-shrink-0 mt-0.5 text-primary/70" />
+                                قبل از ثبت، ممکن است همکارانتان این کسب‌وکار را قبلاً ثبت کرده باشند — موقع ذخیره مشابه‌ها را چک می‌کنیم.
+                            </p>
+                        )}
                     </div>
+
+                    {/* ⚠️ هشدار کسب‌وکار مشابه — انتخاب از لیست به‌جای دیتای تکراری */}
+                    {!isEdit && dupCandidates && (
+                        <div className="rounded-2xl border border-amber-300/60 dark:border-amber-500/30 bg-amber-50 dark:bg-amber-500/10 p-3.5 space-y-2.5">
+                            <div className="flex items-start gap-2">
+                                <AlertTriangle className="w-4 h-4 text-amber-600 dark:text-amber-400 flex-shrink-0 mt-0.5" />
+                                <p className="text-[11px] leading-5 font-medium text-amber-800 dark:text-amber-300">
+                                    کسب‌وکارهایی با نام مشابه قبلاً ثبت شده‌اند — اگر همین است، انتخابش کنید؛ دیتای تکراری نسازید:
+                                </p>
+                            </div>
+                            <div className="space-y-1.5">
+                                {dupCandidates.map((b: any) => (
+                                    <button key={b.id} type="button" onClick={() => pickExisting(b)}
+                                            className="w-full flex items-center gap-2.5 p-2.5 rounded-xl bg-white/70 dark:bg-gray-900/60
+                                                border border-outline-variant/30 dark:border-gray-700 hover:border-primary/50 transition-colors text-right">
+                                        <span className="w-8 h-8 rounded-lg overflow-hidden bg-primary/10 grid place-items-center flex-shrink-0">
+                                            {b.logoUrl
+                                                ? <Image src={b.logoUrl} alt="" width={32} height={32} className="w-full h-full object-cover" unoptimized />
+                                                : <Building2 className="w-3.5 h-3.5 text-primary/70" />}
+                                        </span>
+                                        <span className="flex-1 min-w-0">
+                                            <span className="block text-xs font-bold text-on-surface truncate">{b.name}</span>
+                                            <span className="block text-[9px] text-on-surface-variant/60 truncate">
+                                                {[b.industryName, b.city].filter(Boolean).join(' · ')}
+                                            </span>
+                                        </span>
+                                        <span className="text-[10px] font-bold text-primary flex-shrink-0">انتخاب همین</span>
+                                    </button>
+                                ))}
+                            </div>
+                            <button type="button" onClick={handleSave}
+                                    className="w-full h-9 rounded-lg text-[11px] font-bold text-amber-800 dark:text-amber-300
+                                        border border-amber-400/50 hover:bg-amber-100 dark:hover:bg-amber-500/10 transition-colors">
+                                مطمئنم تکراری نیست — ثبت به‌عنوان کسب‌وکار جدید
+                            </button>
+                        </div>
+                    )}
 
                     {/* لوگو — فقط در ویرایش (برای ساخت شناسهٔ بیزنس لازم است) */}
                     {isEdit && (
@@ -292,11 +377,13 @@ export default function BusinessSetupModal({ isOpen, onClose, business, onSaved 
 
                 {/* فوتر */}
                 <div className="flex-shrink-0 px-4 py-3 border-t border-outline-variant/20">
-                    <button onClick={handleSave} disabled={busy}
+                    <button onClick={handleSave} disabled={busy || dupChecking}
                             className="w-full h-11 rounded-xl text-sm font-extrabold flex items-center justify-center gap-2
                                 bg-primary text-on-primary hover:bg-primary/90 shadow-sm disabled:opacity-50 transition-all">
-                        {busy ? <Loader2 className="w-4 h-4 animate-spin" /> : <Check className="w-4 h-4" />}
-                        {isEdit ? 'ذخیره تغییرات' : 'ثبت کسب‌وکار'}
+                        {dupChecking ? <><Loader2 className="w-4 h-4 animate-spin" /> در حال بررسی کسب‌وکارهای مشابه…</>
+                            : busy ? <Loader2 className="w-4 h-4 animate-spin" />
+                            : <Check className="w-4 h-4" />}
+                        {!dupChecking && (isEdit ? 'ذخیره تغییرات' : 'ثبت کسب‌وکار')}
                     </button>
                 </div>
             </div>

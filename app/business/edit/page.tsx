@@ -42,7 +42,7 @@ function BusinessEditContent() {
     }, [isAuthenticated, router]);
 
     const business = useMemo(() => {
-        const items: any[] = (data as any)?.items ?? [];
+        const items: any[] = ((data as any)?.items ?? []).filter((b: any) => b.canEdit !== false);
         if (items.length === 0) return null;
         return items.find((b) => b.id === wantedId) || items[0];
     }, [data, wantedId]);

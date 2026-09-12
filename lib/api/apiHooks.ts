@@ -982,7 +982,7 @@ export const useArmCatalogs = (
 };
 
 // ============================================================
-// BUSINESS — نهاد تجاری
+// BUSINESS — کسب‌وکارِ مرجع/مشترک
 // ============================================================
 export const useMyBusinesses = (enabled = true) => {
     const { hasAccess } = useAuthState();
@@ -991,6 +991,20 @@ export const useMyBusinesses = (enabled = true) => {
         queryFn: () => apiService.business.getMy(),
         enabled: !!enabled && hasAccess,
         staleTime: 5 * 60_000,
+    });
+};
+
+// ✅ جستجوی عمومی کسب‌وکارها — برای انتخاب کسب‌وکار هنگام ساخت کاتالوگ
+export const useBusinessSearch = (
+    params: { q?: string; provinceCode?: string; cityCode?: string; limit?: number; ids?: string },
+    enabled = true,
+) => {
+    return useQuery({
+        queryKey: ['business-search', params],
+        queryFn: () => apiService.business.search(params),
+        enabled,
+        staleTime: 30_000,
+        placeholderData: (prev: any) => prev,
     });
 };
 

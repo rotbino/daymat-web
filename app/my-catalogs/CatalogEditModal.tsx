@@ -10,7 +10,7 @@ import { apiService } from '@/lib/api/apiService';
 import { useUploadFile, useUpdateCatalog, useUpdateBusinessEntity } from '@/lib/api/apiHooks';
 import { toast } from 'sonner';
 import {
-    AlertTriangle, BookOpen, Building2, Camera, Check, Globe, Layers,
+    AlertTriangle, BookOpen, Building2, Camera, Check, Globe, Info, Layers,
     Loader2, MapPin, Pencil, Phone, Settings2, X,
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
@@ -47,6 +47,8 @@ export default function CatalogEditModal({ isOpen, onClose, catalog, salesTypeLo
     const biz = catalog?.business || {};
     const bizPhone = biz?.phone || user?.phone || '';
     const bizId = biz?.id;
+    // ✅ کسب‌وکارِ مرجع مشترک است — فقط ثبت‌کنندهٔ اول یا مالکِ قدیمی اجازه‌ی ویرایش مشخصاتش را دارد
+    const canEditBiz = !bizId || biz?.creatorUserId === user?.id || biz?.ownerUserId === user?.id;
 
     const [name, setName] = useState(catalog?.name || '');
     const [slug, setSlug] = useState(catalog?.slug || '');
@@ -110,10 +112,12 @@ export default function CatalogEditModal({ isOpen, onClose, catalog, salesTypeLo
         if (!pendingLogoFile) return undefined;
         if (uploadedLogoRef.current) return uploadedLogoRef.current;
         try {
+            // ✅ ویرایشگرِ کسب‌وکار → لوگوی Business | غیر ویرایشگر → لوگوی خودِ کاتالوگ
+            const editBiz = canEditBiz && !!bizId;
             const result = await uploadMutation.mutateAsync({
                 file: pendingLogoFile,
-                model: 'Business',
-                modelId: bizId || catalog.id,
+                model: editBiz ? 'Business' : 'Catalog',
+                modelId: editBiz ? bizId : catalog.id,
                 fieldKey: 'logo',
             });
             const uploaded = { id: result.id, url: result.path || result.thumbnailPath || '' };
@@ -145,8 +149,8 @@ export default function CatalogEditModal({ isOpen, onClose, catalog, salesTypeLo
             const logoFileId = logo?.id;
             const logoUrlValue = logo?.url;
 
-            // ۱) آپدیت Business (صنف + لوگو + موقعیت + آدرس + سایر)
-            if (bizId) {
+            // ۱) آپدیت Business (صنف + لوگو + موقعیت + آدرس + سایر) — فقط ویرایشگرِ کسب‌وکار
+            if (bizId && canEditBiz) {
                 const bizUpdate: any = {
                     industryName: industry?.title?.trim() || undefined,
                     industryId: industry?.id,
@@ -238,6 +242,16 @@ export default function CatalogEditModal({ isOpen, onClose, catalog, salesTypeLo
 
                 <div className="flex-1 min-h-0 overflow-y-auto scrollbar-slim px-4 py-4 pb-[calc(1rem+env(safe-area-inset-bottom))] space-y-4">
 
+                    {/* ⚠️ کسب‌وکار مشترک است — ویرایش مشخصاتش فقط با ثبت‌کننده */}
+                    {!canEditBiz && (
+                        <div className="rounded-xl bg-surface-container-high/50 border border-outline-variant/30 px-3 py-2.5 flex items-start gap-2">
+                            <Info className="w-3.5 h-3.5 text-primary/70 flex-shrink-0 mt-0.5" />
+                            <p className="text-[10px] leading-5 text-on-surface-variant">
+                                این کاتالوگ روی کسب‌وکارِ مشترک ساخته شده — مشخصاتِ کسب‌وکار (صنف، موقعیت، آدرس و توضیحات) توسط ثبت‌کنندهٔ آن مدیریت می‌شود. نام، لینک، تماس و لوگوی کاتالوگِ خودت را همین‌جا ویرایش کن.
+                            </p>
+                        </div>
+                    )}
+
                     {/* لوگو + نام */}
                     <section className="rounded-2xl bg-surface-container-low/60 border border-outline-variant/30 p-4 space-y-3">
                         <div className="flex items-center gap-4">
@@ -287,52 +301,58 @@ export default function CatalogEditModal({ isOpen, onClose, catalog, salesTypeLo
                         </div>
                     </section>
 
-                    {/* صنف */}
-                    <section className="rounded-2xl bg-surface-container-low/60 border border-outline-variant/30 p-4 space-y-1.5">
-                        <SectionTitle icon={Building2} text="صنف / زمینه فعالیت" />
-                        <IndustryAutocomplete
-                            value={industry}
-                            onChange={setIndustry}
-                            placeholder="مثلا: پخش مواد غذایی، سوپرمارکت..."
-                        />
-                    </section>
+                    {/* صنف — فیلد کسب‌وکار */}
+                    {canEditBiz && (
+                        <section className="rounded-2xl bg-surface-container-low/60 border border-outline-variant/30 p-4 space-y-1.5">
+                            <SectionTitle icon={Building2} text="صنف / زمینه فعالیت" />
+                            <IndustryAutocomplete
+                                value={industry}
+                                onChange={setIndustry}
+                                placeholder="مثلا: پخش مواد غذایی، سوپرمارکت..."
+                            />
+                        </section>
+                    )}
 
-                    {/* نوع کسب‌وکار */}
-                    <section className="rounded-2xl bg-surface-container-low/60 border border-outline-variant/30 p-4 space-y-2">
-                        <SectionTitle icon={Layers} text="نوع کسب‌وکار" />
-                        <BusinessTypeSelector
-                            sector={businessSector}
-                            role={businessRole}
-                            onSectorChange={setBusinessSector}
-                            onRoleChange={setBusinessRole}
-                            required
-                        />
-                    </section>
+                    {/* نوع کسب‌وکار — فیلد کسب‌وکار */}
+                    {canEditBiz && (
+                        <section className="rounded-2xl bg-surface-container-low/60 border border-outline-variant/30 p-4 space-y-2">
+                            <SectionTitle icon={Layers} text="نوع کسب‌وکار" />
+                            <BusinessTypeSelector
+                                sector={businessSector}
+                                role={businessRole}
+                                onSectorChange={setBusinessSector}
+                                onRoleChange={setBusinessRole}
+                                required
+                            />
+                        </section>
+                    )}
 
-                    {/* موقعیت */}
-                    <section className="rounded-2xl bg-surface-container-low/60 border border-outline-variant/30 p-4 space-y-3">
-                        <SectionTitle icon={MapPin} text="موقعیت و آدرس" />
-                        <IranLocationSelector
-                            provinceCode={provinceCode}
-                            cityCode={cityCode}
-                            onProvinceChange={(code: string, label: string) => {
-                                setProvinceCode(code);
-                                setProvinceLabel(label);
-                                setCityCode('');
-                                setCityLabel('');
-                            }}
-                            onCityChange={(code: string, label: string) => {
-                                setCityCode(code);
-                                setCityLabel(label);
-                            }}
-                        />
-                        <div className="space-y-1.5">
-                            <label className="text-xs font-medium text-on-surface block">آدرس کسب و کار (اختیاری)</label>
-                            <textarea value={address} onChange={(e) => setAddress(e.target.value)} rows={2}
-                                      placeholder="خیابان، کوچه، پلاک..."
-                                      className={cn(inputCls(), 'h-auto py-2 resize-none')} />
-                        </div>
-                    </section>
+                    {/* موقعیت — فیلد کسب‌وکار */}
+                    {canEditBiz && (
+                        <section className="rounded-2xl bg-surface-container-low/60 border border-outline-variant/30 p-4 space-y-3">
+                            <SectionTitle icon={MapPin} text="موقعیت و آدرس" />
+                            <IranLocationSelector
+                                provinceCode={provinceCode}
+                                cityCode={cityCode}
+                                onProvinceChange={(code: string, label: string) => {
+                                    setProvinceCode(code);
+                                    setProvinceLabel(label);
+                                    setCityCode('');
+                                    setCityLabel('');
+                                }}
+                                onCityChange={(code: string, label: string) => {
+                                    setCityCode(code);
+                                    setCityLabel(label);
+                                }}
+                            />
+                            <div className="space-y-1.5">
+                                <label className="text-xs font-medium text-on-surface block">آدرس کسب و کار (اختیاری)</label>
+                                <textarea value={address} onChange={(e) => setAddress(e.target.value)} rows={2}
+                                          placeholder="خیابان، کوچه، پلاک..."
+                                          className={cn(inputCls(), 'h-auto py-2 resize-none')} />
+                            </div>
+                        </section>
+                    )}
 
                     {/* معرفی */}
                     <section className="rounded-2xl bg-surface-container-low/60 border border-outline-variant/30 p-4 space-y-3">
@@ -346,9 +366,13 @@ export default function CatalogEditModal({ isOpen, onClose, catalog, salesTypeLo
                         </div>
                         <div className="space-y-1.5">
                             <label className="text-xs font-medium text-on-surface block">توضیحات کامل</label>
-                            <textarea value={description} onChange={(e) => setDescription(e.target.value)} rows={3}
-                                      placeholder="تاریخچه، خدمات، محصولات، توانمندی‌ها..."
-                                      className={cn(inputCls(), 'h-auto py-2 resize-none')} />
+                            {canEditBiz ? (
+                                <textarea value={description} onChange={(e) => setDescription(e.target.value)} rows={3}
+                                          placeholder="تاریخچه، خدمات، محصولات، توانمندی‌ها..."
+                                          className={cn(inputCls(), 'h-auto py-2 resize-none')} />
+                            ) : (
+                                <p className="text-[10px] text-on-surface-variant/50">توضیحات کامل کسب‌وکار توسط ثبت‌کنندهٔ آن مدیریت می‌شود.</p>
+                            )}
                         </div>
                     </section>
 

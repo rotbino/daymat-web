@@ -1,20 +1,21 @@
 // app/business/register/page.tsx
 'use client';
 
-import React, { useEffect, useMemo, useState } from 'react';
+import React, { useEffect, useMemo, useRef, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import Image from 'next/image';
 import { useSelector, useDispatch } from 'react-redux';
 import { toast } from 'sonner';
 import {
     LibraryBig, Building2, Plus, Loader2, Check, ArrowRight, MapPin,
-    AtSign, ChevronDown, ChevronUp, BadgeCheck, AlertTriangle,
+    AtSign, ChevronDown, ChevronUp, BadgeCheck, AlertTriangle, Search, X, Users,
 } from 'lucide-react';
-import { useCreateCatalog, useMyBusinesses, useCataloges } from '@/lib/api/apiHooks';
+import { useCreateCatalog, useBusinessSearch, useCataloges, useMyBusinesses } from '@/lib/api/apiHooks';
 import { RootState } from '@/lib/store/store';
 import { setCurrentCatalog } from '@/lib/store/slices/catalogSlice';
 import { clearStoredRef, readStoredRef } from '@/app/components/RefCapture';
 import BusinessSetupModal from '@/app/components/BusinessSetupModal';
+import { IranLocationSelector } from '@/app/components/IranLocationSelector';
 import SlugPicker from '@/app/business/register/SlugPicker';
 import { apiService } from '@/lib/api/apiService';
 import { cn } from '@/lib/utils';
@@ -33,59 +34,86 @@ const FA_LATIN: Record<string, string> = {
 function transliterate(raw: string): string {
     return (raw ?? '')
         .split('')
-        .map((ch) => {
-            if (/[a-zA-Z0-9]/.test(ch)) return ch.toLowerCase();
-            if (ch === ' ' || ch === '-' || ch === '_') return '-';
-            const m = FA_LATIN[ch];
-            return m !== undefined ? m : '';
-        })
+        .map((ch) => FA_LATIN[ch] ?? ch)
         .join('')
-        .replace(/[^a-z0-9-]/g, '')
+        .toLowerCase()
+        .replace(/[^a-z0-9-]+/g, '-')
         .replace(/-+/g, '-')
         .replace(/^-|-$/g, '');
 }
 
-const faDigit = (n: number | string) => String(n).replace(/\d/g, (d) => '۰۱۲۳۴۵۶۷۸۹'[+d]);
-const shortName = (s: string, max = 18) => (s && s.length > max ? `${s.slice(0, max).trimEnd()}…` : s);
+function shortName(n: string, max = 20) {
+    return (n || '').length > max ? n.slice(0, max) + '…' : n;
+}
 
-/** عنوان شماره‌دار بخش‌ها — ساختار ۱/۲/۳ برای شفافیت جریان */
 function SectionTitle({ n, title }: { n: number; title: string }) {
     return (
         <div className="flex items-center gap-2">
-            <span className="w-5 h-5 rounded-full bg-primary/10 text-primary text-[10px] font-extrabold grid place-items-center flex-shrink-0">
-                {faDigit(n)}
-            </span>
-            <h2 className="text-xs font-extrabold text-on-surface">{title}</h2>
+            <span className="w-5 h-5 rounded-full bg-primary/10 text-primary text-[10px] font-extrabold grid place-items-center flex-shrink-0">{n}</span>
+            <h2 className="text-[13px] font-bold text-on-surface">{title}</h2>
         </div>
     );
 }
+
+/** چیپ‌های پیشنهادی پست در کسب‌وکار */
+const POSITION_CHIPS = ['مدیر', 'مدیر فروش', 'کارمند فروش', 'حسابدار', 'انباردار'];
 
 export default function RegisterCatalogPage() {
     const router = useRouter();
     const dispatch = useDispatch();
     const { currentSlug: armSlug } = useSelector((state: RootState) => state.arm);
 
-    const bizQ = useMyBusinesses(true);
-    const myBizList: any[] = bizQ.data?.items ?? [];
-    const hasBizList = !!bizQ.data;
+    // ─── جستجوی کسب‌وکار (عمومی — کسب‌وکار مرجع مشترک است) ───
+    const [searchQ, setSearchQ] = useState('');
+    const [debouncedQ, setDebouncedQ] = useState('');
+    const [provinceCode, setProvinceCode] = useState('');
+    const [provinceLabel, setProvinceLabel] = useState('');
+    const [cityCode, setCityCode] = useState('');
+    const [cityLabel, setCityLabel] = useState('');
 
-    const catQ = useCataloges();
-    const myCatalogs: any[] = Array.isArray(catQ.data) ? catQ.data : (catQ.data as any)?.items ?? [];
+    useEffect(() => {
+        const t = setTimeout(() => setDebouncedQ(searchQ), 300);
+        return () => clearTimeout(t);
+    }, [searchQ]);
 
+    const searchParams = useMemo(() => ({
+        q: debouncedQ,
+        provinceCode: provinceCode || undefined,
+        cityCode: cityCode || undefined,
+        limit: 12,
+    }), [debouncedQ, provinceCode, cityCode]);
+    const searchQ2 = useBusinessSearch(searchParams, true);
+    const searchItems: any[] = searchQ2.data?.items ?? [];
+
+    // ─── دسترسی سریع به کسب‌وکارهای من (ثبت‌کننده/مالک/عضو تیم) ───
+    const myBizQ = useMyBusinesses(true);
+    const myBizList: any[] = myBizQ.data?.items ?? [];
+
+    // ─── کسب‌وکار انتخاب‌شده ───
     const [bizId, setBizId] = useState<string | undefined>(() =>
         new URLSearchParams(
             typeof window !== 'undefined' ? window.location.search : '',
         ).get('bizId') || undefined,
     );
+    const [selectedBizOverride, setSelectedBizOverride] = useState<any>(null);
+    const deepBizQ = useBusinessSearch(
+        useMemo(() => ({ ids: bizId || undefined, limit: 1 }), [bizId]),
+        !!bizId && !selectedBizOverride,
+    );
+    const selectedBiz = selectedBizOverride
+        ?? deepBizQ.data?.items?.find((b: any) => b.id === bizId)
+        ?? null;
+
     const [bizModalOpen, setBizModalOpen] = useState(false);
-    const [bizModalMode, setBizModalMode] = useState<'create' | 'edit'>('create');
-    const [bizModalAuto, setBizModalAuto] = useState(false);
 
     const [refCode] = useState<string | undefined>(() =>
         new URLSearchParams(
             typeof window !== 'undefined' ? window.location.search : '',
         ).get('ref') || readStoredRef() || undefined,
     );
+
+    // ─── پست کاربر در کسب‌وکار (عضویت تیم کسب‌وکار) ───
+    const [position, setPosition] = useState('');
 
     const [catalogName, setCatalogName] = useState('');
     const [nameDirty, setNameDirty] = useState(false);
@@ -98,29 +126,6 @@ export default function RegisterCatalogPage() {
     const createCatalogMutation = useCreateCatalog();
     // ✅ گارد سینکرون دابل‌سابمیت — دو کلیک/Enter در یک تیک، قبل از رندرِ مجددِ دکمه، دو درخواست نمی‌زند
     const submittingRef = React.useRef(false);
-
-    const selectedBiz = useMemo(
-        () => myBizList.find((b) => b.id === bizId) ?? null,
-        [myBizList, bizId],
-    );
-
-    // ─── منطق نهاد: خودکار برای اکثریت ───
-    useEffect(() => {
-        if (bizId || !hasBizList) return;
-        if (myBizList.length === 1) {
-            setBizId(myBizList[0].id);
-        } else if (myBizList.length === 0) {
-            setBizModalMode('create');
-            setBizModalAuto(true);
-        }
-    }, [bizId, hasBizList, myBizList]);
-
-    useEffect(() => {
-        if (bizModalAuto) {
-            setBizModalOpen(true);
-            setBizModalAuto(false);
-        }
-    }, [bizModalAuto]);
 
     // ─── تغییر کسب‌وکار: پیشنهادها تازه می‌شوند (نام + آدرس) ───
     useEffect(() => {
@@ -167,20 +172,18 @@ export default function RegisterCatalogPage() {
         // eslint-disable-next-line react-hooks/exhaustive-deps
     }, [selectedBiz?.id, slugDirty]);
 
-    // ─── هشدار نام تکراری برای همان کسب‌وکار (خطای دیرهنگام بک را پیش‌بینی می‌کند) ───
-    const nameDup = useMemo(() => {
+    // ─── هشدار نام تکراری برای کاتالوگ‌های خود کاربر (خطای دیرهنگام بک را پیش‌بینی می‌کند) ───
+    const catQ = useCataloges();
+    const myCatalogs: any[] = Array.isArray(catQ.data) ? catQ.data : (catQ.data as any)?.items ?? [];
+    const catalogNameDup = useMemo(() => {
         const nm = (catalogName || '').trim();
-        if (!bizId || !nm) return false;
-        return myCatalogs.some((c: any) => {
-            const rawBiz = c.businessId ?? c.business?._id ?? c.business?.id;
-            const cBizId = typeof rawBiz === 'string' ? rawBiz : rawBiz?.id ?? rawBiz?.$oid;
-            return cBizId === bizId && (c.name || '').trim() === nm && c.status === 'active';
-        });
-    }, [myCatalogs, bizId, catalogName]);
+        return !!nm && myCatalogs.some((c: any) => (c.name || '').trim() === nm && c.status === 'active');
+    }, [myCatalogs, catalogName]);
 
     const validate = () => {
         const e: Record<string, string> = {};
-        if (!bizId) e.biz = 'ابتدا کسب‌وکار را انتخاب یا ثبت کن';
+        if (!bizId) e.biz = 'ابتدا کسب‌وکار را جستجو و انتخاب کن (یا جدید ثبت کن)';
+        if (!position.trim()) e.position = 'پستتان در این کسب‌وکار را بنویسید';
         if (!catalogName.trim()) e.name = 'نام کاتالوگ را وارد کن';
         if (!slug || slug.length < 3) e.slug = 'آدرس کاتالوگ معتبر نیست';
         else if (errors.slug === 'taken' || errors.slug === 'reserved') e.slug = errors.slug;
@@ -191,7 +194,7 @@ export default function RegisterCatalogPage() {
     const handleSubmit = async (ev: React.FormEvent) => {
         ev.preventDefault();
         if (submittingRef.current) return; // ✅ ضد دابل‌کال — وسطِ یک submitِ درجریان هستیم
-        if (nameDup) return;
+        if (catalogNameDup) return;
         if (!validate()) return;
         if (!selectedBiz) return;
 
@@ -209,7 +212,7 @@ export default function RegisterCatalogPage() {
                 armSlug,
                 phone: '',
                 description: '',
-                position: 'مالک و مسوول فروش',
+                position: position.trim(),
             });
 
             toast.success(`کاتالوگ «${shortName(catalogName.trim(), 24)}» برای «${shortName(selectedBiz.name, 24)}» ساخته شد 🎉`, {
@@ -250,7 +253,7 @@ export default function RegisterCatalogPage() {
 
     const busy = createCatalogMutation.isPending;
     const bizLocked = !bizId;
-    const submitDisabled = busy || bizLocked || !slug || !!errors.slug || nameDup || !catalogName.trim();
+    const submitDisabled = busy || bizLocked || !slug || !!errors.slug || catalogNameDup || !catalogName.trim() || !position.trim();
 
     return (
         <div className="min-h-screen flex flex-col bg-surface dark:bg-gray-950">
@@ -267,34 +270,61 @@ export default function RegisterCatalogPage() {
 
             <main className="flex-1 w-full max-w-lg mx-auto px-4 pt-5 pb-[100px]">
                 <p className="text-[11px] leading-5 text-on-surface-variant/70 mb-5">
-                    کاتالوگت رو در کمتر از ۳۰ ثانیه بساز .
+                    کاتالوگت رو در کمتر از ۳۰ ثانیه بساز — مشخصات کسب‌وکار از قبل ثبت‌شده برداشته می‌شود.
                 </p>
 
-                {/* ═══ ۱) انتخاب کسب‌وکار ═══ */}
+                {/* ═══ ۱) انتخاب کسب‌وکار — اول جستجو، بعد انتخاب/ثبت ═══ */}
                 <section className="mb-5">
                     <div className="mb-2">
-                        <SectionTitle n={1} title="ساخت کاتالوگ برای کدوم کسب‌وکار؟" />
+                        <SectionTitle n={1} title="کاتالوگت برای کدوم کسب‌وکاره؟" />
                     </div>
 
-                    {hasBizList && myBizList.length > 0 && (
-                        <BizCombo
-                            items={myBizList}
-                            selectedId={bizId}
-                            onPick={(id: string) => { setBizId(id); setErrors((p) => ({ ...p, biz: '' })); }}
-                            onNew={() => { setBizModalMode('create'); setBizModalOpen(true); }}
+                    {selectedBiz ? (
+                        /* ── کارتِ کسب‌وکارِ انتخاب‌شده ── */
+                        <div className="rounded-2xl border border-primary/30 bg-primary/5 p-3.5 flex items-center gap-3">
+                            <span className="w-11 h-11 rounded-xl overflow-hidden bg-primary/10 grid place-items-center flex-shrink-0">
+                                {selectedBiz.logoUrl
+                                    ? <Image src={selectedBiz.logoUrl} alt="" width={44} height={44} className="w-full h-full object-cover" unoptimized />
+                                    : <Building2 className="w-5 h-5 text-primary/70" />}
+                            </span>
+                            <div className="flex-1 min-w-0">
+                                <p className="text-sm font-bold text-on-surface truncate">{selectedBiz.name}</p>
+                                <p className="text-[10px] text-on-surface-variant/70 truncate">
+                                    {[selectedBiz.industryName, selectedBiz.city, selectedBiz.province].filter(Boolean).join(' · ')}
+                                </p>
+                            </div>
+                            {selectedBiz._count?.catalogs != null && (
+                                <span className="text-[9px] text-on-surface-variant/60 flex items-center gap-1 flex-shrink-0">
+                                    <LibraryBig className="w-3 h-3" /> {selectedBiz._count.catalogs}
+                                </span>
+                            )}
+                            <button type="button"
+                                    onClick={() => { setBizId(undefined); setSelectedBizOverride(null); setCatalogName(''); setSlug(''); }}
+                                    className="w-8 h-8 rounded-lg grid place-items-center text-on-surface-variant/60 hover:text-error hover:bg-error/5 transition-colors flex-shrink-0"
+                                    title="تغییر کسب‌وکار">
+                                <X className="w-4 h-4" />
+                            </button>
+                        </div>
+                    ) : (
+                        /* ── پنل جستجو ── */
+                        <BizSearchPanel
+                            q={searchQ}
+                            onQ={setSearchQ}
+                            provinceCode={provinceCode}
+                            provinceLabel={provinceLabel}
+                            cityCode={cityCode}
+                            cityLabel={cityLabel}
+                            onProvince={(code, label) => { setProvinceCode(code); setProvinceLabel(label); setCityCode(''); setCityLabel(''); }}
+                            onCity={(code, label) => { setCityCode(code); setCityLabel(label); }}
+                            loading={searchQ2.isFetching}
+                            items={searchItems}
+                            myItems={myBizList}
+                            onPick={(b) => { setBizId(b.id); setSelectedBizOverride(b); setErrors((p) => ({ ...p, biz: '' })); }}
+                            onNew={() => setBizModalOpen(true)}
                         />
                     )}
-                    {hasBizList && myBizList.length === 0 && (
-                        <button type="button" onClick={() => { setBizModalMode('create'); setBizModalOpen(true); }}
-                                className="mb-3 w-full rounded-xl border border-dashed border-primary/40 bg-primary/5
-                                    p-4 flex items-center gap-2.5 text-right hover:bg-primary/10 transition-colors">
-                            <Building2 className="w-5 h-5 text-primary flex-shrink-0" />
-                            <span className="flex-1 text-sm font-bold text-on-surface">اول کسب‌وکارت را ثبت کن</span>
-                            <Plus className="w-4 h-4 text-primary" />
-                        </button>
-                    )}
                     {errors.biz && (
-                        <p className="mb-3 text-[11px] text-error flex items-center gap-1">
+                        <p className="mt-2 text-[11px] text-error flex items-center gap-1">
                             <Building2 className="w-3.5 h-3.5" /> {errors.biz}
                         </p>
                     )}
@@ -302,21 +332,57 @@ export default function RegisterCatalogPage() {
                 </section>
 
                 <form onSubmit={handleSubmit} className="space-y-5">
-                    {/* ═══ ۲) نام کاتالوگ — پیش‌فرض نام کسب‌وکار، قابل ویرایش ═══ */}
+                    {/* ═══ پست شما در کسب‌وکار — عضویت تیم کسب‌وکار ═══ */}
+                    {selectedBiz && (
+                        <section className="space-y-1.5">
+                            <SectionTitle n={2} title={`پست شما در «${shortName(selectedBiz.name, 18)}»`} />
+                            <div className="flex flex-wrap gap-1.5 mb-1">
+                                {POSITION_CHIPS.map((p) => (
+                                    <button key={p} type="button"
+                                            onClick={() => { setPosition(p); setErrors((prev) => ({ ...prev, position: '' })); }}
+                                            className={cn(
+                                                'px-3 py-1.5 rounded-full text-[11px] font-medium border transition-colors',
+                                                position === p
+                                                    ? 'border-primary bg-primary/10 text-primary'
+                                                    : 'border-outline-variant/40 dark:border-gray-700 text-on-surface-variant hover:border-primary/40',
+                                            )}>
+                                        {p}
+                                    </button>
+                                ))}
+                            </div>
+                            <input type="text" value={position} maxLength={60}
+                                   onChange={(e) => { setPosition(e.target.value); setErrors((p) => ({ ...p, position: '' })); }}
+                                   placeholder="مثلا: مدیر فروش شعبه مرکزی"
+                                   className={cn(
+                                       'w-full h-11 px-3.5 text-sm text-right rounded-xl bg-surface-container-lowest border',
+                                       'focus:ring-2 focus:ring-primary/20 focus:border-primary outline-none transition-all',
+                                       errors.position ? 'border-error' : 'border-outline-variant/40 dark:border-gray-700',
+                                   )} />
+                            {errors.position
+                                ? <p className="text-[10px] text-error flex items-center gap-1.5 px-1"><AlertTriangle className="w-3 h-3 flex-shrink-0" /> {errors.position}</p>
+                                : (
+                                    <p className="text-[10px] text-on-surface-variant/60 px-1">
+                                        لازم نیست مالک کسب‌وکار باشید — با پستتان به تیمِ این کسب‌وکار اضافه می‌شوید.
+                                    </p>
+                                )}
+                        </section>
+                    )}
+
+                    {/* ═══ ۳) نام کاتالوگ — پیش‌فرض نام کسب‌وکار، قابل ویرایش ═══ */}
                     <section className="space-y-1.5">
-                        <SectionTitle n={2} title="نام کاتالوگ" />
+                        <SectionTitle n={selectedBiz ? 3 : 2} title="نام کاتالوگ" />
                         <input type="text" value={catalogName} maxLength={60}
                                onChange={(e) => { setCatalogName(e.target.value); setNameDirty(true); setErrors((p) => ({ ...p, name: '' })); }}
                                placeholder="مثلا: پخش مصالح نارین — شعبه تهران"
                                className={cn(
                                    'w-full h-11 px-3.5 text-sm text-right rounded-xl bg-surface-container-lowest border',
                                    'focus:ring-2 focus:ring-primary/20 focus:border-primary outline-none transition-all',
-                                   (errors.name || nameDup) ? 'border-error' : 'border-outline-variant/40 dark:border-gray-700',
+                                   (errors.name || catalogNameDup) ? 'border-error' : 'border-outline-variant/40 dark:border-gray-700',
                                )} />
-                        {nameDup ? (
+                        {catalogNameDup ? (
                             <p className="text-[10px] text-error flex items-center gap-1.5 px-1">
                                 <AlertTriangle className="w-3 h-3 flex-shrink-0" />
-                                برای این کسب‌وکار یه کاتالوگ با همین نام داری — برای تشخیص راحت‌تر کمی عوضش کن
+                                یه کاتالوگ با همین نام داری — برای تشخیص راحت‌تر کمی عوضش کن
                             </p>
                         ) : (
                             !nameDirty && catalogName && (
@@ -325,7 +391,7 @@ export default function RegisterCatalogPage() {
                                 </p>
                             )
                         )}
-                        {errors.name && !nameDup && (
+                        {errors.name && !catalogNameDup && (
                             <p className="text-[10px] text-error flex items-center gap-1.5 px-1">
                                 <AlertTriangle className="w-3 h-3 flex-shrink-0" /> {errors.name}
                             </p>
@@ -371,9 +437,9 @@ export default function RegisterCatalogPage() {
                         )}
                     </section>
 
-                    {/* ═══ ۳) نوع فروش ═══ */}
+                    {/* ═══ ۴) نوع فروش ═══ */}
                     <section className="space-y-2">
-                        <SectionTitle n={3} title="نوع فروش در این کاتالوگ" />
+                        <SectionTitle n={selectedBiz ? 4 : 3} title="نوع فروش در این کاتالوگ" />
                         <div className="grid grid-cols-3 gap-2">
                             {[
                                 { v: 'wholesale', t: 'عمده', icon: '📦' },
@@ -408,90 +474,155 @@ export default function RegisterCatalogPage() {
                                     : 'bg-primary text-on-primary shadow-lg shadow-primary/25 active:scale-[0.99]',
                             )}>
                         {busy ? <><Loader2 className="w-5 h-5 animate-spin" /> در حال ساخت کاتالوگ…</>
-                            : bizLocked ? <><Building2 className="w-4 h-4" /> اول کسب‌وکار را ثبت کن</>
-                            : nameDup ? <><AlertTriangle className="w-4 h-4" /> نام کاتالوگ تکراری است</>
+                            : bizLocked ? <><Building2 className="w-4 h-4" /> اول کسب‌وکار را انتخاب کن</>
+                            : catalogNameDup ? <><AlertTriangle className="w-4 h-4" /> نام کاتالوگ تکراری است</>
                             : <><LibraryBig className="w-4.5 h-4.5" /> ساخت کاتالوگ برای «{shortName(selectedBiz?.name || '')}»</>}
                     </button>
                 </form>
             </main>
 
-            {/* ═══ مودال ساخت/ویرایش کسب‌وکار ═══ */}
+            {/* ═══ مودال ثبت کسب‌وکار جدید (با هشدار تکراری‌ثبتی) ═══ */}
             <BusinessSetupModal
                 isOpen={bizModalOpen}
-                business={bizModalMode === 'edit' ? selectedBiz : null}
+                business={null}
                 onClose={() => setBizModalOpen(false)}
                 onSaved={(biz: any) => {
-                    // ✅ کسب‌وکار تازه‌ثبت‌شده بلافاصله انتخاب می‌شود
-                    if (bizModalMode === 'create' && biz?.id) setBizId(biz.id);
-                    bizQ.refetch();
+                    // ✅ کسب‌وکار تازه‌ثبت‌شده (یا انتخاب‌شده از لیست مشابه‌ها) بلافاصله انتخاب می‌شود
+                    if (biz?.id) {
+                        setBizId(biz.id);
+                        setSelectedBizOverride(biz);
+                    }
+                    searchQ2.refetch();
                 }}
             />
         </div>
     );
 }
 
-/* ─── کمبوی ظریف نهاد — با لوگو و آواتار ─── */
-function BizCombo({ items, selectedId, onPick, onNew }: {
-    items: any[]; selectedId?: string; onPick: (id: string) => void; onNew: () => void;
+/* ─── پنل جستجوی کسب‌وکار — «اول جستجو کن، تکراری ثبت نکن» ─── */
+function BizSearchPanel({ q, onQ, provinceCode, provinceLabel, cityCode, cityLabel, onProvince, onCity, loading, items, myItems, onPick, onNew }: {
+    q: string; onQ: (v: string) => void;
+    provinceCode: string; provinceLabel: string; cityCode: string; cityLabel: string;
+    onProvince: (code: string, label: string) => void;
+    onCity: (code: string, label: string) => void;
+    loading: boolean; items: any[]; myItems: any[];
+    onPick: (b: any) => void; onNew: () => void;
 }) {
-    const [open, setOpen] = useState(false);
-    const selected = items.find((b) => b.id === selectedId);
+    const [touched, setTouched] = useState(false);
     return (
-        <div className="relative">
-            <div className="flex items-center gap-1.5">
-                <button type="button" onClick={() => setOpen((o) => !o)}
-                        className={cn(
-                            'flex-1 h-11 px-3.5 rounded-xl bg-surface-container-lowest border flex items-center gap-2.5',
-                            'border-outline-variant/40 dark:border-gray-700 focus:ring-2 focus:ring-primary/20',
-                            'focus:border-primary outline-none transition-all text-right',
-                            open && 'ring-2 ring-primary/20 border-primary',
-                        )}>
-                    <span className="w-7 h-7 rounded-md overflow-hidden bg-primary/10 dark:bg-primary/15 grid place-items-center flex-shrink-0">
-                        {selected?.logoUrl
-                            ? <Image src={selected.logoUrl} alt="" width={28} height={28} className="w-full h-full object-cover" unoptimized />
-                            : <Building2 className="w-3.5 h-3.5 text-primary/70" />}
-                    </span>
-                    <span className={cn('flex-1 text-sm truncate', selected ? 'text-on-surface font-medium' : 'text-on-surface-variant/50')}>
-                        {selected ? selected.name : 'انتخاب کسب‌وکار…'}
-                    </span>
-                    {open ? <ChevronUp className="w-4 h-4 text-on-surface-variant/50 flex-shrink-0" />
-                        : <ChevronDown className="w-4 h-4 text-on-surface-variant/50 flex-shrink-0" />}
-                </button>
-                <button type="button" onClick={onNew} title="ثبت کسب‌وکار جدید"
-                        className="w-11 h-11 rounded-xl border border-outline-variant/40 dark:border-gray-700 grid place-items-center
-                            text-on-surface-variant/60 hover:text-primary hover:border-primary/40
-                            hover:bg-primary/5 transition-colors flex-shrink-0">
-                    <Plus className="w-4 h-4" />
-                </button>
-            </div>
-
-            {open && (
-                <>
-                    <div className="fixed inset-0 z-40" onClick={() => setOpen(false)} />
-                    <div className="absolute top-full mt-1 inset-x-0 z-50 p-1.5 rounded-2xl bg-white dark:bg-gray-900
-                        border border-outline-variant/30 dark:border-gray-700 shadow-xl animate-in fade-in zoom-in-95 duration-150 max-h-56 overflow-y-auto">
-                        {items.map((b) => (
+        <div className="space-y-2.5">
+            {/* دسترسی سریع — کسب‌وکارهایی که عضو یا ثبت‌کننده‌شان هستی */}
+            {myItems.length > 0 && (
+                <div className="space-y-1.5">
+                    <p className="text-[10px] font-bold text-on-surface-variant/70">کسب‌وکارهای من</p>
+                    <div className="flex gap-1.5 overflow-x-auto pb-1 scrollbar-slim">
+                        {myItems.map((b) => (
                             <button key={b.id} type="button"
-                                    onClick={() => { onPick(b.id); setOpen(false); }}
-                                    className={cn('w-full flex items-center gap-2.5 px-3 py-2.5 rounded transition-colors text-right',
-                                        b.id === selectedId ? 'bg-primary/5 dark:bg-primary/10' : 'hover:bg-surface-container-high dark:hover:bg-gray-800')}>
-                                <span className="w-7 h-7 rounded-md overflow-hidden bg-primary/10 dark:bg-primary/15 grid place-items-center flex-shrink-0">
+                                    onClick={() => onPick(b)}
+                                    className="flex items-center gap-2 px-2.5 py-1.5 rounded-full border border-outline-variant/40 dark:border-gray-700
+                                        bg-surface-container-lowest/60 hover:border-primary/40 hover:bg-primary/5 transition-colors flex-shrink-0">
+                                <span className="w-6 h-6 rounded-md overflow-hidden bg-primary/10 grid place-items-center flex-shrink-0">
                                     {b.logoUrl
-                                        ? <Image src={b.logoUrl} alt="" width={28} height={28} className="w-full h-full object-cover" unoptimized />
-                                        : <Building2 className="w-3.5 h-3.5 text-primary/70" />}
+                                        ? <Image src={b.logoUrl} alt="" width={24} height={24} className="w-full h-full object-cover" unoptimized />
+                                        : <Building2 className="w-3 h-3 text-primary/70" />}
                                 </span>
-                                <span className="flex-1 min-w-0">
-                                    <span className={cn('block text-xs font-bold truncate', b.id === selectedId ? 'text-primary' : 'text-on-surface')}>{b.name}</span>
-                                    <span className="block text-[9px] text-on-surface-variant/50 truncate">
-                                        {[b.industryName, b.city].filter(Boolean).join(' · ')}
-                                    </span>
-                                </span>
-                                {b.id === selectedId && <Check className="w-3.5 h-3.5 text-primary flex-shrink-0" />}
+                                <span className="text-[11px] font-bold text-on-surface whitespace-nowrap">{shortName(b.name, 18)}</span>
                             </button>
                         ))}
                     </div>
-                </>
+                </div>
             )}
+
+            {/* هشدار — قبل از ثبتِ جدید جستجو کنید */}
+            <div className="rounded-xl bg-amber-50 dark:bg-amber-500/10 border border-amber-200/60 dark:border-amber-500/20 px-3 py-2.5 flex items-start gap-2">
+                <AlertTriangle className="w-4 h-4 text-amber-600 dark:text-amber-400 flex-shrink-0 mt-0.5" />
+                <p className="text-[10.5px] leading-5 text-amber-800 dark:text-amber-300">
+                    شاید همکارانتان این کسب‌وکار را قبلاً ثبت کرده باشند — <b>اول جستجو کنید</b> و از روی نام و لوگو انتخابش کنید تا دیتای تکراری نسازید.
+                </p>
+            </div>
+
+            {/* جستجو */}
+            <div className="relative">
+                <Search className="absolute right-3 top-1/2 -translate-y-1/2 w-4 h-4 text-on-surface-variant/50" />
+                <input type="text" value={q}
+                       onChange={(e) => { onQ(e.target.value); setTouched(true); }}
+                       placeholder="جستجو با نام کسب‌وکار…"
+                       className="w-full h-11 pr-9 pl-9 text-sm text-right rounded-xl bg-surface-container-lowest border
+                           border-outline-variant/40 dark:border-gray-700 focus:ring-2 focus:ring-primary/20
+                           focus:border-primary outline-none transition-all" />
+                {loading
+                    ? <Loader2 className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 animate-spin text-primary" />
+                    : q && (
+                        <button type="button" onClick={() => onQ('')}
+                                className="absolute left-2.5 top-1/2 -translate-y-1/2 w-6 h-6 rounded-full grid place-items-center text-on-surface-variant/50 hover:text-error hover:bg-error/5">
+                            <X className="w-3.5 h-3.5" />
+                        </button>
+                    )}
+            </div>
+
+            {/* فیلتر موقعیت */}
+            <div className="flex items-center gap-1.5">
+                <MapPin className="w-3.5 h-3.5 text-on-surface-variant/50 flex-shrink-0" />
+                <div className="flex-1">
+                    <IranLocationSelector
+                        provinceCode={provinceCode}
+                        cityCode={cityCode}
+                        onProvinceChange={onProvince}
+                        onCityChange={onCity}
+                    />
+                </div>
+            </div>
+
+            {/* نتایج */}
+            <div className="space-y-1.5">
+                {items.map((b) => (
+                    <button key={b.id} type="button"
+                            onClick={() => onPick(b)}
+                            className="w-full flex items-center gap-2.5 p-2.5 rounded-xl border border-outline-variant/30 dark:border-gray-700
+                                bg-surface-container-lowest/60 hover:border-primary/40 hover:bg-primary/5 transition-colors text-right">
+                        <span className="w-9 h-9 rounded-lg overflow-hidden bg-primary/10 dark:bg-primary/15 grid place-items-center flex-shrink-0">
+                            {b.logoUrl
+                                ? <Image src={b.logoUrl} alt="" width={36} height={36} className="w-full h-full object-cover" unoptimized />
+                                : <Building2 className="w-4 h-4 text-primary/70" />}
+                        </span>
+                        <span className="flex-1 min-w-0">
+                            <span className="flex items-center gap-1">
+                                <span className="text-xs font-bold text-on-surface truncate">{b.name}</span>
+                                {!!b.verificationTier && b.verificationTier !== 'none' && (
+                                    <BadgeCheck className="w-3.5 h-3.5 text-primary flex-shrink-0" />
+                                )}
+                            </span>
+                            <span className="block text-[9.5px] text-on-surface-variant/60 truncate">
+                                {[b.industryName, b.city].filter(Boolean).join(' · ')}
+                                {b._count?.catalogs ? ` · ${b._count.catalogs} کاتالوگ` : ''}
+                            </span>
+                        </span>
+                        <span className="text-[10px] font-bold text-primary flex-shrink-0">انتخاب</span>
+                    </button>
+                ))}
+            </div>
+
+            {touched && !loading && items.length === 0 && (
+                <p className="text-[11px] text-on-surface-variant/60 text-center py-2">
+                    کسب‌وکاری با این مشخصات پیدا نشد — اگر مطمئنی تکراری نیست، خودت ثبتش کن.
+                </p>
+            )}
+
+            {/* ثبت کسب‌وکار جدید */}
+            <button type="button" onClick={onNew}
+                    className="w-full rounded-xl border border-dashed border-primary/40 bg-primary/5
+                        p-3.5 flex items-center gap-2.5 text-right hover:bg-primary/10 transition-colors">
+                <span className="w-9 h-9 rounded-lg bg-primary/10 grid place-items-center flex-shrink-0">
+                    <Plus className="w-4.5 h-4.5 text-primary" />
+                </span>
+                <span className="flex-1 min-w-0">
+                    <span className="block text-xs font-bold text-on-surface">ثبت کسب‌وکار جدید</span>
+                    <span className="block text-[9.5px] text-on-surface-variant/60 mt-0.5">
+                        فقط وقتی که در جستجو پیدا نشد — دیتای کسب‌وکار باید یکتا بماند
+                    </span>
+                </span>
+                <Users className="w-4 h-4 text-primary/50 flex-shrink-0" />
+            </button>
         </div>
     );
 }

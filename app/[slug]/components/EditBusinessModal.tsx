@@ -11,6 +11,8 @@ import { toast } from 'sonner';
 import { cn } from '@/lib/utils';
 import { apiService } from '@/lib/api/apiService';
 import { useUploadFile, useUpdateBusinessEntity } from '@/lib/api/apiHooks';
+import { RootState } from '@/lib/store/store';
+import { useSelector } from 'react-redux';
 import { USER_POSITIONS, getLegacyTypeFromRole } from '@/lib/api/data-types';
 import { IranLocationSelector } from '@/app/components/IranLocationSelector';
 import BusinessTypeSelector from '@/app/components/BusinessTypeSelector';
@@ -30,6 +32,11 @@ export default function EditBusinessModal({ isOpen, onClose, catalog, onSaved }:
     const uploadMutation = useUploadFile();
     const updateBusinessMut = useUpdateBusinessEntity();
     const logoInputRef = useRef<HTMLInputElement>(null);
+    const { user } = useSelector((s: RootState) => s.auth);
+    // ✅ کسب‌وکارِ مرجع مشترک است — فقط ثبت‌کنندهٔ اول یا مالکِ قدیمی اجازه‌ی ویرایش مشخصاتش را دارد
+    const canEditBiz = !catalog?.business?.id
+        || catalog?.business?.creatorUserId === user?.id
+        || catalog?.business?.ownerUserId === user?.id;
 
     // ─── فرم ───
     const [name, setName] = useState('');
@@ -173,8 +180,8 @@ export default function EditBusinessModal({ isOpen, onClose, catalog, onSaved }:
             // ۱) لوگو (اگر جدید است)
             const logoFileId = await uploadLogo();
 
-            // ۱٫۵) ✅ نوع کسب‌وکار (درخت دو سطحی) روی Business ثبت می‌شود — همسان با CatalogEditModal
-            if (catalog.business?.id) {
+            // ۱٫۵) ✅ نوع کسب‌وکار (درخت دو سطحی) روی Business ثبت می‌شود — فقط ویرایشگرِ کسب‌وکار
+            if (catalog.business?.id && canEditBiz) {
                 await updateBusinessMut.mutateAsync({
                     id: catalog.business.id,
                     data: {

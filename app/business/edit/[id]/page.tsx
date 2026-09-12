@@ -151,7 +151,6 @@ export default function EditCatalogPage() {
     };
     // ✅ ذخیرهٔ فوری اسلاگ — تیکِ داخل SlugPicker این را صدا می‌زند
     const handleSlugSave = async (newSlug: string) => {
-        debugger
         await updateCatalog.mutateAsync({
             id: catalogId,
             data: { slug: newSlug },

@@ -49,15 +49,26 @@ export const apiService = {
     },
 
     // ============================================================
-    // BUSINESS — نهاد تجاری (یک‌دقیقه‌ای)
+    // BUSINESS — کسب‌وکارِ مرجع/مشترک (ثبت‌کنندهٔ اول ≠ مالک)
     // ============================================================
     business: {
         create: (data: any): Promise<any> =>
             apiRequest('/business', { method: 'POST', data }),
-        // ساخت برای نهادِ انتخابی — کاتالوگ دوم به بعد
-        createForBusiness: (data: any): Promise<Catalog> =>
-            apiRequest('/catalog/for-business', { method: 'POST', data }),
 
+        // ✅ جستجوی عمومی کسب‌وکارها — «اول جستجو کن، تکراری ثبت نکن»
+        //    q + فیلتر استان/شهر + ids برای پیش‌انتخاب با شناسه
+        search: (params: { q?: string; provinceCode?: string; cityCode?: string; limit?: number; offset?: number; ids?: string }): Promise<{ items: any[]; total: number }> => {
+            const sp = new URLSearchParams();
+            if (params.q?.trim()) sp.set('q', params.q.trim());
+            if (params.provinceCode) sp.set('provinceCode', params.provinceCode);
+            if (params.cityCode) sp.set('cityCode', params.cityCode);
+            if (params.limit) sp.set('limit', String(params.limit));
+            if (params.offset) sp.set('offset', String(params.offset));
+            if (params.ids) sp.set('ids', params.ids);
+            return apiRequest(`/business/search?${sp.toString()}`);
+        },
+
+        // کسب‌وکارهای من — ثبت‌کننده/مالک قدیمی/عضو تیم (با پرچم canEdit)
         getMyBusinesses: (): Promise<{ items: BusinessEntity[] }> =>
             apiRequest('/business/my'),
 
@@ -72,9 +83,6 @@ export const apiService = {
 
         delete: (id: string): Promise<any> =>
             apiRequest(`/business/${id}`, { method: 'DELETE' }),
-
-        attachCatalog: (businessId: string, catalogId: string): Promise<any> =>
-            apiRequest(`/business/${businessId}/attach-catalog/${catalogId}`, { method: 'POST' }),
     },
 
     // ============================================================
