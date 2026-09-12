@@ -56,7 +56,7 @@ export default function MobileHeader({ showLocation = false, fixed = true, showB
                 {showLocation && <div className="flex-shrink-0"><LocationFilter /></div>}
 
                 {/* ✅ دکمهٔ ثبت قیمت — جمع‌وجور و ریزفونت تا برای عنوان بازار جا بماند */}
-                <PostPriceButton size="mobile" className="mx-0.5" />
+               {/* <PostPriceButton size="mobile" className="mx-0.5" />*/}
 
                 {/* ✅ اعلان‌ها — بالا، همیشه در دسترس؛ جمع‌وجور تا به سه‌نقطه نزدیک بماند */}
                 {isAuthenticated && (

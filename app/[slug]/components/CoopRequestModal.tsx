@@ -26,9 +26,9 @@ interface CoopRequestModalProps {
 }
 
 const TYPE_CARDS: { type: CoopType; icon: React.ElementType; title: string; desc: string }[] = [
-    { type: 'buyer', icon: ShoppingBasket, title: 'خریدار', desc: 'از این کاتالوگ خرید می‌کنم — با تایید، تماسم به مسئول فروشم می‌رسد' },
-    { type: 'supplier', icon: Truck, title: 'تامین‌کننده', desc: 'کالاهایم را به این کاتالوگ می‌دهم — با کاتالوگِ خودم عضو می‌شوم' },
-    { type: 'seller', icon: Handshake, title: 'همکاری در فروش', desc: 'در فروش این کاتالوگ شریک می‌شوم — فروشنده یا ویزیتور' },
+    { type: 'buyer', icon: ShoppingBasket, title: 'خریدار', desc: 'شما به لیست مشتریان این کسب و کار خواهید پیوست. ' },
+    { type: 'supplier', icon: Truck, title: 'تامین‌کننده', desc: 'شما به لیست تامین کنندگان این کسب و کار خواهید پیوست.' },
+    { type: 'seller', icon: Handshake, title: 'همکاری در فروش', desc: 'شما به لیست ویزیتورها، بازایابان و همکاران فروش ای کسب و کار خواهید پیوست' },
 ];
 
 export default function CoopRequestModal({ open, onClose, catalogId, catalogName, onSuccess }: CoopRequestModalProps) {
@@ -108,7 +108,7 @@ export default function CoopRequestModal({ open, onClose, catalogId, catalogName
                     <div>
                         <p className="font-bold text-gray-900 dark:text-gray-100">درخواست ارتباط تجاری</p>
                         <p className="text-[11px] text-gray-500 dark:text-gray-400 mt-0.5">
-                            ارتباط تجاری با کاتالوگ «{catalogName}» — پس از تایید مدیر (مالک کاتالوگ) فعال می‌شود
+                         درخواست ارتباط شما با این کسب و کار از چه نوعی است؟
                         </p>
                     </div>
                     <button onClick={close} className="p-2 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-800 flex-shrink-0">
@@ -149,7 +149,7 @@ export default function CoopRequestModal({ open, onClose, catalogId, catalogName
                             <>
                                 <div className="flex items-center gap-2 text-xs font-bold text-gray-700 dark:text-gray-300">
                                     <Store className="w-4 h-4 text-primary" />
-                                    کدام کسب‌وکار از این کاتالوگ خرید می‌کند؟
+                                   برای کدام کسب و کارتان می خواهید از این فروشنده خرید کنید؟
                                 </div>
                                 {businesses.length === 0 && (
                                     <p className="text-[11px] text-gray-400">هنوز کسب‌وکاری نداری.</p>
@@ -194,7 +194,7 @@ export default function CoopRequestModal({ open, onClose, catalogId, catalogName
                             <>
                                 <div className="flex items-center gap-2 text-xs font-bold text-gray-700 dark:text-gray-300">
                                     <BookOpen className="w-4 h-4 text-primary" />
-                                    با کدام کاتالوگ خودت تامین می‌کنی؟
+                                    کالاهای کدام کاتالوگت به درد این خریدار می خوره؟
                                 </div>
                                 {myCatalogs.length === 0 && (
                                     <p className="text-[11px] text-gray-400">هنوز کاتالوگی نداری.</p>
@@ -258,7 +258,7 @@ export default function CoopRequestModal({ open, onClose, catalogId, catalogName
                                     ))}
                                 </div>
                                 <p className="text-[11px] text-gray-400 leading-5">
-                                    هر دو یک نقش‌اند — فقط عنوان ترجیحی توست. تصمیم نهایی با مدیرِ تاییدکننده است.
+                                    شما با نقش فروشنده یا بازاریاب کالاهای این کاتالوگ ، مشتریان خاصی را مدیریت می کنید.
                                 </p>
                             </>
                         )}

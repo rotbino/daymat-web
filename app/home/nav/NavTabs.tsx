@@ -94,7 +94,7 @@ function GuestMarketNav({ slug, pathname }: { slug: string; pathname: string }) 
                 </Link>
 
                 {/* CTA ثبت قیمت — لیبل بر اساس نوع بازار؛ مهمان → ثبت‌نام/ورود بعدش /my-catalogs */}
-                <PostPriceButton size="desktop" />
+              {/*  <PostPriceButton size="desktop" />*/}
             </div>
         </nav>
     );
@@ -173,7 +173,7 @@ export default function NavTabs({ guestMarketSlug }: { guestMarketSlug?: string 
                     <div className="flex-1" />
 
                     {/* ✅ دکمهٔ ثبت قیمت — لیبل بر اساس نوع بازار (عمده/خرده/خدمات) */}
-                    <PostPriceButton size="desktop" />
+                    {/*<PostPriceButton size="desktop" />*/}
 
                     {/* بازار */}
                     <IconLink href={currentSlug ? `/${currentSlug}` : '/markets'}
