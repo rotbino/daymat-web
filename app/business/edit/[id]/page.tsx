@@ -504,7 +504,7 @@ export default function EditCatalogPage() {
                                            className="w-full bg-surface-container-lowest dark:bg-gray-800 border border-outline dark:border-gray-700 rounded-lg h-10 px-3 text-sm text-right focus:ring-2 focus:ring-primary/20 focus:border-primary outline-none transition-all" />
                                 </div>
                                 <div>
-                                    <label className="text-xs font-medium text-on-surface-variant dark:text-gray-400 block mb-1">نوع کسب‌وکار</label>
+                                    <label className="text-xs font-medium text-on-surface-variant dark:text-gray-400 block mb-1">نوع فعالیت</label>
                                     <select value={formData.type} onChange={(e) => setFormData({ ...formData, type: e.target.value, industryId: '' })}
                                             className="w-full bg-surface-container-lowest dark:bg-gray-800 border border-outline dark:border-gray-700 rounded-lg h-10 px-3 text-sm text-right appearance-none focus:ring-2 focus:ring-primary/20 focus:border-primary outline-none transition-all">
                                         <option value="">انتخاب نوع...</option>

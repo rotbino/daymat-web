@@ -93,8 +93,27 @@ export default function AdPriceCard({ ad, isOwner, isSaved, onSaveToggle, onCont
 
             {/* ═══ کارت قیمت اصلی (بدون عنوان) ═══ */}
             <div className="bg-white dark:bg-gray-900 rounded-2xl border border-gray-200/80 dark:border-gray-800 p-5 shadow-sm">
-                {/* ✅ گیت بازار خصوصی — قیمت مخفی؛ دکمهٔ عضویت جای عدد */}
+                {/* ✅ گیت قیمت — کاتالوگ خصوصی: درخواست ارتباط تجاری | بازار خصوصی: عضویت */}
                 {ad.unitPrice == null ? (
+                    ad.priceGate === 'catalog_private' ? (
+                        <div>
+                            <p className="text-[11px] text-gray-400">قیمت هر {unit}</p>
+                            <p className="text-[20px] font-extrabold text-amber-600 dark:text-amber-400 leading-snug mt-1">
+                                قیمت مخفی است
+                            </p>
+                            <p className="text-[11px] text-gray-500 dark:text-gray-400 leading-5 mt-1">
+                                این کاتالوگ خصوصی است — قیمت‌ها فقط برای اعضای پذیرفته‌شده نمایش داده می‌شود.
+                            </p>
+                            {ad.catalog?.slug && (
+                                <button type="button" onClick={() => router.push(`/${ad.catalog.slug}`)}
+                                        className="mt-3 w-full h-10 rounded-xl bg-amber-600 hover:bg-amber-700 text-white
+                                            text-[13px] font-bold shadow-sm transition-colors flex items-center justify-center gap-1.5">
+                                    <Lock className="w-4 h-4" />
+                                    برای دیدن قیمت درخواست ارتباط تجاری دهید
+                                </button>
+                            )}
+                        </div>
+                    ) : (
                     <div>
                         <p className="text-[11px] text-gray-400">قیمت هر {unit}</p>
                         <p className="text-[20px] font-extrabold text-amber-600 dark:text-amber-400 leading-snug mt-1">
@@ -112,6 +131,7 @@ export default function AdPriceCard({ ad, isOwner, isSaved, onSaveToggle, onCont
                             </button>
                         )}
                     </div>
+                    )
                 ) : (
                 <div className="flex items-end justify-between gap-1">
                     <div>

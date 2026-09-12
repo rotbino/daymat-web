@@ -6,38 +6,18 @@ import { useRouter } from 'next/navigation';
 import { useSelector, useDispatch } from 'react-redux';
 import { toast } from 'sonner';
 import {
-    LibraryBig, Building2, Loader2, ArrowRight, AtSign, ChevronDown, ChevronUp, AlertTriangle,
+    LibraryBig, Building2, Loader2, ArrowRight, AlertTriangle, Globe, Lock,
 } from 'lucide-react';
 import { useCreateCatalog, useBusinessSearch, useCataloges } from '@/lib/api/apiHooks';
+import { USER_POSITIONS } from '@/lib/api/data-types';
 import { RootState } from '@/lib/store/store';
 import { setCurrentCatalog } from '@/lib/store/slices/catalogSlice';
 import { clearStoredRef, readStoredRef } from '@/app/components/RefCapture';
 import BusinessSelector from '@/app/components/BusinessSelector';
 import SlugPicker from '@/app/business/register/SlugPicker';
-import { apiService } from '@/lib/api/apiService';
 import { cn } from '@/lib/utils';
 
-/* ─── فارسی ← لاتین برای پیشنهاد خودکار آدرس کاتالوگ ─── */
-const FA_LATIN: Record<string, string> = {
-    'آ': 'a', 'ا': 'a', 'أ': 'a', 'إ': 'a', 'ب': 'b', 'پ': 'p', 'ت': 't', 'ث': 's',
-    'ج': 'j', 'چ': 'ch', 'ح': 'h', 'خ': 'kh', 'د': 'd', 'ذ': 'z', 'ر': 'r', 'ز': 'z',
-    'ژ': 'zh', 'س': 's', 'ش': 'sh', 'ص': 's', 'ض': 'z', 'ط': 't', 'ظ': 'z', 'ع': 'a',
-    'غ': 'gh', 'ف': 'f', 'ق': 'gh', 'ک': 'k', 'گ': 'g', 'ل': 'l', 'م': 'm', 'ن': 'n',
-    'و': 'v', 'ه': 'h', 'ی': 'i', 'ي': 'i', 'ئ': 'i', 'ء': '', 'ة': 'h',
-    'َ': '', 'ِ': '', 'ُ': '', 'ّ': '', 'ً': '', 'ٌ': '', 'ٍ': '', 'ْ': '', 'ۀ': 'h',
-};
-
-/** نام کسب‌وکار را به یک اسلاگ لاتین معقول تبدیل می‌کند (pakhsh-masaleh-narin) */
-function transliterate(raw: string): string {
-    return (raw ?? '')
-        .split('')
-        .map((ch) => FA_LATIN[ch] ?? ch)
-        .join('')
-        .toLowerCase()
-        .replace(/[^a-z0-9-]+/g, '-')
-        .replace(/-+/g, '-')
-        .replace(/^-|-$/g, '');
-}
+/* ─── فارسی ← لاتین (حذف شد) — لینک کاتالوگ را کاربر خودش پر می‌کند ─── */
 
 function shortName(n: string, max = 20) {
     return (n || '').length > max ? n.slice(0, max) + '…' : n;
@@ -51,9 +31,6 @@ function SectionTitle({ n, title }: { n: number; title: string }) {
         </div>
     );
 }
-
-/** چیپ‌های پیشنهادی پست در کسب‌وکار */
-const POSITION_CHIPS = ['مدیر', 'مدیر فروش', 'کارمند فروش', 'حسابدار', 'انباردار'];
 
 export default function RegisterCatalogPage() {
     const router = useRouter();
@@ -81,65 +58,33 @@ export default function RegisterCatalogPage() {
         ).get('ref') || readStoredRef() || undefined,
     );
 
-    // ─── پست کاربر در کسب‌وکار (عضویت تیم کسب‌وکار) ───
-    const [position, setPosition] = useState('');
+    // ─── نقش کاربر در کسب‌وکار — تک‌منبع: USER_POSITIONS در data-types ───
+    const [positionRole, setPositionRole] = useState('');      // value از USER_POSITIONS
+    const [positionOther, setPositionOther] = useState('');    // فقط وقتی «سایر»
+    const POSITION_OTHER_VALUE = '10';
+    const effectivePosition = positionRole
+        ? (positionRole === POSITION_OTHER_VALUE ? positionOther.trim() : (USER_POSITIONS.find((p) => p.value === positionRole)?.label || ''))
+        : '';
 
     const [catalogName, setCatalogName] = useState('');
     const [nameDirty, setNameDirty] = useState(false);
-    const [slug, setSlug] = useState('');
-    const [slugDirty, setSlugDirty] = useState(false);
-    const [slugOpen, setSlugOpen] = useState(false);
-    const [slugSuggesting, setSlugSuggesting] = useState(false);
+    const [slug, setSlug] = useState('');          // ✅ کاربر خودش پر می‌کند — پیش‌فرض خالی
     const [salesType, setSalesType] = useState<'wholesale' | 'retail' | 'service'>('wholesale');
+    // ✅ دسترسی کاتالوگ — خصوصی: قیمت‌ها فقط برای اعضای پذیرفته‌شده
+    const [isPrivate, setIsPrivate] = useState(false);
     const [errors, setErrors] = useState<Record<string, string>>({});
     const createCatalogMutation = useCreateCatalog();
     // ✅ گارد سینکرون دابل‌سابمیت — دو کلیک/Enter در یک تیک، قبل از رندرِ مجددِ دکمه، دو درخواست نمی‌زند
     const submittingRef = React.useRef(false);
 
-    // ─── تغییر کسب‌وکار: پیشنهادها تازه می‌شوند (نام + آدرس) ───
+    // ─── تغییر کسب‌وکار: نام پیشنهادی تازه می‌شود ───
     useEffect(() => {
         if (!selectedBiz) return;
         setCatalogName(selectedBiz.name || '');
         setNameDirty(false);
-        setSlugDirty(false);
-        setSlugOpen(false);
         setErrors({});
         // eslint-disable-next-line react-hooks/exhaustive-deps
     }, [selectedBiz?.id]);
-
-    // ─── پیشنهاد خودکار آدرس از نام کسب‌وکار + چک آزاد بودن ───
-    useEffect(() => {
-        if (!selectedBiz || slugDirty) return;
-        let alive = true;
-        setSlugSuggesting(true);
-        (async () => {
-            const full = transliterate(selectedBiz.name || '');
-            let base = full.slice(0, 30);
-            // فقط وقتی برش خورده، نیم‌کلمهٔ آخر را حذف کن
-            if (full.length > 30 && base.length > 3) base = base.replace(/-[^-]*$/, '');
-            base = base.replace(/^-+|-+$/g, '');
-            if (base.length < 3) base = base ? `${base}-shop` : 'catalog';
-            const candidates = [base, `${base}-2`, `${base}-3`, `${base}-4`];
-            for (let i = 0; i < candidates.length; i++) {
-                try {
-                    const res = await apiService.catalog.checkSlug(candidates[i]);
-                    if (!alive) return;
-                    if (res?.available) {
-                        setSlug(candidates[i]);
-                        setSlugSuggesting(false);
-                        return;
-                    }
-                } catch {
-                    // چک در دسترس نبود — همان کاندید اول می‌رود، بک‌اند در صورت نیاز خطا می‌دهد
-                    if (alive) { setSlug(candidates[0]); setSlugSuggesting(false); }
-                    return;
-                }
-            }
-            if (alive) { setSlug(candidates[0]); setSlugSuggesting(false); }
-        })();
-        return () => { alive = false; };
-        // eslint-disable-next-line react-hooks/exhaustive-deps
-    }, [selectedBiz?.id, slugDirty]);
 
     // ─── هشدار نام تکراری برای کاتالوگ‌های خود کاربر (خطای دیرهنگام بک را پیش‌بینی می‌کند) ───
     const catQ = useCataloges();
@@ -152,9 +97,10 @@ export default function RegisterCatalogPage() {
     const validate = () => {
         const e: Record<string, string> = {};
         if (!bizId) e.biz = 'ابتدا کسب‌وکار را جستجو و انتخاب کن (یا جدید ثبت کن)';
-        if (!position.trim()) e.position = 'پستتان در این کسب‌وکار را بنویسید';
+        if (!positionRole) e.position = 'نقشت را در این کسب‌وکار انتخاب کن';
+        else if (positionRole === POSITION_OTHER_VALUE && !positionOther.trim()) e.position = 'نقشت در شرکت را بنویس';
         if (!catalogName.trim()) e.name = 'نام کاتالوگ را وارد کن';
-        if (!slug || slug.length < 3) e.slug = 'آدرس کاتالوگ معتبر نیست';
+        if (!slug || slug.length < 3) e.slug = 'لینک کاتالوگ را وارد کن (حداقل ۳ حرف انگلیسی)';
         else if (errors.slug === 'taken' || errors.slug === 'reserved') e.slug = errors.slug;
         setErrors(e);
         return Object.keys(e).length === 0;
@@ -177,11 +123,12 @@ export default function RegisterCatalogPage() {
                 businessId: bizId,
                 type: selectedBiz.type || 'wholesaler',
                 salesType,
+                isPrivate,
                 refCode,
                 armSlug,
                 phone: '',
                 description: '',
-                position: position.trim(),
+                position: effectivePosition,
             });
 
             toast.success(`کاتالوگ «${shortName(catalogName.trim(), 24)}» برای «${shortName(selectedBiz.name, 24)}» ساخته شد 🎉`, {
@@ -235,7 +182,7 @@ export default function RegisterCatalogPage() {
     };
 
     const busy = createCatalogMutation.isPending;
-    const submitDisabled = busy || !slug || !!errors.slug || catalogNameDup || !catalogName.trim() || !position.trim();
+    const submitDisabled = busy || !slug || !!errors.slug || catalogNameDup || !catalogName.trim() || !effectivePosition;
 
     return (
         <div className="min-h-screen flex flex-col bg-surface dark:bg-gray-950">
@@ -264,38 +211,36 @@ export default function RegisterCatalogPage() {
                 {/* ═══ سایر آیتم‌های کاتالوگ — فقط بعد از انتخاب/ثبت کسب‌وکار ═══ */}
                 {selectedBiz && (
                 <form onSubmit={handleSubmit} className="space-y-5">
-                    {/* ═══ پست شما در کسب‌وکار — عضویت تیم کسب‌وکار ═══ */}
+                    {/* ═══ ۲) نقش شما در کسب‌وکار — تک‌منبع: USER_POSITIONS ═══ */}
                     <section className="space-y-1.5">
-                        <SectionTitle n={2} title={`پست شما در «${shortName(selectedBiz.name, 18)}»`} />
-                        <div className="flex flex-wrap gap-1.5 mb-1">
-                            {POSITION_CHIPS.map((p) => (
-                                <button key={p} type="button"
-                                        onClick={() => { setPosition(p); setErrors((prev) => ({ ...prev, position: '' })); }}
+                        <SectionTitle n={2} title={`نقش شما در «${shortName(selectedBiz.name, 18)}»`} />
+                        <div className="flex flex-wrap gap-1.5">
+                            {USER_POSITIONS.map((p) => (
+                                <button key={p.value} type="button"
+                                        onClick={() => { setPositionRole(p.value); setErrors((prev) => ({ ...prev, position: '' })); }}
                                         className={cn(
                                             'px-3 py-1.5 rounded-full text-[11px] font-medium border transition-colors',
-                                            position === p
+                                            positionRole === p.value
                                                 ? 'border-primary bg-primary/10 text-primary'
                                                 : 'border-outline-variant/40 dark:border-gray-700 text-on-surface-variant hover:border-primary/40',
                                         )}>
-                                    {p}
+                                    {p.label}
                                 </button>
                             ))}
                         </div>
-                        <input type="text" value={position} maxLength={60}
-                               onChange={(e) => { setPosition(e.target.value); setErrors((p) => ({ ...p, position: '' })); }}
-                               placeholder="مثلا: مدیر فروش شعبه مرکزی"
-                               className={cn(
-                                   'w-full h-11 px-3.5 text-sm text-right rounded-xl bg-surface-container-lowest border',
-                                   'focus:ring-2 focus:ring-primary/20 focus:border-primary outline-none transition-all',
-                                   errors.position ? 'border-error' : 'border-outline-variant/40 dark:border-gray-700',
-                               )} />
-                        {errors.position
-                            ? <p className="text-[10px] text-error flex items-center gap-1.5 px-1"><AlertTriangle className="w-3 h-3 flex-shrink-0" /> {errors.position}</p>
-                            : (
-                                <p className="text-[10px] text-on-surface-variant/60 px-1">
-                                    لازم نیست مالک کسب‌وکار باشید — با پستتان به تیمِ این کسب‌وکار اضافه می‌شوید.
-                                </p>
-                            )}
+                        {positionRole === POSITION_OTHER_VALUE && (
+                            <input type="text" value={positionOther} maxLength={60} autoFocus
+                                   onChange={(e) => { setPositionOther(e.target.value); setErrors((p) => ({ ...p, position: '' })); }}
+                                   placeholder="نقشت در شرکت چیه؟ مثلا: مدیر فروش شعبه مرکزی"
+                                   className={cn(
+                                       'w-full h-11 px-3.5 text-sm text-right rounded-xl bg-surface-container-lowest border',
+                                       'focus:ring-2 focus:ring-primary/20 focus:border-primary outline-none transition-all',
+                                       errors.position ? 'border-error' : 'border-outline-variant/40 dark:border-gray-700',
+                                   )} />
+                        )}
+                        {errors.position && (
+                            <p className="text-[10px] text-error flex items-center gap-1.5 px-1"><AlertTriangle className="w-3 h-3 flex-shrink-0" /> {errors.position}</p>
+                        )}
                     </section>
 
                     {/* ═══ ۳) نام کاتالوگ — پیش‌فرض نام کسب‌وکار، قابل ویرایش ═══ */}
@@ -328,48 +273,27 @@ export default function RegisterCatalogPage() {
                         )}
                     </section>
 
-                    {/* ═══ آدرس کاتالوگ — خودکار پیشنهاد شده، جمع‌شونده ═══ */}
+                    {/* ═══ ۴) لینک کاتالوگ — کاربر خودش انتخاب می‌کند ═══ */}
                     <section className="space-y-1.5">
-                        <button type="button" onClick={() => setSlugOpen((o) => !o)}
-                                className={cn(
-                                    'w-full flex items-center gap-2 h-10 px-3 rounded-xl border border-dashed bg-surface-container-lowest/60',
-                                    'border-outline-variant/40 dark:border-gray-700 hover:border-primary/40 transition-colors',
-                                )}>
-                            <AtSign className="w-3.5 h-3.5 text-on-surface-variant/60 flex-shrink-0" />
-                            <span dir="ltr" className="flex-1 text-left text-[12px] font-bold text-on-surface-variant truncate">
-                                {slug ? `daymat.ir/${slug}` : 'daymat.ir/…'}
-                            </span>
-                            {slugSuggesting && !slug
-                                ? <Loader2 className="w-3.5 h-3.5 animate-spin text-on-surface-variant/60" />
-                                : slugOpen
-                                    ? <ChevronUp className="w-3.5 h-3.5 text-on-surface-variant/60" />
-                                    : <span className="text-[10px] font-bold text-primary">تغییر</span>}
-                        </button>
-                        {slugOpen && (
-                            <SlugPicker
-                                value={slug}
-                                onChange={(s: string) => { setSlug(s); setSlugDirty(true); setSlugSuggesting(false); setErrors((p) => ({ ...p, slug: '' })); }}
-                                onStatus={(status: string | null) => {
-                                    setErrors((p) => ({ ...p, slug: status ?? undefined }));
-                                }}
-                                disabled={busy}
-                            />
-                        )}
-                        {!slugOpen && (
-                            <p className="text-[10px] text-on-surface-variant/60 px-1">
-                                آدرس اختصاصی کاتالوگت خودکار پیشنهاد شده؛ اگه دوست داشتی عوضش کن یا بعداً از تب «مشخصات».
-                            </p>
-                        )}
-                        {errors.slug === 'taken' && !slugOpen && (
+                        <SectionTitle n={4} title="لینک اختصاصی کاتالوگ" />
+                        <SlugPicker
+                            value={slug}
+                            onChange={(s: string) => { setSlug(s); setErrors((p) => ({ ...p, slug: '' })); }}
+                            onStatus={(status: string | null) => {
+                                setErrors((p) => ({ ...p, slug: status ?? undefined }));
+                            }}
+                            disabled={busy}
+                        />
+                        {errors.slug === 'taken' && (
                             <p className="text-[10px] text-error flex items-center gap-1.5 px-1">
-                                <AlertTriangle className="w-3 h-3" /> این آدرس آزاد نیست — برای تغییر کلیک کن
+                                <AlertTriangle className="w-3 h-3" /> این لینک آزاد نیست — کمی عوضش کن
                             </p>
                         )}
                     </section>
 
-                    {/* ═══ ۴) نوع فروش ═══ */}
+                    {/* ═══ ۵) نوع فروش ═══ */}
                     <section className="space-y-2">
-                        <SectionTitle n={4} title="نوع فروش در این کاتالوگ" />
+                        <SectionTitle n={5} title="نوع فروش در این کاتالوگ" />
                         <div className="grid grid-cols-3 gap-2">
                             {[
                                 { v: 'wholesale', t: 'عمده', icon: '📦' },
@@ -394,7 +318,38 @@ export default function RegisterCatalogPage() {
                         </div>
                     </section>
 
-                    {/* دکمه نهایی — صریح: برای کدام کسب‌وکار */}
+                    {/* ═══ ۶) دسترسی کاتالوگ — عمومی / خصوصی ═══ */}
+                    <section className="space-y-2">
+                        <SectionTitle n={6} title="دسترسی کاتالوگ" />
+                        <div className="grid grid-cols-2 gap-2">
+                            <button type="button" onClick={() => setIsPrivate(false)}
+                                    className={cn(
+                                        'rounded-xl border p-3 text-right transition-all',
+                                        !isPrivate
+                                            ? 'border-primary bg-primary/5 ring-1 ring-primary/20'
+                                            : 'border-outline-variant/40 dark:border-gray-700 hover:border-primary/30',
+                                    )}>
+                                <span className="flex items-center gap-1.5 mb-1">
+                                    <Globe className={cn('w-4 h-4', !isPrivate ? 'text-primary' : 'text-on-surface-variant/50')} />
+                                    <span className={cn('text-xs font-bold', !isPrivate ? 'text-primary' : 'text-on-surface')}>عمومی</span>
+                                </span>
+                                <span className="block text-[10px] leading-4 text-on-surface-variant/70">قیمت‌ها برای همه نمایش داده می‌شود</span>
+                            </button>
+                            <button type="button" onClick={() => setIsPrivate(true)}
+                                    className={cn(
+                                        'rounded-xl border p-3 text-right transition-all',
+                                        isPrivate
+                                            ? 'border-primary bg-primary/5 ring-1 ring-primary/20'
+                                            : 'border-outline-variant/40 dark:border-gray-700 hover:border-primary/30',
+                                    )}>
+                                <span className="flex items-center gap-1.5 mb-1">
+                                    <Lock className={cn('w-4 h-4', isPrivate ? 'text-primary' : 'text-on-surface-variant/50')} />
+                                    <span className={cn('text-xs font-bold', isPrivate ? 'text-primary' : 'text-on-surface')}>خصوصی</span>
+                                </span>
+                                <span className="block text-[10px] leading-4 text-on-surface-variant/70">قیمت‌ها فقط برای اعضای پذیرفته‌شده</span>
+                            </button>
+                        </div>
+                    </section>
                     <button type="submit"
                             disabled={submitDisabled}
                             className={cn(

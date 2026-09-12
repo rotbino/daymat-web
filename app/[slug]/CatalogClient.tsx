@@ -82,6 +82,8 @@ export default function CatalogClient({ slug, initialCatalog, initialSearch = ''
         if (!user?.id || !displayCatalog?.owner?.id) return false;
         return user.id === displayCatalog.owner.id;
     }, [user?.id, displayCatalog?.owner?.id]);
+    // ✅ گیت قیمت کاتالوگ خصوصی — فقط مالک و اعضای پذیرفته‌شده (درخواست ارتباط تجاری) قیمت می‌بینند
+    const hidePrices = !!displayCatalog?.isPrivate && !isOwner && coopState !== 'member';
     const [catalogEditOpen, setCatalogEditOpen] = useState(false)
     // const router = useRouter(); از قبل هست. اضافه:
     const searchParams = useSearchParams();
@@ -314,6 +316,8 @@ export default function CatalogClient({ slug, initialCatalog, initialSearch = ''
                     isLoadingMore={isLoadingMore}
                     isOwner={isOwner}              // ✅
                     onAddProduct={handleAddProduct} // ✅ افزودن محصول از خود کاتالوگ
+                    hidePrices={hidePrices}         // ✅ کاتالوگ خصوصی — قیمت فقط برای اعضا
+                    onCoopRequest={handleCoopRequest} // ✅ CTA درخواست ارتباط تجاری
                 />
 
                 {/* فوتر */}

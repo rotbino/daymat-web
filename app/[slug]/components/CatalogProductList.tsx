@@ -4,7 +4,7 @@
 import React from 'react';
 import Image from 'next/image';
 import { useRouter } from 'next/navigation';
-import { ChevronLeft, LayoutGrid, List, Loader2, Package, Search, X, Plus } from 'lucide-react';
+import { ChevronLeft, LayoutGrid, List, Loader2, Lock, Package, Search, X, Plus } from 'lucide-react';
 import { unitLabel } from '@/lib/utils/unitLabel';
 import { cn } from '@/lib/utils';
 
@@ -36,12 +36,15 @@ interface CatalogProductListProps {
     /** ✅ ویرایش درجا */
     isOwner?: boolean;
     onAddProduct?: () => void;
+    /** ✅ کاتالوگ خصوصی — قیمت فقط برای اعضای پذیرفته‌شده */
+    hidePrices?: boolean;
+    onCoopRequest?: () => void;
 }
 
 export default function CatalogProductList({
                                                ads, total, query, setQuery, view, setView,
                                                isLoading, isFetching, loadMoreRef, isLoadingMore,
-                                               isOwner, onAddProduct,
+                                               isOwner, onAddProduct, hidePrices, onCoopRequest,
                                            }: CatalogProductListProps) {
     const router = useRouter();
 
@@ -70,6 +73,23 @@ export default function CatalogProductList({
             </div>
 
             <div className={cn(WRAP, 'pt-5')}>
+                {/* ✅ کاتالوگ خصوصی — به‌جای قیمت: درخواست ارتباط تجاری */}
+                {hidePrices && (
+                    <div className="mb-4 rounded-xl border border-amber-200/60 dark:border-amber-500/20 bg-amber-50 dark:bg-amber-500/10 px-3.5 py-3 flex items-center gap-2.5">
+                        <Lock className="w-4 h-4 text-amber-600 dark:text-amber-400 flex-shrink-0" />
+                        <p className="flex-1 text-[11px] leading-5 text-amber-800 dark:text-amber-300 font-medium">
+                            قیمت‌ها فقط برای اعضای پذیرفته‌شده نمایش داده می‌شود
+                        </p>
+                        {onCoopRequest && (
+                            <button onClick={onCoopRequest}
+                                    className="flex-shrink-0 h-8 px-3 rounded-full bg-amber-600 hover:bg-amber-700 text-white
+                                        text-[11px] font-extrabold flex items-center gap-1 active:scale-95 transition-transform">
+                                <Plus className="w-3 h-3" />
+                                درخواست ارتباط تجاری
+                            </button>
+                        )}
+                    </div>
+                )}
                 <div className="flex items-end justify-between gap-4 mb-5">
                     <div>
                         <h2 className="text-[14px] sm:text-[18px] font-black">کاتالوگ محصولات</h2>
@@ -120,8 +140,14 @@ export default function CatalogProductList({
                                     <div className="p-2.5 text-right">
                                         <p className="text-xs font-bold line-clamp-1">{title}</p>
                                         <div className="flex justify-between mt-1">
-                                            <span className="text-sm font-extrabold text-primary">{fmt(ad.unitPrice)}</span>
-                                            {unit && <span className="text-[9px] text-gray-400">{unit}</span>}
+                                            {hidePrices ? (
+                                                <span className="text-[10px] font-bold text-amber-600 dark:text-amber-400 flex items-center gap-1">
+                                                    <Lock className="w-3 h-3" /> قیمت فقط برای اعضا
+                                                </span>
+                                            ) : (
+                                                <span className="text-sm font-extrabold text-primary">{fmt(ad.unitPrice)}</span>
+                                            )}
+                                            {unit && !hidePrices && <span className="text-[9px] text-gray-400">{unit}</span>}
                                         </div>
                                     </div>
                                 </button>
@@ -143,7 +169,13 @@ export default function CatalogProductList({
                                     </div>
                                     <div className="flex-1 text-right">
                                         <p className="text-xs font-bold line-clamp-1">{title}</p>
-                                        <p className="text-sm font-extrabold text-primary mt-1">{fmt(ad.unitPrice)} {unit && <span className="text-[9px] font-normal text-gray-400">{unit}</span>}</p>
+                                        {hidePrices ? (
+                                            <p className="text-[10px] font-bold text-amber-600 dark:text-amber-400 mt-1 flex items-center gap-1">
+                                                <Lock className="w-3 h-3" /> قیمت فقط برای اعضا
+                                            </p>
+                                        ) : (
+                                            <p className="text-sm font-extrabold text-primary mt-1">{fmt(ad.unitPrice)} {unit && <span className="text-[9px] font-normal text-gray-400">{unit}</span>}</p>
+                                        )}
                                     </div>
                                     <ChevronLeft className="w-4 h-4 text-gray-300" />
                                 </button>

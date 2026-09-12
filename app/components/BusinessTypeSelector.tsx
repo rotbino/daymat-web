@@ -2,9 +2,9 @@
 'use client';
 
 import React, { useMemo } from 'react';
-import { DropSelector } from '@/components/common/DropSelector';
 import { BUSINESS_TYPE } from '@/lib/api/data-types';
-import { Building2, Layers, ChevronDown } from 'lucide-react';
+import { ArrowRight, Layers } from 'lucide-react';
+import { cn } from '@/lib/utils';
 
 interface Props {
     /** sector (سطح اول) */
@@ -18,24 +18,21 @@ interface Props {
 }
 
 /**
- * BusinessTypeSelector — انتخاب نوع کسب‌وکار دو سطحی
+ * BusinessTypeSelector — انتخاب «نوع فعالیت» دو سطحی در یک نوار افقی
  *
- * ┌─────────────────┬─────────────────┐
- * │ دسته‌بندی ▼     │ نوع فعالیت ▼   │
- * │ تولید و صنعت    │ تولیدکننده...   │
- * └─────────────────┴─────────────────┘
+ * سطح ۱: نوار افقی دسته‌ها (تولید و صنعت، بازرگانی، …)
+ * بعد از انتخاب دسته: همان نوار → [↩ بازگشت] [دستهٔ انتخاب‌شده] | نقش‌ها به‌صورت افقی
  *
  * - sector: سطح اول (manufacturing, trade, distribution, retail, service)
- * - role: سطح دوم (raw_material, wholesaler, store, ...)
- *
- * وقتی sector عوض شه، role پاک می‌شه.
+ * - role: سطح دوم (raw_material, wholesaler, store, ...) — فیلد اصلی نمایش
+ * - وقتی sector عوض شه، role پاک می‌شه.
  */
 export default function BusinessTypeSelector({
     sector,
     role,
     onSectorChange,
     onRoleChange,
-    label = 'نوع کسب‌وکار',
+    label = 'نوع فعالیت',
     required = false,
 }: Props) {
     const sectorOptions = useMemo(() =>
@@ -45,19 +42,30 @@ export default function BusinessTypeSelector({
         })),
     []);
 
+    const sectorData = useMemo(
+        () => BUSINESS_TYPE.find((s: any) => s.id === sector) as any,
+        [sector],
+    );
+
     const roleOptions = useMemo(() => {
-        const sectorData = BUSINESS_TYPE.find((s: any) => s.id === sector) as any;
         if (!sectorData?.children) return [];
         return sectorData.children.map((c: any) => ({
             value: c.id,
             label: c.label,
         }));
-    }, [sector]);
+    }, [sectorData]);
 
-    const handleSectorChange = (value: string) => {
-        onSectorChange(value);
-        onRoleChange('');  // ✅ role پاک می‌شه
+    const backToSectors = () => {
+        onSectorChange('');
+        onRoleChange('');
     };
+
+    const chipCls = (active: boolean) => cn(
+        'flex-shrink-0 px-3 py-1.5 rounded-full text-[11px] font-bold border transition-colors whitespace-nowrap',
+        active
+            ? 'border-primary bg-primary/10 text-primary'
+            : 'border-outline-variant/40 dark:border-gray-700 text-on-surface-variant hover:border-primary/40 hover:text-primary',
+    );
 
     return (
         <div className="space-y-2">
@@ -68,30 +76,44 @@ export default function BusinessTypeSelector({
                     {required && <span className="text-primary">*</span>}
                 </label>
             )}
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
-                <div>
-                    <label className="text-[10px] font-bold text-on-surface-variant block mb-1">
-                        دسته‌بندی
-                    </label>
-                    <DropSelector
-                        value={sector}
-                        options={sectorOptions}
-                        placeholder="انتخاب دسته..."
-                        onChange={(val) => handleSectorChange(val)}
-                    />
-                </div>
-                <div>
-                    <label className="text-[10px] font-bold text-on-surface-variant block mb-1">
-                        نوع فعالیت
-                    </label>
-                    <DropSelector
-                        value={role}
-                        options={roleOptions}
-                        placeholder={sector ? 'انتخاب نوع فعالیت...' : 'ابتدا دسته را انتخاب کنید'}
-                        disabled={!sector}
-                        onChange={(val) => onRoleChange(val)}
-                    />
-                </div>
+
+            {/* نوار افقی — سطح ۱ و سطح ۲ در همان نوار */}
+            <div className="rounded-xl border border-outline-variant/40 dark:border-gray-700 bg-surface-container-lowest p-2">
+                {!sector ? (
+                    /* ── سطح ۱: انتخاب دسته ── */
+                    <div className="flex items-center gap-1.5 overflow-x-auto scrollbar-slim">
+                        {sectorOptions.map((s) => (
+                            <button key={s.value} type="button"
+                                    onClick={() => onSectorChange(s.value)}
+                                    className={chipCls(false)}>
+                                {s.label}
+                            </button>
+                        ))}
+                    </div>
+                ) : (
+                    /* ── سطح ۲: بازگشت + دستهٔ انتخاب‌شده + نقش‌ها ── */
+                    <div className="flex items-center gap-1.5">
+                        <button type="button" onClick={backToSectors} title="تغییر دسته"
+                                className="w-7 h-7 rounded-full grid place-items-center flex-shrink-0
+                                    text-on-surface-variant hover:text-primary hover:bg-primary/10 transition-colors">
+                            <ArrowRight className="w-4 h-4" />
+                        </button>
+                        <span className="flex-shrink-0 px-3 py-1.5 rounded-full text-[11px] font-extrabold
+                                bg-primary text-on-primary">
+                            {sectorData?.label}
+                        </span>
+                        <span className="w-px h-6 bg-outline-variant/40 dark:bg-gray-700 flex-shrink-0" />
+                        <div className="flex-1 flex items-center gap-1.5 overflow-x-auto scrollbar-slim">
+                            {roleOptions.map((r) => (
+                                <button key={r.value} type="button"
+                                        onClick={() => onRoleChange(r.value)}
+                                        className={chipCls(role === r.value)}>
+                                    {r.label}
+                                </button>
+                            ))}
+                        </div>
+                    </div>
+                )}
             </div>
         </div>
     );

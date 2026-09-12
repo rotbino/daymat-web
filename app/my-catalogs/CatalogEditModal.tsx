@@ -11,7 +11,7 @@ import { useUploadFile, useUpdateCatalog, useUpdateBusinessEntity } from '@/lib/
 import { toast } from 'sonner';
 import {
     AlertTriangle, BookOpen, Building2, Camera, Check, Globe, Info, Layers,
-    Loader2, MapPin, Pencil, Phone, Settings2, X,
+    Loader2, Lock, MapPin, Pencil, Phone, Settings2, X,
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import IndustryAutocomplete from '@/app/components/IndustryAutocomplete';
@@ -72,6 +72,8 @@ export default function CatalogEditModal({ isOpen, onClose, catalog, salesTypeLo
     const [description, setDescription] = useState<string>(biz?.description || catalog?.description || '');
 
     const [slugEditing, setSlugEditing] = useState(false);
+    // ✅ دسترسی کاتالوگ — خصوصی: قیمت‌ها فقط برای اعضای پذیرفته‌شده
+    const [isPrivate, setIsPrivate] = useState<boolean>(!!catalog?.isPrivate);
     const [errors, setErrors] = useState<Record<string, string>>({});
     const [saving, setSaving] = useState(false);
     const [savedTick, setSavedTick] = useState(false);
@@ -102,10 +104,11 @@ export default function CatalogEditModal({ isOpen, onClose, catalog, salesTypeLo
             provinceCode !== (biz?.provinceCode || '') ||
             cityCode !== (biz?.cityCode || '') ||
             address !== (biz?.address || '') ||
-            description !== (biz?.description || catalog?.description || '')
+            description !== (biz?.description || catalog?.description || '') ||
+            isPrivate !== !!catalog?.isPrivate
         );
     }, [catalog, name, slug, industry, shortDescription, phone, website, pendingLogoFile, bizPhone, biz,
-        bizType, businessSector, businessRole, provinceCode, cityCode, address, description]);
+        bizType, businessSector, businessRole, provinceCode, cityCode, address, description, isPrivate]);
 
     /** آپلود لوگو — مقدار نهایی (id+url) برمی‌گردد؛ فراخواننده از همین مقدار استفاده کند */
     const uploadLogo = async (): Promise<{ id: string; url: string } | undefined> => {
@@ -169,7 +172,7 @@ export default function CatalogEditModal({ isOpen, onClose, catalog, salesTypeLo
                 await updateBusinessMutation.mutateAsync({ id: bizId, data: bizUpdate });
             }
 
-            // ۲) آپدیت Catalog (نام + slug + معرفی + تماس + وب + لوگو)
+            // ۲) آپدیت Catalog (نام + slug + معرفی + تماس + وب + لوگو + دسترسی)
             await updateCatalogMutation.mutateAsync({
                 id: catalog.id,
                 data: {
@@ -178,6 +181,7 @@ export default function CatalogEditModal({ isOpen, onClose, catalog, salesTypeLo
                     shortDescription: shortDescription.trim() || undefined,
                     phone: phone.trim() || undefined,
                     website: website.trim() || undefined,
+                    isPrivate,
                     ...(logoFileId ? { logoUrl: logoUrlValue } : {}),
                 },
             });
@@ -299,6 +303,28 @@ export default function CatalogEditModal({ isOpen, onClose, catalog, salesTypeLo
                             <span className="text-[11px] font-bold text-on-surface flex-1">{typeLabel}</span>
                             {salesTypeLocked && <span className="text-[9px] text-on-surface-variant/60">قابل تغییر نیست</span>}
                         </div>
+
+                        {/* ✅ دسترسی کاتالوگ — خصوصی / عمومی */}
+                        <div className="flex items-center gap-2 rounded bg-surface-container-high/50 px-3 py-2.5">
+                            {isPrivate
+                                ? <Lock className="w-3.5 h-3.5 text-primary flex-shrink-0" />
+                                : <Globe className="w-3.5 h-3.5 text-on-surface-variant/60 flex-shrink-0" />}
+                            <div className="flex-1 min-w-0">
+                                <p className="text-[11px] font-bold text-on-surface">کاتالوگ خصوصی</p>
+                                <p className="text-[9px] text-on-surface-variant/60">قیمت‌ها فقط برای اعضای پذیرفته‌شده نمایش داده می‌شود</p>
+                            </div>
+                            <button type="button" role="switch" aria-checked={isPrivate}
+                                    onClick={() => setIsPrivate((v) => !v)}
+                                    className={cn(
+                                        'w-9 h-5 rounded-full relative transition-colors flex-shrink-0',
+                                        isPrivate ? 'bg-primary' : 'bg-outline-variant/60 dark:bg-gray-700',
+                                    )}>
+                                <span className={cn(
+                                    'absolute top-0.5 w-4 h-4 rounded-full bg-white shadow transition-all',
+                                    isPrivate ? 'right-0.5' : 'right-4.5',
+                                )} />
+                            </button>
+                        </div>
                     </section>
 
                     {/* صنف — فیلد کسب‌وکار */}
@@ -316,7 +342,7 @@ export default function CatalogEditModal({ isOpen, onClose, catalog, salesTypeLo
                     {/* نوع کسب‌وکار — فیلد کسب‌وکار */}
                     {canEditBiz && (
                         <section className="rounded-2xl bg-surface-container-low/60 border border-outline-variant/30 p-4 space-y-2">
-                            <SectionTitle icon={Layers} text="نوع کسب‌وکار" />
+                            <SectionTitle icon={Layers} text="نوع فعالیت" />
                             <BusinessTypeSelector
                                 sector={businessSector}
                                 role={businessRole}
