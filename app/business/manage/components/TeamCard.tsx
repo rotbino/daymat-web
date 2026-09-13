@@ -9,7 +9,7 @@ import React, { useEffect, useState } from 'react';
 import Image from 'next/image';
 import { createPortal } from 'react-dom';
 import {
-    Users, UserPlus, Pencil, Trash2, Loader2, User, ShieldCheck, X, Check, AlertTriangle, Search, Copy,
+    Users, UserPlus, Pencil, Trash2, Loader2, User, ShieldCheck, X, Check, AlertTriangle, Search, Share2,
 } from 'lucide-react';
 import { toast } from 'sonner';
 import { cn } from '@/lib/utils';
@@ -19,45 +19,48 @@ import { useAddBusinessMember, useUpdateBusinessMember, useRemoveBusinessMember,
 import { resolveFileSrc } from './BusinessLogo';
 
 // ✅ کاربرِ نتیجهٔ جستجو برای افزودن به تیم
- type TeamUserItem = { id: string; fullName: string | null; phone: string; avatarUrl: string | null };
+type TeamUserItem = { id: string; fullName: string | null; phone: string; avatarUrl: string | null };
 
-/** تشخیص شماره موبایل کامل ایرانی — با ارقام فارسی/عربی و +98/0098 هم کار می‌کند */
-const looksLikeFullPhone = (raw: string): boolean => {
-    const fa = '۰۱۲۳۴۵۶۷۸۹';
-    const ar = '٠١٢٣٤٥٦٧٨٩';
-    let s = (raw || '').trim()
-        .replace(/[۰-۹]/g, (d) => String(fa.indexOf(d)))
-        .replace(/[٠-٩]/g, (d) => String(ar.indexOf(d)))
-        .replace(/[^+\d]/g, '');
-    if (s.startsWith('+98')) s = '0' + s.slice(3);
-    else if (s.startsWith('0098')) s = '0' + s.slice(4);
-    else if (s.startsWith('98') && s.length === 12) s = '0' + s.slice(2);
-    else if (/^9\d{9}$/.test(s)) s = '0' + s;
-    return /^09\d{9}$/.test(s);
-};
-
-/** کپی لینک دعوت به ثبت‌نام در دیمت */
-const copyInviteLink = async () => {
+/**
+ * دعوت به ثبت‌نام در دیمت — شیت اشتراک‌گذاری سیستم (موبایل)
+ * اگر شیت نبود (دسکتاپ) یا خطا داد، لینک کپی می‌شود
+ */
+const inviteToDaymat = async () => {
     const link = `${window.location.origin}/login`;
-    const ok = () => toast.success('لینک ثبت‌نام کپی شد — بفرستش برایش تا در دیمت ثبت‌نام کنه');
-    try {
-        await navigator.clipboard.writeText(link);
-        ok();
-    } catch {
+    const copyFallback = async () => {
+        const ok = () => toast.success('لینک ثبت‌نام کپی شد — بفرستش برایش تا در دیمت ثبت‌نام کنه');
         try {
-            const ta = document.createElement('textarea');
-            ta.value = link;
-            ta.style.position = 'fixed';
-            ta.style.opacity = '0';
-            document.body.appendChild(ta);
-            ta.select();
-            document.execCommand('copy');
-            ta.remove();
+            await navigator.clipboard.writeText(link);
             ok();
         } catch {
-            toast.error('کپی خودکار نشد — این لینک را دستی برایش بفرست: ' + link);
+            try {
+                const ta = document.createElement('textarea');
+                ta.value = link;
+                ta.style.position = 'fixed';
+                ta.style.opacity = '0';
+                document.body.appendChild(ta);
+                ta.select();
+                document.execCommand('copy');
+                ta.remove();
+                ok();
+            } catch {
+                toast.error('کپی خودکار نشد — این لینک را دستی برایش بفرست: ' + link);
+            }
         }
+    };
+    try {
+        if (typeof navigator !== 'undefined' && typeof navigator.share === 'function') {
+            await navigator.share({
+                title: 'دعوت به ثبت‌نام در دیمت',
+                text: 'بیا به دیمت بپیوند — بازار عمده و خردهٔ آنلاین. ثبت‌نام از این لینک:',
+                url: link,
+            });
+            return; // اشتراک موفق
+        }
+    } catch (err: any) {
+        if (err?.name === 'AbortError') return; // کاربر شیت را بست — کاری نکن
     }
+    await copyFallback();
 };
 
 // ✅ مقدار «سایر» از خودِ لیست — هم‌راستا با data-types
@@ -421,24 +424,17 @@ export function TeamCard({
                                                     </button>
                                                 ))}
                                             </>
-                                        ) : debouncedQ && looksLikeFullPhone(addQuery) ? (
-                                            /* شمارهٔ کامل ولی ثبت‌نام‌نشده — دعوت به دیمت */
+                                        ) : debouncedQ ? (
+                                            /* پیدا نشد — دعوت به ثبت‌نام در دیمت (شیت اشتراک‌گذاری) */
                                             <div className="rounded-xl border border-amber-300/60 dark:border-amber-800/50 bg-amber-50 dark:bg-amber-500/5 p-3 space-y-2">
                                                 <p className="text-[11px] font-bold text-amber-700 dark:text-amber-400 leading-5">
-                                                    «{addQuery.trim()}» هنوز در دیمت ثبت‌نام نکرده.
+                                                    همکارت ظاهراً در دیمت ثبت‌نام نکرده. دعوت کن که در دیمت ثبت‌نام کنه.
                                                 </p>
-                                                <button type="button" onClick={copyInviteLink}
+                                                <button type="button" onClick={inviteToDaymat}
                                                         className="w-full h-10 rounded-xl bg-amber-500 text-white text-[11px] font-extrabold flex items-center justify-center gap-1.5 hover:bg-amber-500/90 active:scale-95 transition-all">
-                                                    <Copy className="w-3.5 h-3.5" /> کپی لینک دعوت
+                                                    <Share2 className="w-3.5 h-3.5" /> دعوت به ثبت‌نام در دیمت
                                                 </button>
-                                                <p className="text-[10px] text-on-surface-variant/70 leading-4">
-                                                    لینک ثبت‌نام را برایش بفرست تا عضو دیمت بشه؛ بعد همین‌جا اضافه‌اش کن.
-                                                </p>
                                             </div>
-                                        ) : debouncedQ ? (
-                                            <p className="text-[11px] text-on-surface-variant/60 py-2 text-center">
-                                                کاربری پیدا نشد — می‌تونی با شماره موبایلش جستجو کنی
-                                            </p>
                                         ) : null}
                                     </div>
                                 )}
