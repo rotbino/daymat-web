@@ -10,7 +10,7 @@ import { apiService } from '@/lib/api/apiService';
 import { toast } from 'sonner';
 import {
     Loader2, Phone, ArrowUpRight, ArrowDownRight,
-    Wallet, ChevronLeft, ChevronRight, PlusCircle, Gift, RefreshCw
+    Wallet, ChevronLeft, ChevronRight, PlusCircle, Gift, RefreshCw, Users
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 
@@ -18,7 +18,7 @@ type CreditTransaction = {
     id: string;
     amount: number;
     creditCount: number;
-    transactionType: 'purchase' | 'spend' | 'bonus' | 'refund';
+    transactionType: 'purchase' | 'spend' | 'bonus' | 'refund' | 'reward';
     description: string;
     createdAt: string;
     balanceAfter: number;
@@ -55,11 +55,12 @@ export default function CreditReportPage() {
         if (tx.transactionType === 'spend') return <ArrowDownRight className="w-4 h-4 text-rose-500" />;
         if (tx.transactionType === 'purchase') return <ArrowUpRight className="w-4 h-4 text-emerald-500" />;
         if (tx.transactionType === 'bonus') return <Gift className="w-4 h-4 text-amber-500" />;
+        if (tx.transactionType === 'reward') return <Users className="w-4 h-4 text-emerald-500" />;
         return <RefreshCw className="w-4 h-4 text-blue-500" />;
     };
 
     const getTypeLabel = (tx: CreditTransaction) => {
-        const map = { purchase: 'خرید', spend: 'مصرف', bonus: 'هدیه', refund: 'بازگشت' };
+        const map = { purchase: 'خرید', spend: 'مصرف', bonus: 'هدیه', refund: 'بازگشت', reward: 'سهم دعوت' };
         return map[tx.transactionType] || tx.transactionType;
     };
 

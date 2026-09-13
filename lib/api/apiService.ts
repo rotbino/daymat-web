@@ -18,6 +18,22 @@ import {
     CreditBalance, User, BusinessEntity, BusinessTeamMember,
 } from './apiTypes';
 
+// ─── پارامترهای کشفِ مخاطبِ مرتبط (درخواست ارتباط) ───
+export type ConnCandidateParams = {
+    q?: string; province?: string; city?: string; sector?: string; role?: string;
+};
+
+/** ساخت رشتهٔ کوئری از پارامترهای غیرخالی */
+const connCandidateQuery = (p: ConnCandidateParams & { salesType?: string } = {}): string => {
+    const sp = new URLSearchParams();
+    for (const [k, v] of Object.entries(p)) {
+        const t = (v || '').trim();
+        if (t) sp.set(k, t);
+    }
+    const s = sp.toString();
+    return s ? `?${s}` : '';
+};
+
 export const apiService = {
     // ============================================================
     // AUTH
@@ -257,9 +273,20 @@ export const apiService = {
             getMyPendingSummary: (): Promise<{ total: number; items: { catalogId: string; count: number }[] }> =>
                 apiRequest('/catalog/team/my-pending-summary'),
 
-            // ✅ جستجوی کاتالوگ‌های دیگر برای درخواست تامین‌کنندگی/خدمات
-            partnerCatalogs: (catalogId: string, q: string): Promise<{ items: any[] }> =>
-                apiRequest(`/catalog/${catalogId}/team/partner-catalogs?q=${encodeURIComponent(q)}`),
+            // ✅ پیشنهاد/جستجوی کاتالوگ‌ها — سورتِ مرتبط‌سازی (هم‌شهری/هم‌استان/مکمل) + فیلترها
+            partnerCatalogs: (catalogId: string, params: ConnCandidateParams & { salesType?: string } = {}): Promise<{ items: any[]; suggested?: boolean }> =>
+                apiRequest(`/catalog/${catalogId}/team/partner-catalogs${connCandidateQuery(params)}`),
+
+            // ✅ پیشنهاد/جستجوی افراد برای دعوت به همکاری در فروش — مالکانِ کسب‌وکارهای مرتبط
+            peopleCandidates: (catalogId: string, params: ConnCandidateParams = {}): Promise<{ items: any[]; suggested?: boolean }> =>
+                apiRequest(`/catalog/${catalogId}/team/people-candidates${connCandidateQuery(params)}`),
+
+            // ✅ وضعیت سهمیهٔ درخواست ارتباط — رایگانِ باقی‌مانده / هزینهٔ اعتباری / موجودی کیف پول
+            connectionQuota: (catalogId: string): Promise<{
+                sent: number; freeRequestQuota: number; remaining: number;
+                creditCost: number; referrerSharePercent: number;
+                balance: number; willBeFree: boolean; referrerUserId: string | null;
+            }> => apiRequest(`/catalog/${catalogId}/team/connection-quota`),
 
             // ✅ دعوت‌های Push از طرف مدیر — تایید نهایی با مقصد
             inviteSupplier: (catalogId: string, supplierCatalogId: string, note?: string): Promise<any> =>
@@ -335,8 +362,9 @@ export const apiService = {
             demoteToMember: (catalogId: string, memberId: string): Promise<any> =>
                 apiRequest(`/catalog/${catalogId}/team/members/${memberId}/demote-admin`, { method: 'POST' }),
 
-            customerCandidates: (catalogId: string, q: string): Promise<{ items: any[] }> =>
-                apiRequest(`/catalog/${catalogId}/team/customer-candidates?q=${encodeURIComponent(q)}`),
+            // ✅ پیشنهاد/جستجوی کسب‌وکار برای لِین خریدار — سورتِ مرتبط‌سازی + فیلترها
+            customerCandidates: (catalogId: string, params: ConnCandidateParams = {}): Promise<{ items: any[]; suggested?: boolean }> =>
+                apiRequest(`/catalog/${catalogId}/team/customer-candidates${connCandidateQuery(params)}`),
 
             addCustomer: (catalogId: string, data: { businessId: string; sellerUserId?: string; note?: string }): Promise<any> =>
                 apiRequest(`/catalog/${catalogId}/team/customers`, { method: 'POST', data }),

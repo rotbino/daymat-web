@@ -6,7 +6,7 @@ import { UseFormWatch, UseFormSetValue } from 'react-hook-form';
 import {
     Save, Loader2, Check, Eye, Phone, Shield, Star, Clock,
     Package, TrendingUp, ShoppingCart, Lock, AlertCircle, Edit2,
-    CreditCard, Layers, LayoutGrid, BookOpen,
+    CreditCard, Layers, LayoutGrid, BookOpen, Handshake, Users,
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 
@@ -48,6 +48,8 @@ const ICON_MAP: Record<string, any> = {
     Layers,
     LayoutGrid,
     BookOpen,
+    Handshake,
+    Users,
 };
 
 // ─── تعریف تنظیمات هر ماژول (گروه‌بندی شده) ───
@@ -200,7 +202,7 @@ const moduleConfigs: Record<string, { title: string; icon: any; groups: RuleGrou
         icon: BookOpen,
         groups: [
             {
-                groupTitle: 'تنظیمات کاتالوگ',
+                groupTitle: 'سقف‌های کاتالوگ',
                 groupIcon: 'Layers',
                 rules: [
                     {
@@ -213,6 +215,75 @@ const moduleConfigs: Record<string, { title: string; icon: any; groups: RuleGrou
                         max: 1000,
                         suffix: 'عدد',
                     },
+                    {
+                        key: 'maxAdsPerCatalog',
+                        label: 'حداکثر آگهی روی هر کاتالوگ',
+                        hint: 'سقف آگهی همزمان برای هر کاتالوگ',
+                        icon: 'Package',
+                        isNumber: true,
+                        min: 0,
+                        max: 10000,
+                        suffix: 'عدد',
+                    },
+                    {
+                        key: 'maxFreeCatalogs',
+                        label: 'حداکثر کاتالوگ رایگان هر کاربر',
+                        hint: 'بیش از این تعداد، ایجاد کاتالوگ اعتباری می‌شود',
+                        icon: 'BookOpen',
+                        isNumber: true,
+                        min: 0,
+                        max: 1000,
+                        suffix: 'عدد',
+                    },
+                ],
+            },
+            {
+                groupTitle: 'درخواست ارتباط (عضوگیری)',
+                groupIcon: 'Handshake',
+                rules: [
+                    {
+                        key: 'connectionRequest',
+                        label: 'سهمیه و هزینهٔ درخواست ارتباط',
+                        hint: 'سهمیهٔ رایگان به ازای هر شخص است و روی همهٔ کاتالوگ‌ها و کسب‌وکارهایش شمرده می‌شود — پس از پایان سهمیه، هر درخواست اعتبار مصرف می‌کند',
+                        icon: 'CreditCard',
+                        children: [
+                            {
+                                key: 'freeRequestQuota',
+                                label: 'درخواست رایگان هر شخص',
+                                hint: 'روی همهٔ کاتالوگ‌های او',
+                                icon: 'Handshake',
+                                isNumber: true,
+                                min: 0,
+                                max: 100000,
+                                suffix: 'عدد',
+                            },
+                            {
+                                key: 'creditCost',
+                                label: 'اعتبار هر درخواست پس از سهمیه',
+                                icon: 'CreditCard',
+                                isNumber: true,
+                                min: 0,
+                                max: 10000,
+                                suffix: 'اعتبار',
+                            },
+                            {
+                                key: 'referrerSharePercent',
+                                label: 'سهم دعوت‌کننده',
+                                hint: 'درصدی از درآمد درخواست‌های ارتباطی، به کیف پول کسی که آن کاربر را به دیمت آورده',
+                                icon: 'Users',
+                                isNumber: true,
+                                min: 0,
+                                max: 100,
+                                suffix: 'درصد',
+                            },
+                        ],
+                    },
+                ],
+            },
+            {
+                groupTitle: 'تنظیمات کاتالوگ',
+                groupIcon: 'Shield',
+                rules: [
                     {
                         key: 'multiSeller',
                         label: 'چندفروشندگی',

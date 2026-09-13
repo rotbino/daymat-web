@@ -7,9 +7,13 @@ import { RootState } from '@/lib/store/store';
 import { apiService } from '@/lib/api/apiService';
 
 /**
- * تعداد اعلان‌های خوانده‌نشده — جمع دو منبع:
- *   ۱) اعلان‌های واقعی چرخهٔ عضویت/ارتباط تجاری (GET /notification/unread-count)
- *   ۲) اعلان‌های مشتق از دیتا (کالاهای نیازمند قیمت تازه + کاتالوگ ناقص)
+ * بجِ ناوبری = تعداد اعلان‌های واقعیِ خوانده‌نشده (GET /notification/unread-count)
+ *
+ * ✅ فقط اعلان‌های واقعی شمرده می‌شوند — یادآوری‌های مشتق از دیتا (قیمتِ قدیمی،
+ *    کاتالوگ ناقص و…) تسکِ اعلانی نیستند و بج را بی‌پایان روشن نگه نمی‌دارند؛
+ *    آن‌ها در صفحهٔ اعلان‌ها (بخش «یادآوری‌های کاتالوگ») دیده می‌شوند.
+ * ✅ اعلان‌های اطلاع‌رسانی (تایید/رد و…) با دیدن صفحهٔ اعلان‌ها خوانده می‌شوند
+ *    و دکمهٔ «مشاهده شد» هر کارت هم آن را تک‌تک از جریان خارج می‌کند.
  * ✅ enabled: فقط با نشست rehydrate شده — وگرنه در بوت سرد، درخواست قبل از
  *    rehydrate بدون توکن 401 می‌خورد و force-logout نشست را پاک می‌کند (باگ خروج ناخواسته)
  */
@@ -21,11 +25,5 @@ export function useUnreadNotifications(): number {
         enabled: isAuthenticated,
         refetchInterval: 60_000,
     });
-    const { data: derived } = useQuery({
-        queryKey: ['notifications-derived'],
-        queryFn: () => apiService.notification.getDerived(),
-        enabled: isAuthenticated,
-        staleTime: 60_000,
-    });
-    return (real?.count ?? 0) + (derived?.unread ?? 0);
+    return real?.count ?? 0;
 }

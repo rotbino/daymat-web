@@ -91,34 +91,45 @@ export default function NotificationsPage() {
                     </div>
                 ) : (
                     notifications.map((n) => (
-                        <Link
+                        <div
                             key={n.id}
-                            href={n.href || '#'}
-                            onClick={() => markOne(n.id)}
                             className={cn(
-                                'rounded-xl border p-3.5 flex items-start gap-3 text-right group transition-colors',
+                                'rounded-xl border p-3.5 flex items-start gap-3 text-right transition-colors',
                                 n.isRead
                                     ? 'border-outline-variant/40 bg-surface-container-low/40 dark:bg-gray-900/40'
                                     : 'border-primary/40 bg-primary/5 dark:bg-primary/10',
                             )}
                         >
-                            <span className={cn(
-                                'w-8 h-8 rounded-xl grid place-items-center flex-shrink-0',
-                                n.isRead ? 'bg-surface-container-high text-on-surface-variant' : 'bg-primary/15 text-primary',
-                            )}>
-                                <Handshake className="w-4 h-4" />
-                            </span>
-                            <span className="flex-1 min-w-0">
-                                <span className={cn('block text-xs leading-6', n.isRead ? 'text-on-surface-variant' : 'font-extrabold text-on-surface')}>
-                                    {n.title}
+                            <Link href={n.href || '#'} onClick={() => markOne(n.id)} className="flex items-start gap-3 flex-1 min-w-0 group">
+                                <span className={cn(
+                                    'w-8 h-8 rounded-xl grid place-items-center flex-shrink-0',
+                                    n.isRead ? 'bg-surface-container-high text-on-surface-variant' : 'bg-primary/15 text-primary',
+                                )}>
+                                    <Handshake className="w-4 h-4" />
                                 </span>
-                                {n.body && <span className="block text-[10px] text-on-surface-variant/70 leading-5">{n.body}</span>}
-                            </span>
-                            <span className="text-[10px] font-bold text-primary whitespace-nowrap flex-shrink-0 flex items-center gap-1 pt-1">
-                                مشاهده
-                                <ArrowLeft className="w-3 h-3 group-hover:-translate-x-0.5 transition-transform" />
-                            </span>
-                        </Link>
+                                <span className="flex-1 min-w-0">
+                                    <span className={cn('block text-xs leading-6', n.isRead ? 'text-on-surface-variant' : 'font-extrabold text-on-surface')}>
+                                        {n.title}
+                                    </span>
+                                    {n.body && <span className="block text-[10px] text-on-surface-variant/70 leading-5">{n.body}</span>}
+                                </span>
+                                <span className="text-[10px] font-bold text-primary whitespace-nowrap flex-shrink-0 flex items-center gap-1 pt-1">
+                                    مشاهده
+                                    <ArrowLeft className="w-3 h-3 group-hover:-translate-x-0.5 transition-transform" />
+                                </span>
+                            </Link>
+                            {/* ✅ «مشاهده شد» — اعلان‌های صرفاً اطلاع‌رسانی را بدون رفتن به مقصد، از جریان خارج می‌کند */}
+                            {!n.isRead && (
+                                <button
+                                    onClick={() => markOne(n.id)}
+                                    title="این اعلان را دیده‌ام — از شمارندهٔ بج کم شود"
+                                    className="flex-shrink-0 self-center flex items-center gap-1 px-2 py-1.5 rounded-lg border border-emerald-200/70 dark:border-emerald-800/50 bg-emerald-50/70 dark:bg-emerald-900/20 text-emerald-700 dark:text-emerald-300 text-[10px] font-bold hover:bg-emerald-100 dark:hover:bg-emerald-900/40 active:scale-95 transition"
+                                >
+                                    <Check className="w-3.5 h-3.5" />
+                                    مشاهده شد
+                                </button>
+                            )}
+                        </div>
                     ))
                 )}
 

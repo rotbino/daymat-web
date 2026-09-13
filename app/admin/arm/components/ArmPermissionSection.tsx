@@ -31,6 +31,7 @@ type PermissionKey =
     | 'general.canEditBanner'
     | 'modules.canEditPriceTable'
     | 'modules.canEditBuyLead'
+    | 'modules.canEditCatalog'
     | 'accessRules.canEdit'
     | 'economy.canEdit'
     | 'payment.canEdit'
@@ -77,6 +78,7 @@ const PERMISSIONS: PermissionItem[] = [
     // ========== ماژول‌ها ==========
     { key: 'modules.canEditPriceTable', label: 'ویرایش تابلوی قیمت', category: 'modules' },
     { key: 'modules.canEditBuyLead', label: 'ویرایش درخواست خرید', category: 'modules' },
+    { key: 'modules.canEditCatalog', label: 'ویرایش ماژول کاتالوگ (سقف‌ها و عضوگیری)', category: 'modules' },
 
     // ========== عضویت ==========
     { key: 'accessRules.canEdit', label: 'ویرایش تنظیمات عضویت', category: 'access' },

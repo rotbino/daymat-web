@@ -281,7 +281,7 @@ export default function ArmAdminSettings() {
                                 onSave={() => {}}
                                 isSaving={saving}
                                 moduleKey="catalog"
-                                moduleName="کاتالوگ فروشگاهی"
+                                moduleName="کاتالوگ — سقف‌ها و عضوگیری"
                                 isAdmin={isSystemAdmin}
                             />
                         </div>
