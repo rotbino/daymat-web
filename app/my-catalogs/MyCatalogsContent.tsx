@@ -15,10 +15,11 @@ import { setCurrentCatalog } from '@/lib/store/slices/catalogSlice';
 import { apiService } from '@/lib/api/apiService';
 import {
     useArms, useMyUncategorized, useSetOwnAdCategory,
+    useCatalogPendingSummary, useMyPendingApprovals,
 } from '@/lib/api/apiHooks';
 import { toast } from 'sonner';
 import { cn } from '@/lib/utils';
-import { BarChart3, Globe, IdCard, Loader2, Package, Users } from 'lucide-react';
+import { BarChart3, Globe, IdCard, Loader2, Package, Users, Hourglass, Check, X } from 'lucide-react';
 
 import UnitSettingsModal from '@/app/ad/components/UnitSettingsModal';
 import CategorySettingsModal from '@/app/ad/components/CategorySettingsModal';
@@ -77,6 +78,12 @@ export default function MyCatalogsContent() {
         queryFn: () => apiService.catalog.getAll(),
         staleTime: 60_000,
     });
+
+    // ✅ بج قرمز برگهٔ اعضا + کارت «در انتظار تایید شما» — چرخهٔ عضویت
+    const { data: pendingSummary } = useCatalogPendingSummary();
+    const { data: pendingApprovals } = useMyPendingApprovals();
+    const pendingTotal = pendingSummary?.total || 0;
+    const approvals: any[] = pendingApprovals?.items || [];
     const catalogs = useMemo(
         () => (catalogsRaw ?? []).filter((b: any) => b.status === 'active'),
         [catalogsRaw],
@@ -319,14 +326,14 @@ export default function MyCatalogsContent() {
         ? teamMode === 'admin'
             ? [
                   { key: 'products' as Tab, label: 'محصولات', icon: Package, count: products.length },
-                  { key: 'team' as Tab, label: 'اعضا', icon: Users },
+                  { key: 'team' as Tab, label: 'اعضا', icon: Users, alert: pendingTotal },
               ]
             : [
-                  { key: 'team' as Tab, label: 'اعضا', icon: Users },
+                  { key: 'team' as Tab, label: 'اعضا', icon: Users, alert: pendingTotal },
               ]
         : [
               { key: 'products' as Tab, label: 'محصولات', icon: Package, count: products.length },
-              { key: 'team' as Tab, label: 'اعضا', icon: Users },
+              { key: 'team' as Tab, label: 'اعضا', icon: Users, alert: pendingTotal },
               { key: 'profile' as Tab, label: 'مشخصات', icon: IdCard },
               { key: 'stats' as Tab, label: 'آمار', icon: BarChart3 },
               { key: 'publish' as Tab, label: 'انتشار', icon: Globe, count: memberships.length > 0 ? memberships.length : undefined },
@@ -368,6 +375,24 @@ export default function MyCatalogsContent() {
                 </div>
                 <ConsoleTabs items={tabItems} active={tab} onChange={setTab} />
             </div>
+
+            {/* ✅ کارت «درخواست‌های در انتظار تایید شما» — خریدارِ ثبت‌شده/تامین‌کننده/خدمات (مسیرهای Push) */}
+            {approvals.length > 0 && (
+                <div className="rounded-xl border border-amber-400/40 bg-amber-50/60 dark:bg-amber-900/10 dark:border-amber-800/40 px-4 py-3">
+                    <p className="text-xs font-extrabold text-amber-800 dark:text-amber-300 flex items-center gap-2 mb-2">
+                        <Hourglass className="w-4 h-4" />
+                        درخواست‌های در انتظار تایید شما
+                        <span className="min-w-5 h-5 px-1.5 rounded-full bg-red-500 text-white text-[10px] font-black grid place-items-center">
+                            {approvals.length.toLocaleString('fa-IR')}
+                        </span>
+                    </p>
+                    <div className="space-y-1.5">
+                        {approvals.map((a: any) => (
+                            <PendingApprovalRow key={a.memberId} item={a} />
+                        ))}
+                    </div>
+                </div>
+            )}
 
             {/* 🏪 نوارِ حالت اعضای کاتالوگ — عضوِ فروش/مدیر کاتالوگ دیگری (بازار پخش) */}
             {isTeamEntry && (() => {
@@ -531,6 +556,86 @@ export default function MyCatalogsContent() {
                 catalogSalesType={(currentCatalog as any)?.salesType}
                 onPublished={() => refreshAll()}
             />
+        </div>
+    );
+}
+
+// ════════════════════════════════════════════════════════════
+// ✅ ردیف «درخواست در انتظار تایید شما» — تایید/رد مستقیم از کنسول
+//    kind=customer (صاحب کسب‌وکارِ خریدار) | supplier | service (صاحب کاتالوگِ مقصد)
+// ════════════════════════════════════════════════════════════
+function PendingApprovalRow({ item }: { item: any }) {
+    const queryClient = useQueryClient();
+    const [busy, setBusy] = useState(false);
+
+    const KIND_LABEL: Record<string, string> = {
+        customer: 'ثبت شما به‌عنوان خریدار',
+        supplier: 'درخواست تامین‌کنندگی',
+        service: 'درخواست تامین خدمات',
+    };
+
+    const act = async (fn: () => Promise<any>, doneMsg: string) => {
+        setBusy(true);
+        try {
+            await fn();
+            toast.success(doneMsg);
+            queryClient.invalidateQueries({ queryKey: ['my-pending-approvals'] });
+            queryClient.invalidateQueries({ queryKey: ['catalog-pending-summary'] });
+            queryClient.invalidateQueries({ queryKey: ['catalog-team'] });
+            queryClient.invalidateQueries({ queryKey: ['catalogs'] });
+            queryClient.invalidateQueries({ queryKey: ['notifications'] });
+        } catch (e: any) {
+            toast.error(e?.data?.message || e?.message || 'خطا در انجام عملیات');
+        } finally {
+            setBusy(false);
+        }
+    };
+
+    return (
+        <div className="flex items-center gap-2.5 bg-white/70 dark:bg-gray-900/60 rounded-xl px-3 py-2">
+            <div className="flex-1 min-w-0">
+                <p className="text-[12px] font-bold text-gray-900 dark:text-gray-100 truncate">
+                    {KIND_LABEL[item.kind] || 'درخواست'} · {item.catalog?.name || '—'}
+                </p>
+                <p className="text-[10px] text-gray-500 dark:text-gray-400 truncate">
+                    {item.person?.fullName ? `درخواست‌دهنده: ${item.person.fullName}` : ''}
+                    {item.entityName ? ` · ${item.entityName}` : ''}
+                </p>
+            </div>
+            {busy ? (
+                <Loader2 className="w-4 h-4 animate-spin text-gray-400 flex-shrink-0" />
+            ) : (
+                <div className="flex items-center gap-1.5 flex-shrink-0">
+                    <button
+                        type="button"
+                        onClick={() => act(
+                            () => (
+                                item.kind === 'customer' ? apiService.catalog.team.confirmCustomer(item.catalog.id, item.memberId)
+                                : item.kind === 'supplier' ? apiService.catalog.team.confirmSupplier(item.catalog.id, item.memberId)
+                                : apiService.catalog.team.confirmService(item.catalog.id, item.memberId)
+                            ),
+                            'تایید شد',
+                        )}
+                        className="h-8 px-3 rounded-xl bg-emerald-600 text-white text-[11px] font-bold flex items-center gap-1 hover:bg-emerald-600/90 active:scale-95 transition"
+                    >
+                        <Check className="w-3.5 h-3.5" /> تایید
+                    </button>
+                    <button
+                        type="button"
+                        onClick={() => act(
+                            () => (
+                                item.kind === 'customer' ? apiService.catalog.team.declineCustomer(item.catalog.id, item.memberId)
+                                : item.kind === 'supplier' ? apiService.catalog.team.declineSupplier(item.catalog.id, item.memberId)
+                                : apiService.catalog.team.declineService(item.catalog.id, item.memberId)
+                            ),
+                            'رد شد',
+                        )}
+                        className="h-8 px-2.5 rounded-xl bg-gray-200 dark:bg-gray-800 text-gray-700 dark:text-gray-300 text-[11px] font-bold flex items-center gap-1 hover:bg-gray-300 dark:hover:bg-gray-700 active:scale-95 transition"
+                    >
+                        <X className="w-3.5 h-3.5" /> رد
+                    </button>
+                </div>
+            )}
         </div>
     );
 }

@@ -1,14 +1,18 @@
 // app/notifications/page.tsx
+// 🔔 اعلان‌ها — دو بخش:
+//   ۱) اعلان‌های واقعی چرخهٔ عضویت/ارتباط تجاری (درخواست/تایید/رد/دعوت) — کلیک → مقصد
+//   ۲) یادآوری‌های مشتق از دیتا (قیمت منقضی‌شونده، کاتالوگ ناقص)
 'use client';
 
-import React from 'react';
+import React, { useEffect } from 'react';
 import Link from 'next/link';
-import { useQuery } from '@tanstack/react-query';
+import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { useSelector } from 'react-redux';
 import { RootState } from '@/lib/store/store';
 import { apiService } from '@/lib/api/apiService';
-import { AlertTriangle, AlertCircle, Info, ArrowLeft, BellCheck } from 'lucide-react';
+import { AlertTriangle, AlertCircle, Info, ArrowLeft, BellCheck, Handshake, Check, X } from 'lucide-react';
 import { cn } from '@/lib/utils';
+import { toast } from 'sonner';
 import NavTabs from '@/app/home/nav/NavTabs';
 
 const SEV: Record<string, { icon: any; cls: string }> = {
@@ -19,13 +23,47 @@ const SEV: Record<string, { icon: any; cls: string }> = {
 
 export default function NotificationsPage() {
     const isAuthenticated = useSelector((s: RootState) => s.auth.isAuthenticated);
+    const queryClient = useQueryClient();
+
+    // ✅ اعلان‌های واقعی — چرخهٔ عضویت/ارتباط تجاری
+    const { data: realData, isLoading: realLoading } = useQuery({
+        queryKey: ['notifications'],
+        queryFn: () => apiService.notification.list(),
+        enabled: isAuthenticated,
+        staleTime: 30_000,
+    });
+    const notifications: any[] = realData?.items ?? [];
+    const unreadCount = realData?.unreadCount ?? 0;
+
+    // ✅ یادآوری‌های مشتق — قیمت منقضی‌شونده و…
     const { data, isLoading } = useQuery({
         queryKey: ['notifications-derived'],
         queryFn: () => apiService.notification.getDerived(),
-        enabled: isAuthenticated, // ✅ فقط با نشست — بوت سرد نباید 401 بزند
+        enabled: isAuthenticated,
         staleTime: 60_000,
     });
     const items = data?.items ?? [];
+
+    // خواندن خودکار وقتی صفحه باز است
+    useEffect(() => {
+        if (!isAuthenticated || unreadCount === 0) return;
+        const t = window.setTimeout(async () => {
+            try {
+                await apiService.notification.markAllRead();
+                queryClient.invalidateQueries({ queryKey: ['notifications'] });
+                queryClient.invalidateQueries({ queryKey: ['notifications-unread-count'] });
+            } catch { /* سکوت */ }
+        }, 1500);
+        return () => window.clearTimeout(t);
+    }, [isAuthenticated, unreadCount, queryClient]);
+
+    const markOne = async (id: string) => {
+        try {
+            await apiService.notification.markRead(id);
+            queryClient.invalidateQueries({ queryKey: ['notifications'] });
+            queryClient.invalidateQueries({ queryKey: ['notifications-unread-count'] });
+        } catch { /* سکوت */ }
+    };
 
     return (
         <div className="min-h-screen bg-gradient-to-b from-surface via-surface to-surface-container-low/40 dark:from-gray-950 dark:via-gray-950 dark:to-gray-900/40 pb-24">
@@ -33,39 +71,86 @@ export default function NotificationsPage() {
             <header className="max-w-3xl mx-auto px-4 pt-6 pb-4">
                 <h1 className="text-lg font-black text-on-surface flex items-center gap-1.5">
                     اعلان‌ها
-                    {items.length > 0 && (
-                        <span className="text-[11px] font-bold text-on-surface-variant/70">({items.length.toLocaleString('fa-IR')})</span>
+                    {unreadCount > 0 && (
+                        <span className="min-w-5 h-5 px-1.5 rounded-full bg-red-500 text-white text-[11px] font-black grid place-items-center">
+                            {unreadCount.toLocaleString('fa-IR')} جدید
+                        </span>
                     )}
                 </h1>
-                <p className="text-xs text-on-surface-variant mt-1">وضعیت کاتالوگ‌ها و قیمت‌هایت — کارهای باقی‌مانده اینجاست.</p>
+                <p className="text-xs text-on-surface-variant mt-1">درخواست‌های ارتباط تجاری، تاییدها و وضعیت کاتالوگ‌ها — همه اینجا.</p>
             </header>
 
             <main className="max-w-3xl mx-auto px-4 space-y-2.5">
-                {isLoading ? (
-                    <div className="space-y-2.5">{[0, 1, 2].map((i) => <div key={i} className="h-16 rounded-xl bg-surface-container-high/50 animate-pulse" />)}</div>
-                ) : items.length === 0 ? (
+                {/* ─── اعلان‌های واقعی ─── */}
+                {realLoading ? (
+                    <div className="space-y-2.5">{[0, 1].map((i) => <div key={i} className="h-16 rounded-xl bg-surface-container-high/50 animate-pulse" />)}</div>
+                ) : notifications.length === 0 ? (
+                    <div className="text-center py-10">
+                        <Handshake className="w-10 h-10 text-gray-300 dark:text-gray-700 mx-auto mb-2" />
+                        <p className="text-xs text-on-surface-variant">هنوز درخواست ارتباطی برایتان نیامده.</p>
+                    </div>
+                ) : (
+                    notifications.map((n) => (
+                        <Link
+                            key={n.id}
+                            href={n.href || '#'}
+                            onClick={() => markOne(n.id)}
+                            className={cn(
+                                'rounded-xl border p-3.5 flex items-start gap-3 text-right group transition-colors',
+                                n.isRead
+                                    ? 'border-outline-variant/40 bg-surface-container-low/40 dark:bg-gray-900/40'
+                                    : 'border-primary/40 bg-primary/5 dark:bg-primary/10',
+                            )}
+                        >
+                            <span className={cn(
+                                'w-8 h-8 rounded-xl grid place-items-center flex-shrink-0',
+                                n.isRead ? 'bg-surface-container-high text-on-surface-variant' : 'bg-primary/15 text-primary',
+                            )}>
+                                <Handshake className="w-4 h-4" />
+                            </span>
+                            <span className="flex-1 min-w-0">
+                                <span className={cn('block text-xs leading-6', n.isRead ? 'text-on-surface-variant' : 'font-extrabold text-on-surface')}>
+                                    {n.title}
+                                </span>
+                                {n.body && <span className="block text-[10px] text-on-surface-variant/70 leading-5">{n.body}</span>}
+                            </span>
+                            <span className="text-[10px] font-bold text-primary whitespace-nowrap flex-shrink-0 flex items-center gap-1 pt-1">
+                                مشاهده
+                                <ArrowLeft className="w-3 h-3 group-hover:-translate-x-0.5 transition-transform" />
+                            </span>
+                        </Link>
+                    ))
+                )}
+
+                {/* ─── یادآوری‌های مشتق ─── */}
+                {items.length > 0 && (
+                    <>
+                        <p className="text-[11px] font-extrabold text-on-surface-variant pt-4 pb-1">یادآوری‌های کاتالوگ</p>
+                        {items.map((n: any) => {
+                            const s = SEV[n.severity] ?? SEV.info;
+                            return (
+                                <Link key={n.id} href={n.action?.href ?? '#'}
+                                      className={cn('rounded-xl border p-3.5 flex items-center gap-3 text-right group', s.cls)}>
+                                    <s.icon className="w-4.5 h-4.5 flex-shrink-0" />
+                                    <span className="flex-1 min-w-0">
+                                        <span className="block text-xs font-medium leading-6">{n.title}</span>
+                                    </span>
+                                    <span className="text-[10px] font-bold whitespace-nowrap flex-shrink-0 flex items-center gap-1">
+                                        {n.action?.label}
+                                        <ArrowLeft className="w-3 h-3 group-hover:-translate-x-0.5 transition-transform" />
+                                    </span>
+                                </Link>
+                            );
+                        })}
+                    </>
+                )}
+
+                {(!realLoading && !isLoading && notifications.length === 0 && items.length === 0) && (
                     <div className="text-center py-16">
                         <BellCheck className="w-12 h-12 text-emerald-300 mx-auto mb-3" />
                         <p className="text-sm font-bold text-on-surface">همه‌چیز مرتب است ✓</p>
                         <p className="text-xs text-on-surface-variant mt-1">هیچ کار باقی‌مانده‌ای نداری.</p>
                     </div>
-                ) : (
-                    items.map((n: any) => {
-                        const s = SEV[n.severity] ?? SEV.info;
-                        return (
-                            <Link key={n.id} href={n.action?.href ?? '#'}
-                                  className={cn('rounded-xl border p-3.5 flex items-center gap-3 text-right group', s.cls)}>
-                                <s.icon className="w-4.5 h-4.5 flex-shrink-0" />
-                                <span className="flex-1 min-w-0">
-                                    <span className="block text-xs font-medium leading-6">{n.title}</span>
-                                </span>
-                                <span className="text-[10px] font-bold whitespace-nowrap flex-shrink-0 flex items-center gap-1">
-                                    {n.action?.label}
-                                    <ArrowLeft className="w-3 h-3 group-hover:-translate-x-0.5 transition-transform" />
-                                </span>
-                            </Link>
-                        );
-                    })
                 )}
             </main>
         </div>

@@ -14,6 +14,7 @@ export interface ConsoleTabItem {
     label: string;
     icon: any;
     count?: number;
+    alert?: number; // ✅ بج قرمز — تعداد موارد در انتظار تعیین تکلیف
 }
 
 /** نوار تب‌ها — تب فعال = متن پررنگ + خط زیرین */
@@ -26,7 +27,7 @@ export default function ConsoleTabs({ items, active, onChange }: {
         <div className="pt-1 lg:pt-1.5">
             <nav aria-label="بخش‌های کاتالوگ"
                  className="flex items-stretch">
-                {items.map(({ key, label, icon: Icon, count }) => {
+                {items.map(({ key, label, icon: Icon, count, alert }) => {
                     const isActive = active === key;
                     return (
                         <button key={key} type="button" onClick={() => onChange(key)} aria-current={isActive ? 'page' : undefined}
@@ -34,7 +35,15 @@ export default function ConsoleTabs({ items, active, onChange }: {
                                     isActive
                                         ? 'text-primary font-extrabold'
                                         : 'text-on-surface-variant font-bold hover:text-on-surface active:scale-[0.98]')}>
-                            <Icon className="w-[22px] h-[22px] lg:w-[18px] lg:h-[18px]" />
+                            <span className="relative">
+                                <Icon className="w-[22px] h-[22px] lg:w-[18px] lg:h-[18px]" />
+                                {!!alert && alert > 0 && (
+                                    <span className="absolute -top-1.5 -right-2 min-w-[16px] h-[16px] px-1 rounded-full bg-red-500 text-white
+                                        text-[9px] font-black grid place-items-center ring-2 ring-white dark:ring-gray-900 animate-pulse">
+                                        {alert > 9 ? '۹+' : alert.toLocaleString('fa-IR')}
+                                    </span>
+                                )}
+                            </span>
                             <span className="flex items-center gap-1">
                                 {label}
                                 {typeof count === 'number' && (

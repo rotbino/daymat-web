@@ -16,6 +16,7 @@ import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { toast } from 'sonner';
 import { cn } from '@/lib/utils';
 import { CARD_CLS } from '../constants';
+import ConnectionRequestModal from './ConnectionRequestModal';
 
 interface Props {
     catalogId: string;
@@ -39,6 +40,14 @@ const EVENT_LABEL: Record<string, string> = {
     supplier_approved: 'به‌عنوان تامین‌کننده تایید شد',
     supplier_rejected: 'درخواست تامین‌کننده‌اش رد شد',
     supplier_removed: 'تامین‌کننده‌اش حذف شد',
+    service_approved: 'به‌عنوان سرویس‌دهندهٔ خدمات تایید شد',
+    service_rejected: 'درخواست تامین خدماتش رد شد',
+    supplier_invite_sent: 'برای تامین‌کنندگی دعوت شد',
+    supplier_invite_declined: 'دعوت تامین‌کنندگی را رد کرد',
+    service_invite_sent: 'برای تامین خدمات دعوت شد',
+    service_invite_declined: 'دعوت تامین خدمات را رد کرد',
+    seller_invite_sent: 'به همکاری در فروش دعوت شد',
+    seller_invite_declined: 'دعوت همکاری در فروش را رد کرد',
     admin_promoted: 'مدیر کاتالوگ شد',
     admin_demoted: 'نقش مدیرش گرفته شد',
     customer_added: 'به‌عنوان خریدار ثبت شد',
@@ -51,6 +60,14 @@ const EVENT_LABEL: Record<string, string> = {
     region_set: 'منطقه‌اش تغییر کرد',
     joined: 'به اعضای کاتالوگ اضافه شد',
     migrated: 'به مدل اعضای کاتالوگ منتقل شد',
+};
+
+// ✅ برچسب گویا برای هر نوع درخواست — UX writing به‌جای واژه‌های خام
+const REQUEST_LABEL: Record<string, string> = {
+    seller: 'درخواست همکاری در فروش',
+    buyer: 'درخواست تامین‌شوندگی (خرید)',
+    supplier: 'درخواست تامین‌کنندگی',
+    service: 'درخواست تامین خدمات',
 };
 
 function Avatar({ url, name, size = 40 }: { url?: string | null; name?: string | null; size?: number }) {
@@ -82,10 +99,6 @@ export default function TeamTab({ catalogId }: Props) {
 
     const [busy, setBusy] = useState<string | null>(null);
     const [addOpen, setAddOpen] = useState(false);
-    const [search, setSearch] = useState('');
-    const [results, setResults] = useState<any[]>([]);
-    const [searching, setSearching] = useState(false);
-    const [assignTo, setAssignTo] = useState(''); // sellerUserId برای افزودن (مالک/مدیر)
     const [reassignTarget, setReassignTarget] = useState<any>(null);
     const [menuFor, setMenuFor] = useState<string | null>(null);
     const [approveFor, setApproveFor] = useState<string | null>(null);
@@ -99,6 +112,8 @@ export default function TeamTab({ catalogId }: Props) {
     const refresh = () => {
         queryClient.invalidateQueries({ queryKey: ['catalog-team', catalogId] });
         queryClient.invalidateQueries({ queryKey: ['catalogs'] });
+        queryClient.invalidateQueries({ queryKey: ['catalog-pending-summary'] });
+        queryClient.invalidateQueries({ queryKey: ['my-pending-approvals'] });
         refetch();
     };
 
@@ -116,18 +131,6 @@ export default function TeamTab({ catalogId }: Props) {
         }
     };
 
-    // ─── جست‌وجوی مشتری ───
-    const doSearch = async (q: string) => {
-        setSearch(q);
-        if (q.trim().length < 2) { setResults([]); return; }
-        setSearching(true);
-        try {
-            const res = await apiService.catalog.team.customerCandidates(catalogId, q);
-            setResults(res?.items || []);
-        } catch { setResults([]); }
-        finally { setSearching(false); }
-    };
-
     if (isLoading || !team) {
         return (
             <div className="py-10 text-center">
@@ -136,15 +139,43 @@ export default function TeamTab({ catalogId }: Props) {
         );
     }
 
-    // درخواستِ من در انتظار تایید — عضوِ منتظر
+    // درخواستِ من در انتظار — عضوِ منتظر؛ اگر دعوتِ مدیر باشد خودش می‌پذیرد/رد می‌کند
     if (team.myRole?.isPendingSeller && !canManage) {
+        const isInvite = !!team.myRole?.pendingInvite;
         return (
             <div className={cn(CARD_CLS, 'p-6 text-center')}>
                 <Hourglass className="w-10 h-10 text-amber-500 mx-auto mb-3" />
-                <p className="font-bold text-gray-900 dark:text-gray-100">درخواست عضویت شما ثبت شده</p>
-                <p className="text-sm text-gray-500 dark:text-gray-400 mt-1">
-                    در انتظار تایید مدیر (مالک کاتالوگ) — بعد از تایید می‌توانید مشتری‌های خودتان را ثبت کنید
-                </p>
+                {isInvite ? (
+                    <>
+                        <p className="font-bold text-gray-900 dark:text-gray-100">به همکاری در فروش این کاتالوگ دعوت شده‌اید</p>
+                        <p className="text-sm text-gray-500 dark:text-gray-400 mt-1">
+                            با پذیرش، به‌عنوان فروشنده به اعضا اضافه می‌شوید و می‌توانید مشتری ثبت کنید
+                        </p>
+                        <div className="flex items-center justify-center gap-2 mt-4">
+                            <button
+                                onClick={() => run('acc-inv', () => apiService.catalog.team.acceptSellerInvite(catalogId), 'دعوت پذیرفته شد')}
+                                disabled={busy === 'acc-inv'}
+                                className="px-5 py-2.5 rounded-xl bg-emerald-600 text-white text-sm font-bold flex items-center gap-1.5 disabled:opacity-50"
+                            >
+                                <Check className="w-4 h-4" /> پذیرش دعوت
+                            </button>
+                            <button
+                                onClick={() => run('dec-inv', () => apiService.catalog.team.declineSellerInvite(catalogId), 'دعوت رد شد')}
+                                disabled={busy === 'dec-inv'}
+                                className="px-5 py-2.5 rounded-xl border border-outline-variant/50 text-sm font-bold text-gray-600 dark:text-gray-300 disabled:opacity-50"
+                            >
+                                رد دعوت
+                            </button>
+                        </div>
+                    </>
+                ) : (
+                    <>
+                        <p className="font-bold text-gray-900 dark:text-gray-100">درخواست همکاری در فروش شما ثبت شد</p>
+                        <p className="text-sm text-gray-500 dark:text-gray-400 mt-1">
+                            در انتظار تایید مدیر کاتالوگ — بعد از تایید، می‌توانید مشتری‌های خودتان را ثبت کنید
+                        </p>
+                    </>
+                )}
             </div>
         );
     }
@@ -153,29 +184,31 @@ export default function TeamTab({ catalogId }: Props) {
     const pendingRequests: any[] = team.pendingRequests || [];
     const sellers: any[] = team.sellers || [];
     const suppliers: any[] = team.suppliers || [];
+    const services: any[] = team.services || [];
     const customers: any[] = team.customers || [];
     const events: any[] = team.events || [];
     const activeCustomers = customers.filter((c) => c.customerStatus === 'active');
 
-    // فهرست ساده: کادر (مالک/مدیرها) → همکاران فروش (خودم اول) → تامین‌کننده‌ها → خریدارها (خریدار من اول)
-    const ordered = [...staff, ...sellers, ...suppliers, ...activeCustomers]
+    // فهرست ساده: کادر (مالک/مدیرها) → همکاران فروش (خودم اول) → تامین‌کننده‌ها → سرویس‌دهنده‌ها → خریدارها (خریدار من اول)
+    const ordered = [...staff, ...sellers, ...suppliers, ...services, ...activeCustomers]
         .map((m: any) => ({
             ...m,
             __isMyCustomer: !!team.myRole?.isSeller && m.assignedSellerUserId === team.myRole?.userId,
             __isMe: m.userId === team.myRole?.userId && !m.isOwner && !m.isAdmin,
         }))
         .sort((a: any, b: any) => {
-            const rank = (m: any) => (m.isOwner ? 0 : m.isAdmin ? 1 : m.__isMe ? 2 : m.sellerStatus === 'active' ? 3 : m.supplierStatus === 'active' ? 4 : m.__isMyCustomer ? 5 : 6);
+            const rank = (m: any) => (m.isOwner ? 0 : m.isAdmin ? 1 : m.__isMe ? 2 : m.sellerStatus === 'active' ? 3 : m.supplierStatus === 'active' ? 4 : m.serviceStatus === 'active' ? 5 : m.__isMyCustomer ? 6 : 7);
             return rank(a) - rank(b);
         });
 
     const bizBadge = (m: any) => {
         if (m.__isMyCustomer) return { text: 'خریدار من', cls: 'bg-primary text-on-primary' };
         if (m.supplierStatus === 'active') return { text: 'تامین‌کننده', cls: 'bg-sky-50 text-sky-700 dark:bg-sky-900/30 dark:text-sky-300' };
+        if (m.serviceStatus === 'active') return { text: 'سرویس‌دهنده', cls: 'bg-teal-50 text-teal-700 dark:bg-teal-900/30 dark:text-teal-300' };
         if (m.customerStatus === 'active') return { text: 'خریدار', cls: 'bg-gray-100 text-gray-600 dark:bg-gray-800 dark:text-gray-300' };
         if (m.sellerStatus === 'active') return m.sellerRole === 'visitor'
-            ? { text: 'ویزیتور', cls: 'bg-violet-100 text-violet-700 dark:bg-violet-900/30 dark:text-violet-300' }
-            : { text: 'فروشنده', cls: 'bg-emerald-50 text-emerald-700 dark:bg-emerald-900/30 dark:text-emerald-300' };
+            ? { text: 'بازاریاب', cls: 'bg-violet-100 text-violet-700 dark:bg-violet-900/30 dark:text-violet-300' }
+            : { text: 'همکار فروش', cls: 'bg-emerald-50 text-emerald-700 dark:bg-emerald-900/30 dark:text-emerald-300' };
         return null;
     };
 
@@ -202,92 +235,76 @@ export default function TeamTab({ catalogId }: Props) {
                 </div>
                 {(canManage || team.myRole?.isSeller) && (
                     <button
-                        onClick={() => { setAddOpen(true); setSearch(''); setResults([]); setAssignTo(''); }}
+                        onClick={() => { setAddOpen(true); }}
                         className="flex items-center gap-1.5 px-3 py-2 rounded-xl bg-primary text-white text-sm font-bold hover:opacity-90 transition"
                     >
                         <UserPlus className="w-4 h-4" />
-                        <span className="hidden sm:inline">ثبت مشتری</span>
+                        <span className="hidden sm:inline">درخواست ارتباط</span>
                     </button>
                 )}
             </div>
 
-            {/* در انتظار تایید مدیر (مالک کاتالوگ) — تایپ‌دار: همکار فروش / خریدار / تامین‌کننده */}
+            {/* درخواست‌های در انتظار تعیین تکلیف شما — هر نوع با برچسب گویا */}
             {canManage && pendingRequests.length > 0 && (
                 <div className={cn(CARD_CLS, 'p-4 border-amber-400/40')}>
                     <p className="font-bold text-sm text-amber-700 dark:text-amber-300 mb-3 flex items-center gap-2">
                         <Hourglass className="w-4 h-4" />
-                        در انتظار تایید مدیر (مالک کاتالوگ) — {pendingRequests.length.toLocaleString('fa-IR')} درخواست
+                        درخواست‌های در انتظار تایید شما — {pendingRequests.length.toLocaleString('fa-IR')} مورد
                     </p>
                     <div className="space-y-2">
                         {pendingRequests.map((s) => {
                             const isSellerReq = s.requestType === 'seller';
-                            const isBuyerSelf = s.requestType === 'buyer' && s.pendingGate === 'manager';
-                            const isBuyerPush = s.requestType === 'buyer' && s.pendingGate === 'business_owner';
                             const isSupplierReq = s.requestType === 'supplier';
-                            const entityName = isSupplierReq
-                                ? (s.supplierCatalog?.name || '—')
+                            const isServiceReq = s.requestType === 'service';
+                            const isBuyerSelf = s.requestType === 'buyer';
+                            const entityName = (isSupplierReq || isServiceReq)
+                                ? ((isServiceReq ? s.serviceCatalog?.name : s.supplierCatalog?.name) || '—')
                                 : (s.customerBusiness?.name || s.business?.name || s.fullName || '—');
                             return (
                                 <div key={s.id} className="flex items-center gap-2.5 p-3 rounded-xl bg-amber-50/60 dark:bg-amber-900/10">
                                     <Avatar url={s.avatarUrl} name={s.fullName} size={36} />
                                     <div className="flex-1 min-w-0">
                                         <p className="font-bold text-sm text-gray-900 dark:text-gray-100 truncate">
-                                            {isSupplierReq ? <span className="text-[10px] font-bold text-sky-600 dark:text-sky-400 ml-1">تامین‌کننده</span> : null}
+                                            {isSupplierReq && <span className="text-[10px] font-bold text-sky-600 dark:text-sky-400 ml-1">تامین‌کننده</span>}
+                                            {isServiceReq && <span className="text-[10px] font-bold text-teal-600 dark:text-teal-400 ml-1">سرویس‌دهنده</span>}
                                             {s.fullName || entityName}
                                         </p>
                                         <p className="text-xs text-gray-500 dark:text-gray-400 truncate">
-                                            {isSupplierReq && s.supplierCatalog?.name ? `کاتالوگ: ${s.supplierCatalog.name} · ` : ''}
-                                            {entityName !== s.fullName ? `${entityName} · ` : ''}
+                                            {(entityName !== s.fullName) ? `${entityName} · ` : ''}
                                             {s.memberCity || ''}
                                             {canManage && s.phone ? ` · ${s.phone}` : ''}
                                         </p>
-                                        {isBuyerPush ? (
-                                            <p className="text-[11px] text-amber-600 dark:text-amber-400">در انتظار تایید صاحب کسب‌وکار (ثبت‌شده توسط مسئول فروش)</p>
-                                        ) : (
-                                            <p className="text-[11px] text-amber-600 dark:text-amber-400">
-                                                درخواست ارتباط تجاری: {isSellerReq ? 'همکار فروش' : isBuyerSelf ? 'خریدار' : 'تامین‌کننده'} — در انتظار تایید مدیر (مالک کاتالوگ)
-                                            </p>
-                                        )}
+                                        <p className="text-[11px] text-amber-600 dark:text-amber-400 mt-0.5">
+                                            {REQUEST_LABEL[s.requestType] || 'درخواست ارتباط تجاری'} — در انتظار تایید شما
+                                        </p>
                                     </div>
-                                    {busy === `apr-${s.id}` ? <Loader2 className="w-4 h-4 animate-spin flex-shrink-0" /> : isBuyerPush ? (
-                                        <button
-                                            onClick={() => {
-                                                if (window.confirm('ثبت این خریدار حذف شود؟')) {
-                                                    run(`apr-${s.id}`, () => apiService.catalog.team.removeCustomer(catalogId, s.id), 'ثبت حذف شد');
-                                                }
-                                            }}
-                                            className="h-8 px-2.5 rounded-xl bg-gray-200 dark:bg-gray-800 text-gray-700 dark:text-gray-300 text-[11px] font-bold flex-shrink-0"
-                                            title="حذف ثبت"
-                                        >
-                                            <X className="w-3.5 h-3.5" />
-                                        </button>
-                                    ) : (
+                                    {busy === `apr-${s.id}` ? <Loader2 className="w-4 h-4 animate-spin flex-shrink-0" /> : (
                                         <div className="flex items-center gap-1 flex-shrink-0" onClick={() => { setMenuFor(null); setApproveFor(null); }}>
                                             <div className="relative">
                                                 <button
                                                     onClick={() => setApproveFor(approveFor === s.id ? null : s.id)}
                                                     className="h-8 px-2.5 rounded-xl bg-emerald-600 text-white text-[11px] font-bold flex items-center gap-1"
-                                                    title={isSellerReq ? 'تایید با تعیین نقش بیزینسی' : 'تایید درخواست ارتباط تجاری'}
+                                                    title="تایید درخواست"
                                                 >
                                                     <Check className="w-3.5 h-3.5" />تایید
                                                 </button>
                                                 {approveFor === s.id && (
                                                     <>
                                                         <div className="fixed inset-0 z-30" onClick={() => setApproveFor(null)} />
-                                                        <div className="absolute left-0 top-full mt-1 z-40 w-44 bg-white dark:bg-gray-900 rounded-xl shadow-lg border border-outline-variant/30 py-1.5 text-xs">
+                                                        <div className="absolute left-0 top-full mt-1 z-40 w-48 bg-white dark:bg-gray-900 rounded-xl shadow-lg border border-outline-variant/30 py-1.5 text-xs">
                                                             {isSellerReq ? (
                                                                 <>
                                                                     <button
-                                                                        onClick={() => run(`apr-${s.id}`, () => apiService.catalog.team.approveSeller(catalogId, s.id, 'seller'), 'به‌عنوان فروشنده به اعضا اضافه شد')}
+                                                                        onClick={() => run(`apr-${s.id}`, () => apiService.catalog.team.approveSeller(catalogId, s.id, 'seller'), 'به‌عنوان همکار فروش تایید شد')}
                                                                         className="w-full px-3 py-2.5 hover:bg-gray-100 dark:hover:bg-gray-800 text-right"
                                                                     >
-                                                                        به‌عنوان <b>فروشنده</b>
+                                                                        تایید به‌عنوان <b>همکار فروش</b>
                                                                     </button>
                                                                     <button
-                                                                        onClick={() => run(`apr-${s.id}`, () => apiService.catalog.team.approveSeller(catalogId, s.id, 'visitor'), 'به‌عنوان ویزیتور به اعضا اضافه شد')}
+                                                                        onClick={() => run(`apr-${s.id}`, () => apiService.catalog.team.approveSeller(catalogId, s.id, 'visitor'), 'به‌عنوان بازاریاب تایید شد')}
                                                                         className="w-full px-3 py-2.5 hover:bg-gray-100 dark:hover:bg-gray-800 text-right"
                                                                     >
-                                                                        به‌عنوان <b>ویزیتور</b>
+                                                                        تایید به‌عنوان <b>بازاریاب (ویزیتور)</b>
                                                                     </button>
                                                                 </>
                                                             ) : (
@@ -296,12 +313,14 @@ export default function TeamTab({ catalogId }: Props) {
                                                                         `apr-${s.id}`,
                                                                         () => (isBuyerSelf
                                                                             ? apiService.catalog.team.approveBuyer(catalogId, s.id)
-                                                                            : apiService.catalog.team.approveSupplier(catalogId, s.id)),
+                                                                            : isSupplierReq
+                                                                                ? apiService.catalog.team.approveSupplier(catalogId, s.id)
+                                                                                : apiService.catalog.team.approveService(catalogId, s.id)),
                                                                         'به اعضا اضافه شد',
                                                                     )}
                                                                     className="w-full px-3 py-2.5 hover:bg-gray-100 dark:hover:bg-gray-800 text-right"
                                                                 >
-                                                                    تایید درخواست ارتباط تجاری
+                                                                    تایید {REQUEST_LABEL[s.requestType] || 'درخواست'}
                                                                 </button>
                                                             )}
                                                         </div>
@@ -315,11 +334,13 @@ export default function TeamTab({ catalogId }: Props) {
                                                         ? apiService.catalog.team.rejectSeller(catalogId, s.id)
                                                         : isBuyerSelf
                                                             ? apiService.catalog.team.rejectBuyer(catalogId, s.id)
-                                                            : apiService.catalog.team.rejectSupplier(catalogId, s.id)),
+                                                            : isSupplierReq
+                                                                ? apiService.catalog.team.rejectSupplier(catalogId, s.id)
+                                                                : apiService.catalog.team.rejectService(catalogId, s.id)),
                                                     'درخواست رد شد',
                                                 )}
                                                 className="h-8 px-2.5 rounded-xl bg-gray-200 dark:bg-gray-800 text-gray-700 dark:text-gray-300 text-[11px] font-bold"
-                                                title="رد"
+                                                title="رد درخواست"
                                             >
                                                 <X className="w-3.5 h-3.5" />
                                             </button>
@@ -530,84 +551,14 @@ export default function TeamTab({ catalogId }: Props) {
                 </div>
             )}
 
-            {/* ─── مودال ثبت مشتری ─── */}
-            {addOpen && (
-                <div className="fixed inset-0 z-50 flex items-end sm:items-center justify-center bg-black/50 p-0 sm:p-4" onClick={() => setAddOpen(false)}>
-                    <div
-                        className="bg-white dark:bg-gray-900 w-full sm:max-w-lg rounded-t-2xl sm:rounded-2xl p-5 max-h-[85vh] overflow-y-auto"
-                        onClick={(e) => e.stopPropagation()}
-                    >
-                        <div className="flex items-center justify-between mb-4">
-                            <p className="font-bold text-gray-900 dark:text-gray-100">ثبت مشتری جدید</p>
-                            <button onClick={() => setAddOpen(false)} className="p-2 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-800">
-                                <X className="w-4 h-4" />
-                            </button>
-                        </div>
-
-                        {canManage && sellers.length > 1 && (
-                            <div className="mb-3">
-                                <label className="text-xs text-gray-500 dark:text-gray-400 mb-1 block">انتساب به عضوِ فروش</label>
-                                <select
-                                    value={assignTo}
-                                    onChange={(e) => setAssignTo(e.target.value)}
-                                    className="w-full px-3 py-2.5 rounded-xl bg-gray-50 dark:bg-gray-800 border border-outline-variant/40 text-sm"
-                                >
-                                    <option value="">— خودم (پیش‌فرض) —</option>
-                                    {sellers.filter((s) => !s.isOwner).map((s) => (
-                                        <option key={s.id} value={s.userId}>{s.fullName || s.business?.name}</option>
-                                    ))}
-                                </select>
-                            </div>
-                        )}
-
-                        <div className="relative mb-3">
-                            <Search className="absolute right-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
-                            <input
-                                value={search}
-                                onChange={(e) => doSearch(e.target.value)}
-                                placeholder="نام کسب‌وکار یا شمارهٔ تماس..."
-                                className="w-full pr-9 pl-3 py-2.5 rounded-xl bg-gray-50 dark:bg-gray-800 border border-outline-variant/40 text-sm"
-                            />
-                            {searching && <Loader2 className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 animate-spin text-gray-400" />}
-                        </div>
-
-                        <div className="space-y-2">
-                            {results.map((b) => (
-                                <div key={b.id} className="flex items-center gap-3 p-3 rounded-xl border border-outline-variant/30 dark:border-gray-800">
-                                    <div className="flex-1 min-w-0">
-                                        <p className="font-bold text-sm text-gray-900 dark:text-gray-100 truncate">{b.name}</p>
-                                        <p className="text-xs text-gray-500 dark:text-gray-400 truncate">
-                                            {b.owner?.fullName || ''} · <Phone className="w-3 h-3 inline -mt-0.5" /> {b.owner?.phone || b.phone || '—'}
-                                            {b.city && ` · ${b.city}`}
-                                        </p>
-                                    </div>
-                                    <button
-                                        onClick={async () => {
-                                            await run(`add-${b.id}`, () =>
-                                                apiService.catalog.team.addCustomer(catalogId, {
-                                                    businessId: b.id,
-                                                    ...(assignTo ? { sellerUserId: assignTo } : {}),
-                                                }),
-                                                'مشتری ثبت شد — تا تایید صاحب کسب‌وکار، تماسش مسیریابی نمی‌شود');
-                                            setResults((rs) => rs.filter((r2) => r2.id !== b.id));
-                                        }}
-                                        disabled={busy === `add-${b.id}`}
-                                        className="px-3 py-2 rounded-xl bg-primary text-white text-xs font-bold flex-shrink-0 disabled:opacity-50"
-                                    >
-                                        {busy === `add-${b.id}` ? <Loader2 className="w-4 h-4 animate-spin" /> : 'ثبت'}
-                                    </button>
-                                </div>
-                            ))}
-                            {search.trim().length >= 2 && !searching && results.length === 0 && (
-                                <p className="text-center text-sm text-gray-400 py-4">کسب‌وکاری پیدا نشد</p>
-                            )}
-                            {search.trim().length < 2 && (
-                                <p className="text-center text-sm text-gray-400 py-4">نام یا شمارهٔ سوپرمارکت را بنویسید</p>
-                            )}
-                        </div>
-                    </div>
-                </div>
-            )}
+            {/* ─── مودال درخواست ارتباط — کسب‌وکارها / کاتالوگ‌ها / افراد ─── */}
+            <ConnectionRequestModal
+                open={addOpen}
+                onClose={() => setAddOpen(false)}
+                catalogId={catalogId}
+                canAssign={canManage}
+                sellers={sellers}
+            />
 
             {/* ─── مودال تغییر مسئولِ مشتری ─── */}
             {reassignTarget && (

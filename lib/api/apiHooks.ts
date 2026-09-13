@@ -1622,3 +1622,44 @@ export const useToggleBuyerPaused = (slug?: string) => {
         onError: (error: ApiError) => toast.error(error.message || 'خطا'),
     });
 };
+// ─── اعلان‌ها + درخواست‌های در انتظار (چرخهٔ عضویت) ───
+
+// ✅ شمارندهٔ بج قرمز برگهٔ اعضا — درخواست‌های در انتظارِ کاتالوگ‌های مدیریتی من
+export const useCatalogPendingSummary = (enabled = true) => {
+    return useQuery({
+        queryKey: ['catalog-pending-summary'],
+        queryFn: () => apiService.catalog.team.getMyPendingSummary(),
+        enabled,
+        staleTime: 30_000,
+    });
+};
+
+// ✅ کارت «درخواست‌های در انتظار تایید شما» — خریدار ثبت‌شده/تامین‌کننده/خدمات
+export const useMyPendingApprovals = (enabled = true) => {
+    return useQuery({
+        queryKey: ['my-pending-approvals'],
+        queryFn: () => apiService.catalog.team.getMyPendingApprovals(),
+        enabled,
+        staleTime: 30_000,
+    });
+};
+
+// ✅ اعلان‌های واقعی — چرخهٔ عضویت/ارتباط تجاری
+export const useNotifications = (enabled = true) => {
+    return useQuery({
+        queryKey: ['notifications'],
+        queryFn: () => apiService.notification.list(),
+        enabled,
+        staleTime: 30_000,
+    });
+};
+
+// ✅ شمارندهٔ بج اعلان‌های خوانده‌نشده — ناوبری
+export const useUnreadNotificationCount = (enabled = true) => {
+    return useQuery({
+        queryKey: ['notifications-unread-count'],
+        queryFn: () => apiService.notification.unreadCount(),
+        enabled,
+        refetchInterval: 60_000,
+    });
+};

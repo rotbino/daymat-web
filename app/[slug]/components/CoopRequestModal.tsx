@@ -11,11 +11,11 @@ import { apiService } from '@/lib/api/apiService';
 import { toast } from 'sonner';
 import { cn } from '@/lib/utils';
 import {
-    X, Loader2, Handshake, ShoppingBasket, Truck, ChevronLeft,
+    X, Loader2, Handshake, ShoppingBasket, Truck, Wrench, ChevronLeft,
     Store, BookOpen, Check, Plus,
 } from 'lucide-react';
 
-type CoopType = 'buyer' | 'supplier' | 'seller';
+type CoopType = 'buyer' | 'supplier' | 'seller' | 'service';
 
 interface CoopRequestModalProps {
     open: boolean;
@@ -25,10 +25,11 @@ interface CoopRequestModalProps {
     onSuccess?: () => void;
 }
 
-const TYPE_CARDS: { type: CoopType; icon: React.ElementType; title: string; desc: string }[] = [
-    { type: 'buyer', icon: ShoppingBasket, title: 'خریدار', desc: 'شما به لیست مشتریان این کسب و کار خواهید پیوست. ' },
-    { type: 'supplier', icon: Truck, title: 'تامین‌کننده', desc: 'شما به لیست تامین کنندگان این کسب و کار خواهید پیوست.' },
-    { type: 'seller', icon: Handshake, title: 'همکاری در فروش', desc: 'شما به لیست ویزیتورها، بازایابان و همکاران فروش ای کسب و کار خواهید پیوست' },
+const TYPE_CARDS: { type: CoopType; icon: React.ElementType; title: string; desc: string; requiresServiceCatalog?: boolean }[] = [
+    { type: 'buyer', icon: ShoppingBasket, title: 'درخواست تامین‌شوندگی (خرید)', desc: 'از این کسب‌وکار خرید می‌کنید و در لیست مشتریانش قرار می‌گیرید' },
+    { type: 'supplier', icon: Truck, title: 'درخواست تامین‌کنندگی', desc: 'کالاهای کاتالوگ شما را اینجا عرضه می‌کنند' },
+    { type: 'seller', icon: Handshake, title: 'درخواست همکاری در فروش', desc: 'به‌عنوان فروشنده یا بازاریاب، کالاهای این کاتالوگ را می‌فروشید' },
+    { type: 'service', icon: Wrench, title: 'درخواست تامین خدمات', desc: 'خدمات کاتالوگ شما (مشاوره، حمل، نصب و…) به این کسب‌وکار ارائه می‌شود', requiresServiceCatalog: true },
 ];
 
 export default function CoopRequestModal({ open, onClose, catalogId, catalogName, onSuccess }: CoopRequestModalProps) {
@@ -57,6 +58,9 @@ export default function CoopRequestModal({ open, onClose, catalogId, catalogName
         return (list as any[]).filter((c) => c?.id && c.id !== catalogId);
     }, [myCatalogsRaw, catalogId]);
 
+    // ✅ گیت خدمات — فقط با کاتالوگِ خدماتیِ خود (salesType=service)
+    const hasServiceCatalog = myCatalogs.some((c: any) => c.salesType === 'service');
+
     if (!open) return null;
 
     const reset = () => {
@@ -76,15 +80,17 @@ export default function CoopRequestModal({ open, onClose, catalogId, catalogName
         if (!type) return;
         if (type === 'buyer' && !businessId) { toast.error('ابتدا کسب‌وکارت را انتخاب کن'); return; }
         if (type === 'supplier' && !supplierCatalogId) { toast.error('ابتدا کاتالوگت را انتخاب کن'); return; }
+        if (type === 'service' && !supplierCatalogId) { toast.error('ابتدا کاتالوگ خدماتی‌ات را انتخاب کن'); return; }
         setSubmitting(true);
         try {
             const res = await apiService.catalog.team.joinCoop(catalogId, {
                 type,
                 sellerRole: type === 'seller' ? sellerRole : undefined,
-                businessId: type !== 'supplier' ? businessId || undefined : undefined,
+                businessId: type !== 'supplier' && type !== 'service' ? businessId || undefined : undefined,
                 supplierCatalogId: type === 'supplier' ? supplierCatalogId : undefined,
+                serviceCatalogId: type === 'service' ? supplierCatalogId : undefined,
             });
-            toast.success(res?.message || 'درخواست ارتباط تجاری ثبت شد — در انتظار تایید مدیر (مالک کاتالوگ)');
+            toast.success(res?.message || 'درخواست ثبت شد — در انتظار تایید مدیر کاتالوگ');
             onSuccess?.();
             close();
         } catch (error: any) {
@@ -95,7 +101,7 @@ export default function CoopRequestModal({ open, onClose, catalogId, catalogName
     };
 
     const businesses = Array.isArray(myBusinesses) ? myBusinesses : (myBusinesses as any)?.items || [];
-    const canSubmit = type === 'buyer' ? !!businessId : type === 'supplier' ? !!supplierCatalogId : true;
+    const canSubmit = type === 'buyer' ? !!businessId : (type === 'supplier' || type === 'service') ? !!supplierCatalogId : true;
 
     return (
         <div className="fixed inset-0 z-50 flex items-end sm:items-center justify-center bg-black/50 p-0 sm:p-4" onClick={close}>
@@ -119,25 +125,41 @@ export default function CoopRequestModal({ open, onClose, catalogId, catalogName
                 {/* گام ۱ — انتخاب نوع همکاری */}
                 {step === 'type' && (
                     <div className="space-y-2.5">
-                        {TYPE_CARDS.map(({ type: t, icon: Icon, title, desc }) => (
-                            <button
-                                key={t}
-                                onClick={() => { setType(t); setStep('detail'); }}
-                                className={cn(
-                                    'w-full text-right flex items-start gap-3 p-4 rounded-xl border transition-all active:scale-[0.99]',
-                                    'border-outline-variant/30 dark:border-gray-800 hover:border-primary/50 hover:bg-primary/5',
-                                )}
-                            >
-                                <span className="w-10 h-10 rounded-xl bg-primary/10 text-primary grid place-items-center flex-shrink-0">
-                                    <Icon className="w-5 h-5" />
-                                </span>
-                                <span className="flex-1 min-w-0">
-                                    <span className="block text-sm font-bold text-gray-900 dark:text-gray-100">{title}</span>
-                                    <span className="block text-[11px] text-gray-500 dark:text-gray-400 mt-0.5 leading-5">{desc}</span>
-                                </span>
-                                <ChevronLeft className="w-4 h-4 text-gray-300 mt-3 flex-shrink-0" />
-                            </button>
-                        ))}
+                        {TYPE_CARDS.map(({ type: t, icon: Icon, title, desc, requiresServiceCatalog }) => {
+                            // گیت خدمات — بدون کاتالوگ خدماتی، کارت ناتوان با راهنما
+                            const locked = !!requiresServiceCatalog && !hasServiceCatalog;
+                            return (
+                                <button
+                                    key={t}
+                                    onClick={() => {
+                                        if (locked) {
+                                            toast.error('اول کاتالوگ خدماتی بساز — بعد درخواست تامین خدمات بده');
+                                            return;
+                                        }
+                                        setType(t);
+                                        setStep('detail');
+                                    }}
+                                    className={cn(
+                                        'w-full text-right flex items-start gap-3 p-4 rounded-xl border transition-all active:scale-[0.99]',
+                                        locked
+                                            ? 'border-outline-variant/20 opacity-50'
+                                            : 'border-outline-variant/30 dark:border-gray-800 hover:border-primary/50 hover:bg-primary/5',
+                                    )}
+                                >
+                                    <span className={cn('w-10 h-10 rounded-xl grid place-items-center flex-shrink-0',
+                                        locked ? 'bg-gray-100 dark:bg-gray-800 text-gray-400' : 'bg-primary/10 text-primary')}>
+                                        <Icon className="w-5 h-5" />
+                                    </span>
+                                    <span className="flex-1 min-w-0">
+                                        <span className="block text-sm font-bold text-gray-900 dark:text-gray-100">{title}</span>
+                                        <span className="block text-[11px] text-gray-500 dark:text-gray-400 mt-0.5 leading-5">
+                                            {locked ? 'نیاز به کاتالوگ خدمات — اول بسازش' : desc}
+                                        </span>
+                                    </span>
+                                    <ChevronLeft className="w-4 h-4 text-gray-300 mt-3 flex-shrink-0" />
+                                </button>
+                            );
+                        })}
                     </div>
                 )}
 
@@ -189,48 +211,59 @@ export default function CoopRequestModal({ open, onClose, catalogId, catalogName
                             </>
                         )}
 
-                        {/* تامین‌کننده — انتخاب کاتالوگ خود */}
-                        {type === 'supplier' && (
+                        {/* تامین‌کننده / سرویس‌دهنده — انتخاب کاتالوگ خود */}
+                        {(type === 'supplier' || type === 'service') && (
                             <>
                                 <div className="flex items-center gap-2 text-xs font-bold text-gray-700 dark:text-gray-300">
                                     <BookOpen className="w-4 h-4 text-primary" />
-                                    کالاهای کدام کاتالوگت به درد این خریدار می خوره؟
+                                    {type === 'service'
+                                        ? 'کدام کاتالوگ خدماتی‌ات را به این کسب‌وکار ارائه می‌کنی؟'
+                                        : 'کالاهای کدام کاتالوگت به درد این خریدار می‌خورد؟'}
                                 </div>
-                                {myCatalogs.length === 0 && (
-                                    <p className="text-[11px] text-gray-400">هنوز کاتالوگی نداری.</p>
-                                )}
-                                <div className="space-y-2">
-                                    {myCatalogs.map((c: any) => (
-                                        <button
-                                            key={c.id}
-                                            onClick={() => setSupplierCatalogId(c.id)}
-                                            className={cn(
-                                                'w-full text-right flex items-center gap-3 p-3 rounded-xl border transition-all',
-                                                supplierCatalogId === c.id
-                                                    ? 'border-primary bg-primary/5'
-                                                    : 'border-outline-variant/30 dark:border-gray-800 hover:border-primary/40',
+                                {(() => {
+                                    const pool = type === 'service' ? myCatalogs.filter((c: any) => c.salesType === 'service') : myCatalogs;
+                                    return (
+                                        <>
+                                            {pool.length === 0 && (
+                                                <p className="text-[11px] text-gray-400">
+                                                    {type === 'service' ? 'هنوز کاتالوگ خدماتی نداری.' : 'هنوز کاتالوگی نداری.'}
+                                                </p>
                                             )}
-                                        >
-                                            <span className={cn(
-                                                'w-5 h-5 rounded-full border-2 grid place-items-center flex-shrink-0',
-                                                supplierCatalogId === c.id ? 'border-primary bg-primary' : 'border-gray-300 dark:border-gray-600',
-                                            )}>
-                                                {supplierCatalogId === c.id && <Check className="w-3 h-3 text-white" />}
-                                            </span>
-                                            <span className="flex-1 min-w-0">
-                                                <span className="block text-sm font-bold truncate">{c.name}</span>
-                                                {c.city && <span className="block text-[10px] text-gray-400">{c.city}</span>}
-                                            </span>
-                                        </button>
-                                    ))}
-                                </div>
-                                <Link
-                                    href="/business/register"
-                                    className="flex items-center justify-center gap-1.5 w-full py-2.5 rounded-xl border border-dashed border-outline-variant/40 text-xs font-bold text-primary hover:bg-primary/5"
-                                >
-                                    <Plus className="w-4 h-4" />
-                                    کاتالوگ نداری؟ بسازش
-                                </Link>
+                                            <div className="space-y-2">
+                                                {pool.map((c: any) => (
+                                                    <button
+                                                        key={c.id}
+                                                        onClick={() => setSupplierCatalogId(c.id)}
+                                                        className={cn(
+                                                            'w-full text-right flex items-center gap-3 p-3 rounded-xl border transition-all',
+                                                            supplierCatalogId === c.id
+                                                                ? 'border-primary bg-primary/5'
+                                                                : 'border-outline-variant/30 dark:border-gray-800 hover:border-primary/40',
+                                                        )}
+                                                    >
+                                                        <span className={cn(
+                                                            'w-5 h-5 rounded-full border-2 grid place-items-center flex-shrink-0',
+                                                            supplierCatalogId === c.id ? 'border-primary bg-primary' : 'border-gray-300 dark:border-gray-600',
+                                                        )}>
+                                                            {supplierCatalogId === c.id && <Check className="w-3 h-3 text-white" />}
+                                                        </span>
+                                                        <span className="flex-1 min-w-0">
+                                                            <span className="block text-sm font-bold truncate">{c.name}</span>
+                                                            {c.city && <span className="block text-[10px] text-gray-400">{c.city}</span>}
+                                                        </span>
+                                                    </button>
+                                                ))}
+                                            </div>
+                                            <Link
+                                                href="/business/register"
+                                                className="flex items-center justify-center gap-1.5 w-full py-2.5 rounded-xl border border-dashed border-outline-variant/40 text-xs font-bold text-primary hover:bg-primary/5"
+                                            >
+                                                <Plus className="w-4 h-4" />
+                                                کاتالوگ نداری؟ بسازش
+                                            </Link>
+                                        </>
+                                    );
+                                })()}
                             </>
                         )}
 
@@ -242,7 +275,7 @@ export default function CoopRequestModal({ open, onClose, catalogId, catalogName
                                     عنوان همکاری‌ات در فروش چیست؟
                                 </div>
                                 <div className="grid grid-cols-2 gap-2">
-                                    {([['seller', 'فروشنده'], ['visitor', 'ویزیتور']] as const).map(([val, label]) => (
+                                    {([['seller', 'فروشنده'], ['visitor', 'بازاریاب (ویزیتور)']] as const).map(([val, label]) => (
                                         <button
                                             key={val}
                                             onClick={() => setSellerRole(val)}
@@ -277,7 +310,7 @@ export default function CoopRequestModal({ open, onClose, catalogId, catalogName
                                 className="flex-1 h-11 rounded-xl bg-primary text-on-primary font-bold text-sm flex items-center justify-center gap-2 disabled:opacity-50"
                             >
                                 {submitting && <Loader2 className="w-4 h-4 animate-spin" />}
-                                ارسال درخواست ارتباط تجاری
+                                ارسال درخواست
                             </button>
                         </div>
                     </div>

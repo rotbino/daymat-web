@@ -43,9 +43,22 @@ export const apiService = {
     },
 
     notification:{
-        // ✅ اعلان‌های مشتق از دیتا (بدون مدل Notification)
+        // ✅ اعلان‌های مشتق از دیتا (قیمت‌های در حال انقضا، کاتالوگ ناقص)
         getDerived: (): Promise<{ items: any[]; unread: number }> =>
             apiRequest('/ad/notifications'),
+
+        // ✅ اعلان‌های واقعی چرخهٔ عضویت/ارتباط تجاری
+        list: (limit = 30, offset = 0): Promise<{ items: any[]; unreadCount: number }> =>
+            apiRequest(`/notification?limit=${limit}&offset=${offset}`),
+
+        unreadCount: (): Promise<{ count: number }> =>
+            apiRequest('/notification/unread-count'),
+
+        markRead: (id: string): Promise<any> =>
+            apiRequest(`/notification/${id}/read`, { method: 'POST' }),
+
+        markAllRead: (): Promise<any> =>
+            apiRequest('/notification/read-all', { method: 'POST' }),
     },
 
     // ============================================================
@@ -207,8 +220,55 @@ export const apiService = {
             getMyMemberships: (): Promise<any[]> =>
                 apiRequest('/catalog/team/memberships'),
 
-            joinCoop: (catalogId: string, data: { type: 'seller' | 'buyer' | 'supplier'; sellerRole?: 'seller' | 'visitor'; businessId?: string; supplierCatalogId?: string; note?: string }): Promise<any> =>
+            joinCoop: (catalogId: string, data: { type: 'seller' | 'buyer' | 'supplier' | 'service'; sellerRole?: 'seller' | 'visitor'; businessId?: string; supplierCatalogId?: string; serviceCatalogId?: string; note?: string }): Promise<any> =>
                 apiRequest(`/catalog/${catalogId}/team/join`, { method: 'POST', data }),
+
+            // ✅ درخواست‌های در انتظار تاییدِ من (خریدار ثبت‌شده/تامین‌کننده/خدمات — مسیرهای Push)
+            getMyPendingApprovals: (): Promise<{ items: any[]; total: number }> =>
+                apiRequest('/catalog/team/my-pending-approvals'),
+
+            // ✅ شمارندهٔ درخواست‌های در انتظارِ کاتالوگ‌های مدیریتی من — بج قرمز برگهٔ اعضا
+            getMyPendingSummary: (): Promise<{ total: number; items: { catalogId: string; count: number }[] }> =>
+                apiRequest('/catalog/team/my-pending-summary'),
+
+            // ✅ جستجوی کاتالوگ‌های دیگر برای درخواست تامین‌کنندگی/خدمات
+            partnerCatalogs: (catalogId: string, q: string): Promise<{ items: any[] }> =>
+                apiRequest(`/catalog/${catalogId}/team/partner-catalogs?q=${encodeURIComponent(q)}`),
+
+            // ✅ دعوت‌های Push از طرف مدیر — تایید نهایی با مقصد
+            inviteSupplier: (catalogId: string, supplierCatalogId: string, note?: string): Promise<any> =>
+                apiRequest(`/catalog/${catalogId}/team/invitations/supplier`, { method: 'POST', data: { supplierCatalogId, note } }),
+
+            inviteService: (catalogId: string, serviceCatalogId: string, note?: string): Promise<any> =>
+                apiRequest(`/catalog/${catalogId}/team/invitations/service`, { method: 'POST', data: { serviceCatalogId, note } }),
+
+            inviteSeller: (catalogId: string, userId: string, sellerRole?: 'seller' | 'visitor', note?: string): Promise<any> =>
+                apiRequest(`/catalog/${catalogId}/team/invitations/seller`, { method: 'POST', data: { userId, sellerRole, note } }),
+
+            acceptSellerInvite: (catalogId: string): Promise<any> =>
+                apiRequest(`/catalog/${catalogId}/team/seller-invite/accept`, { method: 'POST' }),
+
+            declineSellerInvite: (catalogId: string): Promise<any> =>
+                apiRequest(`/catalog/${catalogId}/team/seller-invite/decline`, { method: 'POST' }),
+
+            // ✅ تایید/رد دعوت‌های Push
+            confirmSupplier: (catalogId: string, memberId: string): Promise<any> =>
+                apiRequest(`/catalog/${catalogId}/team/suppliers/${memberId}/confirm`, { method: 'POST' }),
+
+            declineSupplier: (catalogId: string, memberId: string, reason?: string): Promise<any> =>
+                apiRequest(`/catalog/${catalogId}/team/suppliers/${memberId}/decline`, { method: 'POST', data: { reason } }),
+
+            approveService: (catalogId: string, memberId: string): Promise<any> =>
+                apiRequest(`/catalog/${catalogId}/team/services/${memberId}/approve`, { method: 'POST' }),
+
+            rejectService: (catalogId: string, memberId: string, reason?: string): Promise<any> =>
+                apiRequest(`/catalog/${catalogId}/team/services/${memberId}/reject`, { method: 'POST', data: { reason } }),
+
+            confirmService: (catalogId: string, memberId: string): Promise<any> =>
+                apiRequest(`/catalog/${catalogId}/team/services/${memberId}/confirm`, { method: 'POST' }),
+
+            declineService: (catalogId: string, memberId: string, reason?: string): Promise<any> =>
+                apiRequest(`/catalog/${catalogId}/team/services/${memberId}/decline`, { method: 'POST', data: { reason } }),
 
             approveSeller: (catalogId: string, memberId: string, sellerRole?: 'seller' | 'visitor'): Promise<any> =>
                 apiRequest(`/catalog/${catalogId}/team/sellers/${memberId}/approve`, { method: 'POST', data: sellerRole ? { sellerRole } : {} }),
