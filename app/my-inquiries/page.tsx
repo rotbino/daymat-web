@@ -15,9 +15,10 @@ import { useMyInquiries, useUpdateInquiry, useDeleteInquiry } from '@/lib/api/ap
 import { toast } from 'sonner';
 import NavTabs from '@/app/home/nav/NavTabs';
 import InquiryIdentityBar from './components/InquiryIdentityBar';
+import UnitSettingsModal from '@/app/ad/components/UnitSettingsModal';
 import {
     ClipboardList, Plus, MapPin, Clock, Users, Loader2,
-    Ban, RotateCcw, Trash2, ArrowLeft, PackageSearch, Eye,
+    Ban, RotateCcw, Trash2, ArrowLeft, PackageSearch, Eye, Boxes,
 } from 'lucide-react';
 import { faNum, faTimeAgo, faDeadlineLeft, STATUS_FA, STATUS_CHIP } from '../inquiries/utils';
 
@@ -41,6 +42,8 @@ export default function MyInquiriesPage() {
     const deleteInquiry = useDeleteInquiry();
     const [busyId, setBusyId] = useState<string | null>(null);
     const cardRefs = useRef<Record<string, HTMLDivElement | null>>({});
+    // ✅ واحدهای اختصاصی کاتالوگ خرید — مثل کاتالوگ فروش (درخواست کاربر)
+    const [unitsTarget, setUnitsTarget] = useState<any | null>(null);
 
     // کاتالوگ‌های فروش — برای سوییچر دو-محصولی (همان کشِ مشترک کنسول فروش)
     const { data: catalogsRaw } = useQuery({
@@ -239,6 +242,10 @@ export default function MyInquiriesPage() {
 
                                             {/* اکشن‌ها */}
                                             <div className="flex shrink-0 items-center gap-1">
+                                                <button onClick={() => setUnitsTarget(w)} aria-label="واحدهای این لیست" title="واحدهای این لیست خرید"
+                                                    className="grid size-9 place-items-center rounded-xl text-stone-400 transition-colors hover:bg-brand-amber-soft hover:text-amber-600">
+                                                    <Boxes className="size-4" />
+                                                </button>
                                                 <Link href={`/inquiries/${w.slug || w.id}`} aria-label="مشاهده"
                                                     className="grid size-9 place-items-center rounded-xl text-stone-400 transition-colors hover:bg-brand-amber-soft hover:text-amber-600">
                                                     <Eye className="size-4" />
@@ -259,6 +266,22 @@ export default function MyInquiriesPage() {
                         </AnimatePresence>
                     </div>
                 )}
+
+                {/* مدال واحدهای اختصاصی کاتالوگ خرید — ذخیره روی خود استعلام (PATCH) */}
+                <UnitSettingsModal
+                    isOpen={!!unitsTarget}
+                    onClose={() => setUnitsTarget(null)}
+                    catalogId={unitsTarget?.id || ''}
+                    initialUnits={unitsTarget?.units ?? []}
+                    saveFn={async (units) => {
+                        if (!unitsTarget) return { units };
+                        await updateInquiry.mutateAsync({ id: unitsTarget.id, data: { units } });
+                        return { units };
+                    }}
+                    onSaved={() => { /* کش با invalidateQueries در useUpdateInquiry تازه می‌شود */ }}
+                    title="واحدهای کاتالوگ خرید"
+                    showQtyFields={false}
+                />
 
                 {/* پیش‌نمایش دیوار */}
                 {!isLoading && (items ?? []).length > 0 && (

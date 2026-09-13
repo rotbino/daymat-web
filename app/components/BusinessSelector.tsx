@@ -26,13 +26,15 @@ interface Props {
     onChange: (biz: any | null) => void;  // انتخاب / پاک کردن
     error?: string;
     disabled?: boolean;
+    /** ✅ برچسب سفارشی — پیش‌فرض: متن کاتالوگ فروش */
+    label?: string;
 }
 
 function shortName(n: string, max = 20) {
     return (n || '').length > max ? n.slice(0, max) + '…' : n;
 }
 
-export default function BusinessSelector({ value, onChange, error, disabled }: Props) {
+export default function BusinessSelector({ value, onChange, error, disabled, label }: Props) {
     const [open, setOpen] = useState(false);
 
     const pick = (b: any) => { onChange(b); setOpen(false); };
@@ -43,7 +45,7 @@ export default function BusinessSelector({ value, onChange, error, disabled }: P
 
     return (
         <div className="space-y-1.5">
-            <p className="text-[12px] font-bold text-on-surface pb-1">ثبت یا انتخاب کسب و کاری که می خوای براش کاتالوگ بسازی</p>
+            <p className="text-[12px] font-bold text-on-surface pb-1">{label || 'ثبت یا انتخاب کسب و کاری که می خوای براش کاتالوگ بسازی'}</p>
 
             {value ? (
                 /* ── انتخاب‌شده — شکلیِ سلکت با لوگو و نام ── */

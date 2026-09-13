@@ -866,8 +866,14 @@ export interface InquiryOffer {
 }
 
 // ─── payload ها ───
+export interface InquiryUnitPayload {
+    unitId: string;
+}
+
 export interface CreateInquiryItemPayload {
     name: string;
+    referenceItemId?: string | null;   // ✅ کالای مرجع — کلید معرفی تامین‌کنندهٔ مرتبط در آینده
+    unitId?: string | null;            // ✅ واحد از مرجع واحد
     quantity?: number | null;
     unit?: string | null;
     brand?: string | null;
@@ -892,6 +898,7 @@ export interface CreateInquiryPayload {
     paymentTerms?: string;
     tags?: string[];
     businessId?: string;
+    units?: InquiryUnitPayload[];      // ✅ واحدهای اختصاصی کاتالوگ خرید (مثل کاتالوگ فروش)
 }
 
 export interface CreateOfferPayload {

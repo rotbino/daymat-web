@@ -35,9 +35,15 @@ interface Props {
     catalogId: string;
     initialUnits: { unitId: string; containsQty?: number; qtyIsFixed?: boolean }[];
     onSaved: (units: { unitId: string; containsQty?: number; qtyIsFixed?: boolean }[]) => void;
+    /** ✅ عمومی‌شده: ذخیره‌ساز سفارشی (مثلاً کاتالوگ خرید → PATCH استعلام) — پیش‌فرض: کانفیگ کاتالوگ فروش */
+    saveFn?: (units: { unitId: string; containsQty?: number; qtyIsFixed?: boolean }[]) => Promise<any>;
+    /** ✅ عنوان مدال — پیش‌فرض: واحدهای اختصاصی کاتالوگ */
+    title?: string;
+    /** ✅ نمایش فیلدهای بسته‌بندی (تعداد داخلش / ثابت) — کاتالوگ خرید اینها را ندارد */
+    showQtyFields?: boolean;
 }
 
-export default function UnitSettingsModal({ isOpen, onClose, catalogId, initialUnits, onSaved }: Props) {
+export default function UnitSettingsModal({ isOpen, onClose, catalogId, initialUnits, onSaved, saveFn, title, showQtyFields = true }: Props) {
     const queryClient = useQueryClient();
 
     // ✅ همان متد و کشِ فرم آگهی — همیشه همگام
@@ -188,12 +194,14 @@ export default function UnitSettingsModal({ isOpen, onClose, catalogId, initialU
         try {
             const units = [...selected.entries()].map(([unitId, v]) => ({
                 unitId,
-                containsQty: v.containsQty && v.containsQty > 0 ? v.containsQty : undefined,
-                qtyIsFixed: v.qtyIsFixed,
+                containsQty: showQtyFields && v.containsQty && v.containsQty > 0 ? v.containsQty : undefined,
+                qtyIsFixed: showQtyFields ? v.qtyIsFixed : false,
             }));
-            const res = await apiService.catalog.updateConfig(catalogId, { units });
-            onSaved(res.config?.units ?? units);
-            toast.success('واحدهای کاتالوگ ذخیره شد');
+            const res = saveFn
+                ? await saveFn(units)
+                : await apiService.catalog.updateConfig(catalogId, { units });
+            onSaved(res?.config?.units ?? units);
+            toast.success('واحدها ذخیره شد');
             onClose();
         } catch (e: any) {
             toast.error(e?.message || 'خطا در ذخیره');
@@ -226,7 +234,7 @@ export default function UnitSettingsModal({ isOpen, onClose, catalogId, initialU
                             <Package className="w-4.5 h-4.5 text-amber-600 dark:text-amber-400" />
                         </span>
                         <div>
-                            <h3 className="text-sm font-extrabold text-on-surface">واحدهای اختصاصی کاتالوگ</h3>
+                            <h3 className="text-sm font-extrabold text-on-surface">{title || 'واحدهای اختصاصی کاتالوگ'}</h3>
                             <p className="text-[10px] text-on-surface-variant/70">
                                 {selected.size > 0
                                     ? `${selected.size.toLocaleString('fa-IR')} واحد انتخاب شده`
@@ -304,7 +312,7 @@ export default function UnitSettingsModal({ isOpen, onClose, catalogId, initialU
                                                     <X className="w-3.5 h-3.5" />
                                                 </button>
                                             </div>
-                                            {isPackaging && (
+                                            {showQtyFields && isPackaging && (
                                                 <div className="flex items-center gap-2.5 mt-2">
                                                     <div className="flex-1 flex items-center gap-2">
                                                         <span className="text-[10px] text-on-surface-variant/70 whitespace-nowrap">تعداد داخلش:</span>
@@ -377,7 +385,7 @@ export default function UnitSettingsModal({ isOpen, onClose, catalogId, initialU
                                 })}
                             </div>
                             {/* ✅ تعداد برای واحدهای عمده — مثل ۲۴ عدد در هر کارتن */}
-                            {newScope === 'wholesale' && (
+                            {showQtyFields && newScope === 'wholesale' && (
                                 <div className="space-y-2 rounded-lg bg-surface p-2.5 border border-outline-variant/25">
                                     <div className="flex items-center gap-2">
                                         <span className="text-[10px] text-on-surface-variant whitespace-nowrap">تعداد داخلش:</span>
