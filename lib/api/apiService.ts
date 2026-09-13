@@ -479,6 +479,9 @@ export const apiService = {
         getAllUnits: (ids?: string[]): Promise<any[]> =>
             apiRequest(`/unit/all${ids?.length ? `?ids=${ids.join(',')}` : ''}`),
 
+        // ✅ ثبت واحد جدید توسط کاربر (مدال واحدهای ویزارد) — عنوان تکراری ممنوع
+        createUnit: (data: { title: string; scope: 'wholesale' | 'retail'; containsQty?: number; qtyIsFixed?: boolean }): Promise<any> =>
+            apiRequest('/unit', { method: 'POST', data }),
 
 
         getVitrine: (slug: string, query: AdListQuery): Promise<{ ads: Ad[]; canViewPrices: boolean; pagination: any; facets?: VitrineFacets }> =>
