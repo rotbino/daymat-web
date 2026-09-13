@@ -122,9 +122,9 @@ export default function LoginPage() {
 
                 toast.success('ثبت‌نام با موفقیت انجام شد');
 
-                // ✅ کاربرِ تازه‌ثبت‌نام — همیشه my-catalogs (کارت ساخت کاتالوگ را می‌بیند)
+                // ✅ کاربرِ تازه‌ثبت‌نام — اگر از لندینگ redirect آمده (انتخاب ابزار: کاتالوگ/دیوار) همان مقصد؛ وگرنه my-catalogs
                 clearStoredRef();
-                router.replace('/my-catalogs');
+                router.replace(getRedirectPath());
                 return;
             } catch (registerError: any) {
                 if (registerError?.data?.errorCode === 'DUPLICATE_PHONE') {

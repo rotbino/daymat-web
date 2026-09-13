@@ -50,6 +50,7 @@
     "date-fns": "4.1.0",
     "dayjs": "^1.11.18",
     "embla-carousel-react": "8.5.1",
+    "framer-motion": "^13.2.0",
     "geist": "latest",
     "input-otp": "1.4.1",
     "lucide-react": "^1.38.0",
