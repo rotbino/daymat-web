@@ -115,8 +115,12 @@ export const apiService = {
         listMembers: (id: string): Promise<{ items: BusinessTeamMember[] }> =>
             apiRequest(`/business/${id}/members`),
 
-        // ✅ افزودن عضو با شماره موبایل — فقط مدیر
-        addMember: (id: string, data: { phone: string; position?: string; role?: 'admin' | 'member' }): Promise<{ success: boolean; member: BusinessTeamMember }> =>
+        // ✅ جستجوی کاربر ثبت‌نام‌شدهٔ دیمت برای افزودن به تیم — با نام یا شماره موبایل
+        searchUsers: (q: string): Promise<{ items: { id: string; fullName: string | null; phone: string; avatarUrl: string | null }[] }> =>
+            apiRequest(`/business/search-users?q=${encodeURIComponent(q)}`),
+
+        // ✅ افزودن عضو با userId (از جستجو) یا شماره موبایل — فقط مدیر
+        addMember: (id: string, data: { userId?: string; phone?: string; position?: string; role?: 'admin' | 'member' }): Promise<{ success: boolean; member: BusinessTeamMember }> =>
             apiRequest(`/business/${id}/members`, { method: 'POST', data }),
 
         // ✅ ویرایش عضو — نقش شرکتی/سیستمی (memberId=me برای خود کاربر)

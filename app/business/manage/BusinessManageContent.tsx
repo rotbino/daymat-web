@@ -99,6 +99,7 @@ export default function BusinessManageContent() {
     const [activitiesOpen, setActivitiesOpen] = useState(false);
     const [locationOpen, setLocationOpen] = useState(false);
     const [autoOpenKey, setAutoOpenKey] = useState<string | null>(null);
+    const [teamAddSignal, setTeamAddSignal] = useState(false);
     const sectionRefs = useRef<Record<string, HTMLDivElement | null>>({});
 
     const updateMutation = useUpdateBusinessDetail();
@@ -172,6 +173,12 @@ export default function BusinessManageContent() {
         if (target.modal === 'activities') setActivitiesOpen(true);
         if (target.modal === 'location') setLocationOpen(true);
         if (target.edit) setAutoOpenKey(target.edit);
+    };
+
+    // پرش به بخش تیم کاری از ردیف بالای صفحه (+ تیم کاری) — با اختیارِ بازکردن مودال افزودن عضو
+    const jumpToTeam = (openAdd?: boolean) => {
+        sectionRefs.current['team']?.scrollIntoView({ behavior: 'smooth', block: 'center' });
+        if (openAdd) window.setTimeout(() => setTeamAddSignal(true), 650);
     };
 
     const handleActivitiesSelect = async (ids: string[]) => {
@@ -373,35 +380,52 @@ export default function BusinessManageContent() {
                                     </div>
                                 </div>
 
-                                {/* تیم کسب‌وکار */}
-                                {members.length > 0 && (
-                                    <div className="mt-3 pt-3 border-t border-outline-variant/20 dark:border-gray-700/60 flex items-center gap-2">
-                                        <div className="flex -space-x-2 space-x-reverse">
-                                            {members.slice(0, 5).map((m: any) => (
-                                                <span
-                                                    key={m.id}
-                                                    className="w-6 h-6 rounded-full ring-2 ring-white dark:ring-gray-900 overflow-hidden bg-surface-container-high grid place-items-center flex-shrink-0"
-                                                >
-                                                    {m.user?.avatarUrl ? (
-                                                        <Image
-                                                            src={resolveFileSrc(m.user.avatarUrl)!}
-                                                            alt={m.user?.fullName || ''}
-                                                            width={24}
-                                                            height={24}
-                                                            className="w-full h-full object-cover"
-                                                            unoptimized
-                                                        />
-                                                    ) : (
-                                                        <User className="w-3 h-3 text-on-surface-variant/50" />
-                                                    )}
-                                                </span>
-                                            ))}
-                                        </div>
-                                        <span className="text-[10px] text-on-surface-variant/70">
-                                            {members.length.toLocaleString('fa-IR')} نفر در تیم کسب‌وکار
+                                {/* تیم کسب‌وکار — میان‌برِ «+ تیم کاری» برای پرش به بخش تیم و افزودن عضو */}
+                                <div className="mt-3 pt-3 border-t border-outline-variant/20 dark:border-gray-700/60 flex items-center gap-2">
+                                    {members.length > 0 ? (
+                                        <>
+                                            <div className="flex -space-x-2 space-x-reverse">
+                                                {members.slice(0, 5).map((m: any) => (
+                                                    <span
+                                                        key={m.id}
+                                                        className="w-6 h-6 rounded-full ring-2 ring-white dark:ring-gray-900 overflow-hidden bg-surface-container-high grid place-items-center flex-shrink-0"
+                                                    >
+                                                        {m.user?.avatarUrl ? (
+                                                            <Image
+                                                                src={resolveFileSrc(m.user.avatarUrl)!}
+                                                                alt={m.user?.fullName || ''}
+                                                                width={24}
+                                                                height={24}
+                                                                className="w-full h-full object-cover"
+                                                                unoptimized
+                                                            />
+                                                        ) : (
+                                                            <User className="w-3 h-3 text-on-surface-variant/50" />
+                                                        )}
+                                                    </span>
+                                                ))}
+                                            </div>
+                                            <span className="text-[10px] text-on-surface-variant/70">
+                                                {members.length.toLocaleString('fa-IR')} نفر در تیم کسب‌وکار
+                                            </span>
+                                        </>
+                                    ) : (
+                                        <span className="text-[10px] text-on-surface-variant/60">
+                                            همکارت را به تیم کسب‌وکار اضافه کن
                                         </span>
-                                    </div>
-                                )}
+                                    )}
+                                    <div className="flex-1" />
+                                    <button
+                                        type="button"
+                                        onClick={() => jumpToTeam(true)}
+                                        aria-label="افزودن عضو جدید — پرش به تیم کاری"
+                                        title="افزودن عضو جدید به تیم کاری"
+                                        className="h-6 pl-2 pr-1.5 rounded-full bg-primary/10 text-primary text-[10px] font-extrabold inline-flex items-center gap-1 hover:bg-primary/20 active:scale-95 transition-all flex-shrink-0"
+                                    >
+                                        <Plus className="w-3 h-3" />
+                                        تیم کاری
+                                    </button>
+                                </div>
                             </div>
 
                             {/* ── کامل‌بودن — فقط موبایل (دسکتاپ در ستون کنار) ── */}
@@ -587,12 +611,20 @@ export default function BusinessManageContent() {
                             </SectionCard>
 
                             {/* ── تیم کاری — افزودن/ویرایش/حذف اعضا + دو سطح نقش ── */}
-                            <TeamCard
-                                businessId={detail.id}
-                                members={(detail.members || []) as any}
-                                responsibleUserId={detail.creatorUserId || detail.ownerUserId || null}
-                                currentUserId={currentUserId}
-                            />
+                            <div
+                                ref={(el) => {
+                                    sectionRefs.current['team'] = el;
+                                }}
+                            >
+                                <TeamCard
+                                    businessId={detail.id}
+                                    members={(detail.members || []) as any}
+                                    responsibleUserId={detail.creatorUserId || detail.ownerUserId || null}
+                                    currentUserId={currentUserId}
+                                    autoOpenAdd={teamAddSignal}
+                                    onAutoOpened={() => setTeamAddSignal(false)}
+                                />
+                            </div>
 
                             {/* ── تیک اعتماد + کاتالوگ‌ها + نمای مشتری — فقط موبایل ── */}
                             <div className="lg:hidden space-y-4">

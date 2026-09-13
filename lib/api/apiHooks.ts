@@ -1092,11 +1092,21 @@ export const useBusinessMembers = (businessId?: string | null, enabled = true) =
     });
 };
 
-// ✅ افزودن عضو با شماره موبایل
+// ✅ جستجوی کاربر برای افزودن به تیم — با نام یا شماره موبایل (کوئریِ دیبانس‌شده از TeamCard)
+export const useTeamUserSearch = (q: string, enabled = true) => {
+    return useQuery({
+        queryKey: ['business-team-user-search', q],
+        queryFn: () => apiService.business.searchUsers(q),
+        enabled: enabled && q.trim().length >= 3,
+        staleTime: 30_000,
+    });
+};
+
+// ✅ افزودن عضو با userId (از جستجو) یا شماره موبایل
 export const useAddBusinessMember = () => {
     const queryClient = useQueryClient();
     return useMutation({
-        mutationFn: ({ id, data }: { id: string; data: { phone: string; position?: string; role?: 'admin' | 'member' } }) =>
+        mutationFn: ({ id, data }: { id: string; data: { userId?: string; phone?: string; position?: string; role?: 'admin' | 'member' } }) =>
             apiService.business.addMember(id, data),
         onSuccess: (_res, vars) => {
             queryClient.invalidateQueries({ queryKey: ['business-members', vars.id] });

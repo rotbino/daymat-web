@@ -9,13 +9,56 @@ import React, { useEffect, useState } from 'react';
 import Image from 'next/image';
 import { createPortal } from 'react-dom';
 import {
-    Users, UserPlus, Pencil, Trash2, Loader2, User, ShieldCheck, X, Check, AlertTriangle,
+    Users, UserPlus, Pencil, Trash2, Loader2, User, ShieldCheck, X, Check, AlertTriangle, Search, Copy,
 } from 'lucide-react';
 import { toast } from 'sonner';
 import { cn } from '@/lib/utils';
 import { USER_POSITIONS } from '@/lib/api/data-types';
 import type { BusinessTeamMember } from '@/lib/api/apiTypes';
-import { useAddBusinessMember, useUpdateBusinessMember, useRemoveBusinessMember } from '@/lib/api/apiHooks';
+import { useAddBusinessMember, useUpdateBusinessMember, useRemoveBusinessMember, useTeamUserSearch } from '@/lib/api/apiHooks';
+import { resolveFileSrc } from './BusinessLogo';
+
+// ✅ کاربرِ نتیجهٔ جستجو برای افزودن به تیم
+ type TeamUserItem = { id: string; fullName: string | null; phone: string; avatarUrl: string | null };
+
+/** تشخیص شماره موبایل کامل ایرانی — با ارقام فارسی/عربی و +98/0098 هم کار می‌کند */
+const looksLikeFullPhone = (raw: string): boolean => {
+    const fa = '۰۱۲۳۴۵۶۷۸۹';
+    const ar = '٠١٢٣٤٥٦٧٨٩';
+    let s = (raw || '').trim()
+        .replace(/[۰-۹]/g, (d) => String(fa.indexOf(d)))
+        .replace(/[٠-٩]/g, (d) => String(ar.indexOf(d)))
+        .replace(/[^+\d]/g, '');
+    if (s.startsWith('+98')) s = '0' + s.slice(3);
+    else if (s.startsWith('0098')) s = '0' + s.slice(4);
+    else if (s.startsWith('98') && s.length === 12) s = '0' + s.slice(2);
+    else if (/^9\d{9}$/.test(s)) s = '0' + s;
+    return /^09\d{9}$/.test(s);
+};
+
+/** کپی لینک دعوت به ثبت‌نام در دیمت */
+const copyInviteLink = async () => {
+    const link = `${window.location.origin}/login`;
+    const ok = () => toast.success('لینک ثبت‌نام کپی شد — بفرستش برایش تا در دیمت ثبت‌نام کنه');
+    try {
+        await navigator.clipboard.writeText(link);
+        ok();
+    } catch {
+        try {
+            const ta = document.createElement('textarea');
+            ta.value = link;
+            ta.style.position = 'fixed';
+            ta.style.opacity = '0';
+            document.body.appendChild(ta);
+            ta.select();
+            document.execCommand('copy');
+            ta.remove();
+            ok();
+        } catch {
+            toast.error('کپی خودکار نشد — این لینک را دستی برایش بفرست: ' + link);
+        }
+    }
+};
 
 // ✅ مقدار «سایر» از خودِ لیست — هم‌راستا با data-types
 const POSITION_OTHER_VALUE = USER_POSITIONS.find((p) => p.label === 'سایر')?.value ?? '8';
@@ -70,7 +113,7 @@ function MemberRow({ member, canRemove, onEdit, onRemove, removing }: {
         <div className="flex items-center gap-2.5 py-2.5">
             <span className="w-9 h-9 rounded-full overflow-hidden bg-surface-container-high dark:bg-gray-800 grid place-items-center flex-shrink-0">
                 {member.user?.avatarUrl ? (
-                    <Image src={member.user.avatarUrl} alt={member.user?.fullName || ''}
+                    <Image src={resolveFileSrc(member.user.avatarUrl)!} alt={member.user?.fullName || ''}
                            width={36} height={36} className="w-full h-full object-cover" unoptimized />
                 ) : (
                     <User className="w-4 h-4 text-on-surface-variant/50" />
@@ -142,11 +185,15 @@ export function TeamCard({
     members,
     responsibleUserId,
     currentUserId,
+    autoOpenAdd,
+    onAutoOpened,
 }: {
     businessId: string;
     members: BusinessTeamMember[];
     responsibleUserId?: string | null; // سازنده/مالک — حذف و سلب مدیریتش معنا ندارد
     currentUserId?: string | null;     // خود کاربر — حذف خودش از اینجا ممکن نیست
+    autoOpenAdd?: boolean;             // سیگنال از دکمهٔ «+ تیم کاری» بالای صفحه — مودال افزودن خودکار باز شود
+    onAutoOpened?: () => void;         // بعد از مصرف سیگنال صدا زده می‌شود (ریست)
 }) {
     const addMut = useAddBusinessMember();
     const updateMut = useUpdateBusinessMember();
@@ -156,8 +203,10 @@ export function TeamCard({
     const [editMember, setEditMember] = useState<BusinessTeamMember | null>(null);
     const [confirmRemove, setConfirmRemove] = useState<BusinessTeamMember | null>(null);
 
-    // ─── فرم افزودن ───
-    const [addPhone, setAddPhone] = useState('');
+    // ─── فرم افزودن — جستجوی کاربر (اسم یا شماره) + انتخاب + نقش ───
+    const [addQuery, setAddQuery] = useState('');
+    const [debouncedQ, setDebouncedQ] = useState('');
+    const [selectedUser, setSelectedUser] = useState<TeamUserItem | null>(null);
     const [addRole, setAddRole] = useState('');
     const [addOther, setAddOther] = useState('');
 
@@ -165,8 +214,18 @@ export function TeamCard({
     const [editRole, setEditRole] = useState('');
     const [editOther, setEditOther] = useState('');
 
+    // دیبانس جستجو (۴۰۰ms)
+    useEffect(() => {
+        const t = window.setTimeout(() => setDebouncedQ(addQuery.trim()), 400);
+        return () => window.clearTimeout(t);
+    }, [addQuery]);
+
+    // جستجوی کاربران ثبت‌نام‌شدهٔ دیمت — فقط تا وقتی عضوی انتخاب نشده
+    const userSearchQ = useTeamUserSearch(debouncedQ, addOpen && !selectedUser);
+
     const openAdd = () => {
-        setAddPhone(''); setAddRole(''); setAddOther('');
+        setAddQuery(''); setDebouncedQ(''); setSelectedUser(null);
+        setAddRole(''); setAddOther('');
         setAddOpen(true);
     };
     const openEdit = (m: BusinessTeamMember) => {
@@ -177,9 +236,17 @@ export function TeamCard({
         setEditMember(m);
     };
 
+    // ─── سیگنال «+ تیم کاری» از کارت هویت بالای صفحه — مودال افزودن را خودکار باز کن ───
+    useEffect(() => {
+        if (!autoOpenAdd) return;
+        openAdd();
+        onAutoOpened?.();
+        // eslint-disable-next-line react-hooks/exhaustive-deps
+    }, [autoOpenAdd]);
+
     const handleAdd = async () => {
-        if (!/^09\d{9}$/.test(addPhone.trim())) {
-            toast.error('شماره موبایل معتبر نیست — مثلاً: 09123456789');
+        if (!selectedUser) {
+            toast.error('اول همکارت را از جستجو پیدا و انتخاب کن');
             return;
         }
         const position = positionToText(addRole, addOther);
@@ -192,7 +259,8 @@ export function TeamCard({
             return;
         }
         try {
-            await addMut.mutateAsync({ id: businessId, data: { phone: addPhone.trim(), position } });
+            await addMut.mutateAsync({ id: businessId, data: { userId: selectedUser.id, position } });
+            setSelectedUser(null);
             setAddOpen(false);
         } catch { /* توست در هوک */ }
     };
@@ -294,32 +362,125 @@ export function TeamCard({
                 </div>
             )}
 
-            {/* ─── مودال افزودن عضو ─── */}
+            {/* ─── مودال افزودن عضو — جستجو با اسم یا شماره ─── */}
             {addOpen && (
                 <TeamModal title="افزودن عضو به تیم" onClose={() => setAddOpen(false)}>
                     <div className="space-y-4">
-                        <div className="space-y-1.5">
-                            <label className="text-xs font-medium text-on-surface block">
-                                شماره موبایل همکار <span className="text-primary">*</span>
-                            </label>
-                            <input type="tel" dir="ltr" value={addPhone} maxLength={11} inputMode="numeric"
-                                   onChange={(e) => setAddPhone(e.target.value.replace(/\D/g, ''))}
-                                   placeholder="09123456789"
-                                   className="w-full h-11 px-3.5 text-sm rounded-xl bg-surface-container-lowest border
-                                       border-outline-variant/40 dark:border-gray-700 text-left
-                                       focus:ring-2 focus:ring-primary/20 focus:border-primary outline-none transition-all" />
-                            <p className="text-[10px] text-on-surface-variant/60 leading-4">
-                                همکارت باید اول در دیمت ثبت‌نام کرده باشد.
-                            </p>
-                        </div>
-                        <div className="space-y-2">
-                            <label className="text-xs font-medium text-on-surface block">
-                                نقش در کسب‌وکار <span className="text-primary">*</span>
-                            </label>
-                            <PositionChips value={addRole} other={addOther}
-                                           onChange={setAddRole} onOtherChange={setAddOther} />
-                        </div>
-                        <button type="button" onClick={handleAdd} disabled={addMut.isPending}
+                        {/* مرحلهٔ ۱ — جستجو یا کاربرِ انتخاب‌شده */}
+                        {!selectedUser ? (
+                            <div className="space-y-1.5">
+                                <label className="text-xs font-medium text-on-surface block">
+                                    جستجوی همکار در دیمت <span className="text-primary">*</span>
+                                </label>
+                                <div className="relative">
+                                    <Search className="absolute right-3 top-1/2 -translate-y-1/2 w-4 h-4 text-on-surface-variant/50" />
+                                    <input type="text" value={addQuery}
+                                           onChange={(e) => setAddQuery(e.target.value)}
+                                           placeholder="اسم یا شماره موبایل… مثلاً: علی یا 09123456789"
+                                           className="w-full h-11 pr-9 pl-3.5 text-sm text-right rounded-xl bg-surface-container-lowest border
+                                               border-outline-variant/40 dark:border-gray-700
+                                               focus:ring-2 focus:ring-primary/20 focus:border-primary outline-none transition-all" />
+                                </div>
+                                <p className="text-[10px] text-on-surface-variant/60 leading-4">
+                                    همکارت باید اول در دیمت ثبت‌نام کرده باشد.
+                                </p>
+
+                                {/* نتایج جستجو */}
+                                {addQuery.trim().length >= 3 && (
+                                    <div className="pt-1 space-y-1.5">
+                                        {userSearchQ.isFetching ? (
+                                            <div className="flex items-center justify-center gap-2 py-4 text-[11px] text-on-surface-variant/60">
+                                                <Loader2 className="w-3.5 h-3.5 animate-spin" /> در حال جستجو…
+                                            </div>
+                                        ) : (userSearchQ.data?.items?.length ?? 0) > 0 ? (
+                                            <>
+                                                <p className="text-[10px] font-bold text-on-surface-variant/70 px-1">
+                                                    روی همکارت بزن تا انتخاب بشه:
+                                                </p>
+                                                {userSearchQ.data!.items.map((u) => (
+                                                    <button key={u.id} type="button"
+                                                            onClick={() => { setSelectedUser(u); setAddQuery(''); }}
+                                                            className="w-full flex items-center gap-2.5 p-2 rounded-xl border border-outline-variant/40 dark:border-gray-700 hover:border-primary/50 hover:bg-primary/5 active:scale-[0.99] transition-all text-right">
+                                                        <span className="w-9 h-9 rounded-full overflow-hidden bg-surface-container-high dark:bg-gray-800 grid place-items-center flex-shrink-0">
+                                                            {u.avatarUrl ? (
+                                                                <Image src={resolveFileSrc(u.avatarUrl)!} alt={u.fullName || ''}
+                                                                       width={36} height={36} className="w-full h-full object-cover" unoptimized />
+                                                            ) : (
+                                                                <User className="w-4 h-4 text-on-surface-variant/50" />
+                                                            )}
+                                                        </span>
+                                                        <span className="flex-1 min-w-0">
+                                                            <span className="block text-[12px] font-bold text-on-surface truncate">
+                                                                {u.fullName || 'کاربر دیمت'}
+                                                            </span>
+                                                            <span className="block text-[10px] text-on-surface-variant/70 text-left" dir="ltr">
+                                                                {u.phone}
+                                                            </span>
+                                                        </span>
+                                                        <UserPlus className="w-4 h-4 text-primary flex-shrink-0" />
+                                                    </button>
+                                                ))}
+                                            </>
+                                        ) : debouncedQ && looksLikeFullPhone(addQuery) ? (
+                                            /* شمارهٔ کامل ولی ثبت‌نام‌نشده — دعوت به دیمت */
+                                            <div className="rounded-xl border border-amber-300/60 dark:border-amber-800/50 bg-amber-50 dark:bg-amber-500/5 p-3 space-y-2">
+                                                <p className="text-[11px] font-bold text-amber-700 dark:text-amber-400 leading-5">
+                                                    «{addQuery.trim()}» هنوز در دیمت ثبت‌نام نکرده.
+                                                </p>
+                                                <button type="button" onClick={copyInviteLink}
+                                                        className="w-full h-10 rounded-xl bg-amber-500 text-white text-[11px] font-extrabold flex items-center justify-center gap-1.5 hover:bg-amber-500/90 active:scale-95 transition-all">
+                                                    <Copy className="w-3.5 h-3.5" /> کپی لینک دعوت
+                                                </button>
+                                                <p className="text-[10px] text-on-surface-variant/70 leading-4">
+                                                    لینک ثبت‌نام را برایش بفرست تا عضو دیمت بشه؛ بعد همین‌جا اضافه‌اش کن.
+                                                </p>
+                                            </div>
+                                        ) : debouncedQ ? (
+                                            <p className="text-[11px] text-on-surface-variant/60 py-2 text-center">
+                                                کاربری پیدا نشد — می‌تونی با شماره موبایلش جستجو کنی
+                                            </p>
+                                        ) : null}
+                                    </div>
+                                )}
+                            </div>
+                        ) : (
+                            /* کاربر انتخاب‌شده — با امکان تغییر */
+                            <div className="flex items-center gap-2.5 p-2.5 rounded-xl border border-primary/40 bg-primary/5">
+                                <span className="w-10 h-10 rounded-full overflow-hidden bg-surface-container-high dark:bg-gray-800 grid place-items-center flex-shrink-0">
+                                    {selectedUser.avatarUrl ? (
+                                        <Image src={resolveFileSrc(selectedUser.avatarUrl)!} alt={selectedUser.fullName || ''}
+                                               width={40} height={40} className="w-full h-full object-cover" unoptimized />
+                                    ) : (
+                                        <User className="w-5 h-5 text-on-surface-variant/50" />
+                                    )}
+                                </span>
+                                <div className="flex-1 min-w-0">
+                                    <p className="text-[12px] font-bold text-on-surface truncate">
+                                        {selectedUser.fullName || 'کاربر دیمت'}
+                                    </p>
+                                    <p className="text-[10px] text-on-surface-variant/70 text-left" dir="ltr">
+                                        {selectedUser.phone}
+                                    </p>
+                                </div>
+                                <button type="button" onClick={() => setSelectedUser(null)} aria-label="تغییر انتخاب"
+                                        className="w-8 h-8 rounded-lg grid place-items-center text-on-surface-variant/60 hover:text-error hover:bg-error/10 active:scale-90 transition-all flex-shrink-0">
+                                    <X className="w-4 h-4" />
+                                </button>
+                            </div>
+                        )}
+
+                        {/* مرحلهٔ ۲ — نقش در کسب‌وکار */}
+                        {selectedUser && (
+                            <div className="space-y-2">
+                                <label className="text-xs font-medium text-on-surface block">
+                                    نقش در کسب‌وکار <span className="text-primary">*</span>
+                                </label>
+                                <PositionChips value={addRole} other={addOther}
+                                               onChange={setAddRole} onOtherChange={setAddOther} />
+                            </div>
+                        )}
+
+                        <button type="button" onClick={handleAdd} disabled={!selectedUser || addMut.isPending}
                                 className="w-full h-11 rounded-xl text-sm font-extrabold flex items-center justify-center gap-2
                                     bg-primary text-on-primary hover:bg-primary/90 disabled:opacity-50 transition-all">
                             {addMut.isPending ? <Loader2 className="w-4 h-4 animate-spin" /> : <Check className="w-4 h-4" />}
