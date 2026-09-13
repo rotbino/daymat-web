@@ -14,6 +14,7 @@ import {
 import { QRCodeCanvas } from 'qrcode.react';
 import { toast } from 'sonner';
 import { cn } from "@/lib/utils/utils";
+import PhoneContactsPanel from '@/components/share/PhoneContactsPanel';
 import {
     CANVAS_FONT, triggerDownload, getQrCanvas, loadImageCached, roundRectPath,
 } from './visitCardShared';
@@ -230,6 +231,14 @@ export default function ShareKitModal({ open, onClose, catalogName, slug, logoUr
                         <ActionBtn icon={copied ? Check : Copy} label={copied ? 'کپی شد' : 'کپی لینک'} onClick={copy} />
                         <ActionBtn icon={Share2} label="سایر" onClick={nativeShare} />
                     </div>
+
+                    {/* 📱 ارسال مستقیم به مخاطبین تلفن — پیامکِ آماده با لینک + ذخیره در دفترچهٔ دیمت */}
+                    {url && (
+                        <PhoneContactsPanel
+                            url={url}
+                            message={`کاتالوگ ${catalogName} رو ببین:`}
+                        />
+                    )}
 
                     {/* QR چاپی — خروجی تصویری */}
                     {url && (

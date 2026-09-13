@@ -1663,3 +1663,42 @@ export const useUnreadNotificationCount = (enabled = true) => {
         refetchInterval: 60_000,
     });
 };
+
+// ─────────────────────────────────────────────────────────────
+// 📱 مخاطبین تلفن (PWA) — دفترچهٔ من + همگام‌سازی با Contact Picker
+// ─────────────────────────────────────────────────────────────
+
+// ✅ دفترچهٔ مخاطبین من — وقتی پنل مخاطبین باز است لود می‌شود
+export const useMyContacts = (q: string, enabled = true) => {
+    return useQuery({
+        queryKey: ['my-contacts', q],
+        queryFn: () => apiService.contacts.list(q),
+        enabled,
+        staleTime: 60_000,
+    });
+};
+
+// ✅ همگام‌سازی مخاطبین انتخاب‌شده از گوشی — بعدش دفترچه و بج‌ها رفرش می‌شوند
+export const useSyncContacts = () => {
+    const qc = useQueryClient();
+    return useMutation({
+        mutationFn: (contacts: { name?: string | null; phone: string }[]) =>
+            apiService.contacts.sync(contacts),
+        onSuccess: () => {
+            qc.invalidateQueries({ queryKey: ['my-contacts'] });
+            qc.invalidateQueries({ queryKey: ['my-contacts-stats'] });
+        },
+    });
+};
+
+// ✅ حذف یک مخاطب از دفترچهٔ من
+export const useRemoveContact = () => {
+    const qc = useQueryClient();
+    return useMutation({
+        mutationFn: (id: string) => apiService.contacts.remove(id),
+        onSuccess: () => {
+            qc.invalidateQueries({ queryKey: ['my-contacts'] });
+            qc.invalidateQueries({ queryKey: ['my-contacts-stats'] });
+        },
+    });
+};

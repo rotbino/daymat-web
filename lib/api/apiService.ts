@@ -62,6 +62,32 @@ export const apiService = {
     },
 
     // ============================================================
+    // CONTACT — دفترچهٔ مخاطبین تلفن (PWA) — اشتراک‌گذاری مستقیم + کشف ارتباطات
+    // ============================================================
+    contacts: {
+        // همگام‌سازی مخاطبین انتخاب‌شده از گوشی — نرمال + تطبیق با اعضای دیمت + ذخیره
+        sync: (contacts: { name?: string | null; phone: string }[]): Promise<{
+            saved: number; created: number; updated: number; invalid: number; skippedByCap?: number;
+            matched: number; total: number;
+        }> => apiRequest('/contact/sync', { method: 'POST', data: { contacts } }),
+
+        // دفترچهٔ من — q: جستجو با نام یا شماره — matchedUser: مشخصات دیمیتیِ مخاطبِ عضو
+        list: (q = '', limit = 500): Promise<{
+            items: { id: string; name: string | null; phone: string; matchedUserId: string | null; createdAt: string;
+                     matchedUser?: { id: string; fullName: string | null; avatarUrl: string | null } | null }[];
+            total: number; matchedCount: number;
+        }> => apiRequest(`/contact?q=${encodeURIComponent(q)}&limit=${limit}`),
+
+        // خلاصهٔ دفترچه برای بج
+        stats: (): Promise<{ total: number; matched: number }> =>
+            apiRequest('/contact/stats'),
+
+        // حذف یک مخاطب از دفترچهٔ من
+        remove: (id: string): Promise<{ success: boolean; deleted: number }> =>
+            apiRequest(`/contact/${id}`, { method: 'DELETE' }),
+    },
+
+    // ============================================================
     // BUSINESS — کسب‌وکارِ مرجع/مشترک (ثبت‌کنندهٔ اول ≠ مالک)
     // ============================================================
     business: {

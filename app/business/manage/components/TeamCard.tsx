@@ -9,13 +9,14 @@ import React, { useEffect, useState } from 'react';
 import Image from 'next/image';
 import { createPortal } from 'react-dom';
 import {
-    Users, UserPlus, Pencil, Trash2, Loader2, User, ShieldCheck, X, Check, AlertTriangle, Search, Share2,
+    Users, UserPlus, Pencil, Trash2, Loader2, User, ShieldCheck, X, Check, AlertTriangle, Search, Share2, Smartphone,
 } from 'lucide-react';
 import { toast } from 'sonner';
 import { cn } from '@/lib/utils';
 import { USER_POSITIONS } from '@/lib/api/data-types';
 import type { BusinessTeamMember } from '@/lib/api/apiTypes';
 import { useAddBusinessMember, useUpdateBusinessMember, useRemoveBusinessMember, useTeamUserSearch } from '@/lib/api/apiHooks';
+import PhoneContactsPanel, { type PhoneContactItem } from '@/components/share/PhoneContactsPanel';
 import { resolveFileSrc } from './BusinessLogo';
 
 // ✅ کاربرِ نتیجهٔ جستجو برای افزودن به تیم
@@ -217,6 +218,9 @@ export function TeamCard({
     const [editRole, setEditRole] = useState('');
     const [editOther, setEditOther] = useState('');
 
+    // 📱 پنل مخاطبین تلفن — انتخاب همکار از دفترچهٔ گوشی
+    const [showContacts, setShowContacts] = useState(false);
+
     // دیبانس جستجو (۴۰۰ms)
     useEffect(() => {
         const t = window.setTimeout(() => setDebouncedQ(addQuery.trim()), 400);
@@ -229,7 +233,29 @@ export function TeamCard({
     const openAdd = () => {
         setAddQuery(''); setDebouncedQ(''); setSelectedUser(null);
         setAddRole(''); setAddOther('');
+        setShowContacts(false);
         setAddOpen(true);
+    };
+
+    /** 📱 تپ روی مخاطب از دفترچهٔ گوشی — عضو دیمت؟ انتخابش کن. نیست؟ پیامک دعوت */
+    const handlePickContact = (c: PhoneContactItem) => {
+        if (c.matchedUserId) {
+            setSelectedUser({
+                id: c.matchedUserId,
+                fullName: c.matchedUser?.fullName || c.name,
+                phone: c.phone,
+                avatarUrl: c.matchedUser?.avatarUrl || null,
+            });
+            setShowContacts(false);
+            setAddQuery('');
+            toast.success(`${c.name || c.matchedUser?.fullName || 'همکارت'} عضو دیمت است — نقشش را مشخص کن`, { duration: 4000 });
+            return;
+        }
+        // هنوز ثبت‌نام نکرده — پیامک دعوت مستقیم با شمارهٔ خودش
+        const link = `${window.location.origin}/login`;
+        const body = `سلام ${c.name || ''}؛ بیا به دیمت بپیوند — بازار عمده و خردهٔ آنلاین. ثبت‌نام از این لینک:\n${link}`;
+        const isIOS = typeof navigator !== 'undefined' && /iPad|iPhone|iPod/.test(navigator.userAgent);
+        window.location.href = `sms:${c.phone}${isIOS ? '&' : '?'}body=${encodeURIComponent(body)}`;
     };
     const openEdit = (m: BusinessTeamMember) => {
         const pos = (m.position || '').trim();
@@ -387,6 +413,21 @@ export function TeamCard({
                                 <p className="text-[10px] text-on-surface-variant/60 leading-4">
                                     همکارت باید اول در دیمت ثبت‌نام کرده باشد.
                                 </p>
+
+                                {/* 📱 از مخاطبین تلفن — انتخاب عضو از دفترچهٔ گوشی */}
+                                <button type="button" onClick={() => setShowContacts((v) => !v)}
+                                        className="w-full h-9 rounded-xl border border-dashed border-primary/40 text-primary
+                                            text-[11px] font-extrabold flex items-center justify-center gap-1.5
+                                            hover:bg-primary/5 active:scale-[0.99] transition-all">
+                                    <Smartphone className="w-3.5 h-3.5" />
+                                    {showContacts ? 'بستن مخاطبین تلفن' : 'یا از مخاطبین تلفنت انتخاب کن'}
+                                </button>
+                                {showContacts && (
+                                    <PhoneContactsPanel
+                                        onPick={handlePickContact}
+                                        title="از دفترچهٔ مخاطبینت انتخاب کن"
+                                    />
+                                )}
 
                                 {/* نتایج جستجو */}
                                 {addQuery.trim().length >= 3 && (
