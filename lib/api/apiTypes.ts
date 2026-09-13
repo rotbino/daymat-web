@@ -808,6 +808,7 @@ export interface InquiryBase {
     title: string;
     description?: string | null;
     slug?: string | null;
+    businessId?: string | null;
     visibility: 'public' | 'unlisted';
     status: 'open' | 'closed' | 'archived';
     deadline?: string | null;

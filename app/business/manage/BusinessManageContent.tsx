@@ -15,6 +15,7 @@ import { cn } from '@/lib/utils';
 import { RootState } from '@/lib/store/store';
 import {
     useMyBusinesses, useBusinessDetail, useUpdateBusinessDetail, useSetBusinessActivities,
+    useMyInquiries,
 } from '@/lib/api/apiHooks';
 import { ActivitySelectorModal } from '@/components/ActivitySelectorModal';
 import { IdentitySwitcher, ManageBusinessItem } from './components/IdentitySwitcher';
@@ -93,6 +94,9 @@ export default function BusinessManageContent() {
 
     // ── جهش‌ها ──
     const setActivitiesMutation = useSetBusinessActivities();
+
+    // ✅ کاتالوگ‌های خرید — برای نمایش کنار کاتالوگ‌های فروش این کسب‌وکار (محصول دوم)
+    const { data: myInqData } = useMyInquiries();
 
     // ── مودال‌ها و پرش ──
     const [logoOpen, setLogoOpen] = useState(false);
@@ -245,6 +249,12 @@ export default function BusinessManageContent() {
     const members = detail?.members || [];
     const tierColor = TIER_COLOR[detail?.verificationTier || ''] || 'text-emerald-500';
 
+    // کاتالوگ‌های خریدِ همین کسب‌وکار (بعد از مشخص‌شدن detail فیلتر می‌شود)
+    const businessInquiries = useMemo(
+        () => ((myInqData?.items ?? []) as any[]).filter((w: any) => w.businessId && w.businessId === (detail?.id || currentId)),
+        [myInqData, detail?.id, currentId],
+    );
+
     // کارت‌های ستون کنار (دسکتاپ) — در موبایل هم در جایشان تکرار می‌شوند
     const completenessCard = (
         <CompletenessCard percent={completeness.percent} items={completeness.items} onJump={jump} />
@@ -264,6 +274,7 @@ export default function BusinessManageContent() {
     const catalogsCard = (
         <CatalogLinksCard
             catalogs={(detail?.catalogs || []) as any}
+            inquiries={businessInquiries}
             businessId={detail?.id || currentId || undefined}
         />
     );
@@ -427,6 +438,9 @@ export default function BusinessManageContent() {
                                     </button>
                                 </div>
                             </div>
+
+                            {/* ── کاتالوگ‌ها — بلافاصله بعد از هویت (بالاتر آمده: دسترسی راحت — درخواست کاربر) ── */}
+                            <div className="lg:hidden">{catalogsCard}</div>
 
                             {/* ── کامل‌بودن — فقط موبایل (دسکتاپ در ستون کنار) ── */}
                             <div className="lg:hidden">{completenessCard}</div>
@@ -626,10 +640,9 @@ export default function BusinessManageContent() {
                                 />
                             </div>
 
-                            {/* ── تیک اعتماد + کاتالوگ‌ها + نمای مشتری — فقط موبایل ── */}
+                            {/* ── تیک اعتماد + نمای مشتری — فقط موبایل ── */}
                             <div className="lg:hidden space-y-4">
                                 {trustCard}
-                                {catalogsCard}
                                 {previewCard}
                                 {teaserCard}
                             </div>
@@ -637,9 +650,9 @@ export default function BusinessManageContent() {
 
                         {/* ═══ ستون کنار — فقط دسکتاپ ═══ */}
                         <aside className="hidden lg:block space-y-4 lg:sticky lg:top-20">
+                            {catalogsCard}
                             {completenessCard}
                             {trustCard}
-                            {catalogsCard}
                             {previewCard}
                             {teaserCard}
                         </aside>

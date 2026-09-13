@@ -2,15 +2,19 @@
 // کاتالوگ‌های خرید من — مدیریت لیست‌های استعلام (محصول دوم دیمت)
 'use client';
 
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useRef, useState } from 'react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { motion, AnimatePresence } from 'framer-motion';
-import { useSelector } from 'react-redux';
+import { useDispatch, useSelector } from 'react-redux';
 import { RootState } from '@/lib/store/store';
+import { setCurrentInquiry } from '@/lib/store/slices/catalogSlice';
+import { useQuery } from '@tanstack/react-query';
+import { apiService } from '@/lib/api/apiService';
 import { useMyInquiries, useUpdateInquiry, useDeleteInquiry } from '@/lib/api/apiHooks';
 import { toast } from 'sonner';
 import NavTabs from '@/app/home/nav/NavTabs';
+import InquiryIdentityBar from './components/InquiryIdentityBar';
 import {
     ClipboardList, Plus, MapPin, Clock, Users, Loader2,
     Ban, RotateCcw, Trash2, ArrowLeft, PackageSearch, Eye,
@@ -26,13 +30,42 @@ const fadeUp = (delay = 0) => ({
 
 export default function MyInquiriesPage() {
     const router = useRouter();
+    const dispatch = useDispatch();
     const { isAuthenticated, _hydrated } = useSelector((s: RootState) => s.auth) as any;
     const hydrated = _hydrated !== false;
+    // «کاتالوگ خرید کارنت» — پرسیست؛ با رفرش هم سرجاش می‌مونه (درخواست کاربر)
+    const currentInquiryId = useSelector((s: RootState) => s.catalog.currentInquiryId);
 
     const { data: items, isLoading } = useMyInquiries();
     const updateInquiry = useUpdateInquiry();
     const deleteInquiry = useDeleteInquiry();
     const [busyId, setBusyId] = useState<string | null>(null);
+    const cardRefs = useRef<Record<string, HTMLDivElement | null>>({});
+
+    // کاتالوگ‌های فروش — برای سوییچر دو-محصولی (همان کشِ مشترک کنسول فروش)
+    const { data: catalogsRaw } = useQuery({
+        queryKey: ['catalogs'],
+        queryFn: () => apiService.catalog.getAll(),
+        enabled: hydrated && isAuthenticated,
+        staleTime: 60_000,
+    });
+    const salesCatalogs: any[] = (catalogsRaw ?? []).filter((c: any) => c.status === 'active');
+    const list: any[] = items ?? [];
+
+    // انتخاب خودکار: اولویت ۱) ?catalog= لینک عمیق ۲) پرسیست ۳) اولین لیست
+    // (نکتهٔ پرسیست کهنه: اگر id قبلی حذف شده باشد، اولین لیست انتخاب می‌شود)
+    useEffect(() => {
+        if (isLoading || list.length === 0) return;
+        if (currentInquiryId && list.some((w) => w.id === currentInquiryId)) return;
+        const fromUrl = new URLSearchParams(window.location.search).get('catalog');
+        const picked = fromUrl && list.some((w) => w.id === fromUrl) ? fromUrl : list[0].id;
+        dispatch(setCurrentInquiry(picked));
+        if (fromUrl) {
+            window.history.replaceState({}, '', '/my-inquiries');
+            window.setTimeout(() => cardRefs.current[picked]?.scrollIntoView({ behavior: 'smooth', block: 'center' }), 400);
+        }
+        // eslint-disable-next-line react-hooks/exhaustive-deps
+    }, [isLoading, list, currentInquiryId]);
 
     useEffect(() => {
         document.title = 'کاتالوگ‌های خرید من | دیمت';
@@ -69,6 +102,15 @@ export default function MyInquiriesPage() {
         }
     };
 
+    // انتخاب از سوییچر — خرید: همین صفحه (پرسیست + اسکرول) | فروش: پرش به کنسول کاتالوگ فروش
+    const selectInquiry = (id: string) => {
+        dispatch(setCurrentInquiry(id));
+        window.setTimeout(() => cardRefs.current[id]?.scrollIntoView({ behavior: 'smooth', block: 'center' }), 150);
+    };
+    const selectSalesCatalog = (id: string) => {
+        router.push(`/my-catalogs?catalog=${id}`);
+    };
+
     if (!hydrated || !isAuthenticated) {
         return (
             <div className="grid min-h-screen place-items-center bg-gradient-to-b from-surface to-surface-container-low/40 dark:from-gray-950 dark:to-gray-900/40">
@@ -101,6 +143,20 @@ export default function MyInquiriesPage() {
                         کاتالوگ خرید جدید
                     </Link>
                 </motion.div>
+
+                {/* سوییچر دو-محصولی — کاتالوگ کارنت خرید با پرسیست (درخواست کاربر) */}
+                {!isLoading && list.length > 0 && (
+                    <motion.div {...fadeUp(0.05)} className="mb-4">
+                        <InquiryIdentityBar
+                            inquiries={list}
+                            catalogs={salesCatalogs}
+                            currentInquiryId={currentInquiryId}
+                            onSelectInquiry={selectInquiry}
+                            onSelectCatalog={selectSalesCatalog}
+                            onNew={() => router.push('/inquiries/new')}
+                        />
+                    </motion.div>
+                )}
 
                 {/* لیست */}
                 {isLoading ? (
@@ -135,18 +191,28 @@ export default function MyInquiriesPage() {
                                 return (
                                     <motion.div
                                         key={w.id}
+                                        ref={(el) => { cardRefs.current[w.id] = el; }}
                                         layout
                                         initial={{ opacity: 0, y: 16 }}
                                         animate={{ opacity: 1, y: 0 }}
                                         exit={{ opacity: 0, scale: 0.97 }}
                                         transition={{ delay: Math.min(i, 8) * 0.04 }}
-                                        className="rounded-3xl border-2 border-stone-100 bg-white p-4 shadow-sm transition-colors hover:border-brand-amber-tint dark:border-gray-800 dark:bg-gray-900 sm:p-5">
+                                        className={`rounded-3xl border-2 bg-white p-4 shadow-sm transition-colors dark:bg-gray-900 sm:p-5 ${
+                                            w.id === currentInquiryId
+                                                ? 'border-brand-amber ring-2 ring-brand-amber/25'
+                                                : 'border-stone-100 hover:border-brand-amber-tint dark:border-gray-800'
+                                        }`}>
                                         <div className="flex items-start justify-between gap-3">
                                             <Link href={`/inquiries/${w.slug || w.id}`} className="group min-w-0 flex-1">
                                                 <div className="flex items-center gap-2">
                                                     <h3 className="truncate text-base font-black text-stone-900 transition-colors group-hover:text-amber-700 dark:text-gray-100 dark:group-hover:text-amber-400">
                                                         {w.title}
                                                     </h3>
+                                                    {w.id === currentInquiryId && (
+                                                        <span className="shrink-0 rounded-full bg-brand-amber px-2 py-0.5 text-[9px] font-black text-white">
+                                                            کاتالوگ کارنت
+                                                        </span>
+                                                    )}
                                                     <span className={`shrink-0 rounded-full px-2 py-0.5 text-[10px] font-extrabold ${STATUS_CHIP[w.status] ?? ''}`}>
                                                         {STATUS_FA[w.status]}
                                                     </span>

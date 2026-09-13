@@ -10,12 +10,12 @@ import { useRouter } from 'next/navigation';
 import { motion, AnimatePresence } from 'framer-motion';
 import { useSelector } from 'react-redux';
 import { RootState } from '@/lib/store/store';
-import { useCreateInquiry } from '@/lib/api/apiHooks';
+import { useCreateInquiry, useMyBusinesses } from '@/lib/api/apiHooks';
 import type { CreateInquiryItemPayload } from '@/lib/api/apiTypes';
 import { toast } from 'sonner';
 import {
     ClipboardList, Plus, Trash2, ChevronDown, SlidersHorizontal,
-    Loader2, FlaskConical, Link2, ImagePlus, Package, Send,
+    Loader2, FlaskConical, Link2, ImagePlus, Package, Send, Building2,
 } from 'lucide-react';
 import { faNum } from '../utils';
 
@@ -58,12 +58,30 @@ export default function NewInquiryPage() {
     const create = useCreateInquiry();
     const [submitting, setSubmitting] = useState(false);
 
+    // اتصال به کسب‌وکار (اختیاری) — برای دیده‌شدن کاتالوگ خرید کنار کاتالوگ‌های فروش در پروفایل کسب‌وکار
+    // پیش‌فرض صفرِ بارِ ذهنی: یک کسب‌وکار → خودکار وصل؛ از صفحهٔ کسب‌وکار با ?bizId= هم می‌آید
+    const { data: myBizData } = useMyBusinesses();
+    const myBizs = useMemo(
+        () => (myBizData?.items ?? []).filter((b: any) => b.canEdit),
+        [myBizData],
+    );
+    const [bizId, setBizId] = useState('');
+    const [bizParam] = useState(() =>
+        typeof window !== 'undefined' ? new URLSearchParams(window.location.search).get('bizId') || '' : '',
+    );
+    useEffect(() => {
+        if (bizId || myBizs.length === 0) return;
+        if (bizParam && myBizs.some((b: any) => b.id === bizParam)) setBizId(bizParam);
+        else if (myBizs.length === 1) setBizId(myBizs[0].id);
+        // eslint-disable-next-line react-hooks/exhaustive-deps
+    }, [myBizs]);
+
     // گیت ورود — مهمان → لاگین با حفظ مقصد
     useEffect(() => {
         if (hydrated && !isAuthenticated) {
-            router.replace(`/login?redirect=${encodeURIComponent('/inquiries/new')}`);
+            router.replace(`/login?redirect=${encodeURIComponent('/inquiries/new' + (bizParam ? `?bizId=${bizParam}` : ''))}`);
         }
-    }, [hydrated, isAuthenticated, router]);
+    }, [hydrated, isAuthenticated, router, bizParam]);
 
     const filledCount = useMemo(() => rows.filter((r) => r.name.trim()).length, [rows]);
 
@@ -106,6 +124,7 @@ export default function NewInquiryPage() {
                 title: title.trim(),
                 description: description.trim() || undefined,
                 items,
+                businessId: bizId || undefined,
                 visibility,
                 deadline: deadline ? new Date(deadline).toISOString() : undefined,
                 city: city.trim() || undefined,
@@ -175,6 +194,23 @@ export default function NewInquiryPage() {
                         placeholder:font-medium placeholder:text-stone-300 focus:border-brand-amber
                         dark:border-gray-700 dark:bg-gray-900 dark:placeholder:text-gray-600"
                     />
+
+                    {/* اتصال به کسب‌وکار — اختیاری و یک‌خطی؛ پیش‌فرض خودکار */}
+                    {myBizs.length > 0 && (
+                        <div className="mt-2.5 flex items-center gap-2 rounded-xl bg-brand-amber-soft/50 px-3 py-2 dark:bg-amber-500/5">
+                            <Building2 className="size-3.5 shrink-0 text-amber-600 dark:text-amber-400" />
+                            <span className="shrink-0 text-[11px] font-bold text-stone-500 dark:text-gray-400">کسب‌وکار:</span>
+                            <select
+                                value={bizId}
+                                onChange={(e) => setBizId(e.target.value)}
+                                className="min-w-0 flex-1 cursor-pointer bg-transparent text-[12px] font-extrabold text-stone-800 outline-none dark:text-gray-200 [&>option]:font-sans">
+                                <option value="">بدون اتصال (شخصی)</option>
+                                {myBizs.map((b: any) => (
+                                    <option key={b.id} value={b.id}>{b.name}</option>
+                                ))}
+                            </select>
+                        </div>
+                    )}
                 </motion.section>
 
                 {/* اقلام */}

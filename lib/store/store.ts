@@ -24,7 +24,7 @@ const armPersistConfig = {
 const catalogPersistConfig = {
     key: 'catalog',
     storage,
-    whitelist: ['currentCatalogId', 'currentCatalog'],
+    whitelist: ['currentCatalogId', 'currentCatalog', 'currentInquiryId'],
 };
 
 const persistedAuthReducer = persistReducer(authPersistConfig, authReducer);

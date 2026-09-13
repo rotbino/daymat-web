@@ -1,7 +1,7 @@
 // app/profile/page.tsx
 'use client';
 
-import React, { useState } from 'react';
+import React, { useMemo, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import Image from 'next/image';
 import { useQuery } from '@tanstack/react-query';
@@ -20,7 +20,7 @@ import { cn } from '@/lib/utils';
 import NavTabs from '@/app/home/nav/NavTabs';
 import EditProfileModal from '@/app/[slug]/components/EditProfileModal';
 import { ChangePasswordModal } from '@/components/register/ChangePasswordModal';
-import { useMyBusinesses } from '@/lib/api/apiHooks';
+import { useMyBusinesses, useMyInquiries } from '@/lib/api/apiHooks';
 import { BusinessLogo } from '@/app/business/manage/components/BusinessLogo';
 
 export default function ProfilePage() {
@@ -43,6 +43,16 @@ export default function ProfilePage() {
     // ─── کسب‌وکارهای من — باکس مدیریت کسب‌وکار (فقط قابل‌ویرایش‌ها) ───
     const { data: myBizData, isLoading: myBizLoading } = useMyBusinesses();
     const myBusinesses: any[] = (myBizData?.items ?? []).filter((b: any) => b.canEdit);
+
+    // کاتالوگ‌های خرید هر کسب‌وکار — شمارش کنار کاتالوگ‌های فروش (محصول دوم)
+    const { data: myInqData } = useMyInquiries();
+    const inquiryCountByBiz = useMemo(() => {
+        const map: Record<string, number> = {};
+        ((myInqData?.items ?? []) as any[]).forEach((w: any) => {
+            if (w.businessId) map[w.businessId] = (map[w.businessId] || 0) + 1;
+        });
+        return map;
+    }, [myInqData]);
 
     React.useEffect(() => {
         const mq = window.matchMedia('(prefers-color-scheme: dark)');
@@ -182,7 +192,10 @@ export default function ProfilePage() {
                                             {[
                                                 b.city || b.province,
                                                 (b._count?.catalogs ?? 0) > 0
-                                                    ? `${(b._count?.catalogs ?? 0).toLocaleString('fa-IR')} کاتالوگ`
+                                                    ? `${(b._count?.catalogs ?? 0).toLocaleString('fa-IR')} کاتالوگ فروش`
+                                                    : null,
+                                                (inquiryCountByBiz[b.id] ?? 0) > 0
+                                                    ? `${(inquiryCountByBiz[b.id] ?? 0).toLocaleString('fa-IR')} کاتالوگ خرید`
                                                     : null,
                                             ]
                                                 .filter(Boolean)

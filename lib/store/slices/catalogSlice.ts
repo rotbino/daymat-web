@@ -19,11 +19,14 @@ export interface CurrentCatalogSnapshot {
 interface CatalogState {
     currentCatalogId: string | null;
     currentCatalog: CurrentCatalogSnapshot | null;
+    /** «کاتالوگ خرید کارنت» — انتخاب سوییچر برای محصول دوم (پرسیست) */
+    currentInquiryId: string | null;
 }
 
 const initialState: CatalogState = {
     currentCatalogId: null,
     currentCatalog: null,
+    currentInquiryId: null,
 };
 
 const catalogSlice = createSlice({
@@ -35,13 +38,18 @@ const catalogSlice = createSlice({
             state.currentCatalogId = action.payload?.id ?? null;
             state.currentCatalog = action.payload;
         },
+        /** انتخاب کاتالوگ خرید کارنت — از سوییچر یا لینک عمیق */
+        setCurrentInquiry: (state, action: PayloadAction<string | null>) => {
+            state.currentInquiryId = action.payload;
+        },
         /** خروج/تغییر کاربر — تا کاتالوگ کاربر قبلی به کاربر بعدی نچسبد */
         clearCurrentCatalog: (state) => {
             state.currentCatalogId = null;
             state.currentCatalog = null;
+            state.currentInquiryId = null;
         },
     },
 });
 
-export const { setCurrentCatalog, clearCurrentCatalog } = catalogSlice.actions;
+export const { setCurrentCatalog, setCurrentInquiry, clearCurrentCatalog } = catalogSlice.actions;
 export default catalogSlice.reducer;

@@ -11,11 +11,11 @@ import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { useDispatch, useSelector } from 'react-redux';
 import { RootState } from '@/lib/store/store';
 import { setUser } from '@/lib/store/slices/authSlice';
-import { setCurrentCatalog } from '@/lib/store/slices/catalogSlice';
+import { setCurrentCatalog, setCurrentInquiry } from '@/lib/store/slices/catalogSlice';
 import { apiService } from '@/lib/api/apiService';
 import {
     useArms, useMyUncategorized, useSetOwnAdCategory,
-    useCatalogPendingSummary, useMyPendingApprovals,
+    useCatalogPendingSummary, useMyPendingApprovals, useMyInquiries,
 } from '@/lib/api/apiHooks';
 import { toast } from 'sonner';
 import { cn } from '@/lib/utils';
@@ -84,6 +84,9 @@ export default function MyCatalogsContent() {
     const { data: pendingApprovals } = useMyPendingApprovals();
     const pendingTotal = pendingSummary?.total || 0;
     const approvals: any[] = pendingApprovals?.items || [];
+    // ✅ کاتالوگ‌های خرید من — در همان سوییچر کنار کاتالوگ‌های فروش (محصول دوم دیمت)
+    const { data: myInquiriesRaw } = useMyInquiries();
+    const myInquiries: any[] = useMemo(() => myInquiriesRaw ?? [], [myInquiriesRaw]);
     const catalogs = useMemo(
         () => (catalogsRaw ?? []).filter((b: any) => b.status === 'active'),
         [catalogsRaw],
@@ -279,6 +282,13 @@ export default function MyCatalogsContent() {
     const canShare = !!(currentCatalog as any)?.slug;
 
     const goNewCatalog = () => router.push('/business/register');
+    // کاتالوگ خرید جدید — فرم محصول دوم
+    const goNewInquiry = () => router.push('/inquiries/new');
+    // انتخاب کاتالوگ خرید از سوییچر → پرش به مدیریت آن + ثبت «کاتالوگ خرید کارنت» (پرسیست)
+    const selectInquiry = (id: string) => {
+        dispatch(setCurrentInquiry(id));
+        router.push(`/my-inquiries?catalog=${id}`);
+    };
     // 👁 مشاهدهٔ کاتالوگ عمومی — همان آدرسی که کیت اشتراک می‌سازد (app/[slug])
     const previewCatalog = () => {
         const slug = (currentCatalog as any)?.slug;
@@ -364,12 +374,15 @@ export default function MyCatalogsContent() {
                 <div className="pb-4 pt-2">
                     <CatalogIdentityBar
                         catalogs={allCatalogs}
+                        inquiries={myInquiries}
                         currentCatalog={currentCatalog}
                         canShare={canShare}
                         onSelect={selectCatalog}
+                        onSelectInquiry={selectInquiry}
                         onShare={openShare}
                         onPreview={previewCatalog}
                         onNewCatalog={goNewCatalog}
+                        onNewInquiry={goNewInquiry}
                         onChangePassword={() => setPasswordOpen(true)}
                     />
                 </div>
