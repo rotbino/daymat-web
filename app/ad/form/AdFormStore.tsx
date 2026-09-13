@@ -35,9 +35,6 @@ function initialFormValues(): AdFormValues {
     };
 }
 
-// ✅ هویت داخلی ردیف‌های چک — روز قابل ویرایش است پس کلید باید ثابت بماند
-const termUid = () => `t${Date.now().toString(36)}${Math.random().toString(36).slice(2, 7)}`;
-
 const initialPayment: PaymentState = {
     chequeOn: false, terms: [], note: '', installment: [], installmentDescription: '',
 };
@@ -99,11 +96,11 @@ export interface AdFormStore {
     // پرداخت چک
     setChequeOn: (on: boolean) => void;
     toggleChequeTerm: (days: number) => void;
-    /** سررسید دلخواه — ردیف با روزِ قابل ویرایش */
-    addCustomTerm: () => void;
-    setTermDays: (uid: string, days: number) => void;
-    setTermPrice: (uid: string, price: number) => void;
-    removeTerm: (uid: string) => void;
+    setTermPrice: (days: number, price: number) => void;
+    /** ✅ سررسید دلخواه — فقط اضافه می‌کند (اگر نباشد) */
+    addTerm: (days: number) => void;
+    /** ✅ ویرایش روز/مبلغ هر ردیف چک — null = حذف ردیف */
+    updateTermAt: (index: number, patch: { days?: number; price?: number } | null) => void;
     setChequeNote: (note: string) => void;
 
     // آکاردئون گزینه‌های پیشرفته
@@ -315,7 +312,7 @@ export function AdFormProvider({ adId, onSuccess, children }: { adId?: string; o
     }, [formData.consumerPrice, formData.singleUnitPrice]);
 
     const advancedActiveCount =
-        (formData.consumerPrice > 0 ? 1 : 0) + formData.volumeTiers.length + (formData.giftPrice > 0 ? 1 : 0);
+        formData.volumeTiers.length + (formData.giftPrice > 0 ? 1 : 0);
 
     // ═══ انتخاب کالا از مرجع + ارث‌بری عکس ═══
     // ✅ برند جزء ویژگی‌های کالای مرجع است — در فرم آگهی تعیین تکلیف نمی‌شود
@@ -350,23 +347,27 @@ export function AdFormProvider({ adId, onSuccess, children }: { adId?: string; o
         setPayment((p) => {
             if (p.terms.some((t) => t.days === days))
                 return { ...p, terms: p.terms.filter((t) => t.days !== days) };
-            return { ...p, terms: [...p.terms, { _uid: termUid(), days, price: 0 }].sort((a, b) => a.days - b.days) };
+            return { ...p, terms: [...p.terms, { days, price: 0 }].sort((a, b) => a.days - b.days) };
         });
     };
-    // ✅ سررسید دلخواه — چک از ۲ روزه تا چند ماهه؛ روزش در ردیف قابل ویرایش است
-    const addCustomTerm = () => {
-        setPayment((p) => p.terms.some((t) => t.days === 0)
+    const setTermPrice = (days: number, price: number) => {
+        setPayment((p) => ({
+            ...p,
+            terms: p.terms.map((x) => x.days === days ? { ...x, price: price || 0 } : x),
+        }));
+    };
+    // ✅ سررسید دلخواه — فقط اضافه می‌کند تا دکمه حذف‌کننده نباشد
+    const addTerm = (days: number) => {
+        setPayment((p) => p.terms.some((t) => t.days === days)
             ? p
-            : { ...p, terms: [...p.terms, { _uid: termUid(), days: 0, price: 0 }] });
+            : { ...p, terms: [...p.terms, { days, price: 0 }] });
     };
-    const setTermDays = (uid: string, days: number) => {
-        setPayment((p) => ({ ...p, terms: p.terms.map((t) => t._uid === uid ? { ...t, days } : t) }));
-    };
-    const setTermPrice = (uid: string, price: number) => {
-        setPayment((p) => ({ ...p, terms: p.terms.map((t) => t._uid === uid ? { ...t, price: price || 0 } : t) }));
-    };
-    const removeTerm = (uid: string) => {
-        setPayment((p) => ({ ...p, terms: p.terms.filter((t) => t._uid !== uid) }));
+    // ✅ روز/مبلغ هر ردیف جدا قابل ویرایش — بدون جابه‌جایی ردیف‌ها هنگام تایپ
+    const updateTermAt = (index: number, patch: { days?: number; price?: number } | null) => {
+        setPayment((p) => {
+            if (patch === null) return { ...p, terms: p.terms.filter((_, i) => i !== index) };
+            return { ...p, terms: p.terms.map((t, i) => (i === index ? { ...t, ...patch } : t)) };
+        });
     };
     const setChequeNote = (note: string) => setPayment((p) => ({ ...p, note }));
     const toggleAdvanced = () => setShowAdvanced((v) => !v);
@@ -500,7 +501,7 @@ export function AdFormProvider({ adId, onSuccess, children }: { adId?: string; o
                 setPayment({
                     chequeOn: true,
                     terms: (pmOld.cheque as any[])
-                        .map((c) => ({ _uid: termUid(), days: c.days || 30, price: c.price || 0 }))
+                        .map((c) => ({ days: c.days || 30, price: c.price || 0 }))
                         .sort((a: any, b: any) => a.days - b.days),
                     note: pmOld.chequeDescription || '',
                     installment: pmOld.installment || [],
@@ -509,8 +510,8 @@ export function AdFormProvider({ adId, onSuccess, children }: { adId?: string; o
             } else {
                 setPayment({ chequeOn: false, terms: [], note: '', installment: pmOld?.installment || [], installmentDescription: pmOld?.installmentDescription || '' });
             }
-            // ✅ اگه گزینه‌های پیشرفته پر شده، آکاردئون باز باشه
-            if (ad.consumerPrice > 0 || ad.volumeTiers?.length > 0 || ad.giftPrice > 0) {
+            // ✅ اگه گزینه‌های پیشرفته پر شده، آکاردئون باز باشه (قیمت مصرف‌کننده حالا بیرون آکاردئونه)
+            if (ad.volumeTiers?.length > 0 || ad.giftPrice > 0) {
                 setShowAdvanced(true);
             }
         }
@@ -553,12 +554,15 @@ export function AdFormProvider({ adId, onSuccess, children }: { adId?: string; o
                     errs.push(`حداقل حجم فروش نمی‌تواند بیشتر از ${constraints.max.toLocaleString('fa-IR')} ${unitName} باشد.`);
                 if (formData.consumerPrice > 0 && formData.singleUnitPrice > 0 &&
                     formData.consumerPrice < formData.singleUnitPrice)
-                    errs.push('قیمت مصرف‌کننده نمی‌تواند از قیمت عمده کمتر باشد.');
+                    errs.push('قیمت مصرف‌کننده نمی‌تواند از قیمت عمده تکی کمتر باشد.');
             } else {
                 if (formData.unitPrice <= 0) errs.push('قیمت را وارد کن.');
                 // ✅ قیمت تکی در تک‌فروشی هم اجباری — با پر کردن قیمت، از روی واحد محاسبه می‌شود
                 if (formData.singleUnitPrice <= 0) errs.push('قیمت تکی را وارد کن.');
             }
+            // ✅ چک‌ها — هر ردیف باید سررسید معتبر داشته باشد
+            if (payment.chequeOn && payment.terms.some((t) => !t.days || t.days <= 0))
+                errs.push('برای هر چک، سررسید (روز) را مشخص کن.');
         } else if (step === 3) {
             if (!formData.cityCode) errs.push('محل کالا را انتخاب کن.');
         }
@@ -599,16 +603,20 @@ export function AdFormProvider({ adId, onSuccess, children }: { adId?: string; o
             let adResultId: string = '';
 
             // ✅ شرایط پرداخت چکی — همان shape مدل قدیمی (سازگار با نمایش جزئیات آگهی)
-            // سررسید دلخواه مجاز؛ ردیف‌های بی‌روز حذف؛ روزهای تکراری ادغام (قیمتِ صریح مقدم است)
-            const chequeMap = new Map<number, number>();
-            for (const t of [...payment.terms].sort((a, b) => a.days - b.days)) {
-                if (t.days <= 0) continue;
-                const price = t.price > 0 ? t.price : formData.unitPrice;
-                if (!chequeMap.has(t.days) || t.price > 0) chequeMap.set(t.days, price);
-            }
-            const paymentData = payment.chequeOn && chequeMap.size > 0 ? {
+            // ردیف‌های بی‌سررسید حذف، روز تکراری ادغام (مبلغ صریح مقدم)، مرتب بر اساس روز
+            const chequeRows = payment.terms
+                .filter((t) => t.days > 0)
+                .reduce<{ days: number; price: number }[]>((acc, t) => {
+                    const dup = acc.find((x) => x.days === t.days);
+                    if (!dup) acc.push({ days: t.days, price: t.price });
+                    else if (t.price > 0 && dup.price <= 0) dup.price = t.price;
+                    return acc;
+                }, [])
+                .sort((a, b) => a.days - b.days);
+            // installment قدیمی حفظ می‌شه تا داده‌های اقساطی آگهی‌های قبلی موقع ویرایش از بین نره
+            const paymentData = chequeRows.length > 0 ? {
                 description: '',
-                cheque: Array.from(chequeMap.entries()).map(([days, price]) => ({ days, price })),
+                cheque: chequeRows.map((t) => ({ days: t.days, price: t.price > 0 ? t.price : formData.unitPrice })),
                 chequeDescription: payment.note.trim() || '',
                 installment: payment.installment || [],
                 installmentDescription: payment.installmentDescription || '',
@@ -720,7 +728,7 @@ export function AdFormProvider({ adId, onSuccess, children }: { adId?: string; o
         patchForm, selectProduct, selectUnit,
         handleSingleUnitPriceChange, handleUnitPriceChange, handleUnitQtyChange,
         openImagePicker, removeImage, addImageFile, imageInputRef,
-        setChequeOn, toggleChequeTerm, addCustomTerm, setTermDays, setTermPrice, removeTerm, setChequeNote,
+        setChequeOn, toggleChequeTerm, setTermPrice, addTerm, updateTermAt, setChequeNote,
         toggleAdvanced,
         nextStep, prevStep, goToStep, validateStep,
         unitModalOpen, setUnitModalOpen, catModalOpen, setCatModalOpen,

@@ -36,9 +36,8 @@ export interface AdFormValues {
     validityHours: number;
 }
 
-/** سررسید چک — _uid فقط هویت داخلی فرم است (روز قابل ویرایش) و موقع ثبت حذف می‌شود */
+/** سررسید چک — روز/مبلغ هر ردیف جدا قابل ویرایش */
 export interface ChequeTerm {
-    _uid: string;
     days: number;
     price: number;
 }

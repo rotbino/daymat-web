@@ -1,5 +1,7 @@
 // app/ad/form/StepPricing.tsx
-// ✅ مرحله ۲: قیمت — دو شکلی (عمده/تک) + چک + آکاردئون گزینه‌های پیشرفته
+// ✅ مرحله ۲: قیمت — چیدمان جمع‌وجور برای کاربر عمده‌فروش:
+//    ۱) حجم فروش و موجودی کنار هم  ۲) کارت‌های «قیمت عمده تکی ↔ قیمت هر واحد» با هم‌محاسبهٔ دوجانبه
+//    ۳) قیمت تکی مصرف‌کننده زیرشان (با سود خرید)  ۴) گزینه‌های بیشتر  ۵) مدت اعتبار قیمت (باکس مستقل)  ۶) شرایط پرداخت — آخر
 
 'use client';
 
@@ -16,7 +18,6 @@ export function StepPricing() {
     const {
         isWholesale, formData, patchForm, unitName, baseUnitTitle,
         handleSingleUnitPriceChange, handleUnitPriceChange, liveProfit,
-        showAdvanced, toggleAdvanced, advancedActiveCount,
     } = useAdForm();
 
     return (
@@ -37,33 +38,59 @@ export function StepPricing() {
 
             {isWholesale ? (
                 <>
-                    <section className="rounded-2xl bg-surface-container-low/60 border border-outline-variant/30 p-4 space-y-2.5">
+                    {/* ۱ — حجم فروش و موجودی، کنار هم */}
+                    <section className="rounded-2xl bg-surface-container-low/60 border border-outline-variant/30 p-4 space-y-3">
                         <label className="text-xs font-bold text-on-surface flex items-center gap-1.5">
-                            <StepBadge n={1} /> حداقل حجم فروش ({unitName}) <span className="text-error">*</span>
+                            <StepBadge n={1} /> حجم فروش و موجودی
                         </label>
-                        <NumberInput value={formData.minQuantity || undefined}
-                                     onChange={(val) => patchForm({ minQuantity: val || 0 })}
-                                     unit={unitName} className="w-full h-14 font-extrabold" />
+                        <div className="grid grid-cols-2 gap-3">
+                            <div className="space-y-1.5">
+                                <p className="text-[10px] text-on-surface-variant/70">
+                                    حداقل حجم فروش ({unitName}) <span className="text-error">*</span>
+                                </p>
+                                <NumberInput value={formData.minQuantity || undefined}
+                                             onChange={(val) => patchForm({ minQuantity: val || 0 })}
+                                             unit={unitName} className="w-full h-12 font-extrabold" />
+                            </div>
+                            <div className="space-y-1.5">
+                                <p className="text-[10px] text-on-surface-variant/70">
+                                    موجودی تضمینی ({unitName}) <span className="text-error">*</span>
+                                </p>
+                                <NumberInput value={formData.availableQuantity || undefined}
+                                             onChange={(val) => patchForm({ availableQuantity: val || 0 })}
+                                             unit={unitName} className="w-full h-12 font-extrabold" />
+                            </div>
+                        </div>
                     </section>
-                    <section className="rounded-2xl bg-surface-container-low/60 border border-outline-variant/30 p-4 space-y-2.5">
+
+                    {/* ۲ — کارت‌های قیمت: ورود هرکدام، دیگری را حساب می‌کند */}
+                    <section className="rounded-2xl bg-surface-container-low/60 border border-outline-variant/30 p-4 space-y-3">
                         <label className="text-xs font-bold text-on-surface flex items-center gap-1.5">
-                            <StepBadge n={2} /> قیمت تکی (هر {baseUnitTitle}) <span className="text-error">*</span>
+                            <StepBadge n={2} /> قیمت عمده
                         </label>
-                        <p className="text-[10px] text-on-surface-variant/60">
-                            قیمت واحد خرید مصرف‌کننده — با پر کردن قیمت {unitName} خودکار حساب می‌شود
-                        </p>
-                        <NumberInput value={formData.singleUnitPrice || undefined}
-                                     onChange={handleSingleUnitPriceChange}
-                                     unit={`${CURRENCY}/${baseUnitTitle}`} className="w-full h-12" />
-                    </section>
-                    <section className="rounded-2xl bg-surface-container-low/60 border border-primary/35 ring-1 ring-primary/10 p-4 space-y-2.5">
-                        <label className="text-xs font-bold text-on-surface flex items-center gap-1.5">
-                            <StepBadge n={3} /> قیمت هر {unitName} (واحد فروش عمده) <span className="text-error">*</span>
-                        </label>
-                        <NumberInput value={formData.unitPrice || undefined}
-                                     onChange={handleUnitPriceChange}
-                                     unit={CURRENCY} className="w-full h-14 text-xl font-extrabold" />
-                        {formData.singleUnitPrice > 0 && formData.unitQty && (
+                        <div className="grid grid-cols-2 gap-3">
+                            <div className="space-y-1.5">
+                                <p className="text-[10px] text-on-surface-variant/70">
+                                    قیمت عمده تکی <span className="text-error">*</span>
+                                </p>
+                                <NumberInput value={formData.singleUnitPrice || undefined}
+                                             onChange={handleSingleUnitPriceChange}
+                                             unit={`${CURRENCY}/${baseUnitTitle}`}
+                                             className="w-full h-14 text-lg font-extrabold" />
+                                <p className="text-[9px] text-on-surface-variant/50">قیمت هر {baseUnitTitle}</p>
+                            </div>
+                            <div className="space-y-1.5">
+                                <p className="text-[10px] text-on-surface-variant/70">
+                                    قیمت هر {unitName} <span className="text-error">*</span>
+                                </p>
+                                <NumberInput value={formData.unitPrice || undefined}
+                                             onChange={handleUnitPriceChange}
+                                             unit={CURRENCY}
+                                             className="w-full h-14 text-lg font-extrabold ring-2 ring-primary/20 rounded-xl" />
+                                <p className="text-[9px] text-on-surface-variant/50">یک {unitName} کامل — قیمت اصلی فروش</p>
+                            </div>
+                        </div>
+                        {formData.singleUnitPrice > 0 && formData.unitQty && formData.unitQty > 1 && (
                             <div className="flex items-center gap-2 text-[11px] text-primary bg-primary/[0.05] border border-primary/15 rounded-lg px-3 py-2">
                                 <Info className="w-3.5 h-3.5 flex-shrink-0" />
                                 <span>
@@ -72,20 +99,34 @@ export function StepPricing() {
                             </div>
                         )}
                     </section>
+
+                    {/* ۳ — قیمت تکی مصرف‌کننده — زیر کارت‌های قیمت */}
                     <section className="rounded-2xl bg-surface-container-low/60 border border-outline-variant/30 p-4 space-y-2.5">
                         <label className="text-xs font-bold text-on-surface flex items-center gap-1.5">
-                            <StepBadge n={4} /> موجودی تضمینی ({unitName}) <span className="text-error">*</span>
+                            <StepBadge n={3} /> قیمت تکی مصرف‌کننده
+                            <span className="text-on-surface-variant/50 text-[10px] font-medium">(اختیاری)</span>
                         </label>
-                        <NumberInput value={formData.availableQuantity || undefined}
-                                     onChange={(val) => patchForm({ availableQuantity: val || 0 })}
-                                     unit={unitName} className="w-full h-12" />
+                        <p className="text-[10px] text-on-surface-variant/60 leading-4">
+                            اگر می‌خواهید خریدار سود خرید را مشاهده کند، قیمت مصرف‌کننده را وارد کنید.
+                        </p>
+                        <NumberInput value={formData.consumerPrice || undefined}
+                                     onChange={(val) => patchForm({ consumerPrice: val || 0 })}
+                                     unit={`${CURRENCY}/${baseUnitTitle}`} className="w-full h-12" />
+                        {liveProfit !== null && (
+                            liveProfit < 0
+                                ? <div className="flex items-center gap-2 text-[11px] font-medium text-error bg-error/[0.06] border border-error/15 rounded-lg px-3 py-2"><AlertTriangle className="w-3.5 h-3.5 flex-shrink-0" /><span>قیمت مصرف‌کننده از قیمت عمده تکی کمتر است!</span></div>
+                                : <div className="flex items-center gap-2 text-[11px] font-medium text-emerald-700 bg-emerald-50 dark:bg-emerald-900/10 border border-emerald-500/15 rounded-lg px-3 py-2"><TrendingUp className="w-3.5 h-3.5 flex-shrink-0" /><span>سود خرید برای مشتری از هر {baseUnitTitle}: <b>{liveProfit.toLocaleString('fa-IR')}</b> {CURRENCY}</span></div>
+                        )}
                     </section>
 
-                    {/* ✅ شرایط پرداخت — چک (اختیاری، جمع‌وجور) — هم برای عمده هم تک */}
-                    <ChequeSection />
-
-                    {/* ✅ گزینه‌های بیشتر — آکاردئون برای کوتاه نگه‌داشتن فرم */}
+                    {/* ۴ — گزینه‌های بیشتر — همه قیمتی‌اند */}
                     <AdvancedAccordion />
+
+                    {/* ۵ — مدت اعتبار قیمت — باکس مستقل */}
+                    <ValiditySection />
+
+                    {/* ۶ — شرایط پرداخت — باکس مستقل */}
+                    <ChequeSection />
                 </>
             ) : (
                 <>
@@ -127,7 +168,9 @@ export function StepPricing() {
                                      onChange={(val) => patchForm({ availableQuantity: val || 0 })}
                                      unit={unitName} className="w-full h-12" />
                     </section>
-                    {/* ✅ شرایط پرداخت — چک در تک‌فروشی هم */}
+                    {/* ۵ — مدت اعتبار قیمت — باکس مستقل */}
+                    <ValiditySection />
+                    {/* ۶ — شرایط پرداخت — چک در تک‌فروشی هم */}
                     <ChequeSection />
                 </>
             )}
@@ -135,11 +178,11 @@ export function StepPricing() {
     );
 }
 
-// ✅ آکاردئون گزینه‌های پیشرفته — قیمت مصرف‌کننده + تخفیف حجمی + اشانتیون
+// ✅ آکاردئون گزینه‌های بیشتر — تخفیف حجمی + اشانتیون (قیمت مصرف‌کننده بیرون آمد)
 function AdvancedAccordion() {
     const {
         showAdvanced, toggleAdvanced, advancedActiveCount,
-        formData, patchForm, baseUnitTitle, unitName, liveProfit,
+        formData, patchForm, baseUnitTitle, unitName,
     } = useAdForm();
 
     return (
@@ -149,7 +192,7 @@ function AdvancedAccordion() {
                 <span className="text-xs font-bold text-on-surface flex items-center gap-1.5">
                     <Info className="w-3.5 h-3.5 text-primary" />
                     گزینه‌های بیشتر
-                    <span className="text-[10px] font-medium text-on-surface-variant/60">(تخفیف حجمی، اشانتیون، قیمت مصرف‌کننده)</span>
+                    <span className="text-[10px] font-medium text-on-surface-variant/60">(تخفیف حجمی، اشانتیون)</span>
                 </span>
                 <span className="flex items-center gap-2">
                     {advancedActiveCount > 0 && (
@@ -162,21 +205,6 @@ function AdvancedAccordion() {
             </button>
             {showAdvanced && (
             <div className="px-3 pb-3 pt-1 space-y-3 border-t border-outline-variant/15 animate-in fade-in duration-200">
-                <section className="rounded-2xl bg-surface-container-low/60 border border-outline-variant/30 p-4 space-y-2.5">
-                    <label className="text-xs font-bold text-on-surface flex items-center gap-1.5">
-                        قیمت تکی مصرف‌کننده
-                    </label>
-                    <p className="text-[10px] text-on-surface-variant/60">سود خریدار عمده از این محاسبه می‌شود</p>
-                    <NumberInput value={formData.consumerPrice || undefined}
-                                 onChange={(val) => patchForm({ consumerPrice: val || 0 })}
-                                 unit={`${CURRENCY}/${baseUnitTitle}`} className="w-full h-12" />
-                    {liveProfit !== null && (
-                        liveProfit < 0
-                            ? <div className="flex items-center gap-2 text-[11px] font-medium text-error bg-error/[0.06] border border-error/15 rounded-lg px-3 py-2"><AlertTriangle className="w-3.5 h-3.5 flex-shrink-0" /><span>قیمت مصرف‌کننده از قیمت عمده کمتر است!</span></div>
-                            : <div className="flex items-center gap-2 text-[11px] font-medium text-emerald-700 bg-emerald-50 dark:bg-emerald-900/10 border border-emerald-500/15 rounded-lg px-3 py-2"><TrendingUp className="w-3.5 h-3.5 flex-shrink-0" /><span>سود خریدار عمده از هر {baseUnitTitle}: <b>{liveProfit.toLocaleString('fa-IR')}</b> {CURRENCY}</span></div>
-                    )}
-                </section>
-
                 {/* ✅ تخفیف حجمی */}
                 <section className="rounded-2xl bg-surface-container-low/60 border border-outline-variant/30 p-4 space-y-2.5">
                     <div className="flex items-center justify-between">
@@ -230,36 +258,42 @@ function AdvancedAccordion() {
                 </section>
             </div>
             )}
-
-            {/* ✅ مدت اعتبار قیمت — یادآوری آپدیت قیمت به خودت (آگهی در بازار می‌ماند) */}
-            <section className="rounded-2xl bg-surface-container-low/60 border border-outline-variant/30 p-4 space-y-2.5">
-                <SectionTitle icon={Timer} text="مدت اعتبار قیمت" />
-                <p className="text-[10px] text-on-surface-variant/60 -mt-1.5">
-                    بعد از این مدت یادت میاریم که قیمت رو تازه کنی — خریدار باید قیمت روز ببینه
-                </p>
-                <div className="grid grid-cols-5 gap-1.5">
-                    {VALIDITY_OPTIONS.map((opt) => {
-                        const active = formData.validityHours === opt.hours;
-                        return (
-                            <button key={opt.hours} type="button"
-                                    onClick={() => patchForm({ validityHours: opt.hours })}
-                                    aria-pressed={active}
-                                    className={cn('h-10 rounded-xl text-[11px] font-bold transition-colors border',
-                                        active
-                                            ? 'bg-primary text-on-primary border-primary'
-                                            : 'bg-surface text-on-surface-variant border-outline-variant/40 hover:border-primary/40')}>
-                                {opt.label}
-                            </button>
-                        );
-                    })}
-                </div>
-                {formData.validityHours > 0 && (
-                    <p className="text-[10px] text-on-surface-variant/50 flex items-center gap-1">
-                        <Info className="w-3 h-3" />
-                        بعد از {formData.validityHours >= 24 ? `${formData.validityHours / 24} روز` : `${formData.validityHours} ساعت`} اعلان «آپدیت قیمت» می‌گیری
-                    </p>
-                )}
-            </section>
         </div>
+    );
+}
+
+// ✅ مدت اعتبار قیمت — باکس کاملاً مستقل؛ هیچ ربطی به «گزینه‌های بیشتر» ندارد
+function ValiditySection() {
+    const { formData, patchForm } = useAdForm();
+
+    return (
+        <section className="rounded-2xl bg-surface-container-low/60 border border-outline-variant/30 p-4 space-y-2.5">
+            <SectionTitle icon={Timer} text="مدت اعتبار قیمت" />
+            <p className="text-[10px] text-on-surface-variant/60 -mt-1.5">
+                بعد از این مدت یادت میاریم که قیمت رو تازه کنی — خریدار باید قیمت روز ببینه
+            </p>
+            <div className="grid grid-cols-5 gap-1.5">
+                {VALIDITY_OPTIONS.map((opt) => {
+                    const active = formData.validityHours === opt.hours;
+                    return (
+                        <button key={opt.hours} type="button"
+                                onClick={() => patchForm({ validityHours: opt.hours })}
+                                aria-pressed={active}
+                                className={cn('h-10 rounded-xl text-[11px] font-bold transition-colors border',
+                                    active
+                                        ? 'bg-primary text-on-primary border-primary'
+                                        : 'bg-surface text-on-surface-variant border-outline-variant/40 hover:border-primary/40')}>
+                            {opt.label}
+                        </button>
+                    );
+                })}
+            </div>
+            {formData.validityHours > 0 && (
+                <p className="text-[10px] text-on-surface-variant/50 flex items-center gap-1">
+                    <Info className="w-3 h-3" />
+                    بعد از {formData.validityHours >= 24 ? `${formData.validityHours / 24} روز` : `${formData.validityHours} ساعت`} اعلان «آپدیت قیمت» می‌گیری
+                </p>
+            )}
+        </section>
     );
 }
