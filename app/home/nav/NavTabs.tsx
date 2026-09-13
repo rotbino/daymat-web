@@ -6,7 +6,7 @@ import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import { useSelector } from 'react-redux';
 import { RootState } from '@/lib/store/store';
-import { Bell, BookOpen, Store, ShoppingCart } from 'lucide-react';
+import { Bell, BookOpen, Store, ShoppingCart, User } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { useNavMode } from './useNavMode';
 import { useUnreadNotifications } from './useUnreadNotifications';
@@ -133,7 +133,8 @@ export default function NavTabs({ guestMarketSlug }: { guestMarketSlug?: string 
     const isNotifActive = !!pathname && pathname.startsWith('/notifications');
     const isProfileActive = !!pathname && pathname.startsWith('/profile');
 
-    const avatar = (user as any)?.avatarFile?.thumbnailPath || (user as any)?.avatarUrl;
+    // 🖼️ کد عکس پروفایل — کامنت شد به درخواست کاربر (آیکون جایگزین شد). برای بازگشت، این خط و بلاک JSX پایین را از کامنت خارج کن
+    // const avatar = (user as any)?.avatarFile?.thumbnailPath || (user as any)?.avatarUrl;
 
     const IconLink = ({
                           href, title, active, children, badge, ariaLabel,
@@ -142,10 +143,11 @@ export default function NavTabs({ guestMarketSlug }: { guestMarketSlug?: string 
     }) => (
         <Link href={href} aria-label={ariaLabel} title={title}
               className={cn(
-                  'relative flex-shrink-0 w-10 h-10 rounded-full grid place-items-center transition-all',
+                  'relative flex-shrink-0 w-10 h-10 rounded-full grid place-items-center transition-colors',
+                  // بدون دایرهٔ پس‌زمینه — فقط خود آیکون رنگی می‌شود (ساده و هماهنگ)
                   active
-                      ? 'text-primary bg-primary/10 ring-2 ring-primary/40'
-                      : 'text-on-surface-variant hover:text-primary hover:bg-primary/10',
+                      ? 'text-primary'
+                      : 'text-on-surface-variant hover:text-primary',
               )}>
             {children}
             {badge}
@@ -196,7 +198,13 @@ export default function NavTabs({ guestMarketSlug }: { guestMarketSlug?: string 
                         <Bell className="w-[21px] h-[21px]" />
                     </IconLink>
 
-                    {/* پروفایل */}
+                    {/* ═══ پروفایل — آیکون مثل بقیهٔ تب‌ها (حتی اگر کاربر لاگین باشد عکس نشان داده نمی‌شود) ═══ */}
+                    <IconLink href="/profile" title="پروفایل من" ariaLabel="پروفایل من"
+                              active={isProfileActive}>
+                        <User className="w-[21px] h-[21px]" />
+                    </IconLink>
+
+                    {/* ═══ نسخهٔ قبلی با عکس پروفایل کاربر — کامنت شد به درخواست کاربر؛ پاک نشده برای بازگشت احتمالی ═══
                     <Link href="/profile" aria-label="پروفایل من" title="پروفایل من"
                           className={cn(
                               'relative flex-shrink-0 w-10 h-10 rounded-full transition-all',
@@ -215,6 +223,7 @@ export default function NavTabs({ guestMarketSlug }: { guestMarketSlug?: string 
                             )}
                         </span>
                     </Link>
+                    ═══ پایان نسخهٔ عکس ═══ */}
 
                     <HeaderMenu />
                 </div>
