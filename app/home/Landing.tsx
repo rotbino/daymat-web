@@ -8,10 +8,14 @@ import { useQuery } from '@tanstack/react-query';
 import { useSelector } from 'react-redux';
 import { RootState } from '@/lib/store/store';
 import { apiService } from '@/lib/api/apiService';
-import { BookOpen, Package, Plus, Store, LogIn } from 'lucide-react';
+import { BookOpen, Package, Plus, Store, LogIn, ClipboardList } from 'lucide-react';
 
 export default function Landing() {
     const { isAuthenticated } = useSelector((s: RootState) => s.auth);
+
+    // اسکرول نرم به بخش معرفی دیوار استعلام (نوار جهت خرید در Hero)
+    const scrollToEstelamWall = () =>
+        document.getElementById('estelam-wall')?.scrollIntoView({ behavior: 'smooth', block: 'start' });
 
     // ✅ کاتالوگ‌های نمونه — عمومی، از هر صنف
     const { data } = useQuery({
@@ -75,6 +79,27 @@ export default function Landing() {
                         { 'ساخت کاتالوگ رایگان'}
                     </Link>
 
+                    {/* ✅ نوار دو جهتِ قیمت — یک هویت، یک حساب، دو جهت:
+                        درِ اصلی تنها همان دکمهٔ بالاست؛ این نوار فقط «جهت‌ها» را نشان می‌دهد
+                        تا خریدار (سوپرمارکتی، رستوران و…) خودش را در صفحه ببیند،
+                        بدون اینکه صفحه به دو محصول دو شقه بشود. */}
+                    <div className="mt-7 max-w-md mx-auto rounded-2xl border border-outline-variant/40
+                        bg-white dark:bg-gray-900 p-1.5 flex flex-col sm:flex-row items-stretch gap-1.5 text-xs">
+                        <div className="flex-1 flex items-center justify-center gap-1.5 px-4 py-2.5 rounded-xl
+                            bg-primary/5 text-primary font-bold whitespace-nowrap">
+                            <BookOpen className="w-3.5 h-3.5" />
+                            فروش می‌کنی؟ کاتالوگ قیمت
+                        </div>
+                        <button type="button" onClick={scrollToEstelamWall}
+                                className="flex-1 flex items-center justify-center gap-1.5 px-4 py-2.5 rounded-xl
+                                text-on-surface-variant font-bold hover:text-primary hover:bg-primary/5
+                                transition-colors whitespace-nowrap cursor-pointer">
+                            <ClipboardList className="w-3.5 h-3.5" />
+                            خرید می‌کنی؟ دیوار استعلام
+                            <span className="rounded-full bg-primary/10 text-primary text-[9px] px-1.5 py-0.5 leading-none font-bold">به‌زودی</span>
+                        </button>
+                    </div>
+
                     {/* ✅ لینک ورود کاربران قدیمی */}
                     {!isAuthenticated && (
                         <p className="mt-5 text-xs text-on-surface-variant">
@@ -101,6 +126,43 @@ export default function Landing() {
                             <p className="mt-1.5 text-xs text-on-surface-variant leading-6">{s.desc}</p>
                         </div>
                     ))}
+                </section>
+
+                {/* ─── ✅ به‌زودی: دیوار استعلام — سمت خرید، روی همان حساب ─── */}
+                <section id="estelam-wall" className="pb-12 scroll-mt-16">
+                    <div className="rounded-3xl border border-outline-variant/40 bg-white dark:bg-gray-900 p-6 sm:p-8">
+                        <div className="flex items-center justify-between gap-2 flex-wrap">
+                            <h2 className="text-sm sm:text-base font-extrabold text-on-surface flex items-center gap-2.5">
+                                <span className="w-9 h-9 rounded-xl bg-primary/10 flex items-center justify-center flex-shrink-0">
+                                    <ClipboardList className="w-4.5 h-4.5 text-primary" />
+                                </span>
+                                دیوار استعلام قیمت
+                            </h2>
+                            <span className="rounded-full bg-primary/10 text-primary text-[10px] font-bold px-2.5 py-1">به‌زودی در دیمت</span>
+                        </div>
+
+                        <p className="mt-4 text-xs sm:text-sm text-on-surface-variant leading-7 text-justify max-w-2xl">
+                            کاتالوگ، چیزی را که <b className="text-on-surface">می‌فروشی</b> نشان می‌دهد؛ دیوار استعلام، چیزی را که <b className="text-on-surface">می‌خری</b>.
+                            لیست خرید روزانه یا هفتگی‌ات را می‌سازی، لینکش را یک بار به تامین‌کننده‌ها می‌دهی و
+                            قیمت‌های پیشنهادی‌شان را داخل پنل همین حساب می‌گیری — بدون سایت و اپ جدا، همان دیمت.
+                        </p>
+
+                        <div className="mt-5 grid sm:grid-cols-3 gap-3">
+                            {[
+                                { n: '۱', title: 'لیست خریدت را بساز', desc: 'هر کالا با تعداد و مشخصات — از لیست روزانه تا هفتگی.' },
+                                { n: '۲', title: 'لینکش را به تامین‌کننده‌ها بده', desc: 'یک بار می‌فرستی؛ آنها هر روز نگاه می‌کنند و قیمت می‌دهند.' },
+                                { n: '۳', title: 'قیمت‌ها را در پنل خودت ببین', desc: 'پیشنهادها فقط برای تو قابل دیدن است؛ بهترین را انتخاب کن.' },
+                            ].map((s) => (
+                                <div key={s.n} className="rounded-2xl border border-outline-variant/30
+                                    bg-surface-container-low/40 dark:bg-gray-950/40 p-4">
+                                    <span className="w-7 h-7 rounded-lg bg-primary/10 text-primary text-xs font-black
+                                        flex items-center justify-center">{s.n}</span>
+                                    <h3 className="mt-2.5 text-xs font-extrabold text-on-surface">{s.title}</h3>
+                                    <p className="mt-1 text-[11px] text-on-surface-variant leading-6">{s.desc}</p>
+                                </div>
+                            ))}
+                        </div>
+                    </div>
                 </section>
 
                 {/* ─── ✅ کاتالوگ‌های نمونه ─── */}
