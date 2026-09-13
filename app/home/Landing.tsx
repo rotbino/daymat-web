@@ -1,21 +1,41 @@
 // app/home/Landing.tsx
 'use client';
 
-import React from 'react';
+import React, { useState } from 'react';
 import Link from 'next/link';
 import Image from 'next/image';
 import { useQuery } from '@tanstack/react-query';
 import { useSelector } from 'react-redux';
 import { RootState } from '@/lib/store/store';
 import { apiService } from '@/lib/api/apiService';
-import { BookOpen, Package, Plus, Store, LogIn, ClipboardList } from 'lucide-react';
+import { BookOpen, Package, Store, LogIn, Megaphone, ArrowDown } from 'lucide-react';
+
+/**
+ * لندینگ دیمت — مثل یک نقاشی ساده:
+ * «هر کسب‌وکاری دو قیمت دارد: یکی برای چیزی که می‌فروشد، یکی برای چیزی که می‌خرد.»
+ * دو محصول هم‌وزن؛ کاربر خودش تشخیص می‌دهد کدام به دردش می‌خورد و با آن شروع می‌کند
+ * (سوپرمارکت → تابلوی اعلام نیاز، شرکت پخش → کاتالوگ قیمت) —
+ * و هر کدام را که بسازد، دومی هم بعداً در پنل همین حساب در دسترس است.
+ */
+
+const CATALOG_STEPS = [
+    'کالاهایت را با عکس و قیمت وارد کن',
+    'لینک و QR اختصاصی را بین مشتری‌ها پخش کن',
+    'همیشه با قیمت به‌روز بفروش',
+];
+
+const WALL_STEPS = [
+    'نیاز خریدت را ثبت کن — کالا، تعداد، مهلت',
+    'تابلویت را برای تامین‌کننده‌ها بفرست',
+    'قیمت‌ها را بگیر و بهترین را انتخاب کن',
+];
+
+const STEP_NUMS = ['۱', '۲', '۳'];
 
 export default function Landing() {
     const { isAuthenticated } = useSelector((s: RootState) => s.auth);
-
-    // اسکرول نرم به بخش معرفی دیوار استعلام (نوار جهت خرید در Hero)
-    const scrollToEstelamWall = () =>
-        document.getElementById('estelam-wall')?.scrollIntoView({ behavior: 'smooth', block: 'start' });
+    const [wallNoticeCard, setWallNoticeCard] = useState(false);
+    const [wallNoticeBand, setWallNoticeBand] = useState(false);
 
     // ✅ کاتالوگ‌های نمونه — عمومی، از هر صنف
     const { data } = useQuery({
@@ -25,7 +45,6 @@ export default function Landing() {
     });
     const featured = data?.items ?? [];
 
-    // ✅ دو در — هر دو بعد از ورود به /my-catalogs می‌روند
     const createHref = isAuthenticated
         ? '/my-catalogs'
         : `/login?redirect=${encodeURIComponent('/my-catalogs')}`;
@@ -59,111 +78,126 @@ export default function Landing() {
             </header>
 
             <main className="max-w-5xl mx-auto px-4">
-                {/* ─── Hero ─── */}
+                {/* ─── Hero — یک جمله، مثل نقاشی ─── */}
                 <section className="pt-12 pb-8 text-center">
-                    <p className="text-[11px] font-bold tracking-[0.3em] text-primary/60 mb-3">DAYMAT — PRODUCT CATALOG</p>
+                    <p className="text-[11px] font-bold tracking-[0.3em] text-primary/60 mb-3">DAYMAT — TWO PRICE TOOLS</p>
                     <h1 className="text-2xl sm:text-4xl font-black text-on-surface leading-snug">
-                        کاتالوگ قیمت آنلاین برای کسب و کارت بساز
+                        هر کسب‌وکاری دو قیمت دارد
                     </h1>
-                    <p className="mt-4 text-sm sm:text-base text-justify text-on-surface-variant leading-8 max-w-2xl mx-auto">
-                        وقتی کاتالوگ دیمت داری، یعنی یه کاتالوگ با قیمت به روز داری که مشتری‌هات عاشقش می‌شن.
-                        کاتالوگت رو در چند دقیقه بساز و لینک اختصاصی اون رو در پیامرسان ها برای مشتری‌ها بفرست یا در بیو اینستاگرامت بزار یا کیو آر کدش رو روی کارت ویزیتت چاپ کن.
-
+                    <p className="mt-3 text-base sm:text-xl font-extrabold text-primary leading-8">
+                        یکی برای چیزی که می‌فروشد، یکی برای چیزی که می‌خرد.
                     </p>
-
-                    {/* ✅ دکمهٔ اصلی */}
-                    <Link href={createHref}
-                          className="mt-6 inline-flex items-center gap-2 h-12 px-8 rounded-xl bg-primary text-on-primary
-                          text-sm font-extrabold hover:bg-primary/90 shadow-lg shadow-primary/25 active:scale-[0.98] transition-all">
-                        <BookOpen className="w-5 h-5" />
-                        { 'ساخت کاتالوگ رایگان'}
-                    </Link>
-
-                    {/* ✅ نوار دو جهتِ قیمت — یک هویت، یک حساب، دو جهت:
-                        درِ اصلی تنها همان دکمهٔ بالاست؛ این نوار فقط «جهت‌ها» را نشان می‌دهد
-                        تا خریدار (سوپرمارکتی، رستوران و…) خودش را در صفحه ببیند،
-                        بدون اینکه صفحه به دو محصول دو شقه بشود. */}
-                    <div className="mt-7 max-w-md mx-auto rounded-2xl border border-outline-variant/40
-                        bg-white dark:bg-gray-900 p-1.5 flex flex-col sm:flex-row items-stretch gap-1.5 text-xs">
-                        <div className="flex-1 flex items-center justify-center gap-1.5 px-4 py-2.5 rounded-xl
-                            bg-primary/5 text-primary font-bold whitespace-nowrap">
-                            <BookOpen className="w-3.5 h-3.5" />
-                            فروش می‌کنی؟ کاتالوگ قیمت
-                        </div>
-                        <button type="button" onClick={scrollToEstelamWall}
-                                className="flex-1 flex items-center justify-center gap-1.5 px-4 py-2.5 rounded-xl
-                                text-on-surface-variant font-bold hover:text-primary hover:bg-primary/5
-                                transition-colors whitespace-nowrap cursor-pointer">
-                            <ClipboardList className="w-3.5 h-3.5" />
-                            خرید می‌کنی؟ دیوار استعلام
-                            <span className="rounded-full bg-primary/10 text-primary text-[9px] px-1.5 py-0.5 leading-none font-bold">به‌زودی</span>
-                        </button>
-                    </div>
-
-                    {/* ✅ لینک ورود کاربران قدیمی */}
-                    {!isAuthenticated && (
-                        <p className="mt-5 text-xs text-on-surface-variant">
-                            قبلاً کاتالوگ ساخته‌ام؟{' '}
-                            <Link href={resumeHref} className="font-bold text-primary hover:underline">
-                                ورود به کاتالوگم
-                            </Link>
-                        </p>
-                    )}
+                    <p className="mt-3 text-xs sm:text-sm text-on-surface-variant leading-7 max-w-xl mx-auto">
+                        دیمت برای هر کدام یک ابزار ساده ساخته است — تو انتخاب کن کدام به دردت می‌خورد.
+                    </p>
                 </section>
 
-                {/* ─── سه فایدهٔ کوتاه ─── */}
-                <section className="grid sm:grid-cols-3 gap-3 pb-10">
-                    {[
-                        { icon: BookOpen, title: 'ساخت در چند دقیقه', desc: 'نام کاتالوگ، آدرس اختصاصی، و اولین کالاها — همین.' },
-                        { icon: Package, title: 'کالاها با عکس و قیمت', desc: 'هر کالا اعتبار قیمت دارد؛ کاتالوگت همیشه تازه می‌ماند.' },
-                        { icon: Plus, title: 'لینک و QR اختصاصی', desc: 'برای بیوی اینستاگرام، واتساپ مشتری‌ها، و ویترین مغازه.' },
-                    ].map((s) => (
-                        <div key={s.title} className="rounded-2xl border border-outline-variant/40 bg-white dark:bg-gray-900 p-5">
-                            <div className="w-10 h-10 rounded-xl bg-primary/10 flex items-center justify-center mb-3">
-                                <s.icon className="w-5 h-5 text-primary" />
+                {/* ─── دو محصول هم‌وزن — کاربر خودش انتخاب می‌کند ─── */}
+                <section className="grid sm:grid-cols-2 gap-4 pb-4">
+                    {/* ۱) کاتالوگ قیمت — ابزار فروش */}
+                    <div className="rounded-3xl border border-outline-variant/40 bg-white dark:bg-gray-900 p-6 flex flex-col">
+                        <div className="flex items-start justify-between">
+                            <div className="w-12 h-12 rounded-2xl bg-primary/10 flex items-center justify-center">
+                                <BookOpen className="w-6 h-6 text-primary" />
                             </div>
-                            <h3 className="text-sm font-extrabold text-on-surface">{s.title}</h3>
-                            <p className="mt-1.5 text-xs text-on-surface-variant leading-6">{s.desc}</p>
+                            <span className="rounded-full bg-primary/10 text-primary text-[10px] font-bold px-2.5 py-1">برای فروش</span>
                         </div>
-                    ))}
-                </section>
-
-                {/* ─── ✅ به‌زودی: دیوار استعلام — سمت خرید، روی همان حساب ─── */}
-                <section id="estelam-wall" className="pb-12 scroll-mt-16">
-                    <div className="rounded-3xl border border-outline-variant/40 bg-white dark:bg-gray-900 p-6 sm:p-8">
-                        <div className="flex items-center justify-between gap-2 flex-wrap">
-                            <h2 className="text-sm sm:text-base font-extrabold text-on-surface flex items-center gap-2.5">
-                                <span className="w-9 h-9 rounded-xl bg-primary/10 flex items-center justify-center flex-shrink-0">
-                                    <ClipboardList className="w-4.5 h-4.5 text-primary" />
-                                </span>
-                                دیوار استعلام قیمت
-                            </h2>
-                            <span className="rounded-full bg-primary/10 text-primary text-[10px] font-bold px-2.5 py-1">به‌زودی در دیمت</span>
-                        </div>
-
-                        <p className="mt-4 text-xs sm:text-sm text-on-surface-variant leading-7 text-justify max-w-2xl">
-                            کاتالوگ، چیزی را که <b className="text-on-surface">می‌فروشی</b> نشان می‌دهد؛ دیوار استعلام، چیزی را که <b className="text-on-surface">می‌خری</b>.
-                            لیست خرید روزانه یا هفتگی‌ات را می‌سازی، لینکش را یک بار به تامین‌کننده‌ها می‌دهی و
-                            قیمت‌های پیشنهادی‌شان را داخل پنل همین حساب می‌گیری — بدون سایت و اپ جدا، همان دیمت.
+                        <h3 className="mt-4 text-lg font-black text-on-surface">کاتالوگ قیمت</h3>
+                        <p className="mt-1.5 text-xs text-on-surface-variant leading-6">
+                            کالاهایت را با عکس و قیمتِ به‌روز نشان بده؛ مشتری همیشه لیست تازه داشته باشد.
                         </p>
 
-                        <div className="mt-5 grid sm:grid-cols-3 gap-3">
-                            {[
-                                { n: '۱', title: 'لیست خریدت را بساز', desc: 'هر کالا با تعداد و مشخصات — از لیست روزانه تا هفتگی.' },
-                                { n: '۲', title: 'لینکش را به تامین‌کننده‌ها بده', desc: 'یک بار می‌فرستی؛ آنها هر روز نگاه می‌کنند و قیمت می‌دهند.' },
-                                { n: '۳', title: 'قیمت‌ها را در پنل خودت ببین', desc: 'پیشنهادها فقط برای تو قابل دیدن است؛ بهترین را انتخاب کن.' },
-                            ].map((s) => (
-                                <div key={s.n} className="rounded-2xl border border-outline-variant/30
-                                    bg-surface-container-low/40 dark:bg-gray-950/40 p-4">
-                                    <span className="w-7 h-7 rounded-lg bg-primary/10 text-primary text-xs font-black
-                                        flex items-center justify-center">{s.n}</span>
-                                    <h3 className="mt-2.5 text-xs font-extrabold text-on-surface">{s.title}</h3>
-                                    <p className="mt-1 text-[11px] text-on-surface-variant leading-6">{s.desc}</p>
-                                </div>
+                        <div className="mt-5 flex flex-col">
+                            {CATALOG_STEPS.map((t, i) => (
+                                <React.Fragment key={t}>
+                                    {i > 0 && (
+                                        <div className="flex justify-center py-1">
+                                            <ArrowDown className="w-3.5 h-3.5 text-on-surface-variant/40" />
+                                        </div>
+                                    )}
+                                    <div className="flex items-center gap-2.5 rounded-xl bg-surface-container-low/50
+                                        dark:bg-gray-950/40 px-3.5 py-2.5">
+                                        <span className="w-6 h-6 rounded-lg bg-primary/10 text-primary text-[11px] font-black
+                                            flex items-center justify-center flex-shrink-0">{STEP_NUMS[i]}</span>
+                                        <p className="text-[11px] font-bold text-on-surface leading-5">{t}</p>
+                                    </div>
+                                </React.Fragment>
                             ))}
                         </div>
+
+                        <div className="mt-4 flex flex-wrap gap-1.5">
+                            {['عمده‌فروش و پخش', 'تولیدکننده', 'فروشگاه'].map((a) => (
+                                <span key={a} className="rounded-full border border-outline-variant/40 px-2.5 py-1 text-[10px] text-on-surface-variant">
+                                    {a}
+                                </span>
+                            ))}
+                        </div>
+
+                        <Link href={createHref}
+                              className="mt-5 h-11 flex items-center justify-center gap-2 rounded-xl bg-primary text-on-primary
+                              text-sm font-extrabold hover:bg-primary/90 shadow-lg shadow-primary/25 active:scale-[0.98] transition-all">
+                            <BookOpen className="w-4.5 h-4.5" /> ساخت کاتالوگ رایگان
+                        </Link>
+                    </div>
+
+                    {/* ۲) تابلوی اعلام نیاز — ابزار خرید */}
+                    <div className="rounded-3xl border border-outline-variant/40 bg-white dark:bg-gray-900 p-6 flex flex-col">
+                        <div className="flex items-start justify-between">
+                            <div className="w-12 h-12 rounded-2xl bg-primary/10 flex items-center justify-center">
+                                <Megaphone className="w-6 h-6 text-primary" />
+                            </div>
+                            <span className="rounded-full bg-primary/10 text-primary text-[10px] font-bold px-2.5 py-1">برای خرید</span>
+                        </div>
+                        <h3 className="mt-4 text-lg font-black text-on-surface">تابلوی اعلام نیاز</h3>
+                        <p className="mt-1.5 text-xs text-on-surface-variant leading-6">
+                            آنچه می‌خری را اعلام کن؛ تامین‌کننده‌ها قیمت بدهند، تو بهترین را انتخاب کن.
+                        </p>
+
+                        <div className="mt-5 flex flex-col">
+                            {WALL_STEPS.map((t, i) => (
+                                <React.Fragment key={t}>
+                                    {i > 0 && (
+                                        <div className="flex justify-center py-1">
+                                            <ArrowDown className="w-3.5 h-3.5 text-on-surface-variant/40" />
+                                        </div>
+                                    )}
+                                    <div className="flex items-center gap-2.5 rounded-xl bg-surface-container-low/50
+                                        dark:bg-gray-950/40 px-3.5 py-2.5">
+                                        <span className="w-6 h-6 rounded-lg bg-primary/10 text-primary text-[11px] font-black
+                                            flex items-center justify-center flex-shrink-0">{STEP_NUMS[i]}</span>
+                                        <p className="text-[11px] font-bold text-on-surface leading-5">{t}</p>
+                                    </div>
+                                </React.Fragment>
+                            ))}
+                        </div>
+
+                        <div className="mt-4 flex flex-wrap gap-1.5">
+                            {['سوپرمارکت و فروشگاه', 'رستوران و کافه', 'کارگاه و سازمان'].map((a) => (
+                                <span key={a} className="rounded-full border border-outline-variant/40 px-2.5 py-1 text-[10px] text-on-surface-variant">
+                                    {a}
+                                </span>
+                            ))}
+                        </div>
+
+                        <button type="button" onClick={() => setWallNoticeCard(true)}
+                                className="mt-5 h-11 flex items-center justify-center gap-2 rounded-xl bg-primary text-on-primary
+                                text-sm font-extrabold hover:bg-primary/90 shadow-lg shadow-primary/25 active:scale-[0.98]
+                                transition-all cursor-pointer">
+                            <Megaphone className="w-4.5 h-4.5" />
+                            ساخت تابلوی اعلام نیاز
+                            <span className="rounded-full bg-white/20 text-[9px] px-1.5 py-0.5 leading-none font-bold">به‌زودی</span>
+                        </button>
+                        {wallNoticeCard && (
+                            <p className="mt-3 rounded-xl border border-primary/20 bg-primary/5 px-3.5 py-2.5 text-[11px] text-on-surface leading-5">
+                                در حال آماده‌سازی است — به‌زودی در پنل دیمت فعال می‌شود. فعلاً حساب‌ات را بساز تا اولین استفاده‌کننده‌اش باشی.
+                            </p>
+                        )}
                     </div>
                 </section>
+
+                <p className="text-center text-[11px] text-on-surface-variant pb-10 leading-6">
+                    هر دو با یک حساب دیمت ساخته می‌شوند — با هر کدام شروع کنی، دومی هم همیشه در پنل خودت در دسترس است.
+                </p>
 
                 {/* ─── ✅ کاتالوگ‌های نمونه ─── */}
                 <section className="pb-12">
@@ -219,18 +253,31 @@ export default function Landing() {
                 {/* ─── باند CTA پایانی ─── */}
                 <section className="pb-16">
                     <div className="rounded-3xl bg-gradient-to-l from-primary/10 via-primary/5 to-transparent border border-primary/20 p-8 text-center">
-                        <h2 className="text-lg font-extrabold text-on-surface">کاتالوگت را همین حالا بساز</h2>
-                        <p className="mt-2 text-xs text-on-surface-variant leading-6">رایگان، بدون کارمزد، با لینک اختصاصی برای اشتراک‌گذاری</p>
-                        <Link href={createHref}
-                              className="mt-5 inline-flex items-center gap-2 h-12 px-8 rounded-xl bg-primary text-on-primary
-                              text-sm font-extrabold hover:bg-primary/90 shadow-lg shadow-primary/25 active:scale-[0.98] transition-all">
-                            <BookOpen className="w-5 h-5" /> ساخت کاتالوگ رایگان
-                        </Link>
+                        <h2 className="text-lg font-extrabold text-on-surface">از کدام شروع می‌کنی؟</h2>
+                        <div className="mt-5 flex flex-col sm:flex-row items-center justify-center gap-3">
+                            <Link href={createHref}
+                                  className="h-12 px-8 inline-flex items-center gap-2 rounded-xl bg-primary text-on-primary
+                                  text-sm font-extrabold hover:bg-primary/90 shadow-lg shadow-primary/25 active:scale-[0.98] transition-all">
+                                <BookOpen className="w-5 h-5" /> کاتالوگ قیمت
+                            </Link>
+                            <button type="button" onClick={() => setWallNoticeBand(true)}
+                                    className="h-12 px-8 inline-flex items-center gap-2 rounded-xl border-2 border-primary/40 text-primary
+                                    text-sm font-extrabold hover:bg-primary/5 transition-colors cursor-pointer">
+                                <Megaphone className="w-5 h-5" /> تابلوی اعلام نیاز
+                                <span className="rounded-full bg-primary/10 text-[9px] px-1.5 py-0.5 leading-none font-bold">به‌زودی</span>
+                            </button>
+                        </div>
+                        {wallNoticeBand && (
+                            <p className="mt-4 text-[11px] text-on-surface leading-5 max-w-md mx-auto
+                                rounded-xl border border-primary/20 bg-white/60 dark:bg-gray-900/60 px-3.5 py-2.5">
+                                در حال آماده‌سازی است — به‌زودی در پنل دیمت فعال می‌شود. فعلاً حساب‌ات را بساز تا اولین استفاده‌کننده‌اش باشی.
+                            </p>
+                        )}
 
                         {!isAuthenticated && (
                             <p className="mt-4 text-xs text-on-surface-variant">
-                                قبلاً کاتالوگ ساخته‌ام؟{' '}
-                                <Link href={resumeHref} className="font-bold text-primary hover:underline">ورود به کاتالوگم</Link>
+                                قبلاً عضو دیمت هستم؟{' '}
+                                <Link href={resumeHref} className="font-bold text-primary hover:underline">ورود به حسابم</Link>
                             </p>
                         )}
                     </div>
