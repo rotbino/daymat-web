@@ -14,12 +14,14 @@ import { toast } from 'sonner';
 import {
     User, Pencil, Key, CreditCard, TrendingUp, Moon, Sun,
     Info, FileText, Lightbulb, LogOut, Wallet, ArrowLeft,
-    Gift, Copy, BadgeCheck,
+    Gift, Copy, BadgeCheck, Building2, ChevronLeft, Plus,
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import NavTabs from '@/app/home/nav/NavTabs';
 import EditProfileModal from '@/app/[slug]/components/EditProfileModal';
 import { ChangePasswordModal } from '@/components/register/ChangePasswordModal';
+import { useMyBusinesses } from '@/lib/api/apiHooks';
+import { BusinessLogo } from '@/app/business/manage/components/BusinessLogo';
 
 export default function ProfilePage() {
     const router = useRouter();
@@ -37,6 +39,10 @@ export default function ProfilePage() {
         queryFn: () => apiService.credit.getBalance(),
         staleTime: 60_000,
     });
+
+    // ─── کسب‌وکارهای من — باکس مدیریت کسب‌وکار (فقط قابل‌ویرایش‌ها) ───
+    const { data: myBizData, isLoading: myBizLoading } = useMyBusinesses();
+    const myBusinesses: any[] = (myBizData?.items ?? []).filter((b: any) => b.canEdit);
 
     React.useEffect(() => {
         const mq = window.matchMedia('(prefers-color-scheme: dark)');
@@ -142,6 +148,69 @@ export default function ProfilePage() {
                             text-on-surface-variant hover:text-primary hover:border-primary/40 transition-colors flex-shrink-0">
                         <Pencil className="w-3.5 h-3.5" /> ویرایش
                     </button>
+                </div>
+
+                {/* ═══ کارت کسب‌وکارها — مدیریت کسب‌وکار، بالای دعوت ═══ */}
+                <div className="bg-white dark:bg-gray-900 rounded-2xl border border-outline-variant/50 dark:border-gray-700 p-4 space-y-3">
+                    <div className="flex items-center gap-2.5">
+                        <span className="w-9 h-9 rounded-xl bg-primary/15 flex items-center justify-center flex-shrink-0">
+                            <Building2 className="w-4.5 h-4.5 text-primary" />
+                        </span>
+                        <div className="flex-1 min-w-0">
+                            <p className="text-sm font-extrabold text-on-surface">کسب‌وکار من</p>
+                            <p className="text-[10px] text-on-surface-variant/70 mt-0.5">
+                                مشخصات، کاتالوگ‌ها و تیک اعتماد کسب‌وکارت را از یک‌جا مدیریت کن.
+                            </p>
+                        </div>
+                    </div>
+
+                    {myBizLoading ? (
+                        <div className="h-[52px] rounded-xl bg-surface-container-low dark:bg-gray-800 animate-pulse" />
+                    ) : myBusinesses.length > 0 ? (
+                        <div className="space-y-2">
+                            {myBusinesses.slice(0, 3).map((b) => (
+                                <button
+                                    key={b.id}
+                                    type="button"
+                                    onClick={() => router.push(`/business/manage?id=${b.id}`)}
+                                    className="w-full flex items-center gap-3 rounded-xl border border-outline-variant/40 dark:border-gray-700/70 p-2.5 hover:border-primary/40 active:scale-[0.99] transition-all text-right"
+                                >
+                                    <BusinessLogo logoUrl={b.logoUrl} name={b.name} className="w-9 h-9 rounded-lg" />
+                                    <span className="flex-1 min-w-0">
+                                        <span className="block text-xs font-bold text-on-surface truncate">{b.name}</span>
+                                        <span className="block text-[10px] text-on-surface-variant/70 mt-0.5">
+                                            {[
+                                                b.city || b.province,
+                                                (b._count?.catalogs ?? 0) > 0
+                                                    ? `${(b._count?.catalogs ?? 0).toLocaleString('fa-IR')} کاتالوگ`
+                                                    : null,
+                                            ]
+                                                .filter(Boolean)
+                                                .join(' · ') || 'مشاهده و ویرایش مشخصات'}
+                                        </span>
+                                    </span>
+                                    <ChevronLeft className="w-4 h-4 text-on-surface-variant/40 flex-shrink-0" />
+                                </button>
+                            ))}
+                            {myBusinesses.length > 3 && (
+                                <button
+                                    type="button"
+                                    onClick={() => router.push('/business/manage')}
+                                    className="w-full text-center text-[10px] font-bold text-primary py-1 hover:underline"
+                                >
+                                    و {(myBusinesses.length - 3).toLocaleString('fa-IR')} کسب‌وکار دیگر…
+                                </button>
+                            )}
+                        </div>
+                    ) : (
+                        <button
+                            type="button"
+                            onClick={() => router.push('/business/register')}
+                            className="w-full h-10 rounded-xl bg-primary text-on-primary text-xs font-extrabold flex items-center justify-center gap-2 hover:bg-primary/90 active:scale-[0.98] transition-all shadow-sm shadow-primary/25"
+                        >
+                            <Plus className="w-4 h-4" /> ثبت کسب‌وکار
+                        </button>
+                    )}
                 </div>
 
                 {/* ═══ کارت دعوت — بالای کیف، جای خودش ═══ */}

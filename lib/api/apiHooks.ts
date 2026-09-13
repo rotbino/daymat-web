@@ -1032,6 +1032,58 @@ export const useUpdateBusinessEntity = () => {
     });
 };
 
+// ✅ جزئیات کامل کسب‌وکار — صفحهٔ مدیریت کسب‌وکار (با کاتالوگ‌ها، تیم و زمینه‌های فعالیت)
+export const useBusinessDetail = (id?: string | null) => {
+    return useQuery({
+        queryKey: ['business-detail', id],
+        queryFn: () => apiService.business.getOne(id!),
+        enabled: !!id,
+        staleTime: 30_000,
+    });
+};
+
+// ✅ ویرایش جزئی کسب‌وکار (ویرایش درجهای با مداد) — بدون توست خودکار؛ فراخوانی‌کننده بازخورد میدهد
+export const useUpdateBusinessDetail = () => {
+    const queryClient = useQueryClient();
+    return useMutation({
+        mutationFn: ({ id, data }: { id: string; data: any }) => apiService.business.update(id, data),
+        onSuccess: (_res, vars) => {
+            queryClient.invalidateQueries({ queryKey: ['business-detail', vars.id] });
+            queryClient.invalidateQueries({ queryKey: ['businesses-entity'] });
+        },
+        onError: (error: ApiError) => toast.error(error.message || 'خطا در ذخیره'),
+    });
+};
+
+// ✅ زمینه‌های فعالیت — جایگزینی کامل
+export const useSetBusinessActivities = () => {
+    const queryClient = useQueryClient();
+    return useMutation({
+        mutationFn: ({ id, activityIds }: { id: string; activityIds: string[] }) =>
+            apiService.business.setActivities(id, activityIds),
+        onSuccess: (_res, vars) => {
+            queryClient.invalidateQueries({ queryKey: ['business-detail', vars.id] });
+            queryClient.invalidateQueries({ queryKey: ['businesses-entity'] });
+            toast.success('زمینه‌های فعالیت به‌روزرسانی شد');
+        },
+        onError: (error: ApiError) => toast.error(error.message || 'خطا در ذخیره زمینه‌های فعالیت'),
+    });
+};
+
+// ✅ ارسال مدارک تیک اعتماد کسب‌وکار
+export const useRequestBusinessVerification = () => {
+    const queryClient = useQueryClient();
+    return useMutation({
+        mutationFn: ({ id, data }: { id: string; data: Parameters<typeof apiService.business.requestVerification>[1] }) =>
+            apiService.business.requestVerification(id, data),
+        onSuccess: (_res, vars) => {
+            queryClient.invalidateQueries({ queryKey: ['business-detail', vars.id] });
+            queryClient.invalidateQueries({ queryKey: ['business-verify-status', vars.id] });
+        },
+        onError: (error: ApiError) => toast.error(error.message || 'خطا در ارسال مدارک'),
+    });
+};
+
 // ============================================================
 // ARM-ADMIN: MEMBERSHIPS — فروشندگان و خریداران بازار (دو-مرحله‌ای)
 // ============================================================

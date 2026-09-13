@@ -83,6 +83,27 @@ export const apiService = {
 
         delete: (id: string): Promise<any> =>
             apiRequest(`/business/${id}`, { method: 'DELETE' }),
+
+        // ✅ زمینه‌های فعالیت — جایگزینی کامل لیست (صفحهٔ مدیریت کسب‌وکار)
+        setActivities: (id: string, activityIds: string[]): Promise<{ success: boolean; count: number }> =>
+            apiRequest(`/business/${id}/activities`, { method: 'PUT', data: { activityIds } }),
+
+        // ✅ تیک اعتماد کسب‌وکار — ارسال مدارک
+        requestVerification: (id: string, data: {
+            level: 'blue' | 'silver' | 'gold';
+            nationalId: string;
+            nationalCardFileId?: string;
+            licenseFileIds?: string[];
+            awardFileIds?: string[];
+        }): Promise<{ success: boolean; message: string }> =>
+            apiRequest(`/business/${id}/verify`, { method: 'POST', data }),
+
+        // ✅ وضعیت تیک اعتماد — آخرین درخواست
+        getVerificationStatus: (id: string): Promise<{
+            verificationStatus: string;
+            verificationTier: string;
+            latest?: { id: string; tier: string; status: string; notes?: string; submittedAt?: string; reviewedAt?: string } | null;
+        }> => apiRequest(`/business/${id}/verify/status`),
     },
 
     // ============================================================
