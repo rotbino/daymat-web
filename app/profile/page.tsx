@@ -47,12 +47,22 @@ export default function ProfilePage() {
     // کاتالوگ‌های خرید هر کسب‌وکار — شمارش کنار کاتالوگ‌های فروش (محصول دوم)
     const { data: myInqData } = useMyInquiries();
     const inquiryCountByBiz = useMemo(() => {
+        // ⚠️ useMyInquiries آرایه را مستقیم برمی‌گرداند (نه {items}) — قبلاً myInqData?.items می‌گرفتیم → همیشه صفر
+        const items = (myInqData ?? []) as any[];
         const map: Record<string, number> = {};
-        ((myInqData?.items ?? []) as any[]).forEach((w: any) => {
+        items.forEach((w: any) => {
             if (w.businessId) map[w.businessId] = (map[w.businessId] || 0) + 1;
         });
+        // فال‌بک برای کاتالوگ‌های خریدِ قدیمی بدون businessId — اگر کاربر فقط یک کسب‌وکار قابل‌مدیریت دارد،
+        // شمارش‌شان به همان کسب‌وکار اضافه می‌شود تا پروفایل، کاتالوگ خرید را نشان دهد
+        const orphanCount = items.filter((w: any) => !w.businessId).length;
+        if (orphanCount > 0 && myBusinesses.length === 1) {
+            const onlyId = myBusinesses[0].id;
+            map[onlyId] = (map[onlyId] || 0) + orphanCount;
+        }
         return map;
-    }, [myInqData]);
+        // eslint-disable-next-line react-hooks/exhaustive-deps
+    }, [myInqData, myBusinesses.length]);
 
     React.useEffect(() => {
         const mq = window.matchMedia('(prefers-color-scheme: dark)');

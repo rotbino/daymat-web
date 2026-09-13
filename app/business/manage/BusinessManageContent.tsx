@@ -156,6 +156,23 @@ export default function BusinessManageContent() {
         return { percent, items: checks.map(({ key, label, ok }) => ({ key, label, ok })) };
     }, [detail]);
 
+    // ✅ کاتالوگ‌های خریدِ همین کسب‌وکار — ⚠️ قواعد هوک‌ها: این useMemo باید «قبل از» returnهای شرطی باشد
+    // (قبلاً بعد از آن‌ها بود → خطای ترتیب هوک‌ها هنگام لود)
+    const businessInquiries = useMemo(() => {
+        // ⚠️ useMyInquiries آرایه را مستقیم برمی‌گرداند (نه {items}) — قبلاً myInqData?.items می‌گرفتیم → همیشه خالی
+        const items = (myInqData ?? []) as any[];
+        const bizId = detail?.id || currentId;
+        if (!bizId) return [] as any[];
+        const attached = items.filter((w: any) => w.businessId === bizId);
+        // فال‌بک برای کاتالوگ‌های خریدِ قدیمی بدون businessId (ساخته‌شده قبل از قابلیت اتصال):
+        // اگر کاربر فقط همین یک کسب‌وکار قابل‌مدیریت دارد، این‌ها هم اینجا نمایش داده می‌شوند تا گم نشوند
+        const orphans = items.filter((w: any) => !w.businessId);
+        if (orphans.length > 0 && businesses.length === 1 && businesses[0].id === bizId) {
+            return [...attached, ...orphans];
+        }
+        return attached;
+    }, [myInqData, detail?.id, currentId, businesses]);
+
     // پرش از چک‌لیست به بخش مربوطه
     const jump = (key: string) => {
         const map: Record<string, { ref: string; edit?: string; modal?: 'logo' | 'activities' | 'location' }> = {
@@ -248,12 +265,6 @@ export default function BusinessManageContent() {
     const activities = (detail?.activities || []).map((a: any) => a?.activity).filter(Boolean);
     const members = detail?.members || [];
     const tierColor = TIER_COLOR[detail?.verificationTier || ''] || 'text-emerald-500';
-
-    // کاتالوگ‌های خریدِ همین کسب‌وکار (بعد از مشخص‌شدن detail فیلتر می‌شود)
-    const businessInquiries = useMemo(
-        () => ((myInqData?.items ?? []) as any[]).filter((w: any) => w.businessId && w.businessId === (detail?.id || currentId)),
-        [myInqData, detail?.id, currentId],
-    );
 
     // کارت‌های ستون کنار (دسکتاپ) — در موبایل هم در جایشان تکرار می‌شوند
     const completenessCard = (
