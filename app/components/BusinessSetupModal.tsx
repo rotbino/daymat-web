@@ -341,7 +341,7 @@ export default function BusinessSetupModal({ isOpen, onClose, business, onSaved 
                     </div>
 
                     {/* نوع کسب‌وکار — درخت دو سطحی (همسان با فرم ویرایش) — چیپ‌های قدیمی حذف شد */}
-                    <section className="rounded-2xl bg-surface-container-low/60 border border-outline-variant/30 p-4 space-y-2">
+                    <section className="space-y-2">
                         <SectionTitle icon={Layers} text="نوع فعالیت" />
                         <BusinessTypeSelector
                             sector={businessSector}

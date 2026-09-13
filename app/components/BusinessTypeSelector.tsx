@@ -98,10 +98,10 @@ export default function BusinessTypeSelector({
                                     text-on-surface-variant hover:text-primary hover:bg-primary/10 transition-colors">
                             <ArrowRight className="w-4 h-4" />
                         </button>
-                        <span className="flex-shrink-0 px-3 py-1.5 rounded-full text-[11px] font-extrabold
+                      {/*  <span className="flex-shrink-0 px-3 py-1.5 rounded-full text-[11px] font-extrabold
                                 bg-primary text-on-primary">
                             {sectorData?.label}
-                        </span>
+                        </span>*/}
                         <span className="w-px h-6 bg-outline-variant/40 dark:bg-gray-700 flex-shrink-0" />
                         <div className="flex-1 flex items-center gap-1.5 overflow-x-auto scrollbar-slim">
                             {roleOptions.map((r) => (

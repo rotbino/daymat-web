@@ -32,27 +32,7 @@ export const CATALOG_ROLES = [
 // ✅ sector بیشتر برای فیلتر و دسته‌بندی استفاده می‌شه
 //
 export const BUSINESS_TYPE = [
-    {
-        id: "manufacturing",
-        label: "تولید و صنعت",
-        children: [
-            { id: "raw_material", label: "تولیدکننده مواد اولیه" },
-            { id: "parts", label: "تولیدکننده قطعات/اجزا" },
-            { id: "final_product", label: "تولیدکننده محصول نهایی" },
-            { id: "packaging", label: "بسته‌بندی و تکمیل محصول" },
-        ],
-    },
-    {
-        id: "trade",
-        label: "بازرگانی و تجارت",
-        children: [
-            { id: "importer", label: "واردکننده" },
-            { id: "exporter", label: "صادرکننده" },
-            { id: "importer_exporter", label: "واردات و صادرات" },
-            { id: "trading_house", label: "خانه بازرگانی" },
-            { id: "agent", label: "نمایندگی فروش" },
-        ],
-    },
+
     {
         id: "distribution",
         label: "توزیع، پخش و واسطه‌گری",
@@ -85,6 +65,27 @@ export const BUSINESS_TYPE = [
             { id: "digital", label: "خدمات دیجیتال" },
             { id: "training", label: "آموزش" },
             { id: "other_services", label: "سایر خدمات" },
+        ],
+    },
+    {
+        id: "manufacturing",
+        label: "تولید و صنعت",
+        children: [
+            { id: "raw_material", label: "تولیدکننده مواد اولیه" },
+            { id: "parts", label: "تولیدکننده قطعات/اجزا" },
+            { id: "final_product", label: "تولیدکننده محصول نهایی" },
+            { id: "packaging", label: "بسته‌بندی و تکمیل محصول" },
+        ],
+    },
+    {
+        id: "trade",
+        label: "بازرگانی و تجارت",
+        children: [
+            { id: "importer", label: "واردکننده" },
+            { id: "exporter", label: "صادرکننده" },
+            { id: "importer_exporter", label: "واردات و صادرات" },
+            { id: "trading_house", label: "خانه بازرگانی" },
+            { id: "agent", label: "نمایندگی فروش" },
         ],
     },
 ] as const;

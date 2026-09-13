@@ -2,7 +2,7 @@
 // 🔗 لینک کاتالوگ‌های این کسب‌وکار — کپی و مشاهده + ساخت کاتالوگ جدید
 'use client';
 
-import React from 'react';
+import React, {useState} from 'react';
 import Link from 'next/link';
 import { BookOpen, Copy, ExternalLink, Plus, Check, Store } from 'lucide-react';
 import { toast } from 'sonner';
