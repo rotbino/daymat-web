@@ -8,7 +8,7 @@ import { toast } from 'sonner';
 import {
     LibraryBig, Building2, Loader2, ArrowRight, AlertTriangle, Globe, Lock,
 } from 'lucide-react';
-import { useCreateCatalog, useBusinessSearch, useCataloges } from '@/lib/api/apiHooks';
+import { useCreateCatalog, useBusinessSearch, useCataloges, useMyBusinesses } from '@/lib/api/apiHooks';
 import { USER_POSITIONS } from '@/lib/api/data-types';
 import { RootState } from '@/lib/store/store';
 import { setCurrentCatalog } from '@/lib/store/slices/catalogSlice';
@@ -44,13 +44,32 @@ export default function RegisterCatalogPage() {
         ).get('bizId') || undefined,
     );
     const [selectedBizOverride, setSelectedBizOverride] = useState<any>(null);
+    // ✅ همگام‌سازی دیرهنگام bizId — اگر در ناوبری نرم، initializer قبل از به‌روز شدن URL اجرا شود
+    const bizIdRef = useRef(bizId);
+    bizIdRef.current = bizId;
+    useEffect(() => {
+        const sync = () => {
+            const q = new URLSearchParams(window.location.search).get('bizId') || undefined;
+            if (q && q !== bizIdRef.current) setBizId(q);
+        };
+        sync();
+        const t = setTimeout(sync, 400);
+        window.addEventListener('popstate', sync);
+        return () => { clearTimeout(t); window.removeEventListener('popstate', sync); };
+    }, []);
     const deepBizQ = useBusinessSearch(
         useMemo(() => ({ ids: bizId || undefined, limit: 1 }), [bizId]),
         !!bizId && !selectedBizOverride,
     );
+    // ✅ پشتیبانِ دیپ‌لینک: اگر جستجوی عمومی جواب نداد (خطای موقت/بک‌اند قدیمی/فیلتر وضعیت)،
+    //    همان کسب‌وکار از «کسب‌وکارهای من» پیدا و خودکار انتخاب می‌شود
+    const myBizQ = useMyBusinesses(!!bizId && !selectedBizOverride);
+    const deepLinkResolved = !!bizId && !selectedBizOverride && !deepBizQ.isFetching && !myBizQ.isFetching;
     const selectedBiz = selectedBizOverride
         ?? deepBizQ.data?.items?.find((b: any) => b.id === bizId)
+        ?? (myBizQ.data?.items ?? []).find((b: any) => b.id === bizId)
         ?? null;
+    const deepLinkMiss = deepLinkResolved && !selectedBiz;
 
     const [refCode] = useState<string | undefined>(() =>
         new URLSearchParams(
@@ -200,7 +219,7 @@ export default function RegisterCatalogPage() {
             <main className="flex-1 w-full max-w-lg mx-auto px-4 pt-5 pb-[100px]">
                 {/* ═══ سلکتور کسب‌وکار — تنها آیتم صفحه تا وقتی انتخاب نشده ═══ */}
                 <section className="mb-5">
-                    {bizId && !selectedBiz && deepBizQ.isFetching ? (
+                    {bizId && !selectedBiz && (deepBizQ.isFetching || myBizQ.isFetching) ? (
                         /* دیپ‌لینک از مدیریت کسب‌وکار — تا واکشی تمام شود، کاربر نباید چیزی انتخاب کند */
                         <div className="rounded-xl border border-primary/30 bg-primary/5 px-3.5 py-3 flex items-center gap-2.5">
                             <Loader2 className="w-4 h-4 animate-spin text-primary flex-shrink-0" />
@@ -209,6 +228,12 @@ export default function RegisterCatalogPage() {
                     ) : (
                         <>
                             <BusinessSelector value={selectedBiz} onChange={handleBizChange} error={errors.biz} />
+                            {deepLinkMiss && (
+                                <p className="mt-2 text-[11px] text-amber-600 dark:text-amber-400 flex items-center gap-1.5 px-1">
+                                    <AlertTriangle className="w-3.5 h-3.5 flex-shrink-0" />
+                                    کسب‌وکار با شناسهٔ لینک پیدا نشد — لطفاً دستی انتخابش کن.
+                                </p>
+                            )}
                             {!selectedBiz && (
                                 <p className="mt-2.5 text-[11px] leading-5 text-on-surface-variant/70">
                                     اگر کسب‌وکارت قبلاً توسط همکاران یا صاحب کسب‌وکار ثبت شده، فقط انتخابش کن.
