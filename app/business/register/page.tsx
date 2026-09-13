@@ -6,9 +6,9 @@ import { useRouter } from 'next/navigation';
 import { useSelector, useDispatch } from 'react-redux';
 import { toast } from 'sonner';
 import {
-    LibraryBig, Building2, Loader2, ArrowRight, AlertTriangle, Globe, Lock,
+    LibraryBig, Building2, Loader2, ArrowRight, AlertTriangle, Globe, Lock, BadgeCheck,
 } from 'lucide-react';
-import { useCreateCatalog, useBusinessSearch, useCataloges, useMyBusinesses } from '@/lib/api/apiHooks';
+import { useCreateCatalog, useBusinessSearch, useCataloges, useMyBusinesses, useMyBusinessMembership } from '@/lib/api/apiHooks';
 import { USER_POSITIONS } from '@/lib/api/data-types';
 import { RootState } from '@/lib/store/store';
 import { setCurrentCatalog } from '@/lib/store/slices/catalogSlice';
@@ -80,10 +80,24 @@ export default function RegisterCatalogPage() {
     // ─── نقش کاربر در کسب‌وکار — تک‌منبع: USER_POSITIONS در data-types ───
     const [positionRole, setPositionRole] = useState('');      // value از USER_POSITIONS
     const [positionOther, setPositionOther] = useState('');    // فقط وقتی «سایر»
-    const POSITION_OTHER_VALUE = '10';
+    // ✅ مقدار «سایر» از خودِ لیست خوانده می‌شود — هم‌راستا با data-types
+    const POSITION_OTHER_VALUE = USER_POSITIONS.find((p) => p.label === 'سایر')?.value ?? '8';
     const effectivePosition = positionRole
         ? (positionRole === POSITION_OTHER_VALUE ? positionOther.trim() : (USER_POSITIONS.find((p) => p.value === positionRole)?.label || ''))
         : '';
+
+    // ✅ نقشِ از قبل مشخص‌شده در تیم کسب‌وکار — دیگر پرسیده نمی‌شود (تک‌منبع: تیم کسب‌وکار)
+    const membershipQ = useMyBusinessMembership(selectedBiz?.id, !!selectedBiz);
+    const [positionFromTeam, setPositionFromTeam] = useState(false);
+    useEffect(() => {
+        const pos = (membershipQ.data?.position || '').trim();
+        if (!pos) { setPositionFromTeam(false); return; }
+        const matched = USER_POSITIONS.find((p) => p.label === pos);
+        setPositionRole(matched?.value || POSITION_OTHER_VALUE);
+        setPositionOther(matched ? '' : pos);
+        setPositionFromTeam(true);
+        // eslint-disable-next-line react-hooks/exhaustive-deps
+    }, [membershipQ.data]);
 
     const [catalogName, setCatalogName] = useState('');
     const [nameDirty, setNameDirty] = useState(false);
@@ -198,6 +212,10 @@ export default function RegisterCatalogPage() {
             setCatalogName('');
             setSlug('');
         }
+        // نقشِ کسب‌وکار تازه — از تیمِ همان کسب‌وکار خوانده می‌شود
+        setPositionRole('');
+        setPositionOther('');
+        setPositionFromTeam(false);
     };
 
     const busy = createCatalogMutation.isPending;
@@ -248,32 +266,49 @@ export default function RegisterCatalogPage() {
                 {/* ═══ سایر آیتم‌های کاتالوگ — فقط بعد از انتخاب/ثبت کسب‌وکار ═══ */}
                 {selectedBiz && (
                 <form onSubmit={handleSubmit} className="space-y-5">
-                    {/* ═══ ۲) نقش شما در کسب‌وکار — تک‌منبع: USER_POSITIONS ═══ */}
+                    {/* ═══ ۲) نقش شما در کسب‌وکار — اگر در تیم کسب‌وکار قبلاً مشخص شده، فقط نمایش داده می‌شود ═══ */}
                     <section className="space-y-1.5">
                         <SectionTitle n={2} title={`نقش شما در «${shortName(selectedBiz.name, 18)}»`} />
-                        <div className="flex flex-wrap gap-1.5">
-                            {USER_POSITIONS.map((p) => (
-                                <button key={p.value} type="button"
-                                        onClick={() => { setPositionRole(p.value); setErrors((prev) => ({ ...prev, position: '' })); }}
-                                        className={cn(
-                                            'px-3 py-1.5 rounded-full text-[11px] font-medium border transition-colors',
-                                            positionRole === p.value
-                                                ? 'border-primary bg-primary/10 text-primary'
-                                                : 'border-outline-variant/40 dark:border-gray-700 text-on-surface-variant hover:border-primary/40',
-                                        )}>
-                                    {p.label}
-                                </button>
-                            ))}
-                        </div>
-                        {positionRole === POSITION_OTHER_VALUE && (
-                            <input type="text" value={positionOther} maxLength={60} autoFocus
-                                   onChange={(e) => { setPositionOther(e.target.value); setErrors((p) => ({ ...p, position: '' })); }}
-                                   placeholder="نقشت در شرکت چیه؟ مثلا: مدیر فروش شعبه مرکزی"
-                                   className={cn(
-                                       'w-full h-11 px-3.5 text-sm text-right rounded-xl bg-surface-container-lowest border',
-                                       'focus:ring-2 focus:ring-primary/20 focus:border-primary outline-none transition-all',
-                                       errors.position ? 'border-error' : 'border-outline-variant/40 dark:border-gray-700',
-                                   )} />
+                        {positionFromTeam ? (
+                            <div className="rounded-xl border border-primary/25 bg-primary/5 px-3.5 py-3 flex items-center gap-2.5">
+                                <BadgeCheck className="w-4.5 h-4.5 text-primary flex-shrink-0" />
+                                <div className="flex-1 min-w-0">
+                                    <p className="text-[12px] font-bold text-on-surface">{effectivePosition}</p>
+                                    <p className="text-[10px] text-on-surface-variant/70 mt-0.5">
+                                        از تیم کسب‌وکار — برای تغییر، از مدیریت کسب‌وکار بخش «تیم کاری»
+                                    </p>
+                                </div>
+                                {membershipQ.data?.role === 'admin' && (
+                                    <span className="text-[9px] font-extrabold text-primary bg-primary/15 rounded-full px-2 py-1 flex-shrink-0">مدیر کسب‌وکار</span>
+                                )}
+                            </div>
+                        ) : (
+                            <>
+                                <div className="flex flex-wrap gap-1.5">
+                                    {USER_POSITIONS.map((p) => (
+                                        <button key={p.value} type="button"
+                                                onClick={() => { setPositionRole(p.value); setErrors((prev) => ({ ...prev, position: '' })); }}
+                                                className={cn(
+                                                    'px-3 py-1.5 rounded-full text-[11px] font-medium border transition-colors',
+                                                    positionRole === p.value
+                                                        ? 'border-primary bg-primary/10 text-primary'
+                                                        : 'border-outline-variant/40 dark:border-gray-700 text-on-surface-variant hover:border-primary/40',
+                                                )}>
+                                            {p.label}
+                                        </button>
+                                    ))}
+                                </div>
+                                {positionRole === POSITION_OTHER_VALUE && (
+                                    <input type="text" value={positionOther} maxLength={60} autoFocus
+                                           onChange={(e) => { setPositionOther(e.target.value); setErrors((p) => ({ ...p, position: '' })); }}
+                                           placeholder="نقشت در شرکت چیه؟ مثلا: مدیر فروش شعبه مرکزی"
+                                           className={cn(
+                                               'w-full h-11 px-3.5 text-sm text-right rounded-xl bg-surface-container-lowest border',
+                                               'focus:ring-2 focus:ring-primary/20 focus:border-primary outline-none transition-all',
+                                               errors.position ? 'border-error' : 'border-outline-variant/40 dark:border-gray-700',
+                                           )} />
+                                )}
+                            </>
                         )}
                         {errors.position && (
                             <p className="text-[10px] text-error flex items-center gap-1.5 px-1"><AlertTriangle className="w-3 h-3 flex-shrink-0" /> {errors.position}</p>

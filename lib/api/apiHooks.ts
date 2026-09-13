@@ -1070,6 +1070,74 @@ export const useSetBusinessActivities = () => {
     });
 };
 
+// ─── تیم کاری کسب‌وکار — دو سطح نقش (سیستمی admin/member + نقش شرکتی) ───
+
+// ✅ عضویت من در کسب‌وکار — فرم ثبت کاتالوگ: نقش شرکتیِ از قبل مشخص شده دوباره پرسیده نمی‌شود
+export const useMyBusinessMembership = (businessId?: string | null, enabled = true) => {
+    return useQuery({
+        queryKey: ['business-my-membership', businessId],
+        queryFn: () => apiService.business.getMyMembership(businessId!),
+        enabled: !!businessId && enabled,
+        staleTime: 60_000,
+    });
+};
+
+// ✅ لیست تیم کاری — فقط مدیر (صفحهٔ مدیریت کسب‌وکار)
+export const useBusinessMembers = (businessId?: string | null, enabled = true) => {
+    return useQuery({
+        queryKey: ['business-members', businessId],
+        queryFn: () => apiService.business.listMembers(businessId!),
+        enabled: !!businessId && enabled,
+        staleTime: 30_000,
+    });
+};
+
+// ✅ افزودن عضو با شماره موبایل
+export const useAddBusinessMember = () => {
+    const queryClient = useQueryClient();
+    return useMutation({
+        mutationFn: ({ id, data }: { id: string; data: { phone: string; position?: string; role?: 'admin' | 'member' } }) =>
+            apiService.business.addMember(id, data),
+        onSuccess: (_res, vars) => {
+            queryClient.invalidateQueries({ queryKey: ['business-members', vars.id] });
+            queryClient.invalidateQueries({ queryKey: ['business-detail', vars.id] });
+            toast.success('عضو جدید به تیم کسب‌وکار اضافه شد');
+        },
+        onError: (error: ApiError) => toast.error(error.message || 'خطا در افزودن عضو'),
+    });
+};
+
+// ✅ ویرایش عضو — نقش شرکتی/سیستمی (memberId=me برای خود)
+export const useUpdateBusinessMember = () => {
+    const queryClient = useQueryClient();
+    return useMutation({
+        mutationFn: ({ id, memberId, data }: { id: string; memberId: string; data: { position?: string; role?: 'admin' | 'member' } }) =>
+            apiService.business.updateMember(id, memberId, data),
+        onSuccess: (_res, vars) => {
+            queryClient.invalidateQueries({ queryKey: ['business-members', vars.id] });
+            queryClient.invalidateQueries({ queryKey: ['business-detail', vars.id] });
+            queryClient.invalidateQueries({ queryKey: ['business-my-membership', vars.id] });
+            queryClient.invalidateQueries({ queryKey: ['businesses-entity'] });
+        },
+        onError: (error: ApiError) => toast.error(error.message || 'خطا در ویرایش عضو'),
+    });
+};
+
+// ✅ حذف عضو از تیم
+export const useRemoveBusinessMember = () => {
+    const queryClient = useQueryClient();
+    return useMutation({
+        mutationFn: ({ id, memberId }: { id: string; memberId: string }) =>
+            apiService.business.removeMember(id, memberId),
+        onSuccess: (_res, vars) => {
+            queryClient.invalidateQueries({ queryKey: ['business-members', vars.id] });
+            queryClient.invalidateQueries({ queryKey: ['business-detail', vars.id] });
+            toast.success('عضو از تیم کسب‌وکار حذف شد');
+        },
+        onError: (error: ApiError) => toast.error(error.message || 'خطا در حذف عضو'),
+    });
+};
+
 // ✅ ارسال مدارک تیک اعتماد کسب‌وکار
 export const useRequestBusinessVerification = () => {
     const queryClient = useQueryClient();

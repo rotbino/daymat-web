@@ -2,14 +2,14 @@
 'use client';
 
 import React, { useEffect, useRef, useState } from 'react';
-import { Building2, Camera, Loader2, X, Check, Layers, AlertTriangle, SearchCheck } from 'lucide-react';
+import { Building2, Camera, Loader2, X, Check, Layers, AlertTriangle, SearchCheck, UserCog } from 'lucide-react';
 import Image from 'next/image';
 import { createPortal } from 'react-dom';
 import { toast } from 'sonner';
 import { cn } from '@/lib/utils';
 import { useCreateBusinessEntity, useUpdateBusinessEntity, useUploadFile } from '@/lib/api/apiHooks';
 import { apiService } from '@/lib/api/apiService';
-import { getLegacyTypeFromRole } from '@/lib/api/data-types';
+import { getLegacyTypeFromRole, USER_POSITIONS } from '@/lib/api/data-types';
 import { IranLocationSelector } from '@/app/components/IranLocationSelector';
 import IndustryAutocomplete from '@/app/components/IndustryAutocomplete';
 import BusinessTypeSelector from '@/app/components/BusinessTypeSelector';
@@ -29,7 +29,11 @@ interface BusinessEntityLite {
     cityCode?: string | null;
     phone?: string | null;
     logoUrl?: string | null;
+    position?: string | null; // ✅ نقش شرکتی خودِ کاربر در این کسب‌وکار (از تیم کسب‌وکار)
 }
+
+// ✅ مقدارِ گزینهٔ «سایر» — از خودِ لیست خوانده می‌شود تا با data-types همیشه هم‌راستا بماند
+const POSITION_OTHER_VALUE = USER_POSITIONS.find((p) => p.label === 'سایر')?.value ?? '8';
 
 interface Props {
     isOpen: boolean;
@@ -53,6 +57,14 @@ export default function BusinessSetupModal({ isOpen, onClose, business, onSaved 
     const [provinceLabel, setProvinceLabel] = useState('');
     const [cityCode, setCityCode] = useState('');
     const [cityLabel, setCityLabel] = useState('');
+
+    // ─── نقش شما در کسب‌وکار — تک‌منبع: USER_POSITIONS (نقش شرکتی روی تیم کسب‌وکار ثبت می‌شود) ───
+    const [positionRole, setPositionRole] = useState('');
+    const [positionOther, setPositionOther] = useState('');
+    const initialPositionRef = useRef<string>('');
+    const effectivePosition = positionRole
+        ? (positionRole === POSITION_OTHER_VALUE ? positionOther.trim() : (USER_POSITIONS.find((p) => p.value === positionRole)?.label || ''))
+        : '';
 
     // ─── لوگو (ویرایش) — آپلود با model=Business → بک‌اند Business.logoUrl را sync می‌کند ───
     const [currentLogoUrl, setCurrentLogoUrl] = useState<string | null>(null);
@@ -82,6 +94,12 @@ export default function BusinessSetupModal({ isOpen, onClose, business, onSaved 
         setDupCandidates(null);
         setDupChecking(false);
         setErrors({});
+        // نقش شرکتی ذخیره‌شدهٔ کاربر در این کسب‌وکار (اگر قبلاً مشخص شده)
+        const savedPos = (business?.position || '').trim();
+        const matched = USER_POSITIONS.find((p) => p.label === savedPos);
+        setPositionRole(savedPos ? (matched?.value || POSITION_OTHER_VALUE) : '');
+        setPositionOther(savedPos && !matched ? savedPos : '');
+        initialPositionRef.current = savedPos;
     }, [isOpen, business]);
 
     // پیش‌نمایش لوگوی تازه
@@ -128,6 +146,8 @@ export default function BusinessSetupModal({ isOpen, onClose, business, onSaved 
         if (!businessSector) e.bizType = 'دسته‌بندی کسب‌وکار را انتخاب کن';
         else if (!businessRole) e.bizType = 'نوع فعالیت را انتخاب کن';
         if (!provinceCode) e.location = 'انتخاب موقعیت الزامی است';
+        if (!positionRole) e.position = 'نقشت را در این کسب‌وکار انتخاب کن';
+        else if (positionRole === POSITION_OTHER_VALUE && !positionOther.trim()) e.position = 'نقشت در شرکت را بنویس';
         setErrors(e);
         return Object.keys(e).length === 0;
     };
@@ -170,10 +190,16 @@ export default function BusinessSetupModal({ isOpen, onClose, business, onSaved 
                 city: cityLabel,
                 cityCode,
             };
+            // ✅ نقش شرکتی ثبت‌کننده — روی تیم کسب‌وکار (BusinessMember) ثبت می‌شود
+            if (!isEdit) payload.position = effectivePosition;
             if (!isEdit && dupCandidates) payload.force = true; // ✅ کاربر صریحاً ثبتِ جدید را انتخاب کرده
             const res = isEdit
                 ? await updateMut.mutateAsync({ id: business!.id!, data: payload })
                 : await createMut.mutateAsync(payload);
+            // ✅ ویرایش: تغییر نقش شرکتیِ خود کاربر — بعد از ذخیرهٔ موفق کسب‌وکار، روی عضویتش اعمال می‌شود
+            if (isEdit && effectivePosition && effectivePosition !== initialPositionRef.current) {
+                await apiService.business.updateMember(business!.id!, 'me', { position: effectivePosition }).catch(() => {});
+            }
             // اگر بک‌اند هم هشدار تکراری داد (بدون همگام‌سازی با UI) — لیست را نشان بده
             if (!isEdit && (res as any)?.duplicateWarning) {
                 setDupCandidates((res as any).candidates ?? []);
@@ -351,6 +377,37 @@ export default function BusinessSetupModal({ isOpen, onClose, business, onSaved 
                             label=""
                         />
                         {errors.bizType && <p className="text-error text-[11px]">{errors.bizType}</p>}
+                    </section>
+
+                    {/* ✅ نقش شما در کسب‌وکار — نقش شرکتی (مالک، مدیرعامل، مدیر فروش…) روی تیم کسب‌وکار ثبت می‌شود */}
+                    <section className="space-y-2">
+                        <SectionTitle icon={UserCog} text="نقش شما در کسب‌وکار" />
+                        <div className="flex flex-wrap gap-1.5">
+                            {USER_POSITIONS.map((p) => (
+                                <button key={p.value} type="button"
+                                        onClick={() => { setPositionRole(p.value); setErrors((prev) => ({ ...prev, position: '' })); }}
+                                        className={cn(
+                                            'px-3 py-1.5 rounded-full text-[11px] font-medium border transition-colors',
+                                            positionRole === p.value
+                                                ? 'border-primary bg-primary/10 text-primary'
+                                                : 'border-outline-variant/40 dark:border-gray-700 text-on-surface-variant hover:border-primary/40',
+                                        )}>
+                                    {p.label}
+                                </button>
+                            ))}
+                        </div>
+                        {positionRole === POSITION_OTHER_VALUE && (
+                            <input type="text" value={positionOther} maxLength={60}
+                                   onChange={(e) => { setPositionOther(e.target.value); setErrors((p) => ({ ...p, position: '' })); }}
+                                   placeholder="نقشت در شرکت چیه؟ مثلا: مدیر فروش شعبه مرکزی"
+                                   className={inputCls(errors.position)} />
+                        )}
+                        {errors.position && <p className="text-error text-[11px]">{errors.position}</p>}
+                        {!isEdit && (
+                            <p className="text-[10px] text-on-surface-variant/60 leading-4">
+                                این نقشِ شرکتیِ توست — اینکه در کاتالوگ فروش چه نقشی داشته باشی، موقع ساخت کاتالوگ مشخص می‌شود.
+                            </p>
+                        )}
                     </section>
 
                     {/* موقعیت */}

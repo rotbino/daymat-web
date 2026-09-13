@@ -561,6 +561,21 @@ export interface CreateBusinessEntityDto {
     businessLicense?: string;
 }
 
+// ==================== تیم کاری کسب‌وکار (BusinessMember) ====================
+// دو سطح نقش: role سیستمی (admin | member) + position شرکتی (USER_POSITIONS یا متن آزاد)
+export interface BusinessTeamMember {
+    id: string;
+    userId: string;
+    role: 'admin' | 'member';
+    position?: string | null;
+    viaCatalogId?: string | null;
+    invitedBy?: string | null;
+    status: string;
+    createdAt: string;
+    isCreator?: boolean;
+    user?: { id: string; fullName?: string | null; avatarUrl?: string | null };
+}
+
 
 
 

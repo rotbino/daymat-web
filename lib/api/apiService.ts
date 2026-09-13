@@ -15,7 +15,7 @@ import {
     VitrineFacets,
     PurchaseCreditDto,
     PurchaseCreditResponse,
-    CreditBalance, User, BusinessEntity,
+    CreditBalance, User, BusinessEntity, BusinessTeamMember,
 } from './apiTypes';
 
 export const apiService = {
@@ -104,6 +104,28 @@ export const apiService = {
             verificationTier: string;
             latest?: { id: string; tier: string; status: string; notes?: string; submittedAt?: string; reviewedAt?: string } | null;
         }> => apiRequest(`/business/${id}/verify/status`),
+
+        // ─── تیم کاری کسب‌وکار — دو سطح نقش (سیستمی admin/member + نقش شرکتی) ───
+
+        // ✅ عضویت من در این کسب‌وکار — فرم کاتالوگ: اگر نقش شرکتی قبلاً مشخص شده، دیگر پرسیده نمی‌شود
+        getMyMembership: (id: string): Promise<{ isMember: boolean; role: string | null; position: string | null; canManageTeam: boolean }> =>
+            apiRequest(`/business/${id}/my-membership`),
+
+        // ✅ لیست تیم کاری — فقط مدیر
+        listMembers: (id: string): Promise<{ items: BusinessTeamMember[] }> =>
+            apiRequest(`/business/${id}/members`),
+
+        // ✅ افزودن عضو با شماره موبایل — فقط مدیر
+        addMember: (id: string, data: { phone: string; position?: string; role?: 'admin' | 'member' }): Promise<{ success: boolean; member: BusinessTeamMember }> =>
+            apiRequest(`/business/${id}/members`, { method: 'POST', data }),
+
+        // ✅ ویرایش عضو — نقش شرکتی/سیستمی (memberId=me برای خود کاربر)
+        updateMember: (id: string, memberId: string, data: { position?: string; role?: 'admin' | 'member' }): Promise<{ success: boolean; member: BusinessTeamMember }> =>
+            apiRequest(`/business/${id}/members/${memberId}`, { method: 'PATCH', data }),
+
+        // ✅ حذف عضو از تیم — فقط مدیر
+        removeMember: (id: string, memberId: string): Promise<{ success: boolean }> =>
+            apiRequest(`/business/${id}/members/${memberId}`, { method: 'DELETE' }),
     },
 
     // ============================================================

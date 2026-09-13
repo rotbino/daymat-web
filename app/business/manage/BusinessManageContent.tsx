@@ -26,6 +26,7 @@ import { LogoEditModal } from './components/LogoEditModal';
 import { LocationEditModal } from './components/LocationEditModal';
 import { CatalogLinksCard } from './components/CatalogLinksCard';
 import { BusinessPreviewCard } from './components/BusinessPreviewCard';
+import { TeamCard } from './components/TeamCard';
 
 const TIER_COLOR: Record<string, string> = {
     blue: 'text-blue-500',
@@ -73,6 +74,7 @@ function SectionCard({
 export default function BusinessManageContent() {
     const router = useRouter();
     const isAuthenticated = useSelector((s: RootState) => s.auth.isAuthenticated);
+    const currentUserId = useSelector((s: RootState) => s.auth.user?.id || null);
 
     // ── کسب‌وکارهای من + انتخاب فعلی ──
     const { data: myData, isLoading: myLoading } = useMyBusinesses();
@@ -583,6 +585,14 @@ export default function BusinessManageContent() {
                                     onSave={(v) => saveFields({ description: v })}
                                 />
                             </SectionCard>
+
+                            {/* ── تیم کاری — افزودن/ویرایش/حذف اعضا + دو سطح نقش ── */}
+                            <TeamCard
+                                businessId={detail.id}
+                                members={(detail.members || []) as any}
+                                responsibleUserId={detail.creatorUserId || detail.ownerUserId || null}
+                                currentUserId={currentUserId}
+                            />
 
                             {/* ── تیک اعتماد + کاتالوگ‌ها + نمای مشتری — فقط موبایل ── */}
                             <div className="lg:hidden space-y-4">
