@@ -1,5 +1,6 @@
 // app/business/manage/components/CatalogLinksCard.tsx
 // 🔗 لینک کاتالوگ‌های این کسب‌وکار — کپی و مشاهده + ساخت کاتالوگ جدید
+// ✅ «کاتالوگ جدید» با bizId دیپ‌لینک می‌شود تا فرم ثبت کاتالوگ خودش کسب‌وکار را انتخاب کرده باشد
 'use client';
 
 import React, {useState} from 'react';
@@ -17,7 +18,7 @@ export interface ManageCatalogItem {
 
 const SALES_LABEL: Record<string, string> = { wholesale: 'عمده', retail: 'خرده', both: 'عمده و خرده' };
 
-export function CatalogLinksCard({ catalogs }: { catalogs: ManageCatalogItem[] }) {
+export function CatalogLinksCard({ catalogs, businessId }: { catalogs: ManageCatalogItem[]; businessId?: string | null }) {
     const [copiedId, setCopiedId] = useState<string | null>(null);
 
     const copyLink = async (slug: string, id: string) => {
@@ -47,7 +48,7 @@ export function CatalogLinksCard({ catalogs }: { catalogs: ManageCatalogItem[] }
                     </p>
                 </div>
                 <Link
-                    href="/business/register"
+                    href={businessId ? `/business/register?bizId=${businessId}` : '/business/register'}
                     className="h-8 px-3 rounded-lg border border-primary/30 text-primary text-[10px] font-extrabold flex items-center gap-1 hover:bg-primary/5 active:scale-95 transition-all flex-shrink-0"
                 >
                     <Plus className="w-3.5 h-3.5" /> کاتالوگ جدید

@@ -186,10 +186,10 @@ export default function RegisterCatalogPage() {
 
     return (
         <div className="min-h-screen flex flex-col bg-surface dark:bg-gray-950">
-            {/* هدر ساده */}
+            {/* هدر ساده — بازگشت هوشمند: با دیپ‌لینک bizId برمی‌گردیم به مدیریت کسب‌وکار */}
             <header className="sticky top-0 z-40 bg-white/80 dark:bg-gray-950/80 backdrop-blur border-b border-outline-variant/20">
                 <div className="max-w-lg mx-auto px-4 h-14 flex items-center justify-between">
-                    <button onClick={() => router.push('/')} className="flex items-center gap-1 text-sm text-on-surface-variant hover:text-primary">
+                    <button onClick={() => router.push(bizId ? `/business/manage?id=${bizId}` : '/')} className="flex items-center gap-1 text-sm text-on-surface-variant hover:text-primary">
                         <ArrowRight className="w-4 h-4" /> بازگشت
                     </button>
                     <h1 className="text-sm font-bold text-on-surface">ساخت کاتالوگ</h1>
@@ -200,13 +200,23 @@ export default function RegisterCatalogPage() {
             <main className="flex-1 w-full max-w-lg mx-auto px-4 pt-5 pb-[100px]">
                 {/* ═══ سلکتور کسب‌وکار — تنها آیتم صفحه تا وقتی انتخاب نشده ═══ */}
                 <section className="mb-5">
-                    <BusinessSelector value={selectedBiz} onChange={handleBizChange} error={errors.biz} />
-                    {!selectedBiz && (
-                        <p className="mt-2.5 text-[11px] leading-5 text-on-surface-variant/70">
-                            اگر کسب‌وکارت قبلاً توسط همکاران یا صاحب کسب‌وکار ثبت شده، فقط انتخابش کن.
-                            در غیر این صورت، خودت ثبتش کن. برای انتخاب یا ثبت کسب و کار لازم نیست مالکش باشی؛
-                            همین که در اون شاغل باشی کافیه.
-                        </p>
+                    {bizId && !selectedBiz && deepBizQ.isFetching ? (
+                        /* دیپ‌لینک از مدیریت کسب‌وکار — تا واکشی تمام شود، کاربر نباید چیزی انتخاب کند */
+                        <div className="rounded-xl border border-primary/30 bg-primary/5 px-3.5 py-3 flex items-center gap-2.5">
+                            <Loader2 className="w-4 h-4 animate-spin text-primary flex-shrink-0" />
+                            <span className="text-[12px] font-medium text-on-surface-variant">در حال آماده‌سازی کسب‌وکار انتخابی…</span>
+                        </div>
+                    ) : (
+                        <>
+                            <BusinessSelector value={selectedBiz} onChange={handleBizChange} error={errors.biz} />
+                            {!selectedBiz && (
+                                <p className="mt-2.5 text-[11px] leading-5 text-on-surface-variant/70">
+                                    اگر کسب‌وکارت قبلاً توسط همکاران یا صاحب کسب‌وکار ثبت شده، فقط انتخابش کن.
+                                    در غیر این صورت، خودت ثبتش کن. برای انتخاب یا ثبت کسب و کار لازم نیست مالکش باشی؛
+                                    همین که در اون شاغل باشی کافیه.
+                                </p>
+                            )}
+                        </>
                     )}
                 </section>
 

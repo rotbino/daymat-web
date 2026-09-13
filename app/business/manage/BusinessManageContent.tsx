@@ -253,7 +253,10 @@ export default function BusinessManageContent() {
         />
     ) : null;
     const catalogsCard = (
-        <CatalogLinksCard catalogs={(detail?.catalogs || []) as any} />
+        <CatalogLinksCard
+            catalogs={(detail?.catalogs || []) as any}
+            businessId={detail?.id || currentId || undefined}
+        />
     );
     const previewCard = detail ? <BusinessPreviewCard business={detail} /> : null;
     const teaserCard = (
