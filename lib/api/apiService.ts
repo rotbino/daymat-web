@@ -16,6 +16,8 @@ import {
     PurchaseCreditDto,
     PurchaseCreditResponse,
     CreditBalance, User, BusinessEntity, BusinessTeamMember,
+    InquiryListResponse, InquiryDetail, InquiryListItem, InquiryOffer,
+    CreateInquiryPayload, CreateOfferPayload,
 } from './apiTypes';
 
 // ─── پارامترهای کشفِ مخاطبِ مرتبط (درخواست ارتباط) ───
@@ -1374,5 +1376,55 @@ export const apiService = {
             apiRequest(`/user-market/ads/${adId}/category`, { method: 'PATCH', data: { categoryId } }),
     },
 
+    // ============================================================
+    // INQUIRY — کاتالوگ خرید (استعلام قیمت)
+    // ============================================================
+    inquiry: {
+        /** دیوار عمومی کاتالوگ‌های خرید باز */
+        publicList: (params: { q?: string; city?: string; tag?: string; page?: number; limit?: number } = {}): Promise<InquiryListResponse> => {
+            const sp = new URLSearchParams();
+            Object.entries(params).forEach(([k, v]) => {
+                const t = (v ?? '').toString().trim();
+                if (t) sp.set(k, t);
+            });
+            const s = sp.toString();
+            return apiRequest(`/inquiry/public${s ? `?${s}` : ''}`);
+        },
+
+        /** جزئیات با شناسه یا اسلاگ (مالک: همراه پیشنهادها) */
+        get: (idOrSlug: string): Promise<InquiryDetail> =>
+            apiRequest(`/inquiry/${encodeURIComponent(idOrSlug)}`),
+
+        /** ساخت کاتالوگ خرید */
+        create: (data: CreateInquiryPayload): Promise<InquiryDetail> =>
+            apiRequest('/inquiry', { method: 'POST', data }),
+
+        /** ویرایش (مالک) — ارسال items یعنی جایگزینی کامل اقلام */
+        update: (id: string, data: Partial<CreateInquiryPayload> & { status?: string }): Promise<InquiryDetail> =>
+            apiRequest(`/inquiry/${id}`, { method: 'PATCH', data }),
+
+        remove: (id: string): Promise<{ message: string }> =>
+            apiRequest(`/inquiry/${id}`, { method: 'DELETE' }),
+
+        /** کاتالوگ‌های خرید من */
+        mine: (): Promise<InquiryListItem[]> =>
+            apiRequest('/inquiry/mine'),
+
+        /** ثبت پیشنهاد قیمت */
+        addOffer: (inquiryId: string, data: CreateOfferPayload): Promise<InquiryOffer> =>
+            apiRequest(`/inquiry/${inquiryId}/offers`, { method: 'POST', data }),
+
+        /** پیشنهادهای دریافتی (فقط مالک) */
+        getOffers: (inquiryId: string): Promise<InquiryOffer[]> =>
+            apiRequest(`/inquiry/${inquiryId}/offers`),
+
+        /** تغییر وضعیت پیشنهاد — پذیرش/رد (مالک) یا انصراف (پیشنهاددهنده) */
+        updateOffer: (offerId: string, status: 'accepted' | 'rejected' | 'withdrawn'): Promise<InquiryOffer> =>
+            apiRequest(`/inquiry/offers/${offerId}`, { method: 'PATCH', data: { status } }),
+
+        /** پیشنهادهایی که من فرستاده‌ام */
+        myOffers: (): Promise<InquiryOffer[]> =>
+            apiRequest('/inquiry/my-offers'),
+    },
 
 };

@@ -764,3 +764,142 @@ export const PERMISSION_LEVELS = {
 };
 
 
+
+// ═══════════════════════════════════════════════════════════
+// INQUIRY — کاتالوگ خرید (استعلام قیمت)
+// فلسفه: ساده به‌صورت پیش‌فرض، پیشرفته اختیاری (قطعهٔ صنعتی)
+// ═══════════════════════════════════════════════════════════
+
+export interface InquiryItemSpec {
+    key: string;
+    value: string;
+}
+
+export interface InquiryItem {
+    id: string;
+    inquiryId: string;
+    name: string;
+    quantity?: number | null;
+    unit?: string | null;
+    brand?: string | null;
+    specs?: InquiryItemSpec[] | null;
+    imageUrl?: string | null;
+    referenceUrl?: string | null;
+    note?: string | null;
+    order: number;
+    createdAt: string;
+}
+
+export interface InquiryOwnerBrief {
+    id: string;
+    fullName?: string | null;
+    avatarUrl?: string | null;
+}
+
+export interface InquiryBusinessBrief {
+    id: string;
+    name: string;
+    logoUrl?: string | null;
+    city?: string | null;
+}
+
+export interface InquiryBase {
+    id: string;
+    title: string;
+    description?: string | null;
+    slug?: string | null;
+    visibility: 'public' | 'unlisted';
+    status: 'open' | 'closed' | 'archived';
+    deadline?: string | null;
+    province?: string | null;
+    provinceCode?: string | null;
+    city?: string | null;
+    cityCode?: string | null;
+    deliveryNote?: string | null;
+    paymentTerms?: string | null;
+    tags: string[];
+    viewCount: number;
+    offerCount: number;
+    createdAt: string;
+    updatedAt: string;
+    owner?: InquiryOwnerBrief;
+    business?: InquiryBusinessBrief | null;
+}
+
+/** ردیف دیوار عمومی و فهرست «کاتالوگ‌های خرید من» */
+export interface InquiryListItem extends InquiryBase {
+    _count?: { items: number };
+}
+
+export interface InquiryListResponse {
+    items: InquiryListItem[];
+    total: number;
+    page: number;
+    limit: number;
+}
+
+/** جزئیات کامل — مالک: به‌همراه offers و isOwner */
+export interface InquiryDetail extends InquiryBase {
+    items: InquiryItem[];
+    isOwner?: boolean;
+    offers?: InquiryOffer[];
+}
+
+export interface InquiryOffer {
+    id: string;
+    inquiryId: string;
+    itemId?: string | null;
+    offererUserId: string;
+    offerer?: InquiryOwnerBrief & { phone?: string | null };
+    businessId?: string | null;
+    business?: InquiryBusinessBrief | null;
+    price?: number | null;
+    currency?: string;
+    priceBasis?: string | null;
+    deliveryDays?: number | null;
+    message?: string | null;
+    contactPhone?: string | null;
+    status: 'pending' | 'accepted' | 'rejected' | 'withdrawn';
+    createdAt: string;
+    inquiry?: { id: string; title: string; slug?: string | null; status: string; city?: string | null; deadline?: string | null };
+}
+
+// ─── payload ها ───
+export interface CreateInquiryItemPayload {
+    name: string;
+    quantity?: number | null;
+    unit?: string | null;
+    brand?: string | null;
+    specs?: InquiryItemSpec[];
+    imageUrl?: string | null;
+    referenceUrl?: string | null;
+    note?: string | null;
+}
+
+export interface CreateInquiryPayload {
+    title: string;
+    description?: string;
+    items?: CreateInquiryItemPayload[];
+    visibility?: 'public' | 'unlisted';
+    deadline?: string;
+    slug?: string;
+    province?: string;
+    provinceCode?: string;
+    city?: string;
+    cityCode?: string;
+    deliveryNote?: string;
+    paymentTerms?: string;
+    tags?: string[];
+    businessId?: string;
+}
+
+export interface CreateOfferPayload {
+    itemId?: string;
+    price: number;
+    currency?: string;
+    priceBasis?: string;
+    deliveryDays?: number;
+    message?: string;
+    contactPhone?: string;
+    businessId?: string;
+}

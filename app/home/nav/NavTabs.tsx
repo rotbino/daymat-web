@@ -34,7 +34,7 @@ import SearchBox from '@/components/home/SearchBox';
 const NON_MARKET_SEGMENTS = new Set([
     'my-catalogs', 'market', 'markets', 'notifications', 'profile', 'business', 'ad', 'ads',
     'login', 'register', 'docs', 'feedback', 'credit', 'admin', 'arm-admin',
-    'catalogs', 'api', 'c', '_a', 'no-arm', 'new-home', 'saved-ads',
+    'catalogs', 'api', 'c', '_a', 'no-arm', 'new-home', 'saved-ads', 'my-inquiries', 'inquiries',
 ]);
 
 function NotifBadge({ count }: { count: number }) {

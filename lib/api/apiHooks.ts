@@ -12,7 +12,9 @@ import {
     AdListQuery,
     PurchaseCreditDto,
     UploadFileResponse,
-    DeleteFileResponse
+    DeleteFileResponse,
+    CreateInquiryPayload,
+    CreateOfferPayload,
 } from './apiTypes';
 import { toast } from 'sonner';
 import { useSelector } from "react-redux";
@@ -1699,6 +1701,111 @@ export const useRemoveContact = () => {
         onSuccess: () => {
             qc.invalidateQueries({ queryKey: ['my-contacts'] });
             qc.invalidateQueries({ queryKey: ['my-contacts-stats'] });
+        },
+    });
+};
+
+// ═══════════════════════════════════════════════════════════
+// INQUIRY HOOKS — کاتالوگ خرید (استعلام قیمت)
+// ═══════════════════════════════════════════════════════════
+
+export interface InquiryListParams {
+    q?: string; city?: string; tag?: string; page?: number; limit?: number;
+}
+
+/** دیوار عمومی کاتالوگ‌های خرید — بدون نیاز به ورود */
+export const usePublicInquiries = (params: InquiryListParams = {}) => {
+    return useQuery({
+        queryKey: ['inquiries', 'public', params],
+        queryFn: () => apiService.inquiry.publicList(params),
+        staleTime: 30 * 1000,
+        placeholderData: keepPreviousData,
+    });
+};
+
+/** جزئیات یک کاتالوگ خرید (مالک: به‌همراه پیشنهادها) */
+export const useInquiry = (idOrSlug?: string) => {
+    return useQuery({
+        queryKey: ['inquiry', 'detail', idOrSlug],
+        queryFn: () => apiService.inquiry.get(idOrSlug!),
+        enabled: !!idOrSlug,
+    });
+};
+
+/** کاتالوگ‌های خرید من */
+export const useMyInquiries = () => {
+    const { hasAccess } = useAuthState();
+    return useQuery({
+        queryKey: ['inquiries', 'mine'],
+        queryFn: () => apiService.inquiry.mine(),
+        enabled: hasAccess,
+        staleTime: 60 * 1000,
+    });
+};
+
+/** پیشنهادهایی که من فرستاده‌ام (سمت تامین‌کننده) */
+export const useMyOffers = () => {
+    const { hasAccess } = useAuthState();
+    return useQuery({
+        queryKey: ['inquiries', 'my-offers'],
+        queryFn: () => apiService.inquiry.myOffers(),
+        enabled: hasAccess,
+        staleTime: 60 * 1000,
+    });
+};
+
+export const useCreateInquiry = () => {
+    const qc = useQueryClient();
+    return useMutation({
+        mutationFn: (payload: CreateInquiryPayload) => apiService.inquiry.create(payload),
+        onSuccess: () => {
+            qc.invalidateQueries({ queryKey: ['inquiries'] });
+        },
+    });
+};
+
+export const useUpdateInquiry = () => {
+    const qc = useQueryClient();
+    return useMutation({
+        mutationFn: ({ id, data }: { id: string; data: Partial<CreateInquiryPayload> & { status?: string } }) =>
+            apiService.inquiry.update(id, data),
+        onSuccess: (_res, vars) => {
+            qc.invalidateQueries({ queryKey: ['inquiries'] });
+            qc.invalidateQueries({ queryKey: ['inquiry', 'detail', vars.id] });
+        },
+    });
+};
+
+export const useDeleteInquiry = () => {
+    const qc = useQueryClient();
+    return useMutation({
+        mutationFn: (id: string) => apiService.inquiry.remove(id),
+        onSuccess: () => {
+            qc.invalidateQueries({ queryKey: ['inquiries'] });
+        },
+    });
+};
+
+export const useAddOffer = () => {
+    const qc = useQueryClient();
+    return useMutation({
+        mutationFn: ({ inquiryId, data }: { inquiryId: string; data: CreateOfferPayload }) =>
+            apiService.inquiry.addOffer(inquiryId, data),
+        onSuccess: () => {
+            qc.invalidateQueries({ queryKey: ['inquiries'] });
+            qc.invalidateQueries({ queryKey: ['inquiries', 'my-offers'] });
+        },
+    });
+};
+
+export const useUpdateOfferStatus = () => {
+    const qc = useQueryClient();
+    return useMutation({
+        mutationFn: ({ offerId, status }: { offerId: string; status: 'accepted' | 'rejected' | 'withdrawn' }) =>
+            apiService.inquiry.updateOffer(offerId, status),
+        onSuccess: () => {
+            qc.invalidateQueries({ queryKey: ['inquiry'] });
+            qc.invalidateQueries({ queryKey: ['inquiries', 'my-offers'] });
         },
     });
 };

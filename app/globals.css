@@ -44,6 +44,21 @@
   --cell-size: 2rem;
   --font-family: "number-font", "text-font", Vazirmatn, sans-serif;
 
+  /* ══════════════════════════════════════════════════
+     هویت برند دیمت — از برندبوک (تنها نقطهٔ تغییر رنگ سایت)
+     قرمز لاکی + کهربایی — هر جا برند حرف اول را می‌زند از این توکن‌ها استفاده شود
+     ══════════════════════════════════════════════════ */
+  --brand-red: #b42127;          /* قرمز لاکی لوگو */
+  --brand-red-strong: #931a1f;   /* حالت فشرده/هاور */
+  --brand-red-soft: #fdf1f1;     /* سطح ملایم روشن */
+  --brand-red-tint: #f7dede;     /* حاشیه و بوردر ملایم */
+  --brand-amber: #f5a800;        /* کهربایی لوگو */
+  --brand-amber-strong: #cf8e00; /* حالت فشرده/هاور */
+  --brand-amber-soft: #fff8e8;   /* سطح ملایم روشن */
+  --brand-amber-tint: #fdecc3;   /* حاشیه و بوردر ملایم */
+  --brand-ink: #201518;          /* مشکی گرم متن */
+
+
   /* ShadCN HSL متغیرها */
   --background-hsl: 0 0% 100%;
   --foreground: 222.2 84% 4.9%;
@@ -81,6 +96,16 @@
 
 .dark {
   /* ⚠️ توکن‌های M3 تم تاریک — هم‌ارز ThemeProvider (DARK_COLORS) تا اولین رندر/SSR هم خوانا باشد */
+  /* برند دیمت — نسخهٔ تم تاریک (روشن‌تر برای کنتراست روی پس‌زمینهٔ تیره) */
+  --brand-red: #e8555b;
+  --brand-red-strong: #f26b70;
+  --brand-red-soft: #2b1315;
+  --brand-red-tint: #471c1f;
+  --brand-amber: #ffb224;
+  --brand-amber-strong: #ffc24d;
+  --brand-amber-soft: #291c06;
+  --brand-amber-tint: #3f2c0b;
+  --brand-ink: #f3ecef;
   --primary: #ffb4a8;
   --primary-container: #8b0000;
   --primary-fixed: #ffdad4;
@@ -187,6 +212,17 @@
   --color-sidebar-accent-foreground: hsl(var(--sidebar-accent-foreground));
   --color-sidebar-border: hsl(var(--sidebar-border));
   --color-sidebar-ring: hsl(var(--sidebar-ring));
+
+  /* ═══ رنگ‌های برند دیمت — از متغیرهای بالا (پشتیبانی خودکار تم تاریک) ═══ */
+  --color-brand-red: var(--brand-red);
+  --color-brand-red-strong: var(--brand-red-strong);
+  --color-brand-red-soft: var(--brand-red-soft);
+  --color-brand-red-tint: var(--brand-red-tint);
+  --color-brand-amber: var(--brand-amber);
+  --color-brand-amber-strong: var(--brand-amber-strong);
+  --color-brand-amber-soft: var(--brand-amber-soft);
+  --color-brand-amber-tint: var(--brand-amber-tint);
+  --color-brand-ink: var(--brand-ink);
 
   --font-sans: var(--font-family, "number-font", "text-font", Vazirmatn, sans-serif);
   --font-mono: JetBrains Mono, monospace;

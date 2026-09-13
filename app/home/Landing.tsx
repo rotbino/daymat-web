@@ -7,9 +7,12 @@ import Image from 'next/image';
 import { motion } from 'framer-motion';
 import { useSelector } from 'react-redux';
 import { RootState } from '@/lib/store/store';
+import { useQuery } from '@tanstack/react-query';
+import { apiService } from '@/lib/api/apiService';
 import {
   Apple,
   ArrowDown,
+  Eye,
   ArrowLeft,
   CheckCircle2,
   ClipboardList,
@@ -24,13 +27,14 @@ import {
 } from 'lucide-react';
 
 /**
- * لندینگ دیمت — دو ابزار هم‌وزن با دو رنگ دوست‌داشتنی:
- *   زمردی = کاتالوگ قیمت (فروش)  |  کهربایی = دیوار استعلام قیمت (خرید)
- * لینک هر دو ابزار یک زنجیرهٔ ثابت دارد:
- *   مهمان → /login?redirect=X (انتخاب کاربر حفظ می‌شود)
- *   لاگین → مستقیم X
- *   X برای کاتالوگ = فرم ساخت کاتالوگ (/business/register)
- *   X برای دیوار = /my-catalogs?tool=wall (مدال ساخت دیوار — ماژول بعدی)
+ * لندینگ دیمت — دو محصول جدا با دو لینک جدا:
+ *   قرمز لاکی برند = کاتالوگ فروش (نمایش و تبلیغ)  |  کهربایی برند = کاتالوگ خرید (استعلام و خرید)
+ * لینک هر محصول زنجیرهٔ خودش را دارد:
+ *   مهمان → /login?redirect=X (انتخاب کاربر حفظ می‌شود)  |  لاگین → مستقیم X
+ *   X برای کاتالوگ فروش = فرم ساخت (/business/register)
+ *   X برای کاتالوگ خرید = فرم ساخت (/inquiries/new)
+ * نکتهٔ مهم: لینک کاتالوگ فروش فقط به دست خریدارها می‌رسد و
+ * لینک کاتالوگ خرید فقط به دست تامین‌کننده‌ها — هرگز قاطی نمی‌شوند.
  */
 
 /* ------------------------------ motion helper ----------------------------- */
@@ -46,9 +50,9 @@ const fadeUp = (delay = 0) => ({
 
 function MiniCatalog() {
   const rows = [
-    { icon: Package, tint: 'bg-emerald-100 text-emerald-700 dark:bg-emerald-500/15 dark:text-emerald-300', price: '۲۵٬۰۰۰' },
-    { icon: Milk, tint: 'bg-teal-100 text-teal-700 dark:bg-teal-500/15 dark:text-teal-300', price: '۱۸٬۵۰۰' },
-    { icon: Apple, tint: 'bg-lime-100 text-lime-700 dark:bg-lime-500/15 dark:text-lime-300', price: '۹۸٬۰۰۰' },
+    { icon: Package, tint: 'bg-rose-100 text-rose-700 dark:bg-rose-500/15 dark:text-rose-300', price: '۲۵٬۰۰۰' },
+    { icon: Milk, tint: 'bg-red-100 text-red-700 dark:bg-red-500/15 dark:text-red-300', price: '۱۸٬۵۰۰' },
+    { icon: Apple, tint: 'bg-orange-100 text-orange-700 dark:bg-orange-500/15 dark:text-orange-300', price: '۹۸٬۰۰۰' },
   ];
   return (
     <motion.div
@@ -58,15 +62,15 @@ function MiniCatalog() {
         dark:border-gray-700 dark:bg-gray-900 dark:shadow-black/50 sm:w-48"
     >
       <div className="flex items-center gap-2 border-b border-dashed border-stone-200 pb-2 dark:border-gray-700">
-        <span className="grid size-6 shrink-0 place-items-center rounded-full bg-emerald-100 dark:bg-emerald-500/20">
-          <Store className="size-3.5 text-emerald-700 dark:text-emerald-300" />
+        <span className="grid size-6 shrink-0 place-items-center rounded-full bg-red-100 dark:bg-red-500/20">
+          <Store className="size-3.5 text-red-700 dark:text-red-300" />
         </span>
         <div className="min-w-0 flex-1 space-y-1">
           <div className="h-1.5 w-14 rounded-full bg-stone-300 dark:bg-gray-600" />
           <div className="h-1.5 w-9 rounded-full bg-stone-200 dark:bg-gray-700" />
         </div>
-        <span className="shrink-0 rounded-full bg-emerald-600 px-2 py-0.5 text-[9px] font-bold text-white">
-          کاتالوگ من
+        <span className="shrink-0 rounded-full bg-brand-red px-2 py-0.5 text-[9px] font-bold text-white">
+          کاتالوگ فروش
         </span>
       </div>
       <div className="mt-2 space-y-2">
@@ -80,8 +84,8 @@ function MiniCatalog() {
               <div className="h-1.5 w-10 rounded-full bg-stone-200 dark:bg-gray-700" />
             </div>
             <span
-              className="shrink-0 rounded-md border border-emerald-200 bg-emerald-50 px-1.5 py-0.5 text-[10px] font-bold text-emerald-700
-              dark:border-emerald-500/30 dark:bg-emerald-500/10 dark:text-emerald-300">
+              className="shrink-0 rounded-md border border-red-200 bg-red-50 px-1.5 py-0.5 text-[10px] font-bold text-red-700
+              dark:border-red-500/30 dark:bg-red-500/10 dark:text-red-300">
               {row.price}
             </span>
           </div>
@@ -114,7 +118,7 @@ function MiniWall() {
         <span className="grid size-6 shrink-0 place-items-center rounded-full bg-amber-200 dark:bg-amber-500/25">
           <ClipboardList className="size-3.5 text-amber-800 dark:text-amber-300" />
         </span>
-        <span className="text-[11px] font-bold text-stone-700 dark:text-gray-200">دیوار استعلام من</span>
+        <span className="text-[11px] font-bold text-stone-700 dark:text-gray-200">کاتالوگ خرید من</span>
         <span className="ms-auto size-2.5 rounded-full bg-amber-400 ring-2 ring-amber-300 dark:ring-amber-500/30" />
       </div>
       <div className="mt-2 grid grid-cols-2 gap-2">
@@ -128,7 +132,7 @@ function MiniWall() {
                   dark:bg-gray-900/80 dark:text-gray-100">
                   {n.price}
                 </span>
-                <p className="mt-0.5 flex items-center gap-0.5 text-[8px] text-emerald-700 dark:text-emerald-400">
+                <p className="mt-0.5 flex items-center gap-0.5 text-[8px] text-amber-600 dark:text-amber-400">
                   <CheckCircle2 className="size-2.5" /> قیمت داد
                 </p>
               </>
@@ -152,21 +156,21 @@ function MiniWall() {
 /* --------------------------------- pieces --------------------------------- */
 
 const TONES = {
-  emerald: {
-    chip: 'border-emerald-200 bg-emerald-100 text-emerald-800 dark:border-emerald-500/30 dark:bg-emerald-500/15 dark:text-emerald-300',
-    stepNum: 'bg-emerald-600 text-white',
-    stepLine: 'border-emerald-200 dark:border-emerald-500/40',
-    audience: 'border-emerald-200 bg-emerald-50 text-emerald-800 dark:border-emerald-500/30 dark:bg-emerald-500/10 dark:text-emerald-300',
-    headerBg: 'bg-emerald-50/60 dark:bg-emerald-500/5',
-    button: 'bg-emerald-600 text-white hover:bg-emerald-700 shadow-lg shadow-emerald-600/25',
+  red: {
+    chip: 'border-brand-red-tint bg-brand-red-soft text-brand-red',
+    stepNum: 'bg-brand-red text-white',
+    stepLine: 'border-brand-red-tint',
+    audience: 'border-brand-red-tint bg-brand-red-soft text-brand-red',
+    headerBg: 'bg-brand-red-soft/50',
+    button: 'bg-brand-red text-white hover:bg-brand-red-strong shadow-lg shadow-brand-red/25',
   },
   amber: {
-    chip: 'border-amber-200 bg-amber-100 text-amber-800 dark:border-amber-500/30 dark:bg-amber-500/15 dark:text-amber-300',
-    stepNum: 'bg-amber-500 text-white',
-    stepLine: 'border-amber-200 dark:border-amber-500/40',
-    audience: 'border-amber-200 bg-amber-50 text-amber-800 dark:border-amber-500/30 dark:bg-amber-500/10 dark:text-amber-300',
-    headerBg: 'bg-amber-50/70 dark:bg-amber-500/5',
-    button: 'bg-amber-500 text-white hover:bg-amber-600 shadow-lg shadow-amber-500/25',
+    chip: 'border-brand-amber-tint bg-brand-amber-soft text-amber-800 dark:text-amber-300',
+    stepNum: 'bg-brand-amber text-white',
+    stepLine: 'border-brand-amber-tint',
+    audience: 'border-brand-amber-tint bg-brand-amber-soft text-amber-800 dark:text-amber-300',
+    headerBg: 'bg-brand-amber-soft/60',
+    button: 'bg-brand-amber text-white hover:bg-brand-amber-strong shadow-lg shadow-brand-amber/30',
   },
 } as const;
 
@@ -266,6 +270,115 @@ function ProductCard({
   );
 }
 
+/* ------------------------------ live از روت ------------------------------- */
+
+/** سکشن زندهٔ روت: کاتالوگ‌های فروش نمونه + کاتالوگ‌های خرید باز — دو جدول جدا، دو محصول جدا */
+function LiveFromDaymat({ wallHref }: { wallHref: string }) {
+  const { data: featured } = useQuery({
+    queryKey: ['landing', 'featured-catalogs'],
+    queryFn: () => apiService.catalog.getFeatured(4),
+    staleTime: 60 * 1000,
+  });
+  const { data: inquiries } = useQuery({
+    queryKey: ['landing', 'open-inquiries'],
+    queryFn: () => apiService.inquiry.publicList({ limit: 4 }),
+    staleTime: 30 * 1000,
+  });
+
+  const catalogs = (featured?.items ?? []).slice(0, 4);
+  const walls = (inquiries?.items ?? []).slice(0, 4);
+
+  if (!catalogs.length && !walls.length) return null;
+
+  return (
+    <section aria-label="همین حالا توی دیمت" className="mx-auto max-w-6xl px-4 py-10 sm:px-6">
+      <motion.div {...fadeUp()} className="mx-auto max-w-2xl text-center">
+        <span className="text-sm font-black text-stone-400 dark:text-gray-500">همین حالا توی دیمت</span>
+        <h2 className="mt-2 text-3xl font-black sm:text-4xl">کاتالوگ‌های فروش و کاتالوگ‌های خرید، زنده</h2>
+        <p className="mt-4 leading-8 text-stone-600 dark:text-gray-400">
+          دو فهرست جدا — یکی مال فروشنده‌هاست، یکی مال خریدارها؛ هر وقت دلت خواست ورود (کاوش) کن.
+        </p>
+      </motion.div>
+
+      <div className="mt-10 grid gap-6 md:grid-cols-2">
+        {/* کاتالوگ‌های فروش نمونه */}
+        {catalogs.length > 0 && (
+          <motion.div {...fadeUp(0.1)}
+            className="rounded-3xl border-2 border-brand-red-tint bg-white p-6 shadow-sm dark:bg-gray-900">
+            <div className="flex items-center justify-between">
+              <h3 className="flex items-center gap-2 text-lg font-black text-brand-red">
+                <Store className="size-5" /> کاتالوگ‌های فروش
+              </h3>
+            </div>
+            <ul className="mt-4 space-y-2">
+              {catalogs.map((c: any, i: number) => (
+                <motion.li key={c.id ?? i} initial={{ opacity: 0, x: 16 }} whileInView={{ opacity: 1, x: 0 }}
+                  viewport={{ once: true }} transition={{ delay: i * 0.06 }}>
+                  <Link href={`/${c.slug || c.id}`}
+                    className="flex items-center gap-3 rounded-2xl border border-stone-100 px-3 py-2.5 transition-colors hover:border-brand-red-tint hover:bg-brand-red-soft/50
+                    dark:border-gray-800 dark:hover:bg-gray-800/60">
+                    {c.logoUrl ? (
+                      <Image src={c.logoUrl} alt="" width={36} height={36} className="size-9 rounded-xl object-cover" unoptimized />
+                    ) : (
+                      <span className="grid size-9 place-items-center rounded-xl bg-brand-red-soft text-brand-red">
+                        <Store className="size-4" />
+                      </span>
+                    )}
+                    <span className="min-w-0 flex-1">
+                      <span className="block truncate text-sm font-extrabold text-stone-800 dark:text-gray-200">{c.name}</span>
+                      {c.city ? <span className="block text-[11px] text-stone-400 dark:text-gray-500">{c.city}</span> : null}
+                    </span>
+                    <Eye className="size-4 shrink-0 text-stone-300 dark:text-gray-600" />
+                  </Link>
+                </motion.li>
+              ))}
+            </ul>
+          </motion.div>
+        )}
+
+        {/* کاتالوگ‌های خرید باز */}
+        {walls.length > 0 && (
+          <motion.div {...fadeUp(0.2)}
+            className="rounded-3xl border-2 border-brand-amber-tint bg-white p-6 shadow-sm dark:bg-gray-900">
+            <div className="flex items-center justify-between">
+              <h3 className="flex items-center gap-2 text-lg font-black text-amber-600 dark:text-amber-400">
+                <ClipboardList className="size-5" /> کاتالوگ‌های خرید باز
+              </h3>
+              <Link href={wallHref} className="text-xs font-bold text-amber-600 hover:underline dark:text-amber-400">بساز +</Link>
+            </div>
+            <ul className="mt-4 space-y-2">
+              {walls.map((w, i) => (
+                <motion.li key={w.id} initial={{ opacity: 0, x: -16 }} whileInView={{ opacity: 1, x: 0 }}
+                  viewport={{ once: true }} transition={{ delay: i * 0.06 }}>
+                  <Link href={`/inquiries/${w.slug || w.id}`}
+                    className="flex items-center gap-3 rounded-2xl border border-stone-100 px-3 py-2.5 transition-colors hover:border-brand-amber-tint hover:bg-brand-amber-soft/60
+                    dark:border-gray-800 dark:hover:bg-gray-800/60">
+                    <span className="grid size-9 shrink-0 place-items-center rounded-xl bg-brand-amber-soft text-amber-600 dark:text-amber-400">
+                      <ShoppingBasket className="size-4" />
+                    </span>
+                    <span className="min-w-0 flex-1">
+                      <span className="block truncate text-sm font-extrabold text-stone-800 dark:text-gray-200">{w.title}</span>
+                      <span className="block text-[11px] text-stone-400 dark:text-gray-500">
+                        {[w.city, `${(w._count?.items ?? 0).toLocaleString('fa-IR')} قلم`].filter(Boolean).join(' · ')}
+                      </span>
+                    </span>
+                    <Eye className="size-4 shrink-0 text-stone-300 dark:text-gray-600" />
+                  </Link>
+                </motion.li>
+              ))}
+            </ul>
+            <Link href="/inquiries"
+              className="mt-4 flex h-10 items-center justify-center gap-1.5 rounded-full border border-brand-amber-tint text-xs font-extrabold text-amber-700 transition-colors hover:bg-brand-amber-soft dark:text-amber-400">
+              دیدن کل دیوار کاتالوگ‌های خرید
+              <ArrowLeft className="size-3.5" />
+            </Link>
+          </motion.div>
+        )}
+      </div>
+    </section>
+  );
+}
+
 /* --------------------------------- landing -------------------------------- */
 
 export default function Landing() {
@@ -274,8 +387,8 @@ export default function Landing() {
   // ✅ زنجیرهٔ انتخاب ابزار: مهمان → login با redirect (انتخاب حفظ می‌شود) | لاگین → مستقیم
   const toolHref = (path: string) =>
     isAuthenticated ? path : `/login?redirect=${encodeURIComponent(path)}`;
-  const catalogHref = toolHref('/business/register'); // فرم ساخت کاتالوگ (ثبت کسب‌وکار)
-  const wallHref = toolHref('/my-catalogs?tool=wall'); // دیوار استعلام — مدالِ ماژول بعدی
+  const catalogHref = toolHref('/business/register'); // کاتالوگ فروش — فرم ساخت
+  const wallHref = toolHref('/inquiries/new');        // کاتالوگ خرید — فرم ساخت (محصول مستقل)
 
   return (
     <div className="min-h-screen bg-[#FFFDF7] text-stone-900 dark:bg-gray-950 dark:text-gray-100">
@@ -298,7 +411,7 @@ export default function Landing() {
               <Link href="/my-catalogs"
                     className="rounded-full bg-stone-900 px-4 py-2 text-xs font-bold text-white transition-colors hover:bg-stone-700
                     dark:bg-gray-100 dark:text-gray-900 dark:hover:bg-white">
-                کاتالوگ من
+                پنل من
               </Link>
             ) : (
               <Link href="/login"
@@ -325,64 +438,51 @@ export default function Landing() {
                 {...fadeUp(0.1)}
                 className="mx-auto mt-6 max-w-3xl text-4xl font-black leading-[1.35] sm:text-5xl md:text-6xl md:leading-[1.3]">
                 هر کسی توی بازار،{' '}
-                <span className="text-emerald-600 dark:text-emerald-400">هم می‌فروشه</span>،{' '}
-                <span className="text-amber-500 dark:text-amber-400">هم می‌خره</span>
+                <span className="text-brand-red">هم می‌فروشه</span>،{' '}
+                <span className="text-brand-amber">هم می‌خره</span>
               </motion.h1>
 
               <motion.p
                 {...fadeUp(0.2)}
                 className="mx-auto mt-5 max-w-2xl text-base leading-8 text-stone-600 dark:text-gray-400 sm:text-lg">
-                پس دو تا ابزار ساده ساخته‌ایم: یکی برای نمایش و تبلیغ کالاها و خدماتت،
-                یکی برای استعلام قیمت خریدت. هر دو فقط یک لینک‌اند؛ با چند کلیک بساز
-                و همان لینک را پخش کن.
+                پس دو تا محصول ساده ساخته‌ایم: «کاتالوگ فروش» برای نمایش و تبلیغ چیزی که می‌فروشی،
+                و «کاتالوگ خرید» برای استعلام قیمت چیزی که می‌خری. هر کدام یک لینک جداست؛
+                با چند کلیک بساز و فقط لینکِ همان را بین همان آدم‌ها پخش کن.
               </motion.p>
 
               <motion.div {...fadeUp(0.3)} className="mt-8 flex flex-wrap items-center justify-center gap-3">
                 <a
                   href="#catalog"
-                  className="inline-flex h-12 items-center gap-2 rounded-full bg-emerald-600 px-7 text-base font-extrabold text-white shadow-lg shadow-emerald-600/25 transition-colors hover:bg-emerald-700">
+                  className="inline-flex h-12 items-center gap-2 rounded-full bg-brand-red px-7 text-base font-extrabold text-white shadow-lg shadow-brand-red/25 transition-colors hover:bg-brand-red-strong">
                   می‌خوام بفروشم
                   <ArrowDown className="size-4" />
                 </a>
                 <a
                   href="#inquiry"
-                  className="inline-flex h-12 items-center gap-2 rounded-full bg-amber-500 px-7 text-base font-extrabold text-white shadow-lg shadow-amber-500/25 transition-colors hover:bg-amber-600">
+                  className="inline-flex h-12 items-center gap-2 rounded-full bg-brand-amber px-7 text-base font-extrabold text-white shadow-lg shadow-brand-amber/30 transition-colors hover:bg-brand-amber-strong">
                   می‌خوام بخرم
                   <ArrowDown className="size-4" />
                 </a>
               </motion.div>
 
-              {/* duo visual: catalog — you — inquiry wall */}
+              {/* دو محصول مستقل — بدون خط اتصال؛ هر کدام یک لینک جدا دارند */}
               <motion.div
                 {...fadeUp(0.4)}
-                className="relative mx-auto mt-16 flex max-w-3xl flex-col items-center gap-7 sm:flex-row sm:justify-center sm:gap-10">
-                <div
-                  aria-hidden
-                  className="pointer-events-none absolute inset-x-10 top-1/2 hidden -translate-y-1/2 border-t-2 border-dashed border-stone-300 dark:border-gray-700 sm:block"
-                />
-                <div
-                  aria-hidden
-                  className="pointer-events-none absolute inset-y-10 start-1/2 -translate-x-1/2 border-s-2 border-dashed border-stone-300 dark:border-gray-700 sm:hidden"
-                />
-                <div className="relative flex flex-col items-center gap-3">
+                className="mx-auto mt-16 flex max-w-3xl flex-col items-center gap-7 sm:flex-row sm:justify-center sm:gap-12">
+                <div className="flex flex-col items-center gap-3">
                   <MiniCatalog />
                   <span
-                    className="relative rounded-full border border-emerald-200 bg-white px-3 py-1 text-[10px] font-bold text-emerald-700 shadow-sm
-                    dark:border-emerald-500/30 dark:bg-gray-900 dark:text-emerald-300 sm:text-xs">
-                    کاتالوگ قیمت — برای فروش
+                    className="rounded-full border border-brand-red-tint bg-white px-3 py-1 text-[10px] font-bold text-brand-red shadow-sm
+                    dark:bg-gray-900 sm:text-xs">
+                    کاتالوگ فروش — لینکش مالِ خریدارها
                   </span>
                 </div>
-                <div
-                  className="relative z-10 grid size-14 shrink-0 place-items-center rounded-full border-4 border-white bg-stone-900 text-xs font-black text-white shadow-xl
-                  dark:border-gray-950 dark:bg-gray-700 sm:size-20 sm:text-base">
-                  شما
-                </div>
-                <div className="relative flex flex-col items-center gap-3">
+                <div className="flex flex-col items-center gap-3">
                   <MiniWall />
                   <span
-                    className="relative rounded-full border border-amber-200 bg-white px-3 py-1 text-[10px] font-bold text-amber-700 shadow-sm
-                    dark:border-amber-500/30 dark:bg-gray-900 dark:text-amber-300 sm:text-xs">
-                    دیوار استعلام — برای خرید
+                    className="rounded-full border border-brand-amber-tint bg-white px-3 py-1 text-[10px] font-bold text-amber-700 shadow-sm
+                    dark:bg-gray-900 dark:text-amber-300 sm:text-xs">
+                    کاتالوگ خرید — لینکش مالِ تامین‌کننده‌ها
                   </span>
                 </div>
               </motion.div>
@@ -392,25 +492,25 @@ export default function Landing() {
           {/* ----------------------------- products ---------------------------- */}
           <section aria-label="دو ابزار" className="mx-auto max-w-6xl px-4 py-14 sm:px-6">
             <motion.div {...fadeUp()} className="mx-auto max-w-2xl text-center">
-              <span className="text-sm font-black text-stone-400 dark:text-gray-500">دو ابزار ساده</span>
+              <span className="text-sm font-black text-stone-400 dark:text-gray-500">دو محصول جدا</span>
               <h2 className="mt-2 text-3xl font-black leading-snug sm:text-4xl">
-                برای فروشت <span className="text-emerald-600 dark:text-emerald-400">کاتالوگ</span>، برای خریدت{' '}
-                <span className="text-amber-500 dark:text-amber-400">دیوار استعلام</span>
+                برای فروشت <span className="text-brand-red">کاتالوگ فروش</span>، برای خریدت{' '}
+                <span className="text-brand-amber">کاتالوگ خرید</span>
               </h2>
               <p className="mt-4 leading-8 text-stone-600 dark:text-gray-400">
                 هر کدام چند دقیقه‌ای ساخته می‌شود و یک لینک ساده تحویل می‌دهد؛
-                لینک را بفرست، بقیه‌اش را بازار خودش انجام می‌دهد.
+                هر لینک هم فقط به مسیر خودش می‌رود — کاتالوگ فروش پیش خریدارها، کاتالوگ خرید پیش تامین‌کننده‌ها.
               </p>
             </motion.div>
 
             <div className="mt-10 grid gap-6 md:grid-cols-2 md:gap-8">
               <ProductCard
                 id="catalog"
-                tone="emerald"
+                tone="red"
                 icon={Store}
-                chip="ابزار فروش و تبلیغ کالا"
-                title="ساخت کاتالوگ قیمت"
-                desc="کالاها یا خدماتت رو قشنگ نشون بده، قیمت رو کنارشون بذار و لینکش رو بده دست خریدارها."
+                chip="نمایش و تبلیغ کالا و خدمات"
+                title="ساخت کاتالوگ فروش"
+                desc="چیزهایی که می‌فروشی رو قشنگ نشون بده، قیمت رو کنارشون بذار و لینک کاتالوگ فروشت رو بده دست خریدارها."
                 illustration={<MiniCatalog />}
                 steps={[
                   {
@@ -427,7 +527,7 @@ export default function Landing() {
                   },
                 ]}
                 audience={['فروشگاه‌ها', 'شرکت‌های پخش', 'تولیدی‌ها', 'خدمات']}
-                cta="کاتالوگ بساز"
+                cta="کاتالوگ فروش بساز"
                 href={catalogHref}
               />
 
@@ -435,26 +535,26 @@ export default function Landing() {
                 id="inquiry"
                 tone="amber"
                 icon={ClipboardList}
-                chip="برای استعلام خرید"
-                title="ساخت دیوار استعلام قیمت"
-                desc="نیاز خریدت رو روی دیوار بذار، لینکش رو بده تامین‌کننده‌ها؛ اون‌ها قیمت بدن، تو بهترین رو انتخاب کن."
+                chip="استعلام قیمت خرید"
+                title="ساخت کاتالوگ خرید"
+                desc="لیست چیزهایی که می‌خری رو بنویس، لینک کاتالوگ خریدت رو بده تامین‌کننده‌ها؛ اون‌ها قیمت بدن، تو بهترین رو انتخاب کن."
                 illustration={<MiniWall />}
                 steps={[
                   {
-                    title: 'نیازت رو ثبت کن',
-                    desc: 'بنویس چی می‌خوای، چندتا و با چه شرایطی؛ از جنس عمده تا خدمات.',
+                    title: 'لیست خریدت رو بنویس',
+                    desc: 'بنویس چی می‌خوای، چندتا و با چه شرایطی؛ از لیست هفتگی سوپرمارکت تا قطعهٔ صنعتی با مشخصات فنی.',
                   },
                   {
-                    title: 'دیوار رو بفرست برای تامین‌کننده‌ها',
-                    desc: 'لینک دیوار دست کارخونه‌ها و فروشنده‌های عمده می‌رسه؛ هر وقت خواستن، روش قیمت می‌ذارن.',
+                    title: 'لینکش رو بده تامین‌کننده‌ها',
+                    desc: 'فقط همین لینک کاتالوگ خرید پخش می‌شه؛ کاتالوگ فروشت اصلاً درگیر این ماجرا نیست.',
                   },
                   {
                     title: 'بهترین قیمت رو انتخاب کن',
-                    desc: 'قیمت‌ها و شرایط رو کنار هم ببین و با هر کی به‌صرفه‌تر بود معامله کن.',
+                    desc: 'پیشنهاد قیمت‌ها و شرایط رو کنار هم ببین و با هر کی به‌صرفه‌تر بود معامله کن.',
                   },
                 ]}
-                audience={['سوپرمارکت‌ها', 'خرید عمده', 'پروژه‌ها', 'خدمات']}
-                cta="دیوار استعلام بساز"
+                audience={['سوپرمارکت‌ها', 'کارخانه‌ها', 'پروژه‌ها', 'خدمات']}
+                cta="کاتالوگ خرید بساز"
                 href={wallHref}
               />
             </div>
@@ -485,29 +585,29 @@ export default function Landing() {
                   <div>
                     <div className="flex flex-wrap items-center gap-2">
                       <span
-                        className="rounded-full bg-emerald-100 px-3 py-1 text-xs font-black text-emerald-800 dark:bg-emerald-500/15 dark:text-emerald-300">
-                        شروع با کاتالوگ
+                        className="rounded-full bg-brand-red-soft px-3 py-1 text-xs font-black text-brand-red">
+                        شروع با کاتالوگ فروش
                       </span>
                       <ArrowLeft aria-hidden className="size-4 text-stone-400 dark:text-gray-600" />
                       <span
-                        className="rounded-full border-2 border-dashed border-amber-300 px-3 py-1 text-xs font-bold text-amber-700
-                        dark:border-amber-500/50 dark:text-amber-300">
-                        بعداً: دیوار استعلام
+                        className="rounded-full border-2 border-dashed border-brand-amber-tint px-3 py-1 text-xs font-bold text-amber-700
+                        dark:text-amber-300">
+                        بعداً: کاتالوگ خرید
                       </span>
                     </div>
                     <p className="mt-2 text-sm leading-7 text-stone-600 dark:text-gray-400">
-                      کالاهاش رو قشنگ نشون می‌ده و لینک کاتالوگش رو می‌فرسته برای مغازه‌دارها.
+                      کالاهاش رو قشنگ نشون می‌ده و لینک کاتالوگ فروشش رو می‌فرسته برای مغازه‌دارها — فقط همین لینک.
                     </p>
                   </div>
                   <div>
                     <div className="flex flex-wrap items-center gap-2">
                       <span
-                        className="rounded-full bg-amber-100 px-3 py-1 text-xs font-black text-amber-800 dark:bg-amber-500/15 dark:text-amber-300">
+                        className="rounded-full bg-brand-amber-soft px-3 py-1 text-xs font-black text-amber-800 dark:text-amber-300">
                         برای خرید عمده
                       </span>
                     </div>
                     <p className="mt-2 text-sm leading-7 text-stone-600 dark:text-gray-400">
-                      هر وقت خواست جنس عمده بخره، دیوار استعلام می‌سازه و از کارخونه‌ها قیمت می‌گیره.
+                      هر وقت خواست جنس عمده بخره، یه کاتالوگ خرید جدا می‌سازه و فقط لینک همون رو می‌ده دست کارخونه‌ها.
                     </p>
                   </div>
                 </div>
@@ -528,29 +628,28 @@ export default function Landing() {
                   <div>
                     <div className="flex flex-wrap items-center gap-2">
                       <span
-                        className="rounded-full bg-amber-100 px-3 py-1 text-xs font-black text-amber-800 dark:bg-amber-500/15 dark:text-amber-300">
-                        شروع با دیوار استعلام
+                        className="rounded-full bg-brand-amber-soft px-3 py-1 text-xs font-black text-amber-800 dark:text-amber-300">
+                        شروع با کاتالوگ خرید
                       </span>
                       <ArrowLeft aria-hidden className="size-4 text-stone-400 dark:text-gray-600" />
                       <span
-                        className="rounded-full border-2 border-dashed border-emerald-300 px-3 py-1 text-xs font-bold text-emerald-700
-                        dark:border-emerald-500/50 dark:text-emerald-300">
-                        بعداً: کاتالوگ
+                        className="rounded-full border-2 border-dashed border-brand-red-tint px-3 py-1 text-xs font-bold text-brand-red">
+                        بعداً: کاتالوگ فروش
                       </span>
                     </div>
                     <p className="mt-2 text-sm leading-7 text-stone-600 dark:text-gray-400">
-                      برای جنس‌های عمده‌ش از کارخونه‌ها قیمت می‌گیره و بهترین شرایط رو انتخاب می‌کنه.
+                      برای جنس‌های عمده‌ش لیست خرید می‌سازه، لینکش رو به کارخونه‌ها می‌ده و از همه قیمت می‌گیره.
                     </p>
                   </div>
                   <div>
                     <div className="flex flex-wrap items-center gap-2">
                       <span
-                        className="rounded-full bg-emerald-100 px-3 py-1 text-xs font-black text-emerald-800 dark:bg-emerald-500/15 dark:text-emerald-300">
+                        className="rounded-full bg-brand-red-soft px-3 py-1 text-xs font-black text-brand-red">
                         برای نمایش کالا
                       </span>
                     </div>
                     <p className="mt-2 text-sm leading-7 text-stone-600 dark:text-gray-400">
-                      هر وقت خواست، کاتالوگ می‌سازه و کالاهاش رو برای همسایه‌ها و مشتری‌های محله نشون می‌ده.
+                      هر وقت خواست، کاتالوگ فروش جدا می‌سازه و کالاهاش رو برای مشتری‌های محله نشون می‌ده.
                     </p>
                   </div>
                 </div>
@@ -563,10 +662,14 @@ export default function Landing() {
               className="mt-8 flex flex-col items-center gap-2 rounded-3xl bg-stone-900 px-6 py-7 text-center text-white shadow-xl dark:bg-gray-800 sm:flex-row sm:justify-center sm:gap-4">
               <Handshake className="size-7 shrink-0 text-amber-400" />
               <p className="text-base font-bold leading-8 sm:text-lg">
-                فرق نمی‌کنه از کدوم شروع کنی؛ هر وقت دومی رو لازم داشتی، با چند کلیک می‌سازی‌ش.
+                از کدوم شروع کنی فرقی نمی‌کنه؛ هر وقت دومی رو خواستی با چند کلیک می‌سازی‌ش.
+                موقع فرستادن لینک هم هیچ‌وقت قاطی نمی‌شن — هر لینک فقط به مسیر خودش می‌ره.
               </p>
             </motion.div>
           </section>
+
+          {/* -------------------------- live از روت دیمت ------------------------- */}
+          <LiveFromDaymat wallHref={wallHref} />
 
           {/* ------------------------------ final CTA --------------------------- */}
           <section id="start" aria-label="شروع" className="mx-auto max-w-4xl scroll-mt-24 px-4 pb-20 pt-12 sm:px-6">
@@ -574,26 +677,26 @@ export default function Landing() {
               {...fadeUp()}
               className="relative overflow-hidden rounded-[2.5rem] border-2 border-stone-200 bg-white px-6 py-12 text-center shadow-xl shadow-stone-200/70
               dark:border-gray-800 dark:bg-gray-900 dark:shadow-black/40 sm:px-12">
-              <div aria-hidden className="absolute -right-16 -top-16 size-48 rounded-full bg-emerald-100 blur-2xl dark:bg-emerald-500/10" />
-              <div aria-hidden className="absolute -bottom-16 -left-16 size-48 rounded-full bg-amber-100 blur-2xl dark:bg-amber-500/10" />
+              <div aria-hidden className="absolute -right-16 -top-16 size-48 rounded-full bg-brand-red-soft blur-2xl" />
+              <div aria-hidden className="absolute -bottom-16 -left-16 size-48 rounded-full bg-brand-amber-soft blur-2xl" />
               <div className="relative">
-                <h2 className="text-3xl font-black sm:text-4xl">همین حالا بازار خودت رو بساز</h2>
+                <h2 className="text-3xl font-black sm:text-4xl">همین حالا اولین کاتالوگت رو بساز</h2>
                 <p className="mx-auto mt-4 max-w-xl leading-8 text-stone-600 dark:text-gray-400">
-                  چند دقیقه وقت بذار، ابزارت رو بساز و فقط لینکش رو پخش کن؛
+                  چند دقیقه وقت بذار، محصولت رو بساز و فقط لینکش رو پخش کن؛
                   ساده مثل ساختن یک پست.
                 </p>
                 <div className="mt-8 flex flex-wrap items-center justify-center gap-3">
                   <Link
                     href={catalogHref}
-                    className="inline-flex h-12 items-center gap-2 rounded-full bg-emerald-600 px-7 text-base font-extrabold text-white shadow-lg shadow-emerald-600/25 transition-colors hover:bg-emerald-700">
+                    className="inline-flex h-12 items-center gap-2 rounded-full bg-brand-red px-7 text-base font-extrabold text-white shadow-lg shadow-brand-red/25 transition-colors hover:bg-brand-red-strong">
                     <Store className="size-4" />
-                    ساخت کاتالوگ قیمت
+                    ساخت کاتالوگ فروش
                   </Link>
                   <Link
                     href={wallHref}
-                    className="inline-flex h-12 items-center gap-2 rounded-full bg-amber-500 px-7 text-base font-extrabold text-white shadow-lg shadow-amber-500/25 transition-colors hover:bg-amber-600">
+                    className="inline-flex h-12 items-center gap-2 rounded-full bg-brand-amber px-7 text-base font-extrabold text-white shadow-lg shadow-brand-amber/30 transition-colors hover:bg-brand-amber-strong">
                     <ClipboardList className="size-4" />
-                    ساخت دیوار استعلام قیمت
+                    ساخت کاتالوگ خرید
                   </Link>
                 </div>
                 <p className="mt-5 text-xs font-medium text-stone-400 dark:text-gray-500">
@@ -610,12 +713,12 @@ export default function Landing() {
             className="mx-auto flex max-w-6xl flex-col items-center justify-between gap-3 px-4 py-8 sm:flex-row sm:px-6">
             <div className="flex items-center gap-2.5">
               <Image src="/images/logo3.png" alt="دیمت" width={80} height={28} className="h-7 w-auto object-contain" unoptimized />
-              <span className="hidden text-sm text-stone-400 dark:text-gray-500 sm:inline">— فروش با کاتالوگ، خرید با استعلام</span>
+              <span className="hidden text-sm text-stone-400 dark:text-gray-500 sm:inline">— فروش با کاتالوگ فروش، خرید با کاتالوگ خرید</span>
             </div>
             <nav className="flex items-center gap-4 text-xs font-bold text-stone-500 dark:text-gray-400">
-              <Link href="/docs/about" className="hover:text-emerald-600 dark:hover:text-emerald-400">درباره ما</Link>
-              <Link href="/docs/terms" className="hover:text-emerald-600 dark:hover:text-emerald-400">قوانین</Link>
-              <Link href="/feedback" className="hover:text-emerald-600 dark:hover:text-emerald-400">پیشنهادات</Link>
+              <Link href="/docs/about" className="hover:text-brand-red">درباره ما</Link>
+              <Link href="/docs/terms" className="hover:text-brand-red">قوانین</Link>
+              <Link href="/feedback" className="hover:text-brand-red">پیشنهادات</Link>
             </nav>
             <p className="text-xs text-stone-400 dark:text-gray-500">هر کسی توی بازار هم فروشنده‌ست، هم خریدار © ۱۴۰۵</p>
           </div>
