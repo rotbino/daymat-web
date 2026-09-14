@@ -1,4 +1,4 @@
-// app/inquiries/utils.ts — کمک‌متیرهای مشترک کاتالوگ قیمت
+// app/inquiries/utils.ts — کمک‌متیرهای مشترک اعلام خرید
 export const faNum = (n: number | null | undefined): string =>
     (n ?? 0).toLocaleString('fa-IR');
 
@@ -52,7 +52,7 @@ export const STATUS_CHIP: Record<string, string> = {
     withdrawn: 'bg-stone-100 text-stone-400 dark:bg-gray-800 dark:text-gray-500',
 };
 
-// ✅ کلاس واحد ورودی فرم‌های کاتالوگ قیمت — متن در هر دو تم خوانا
+// ✅ کلاس واحد ورودی فرم‌های اعلام خرید — متن در هر دو تم خوانا
 export const inp = 'h-10 rounded-xl border border-stone-200 bg-white px-3 text-sm font-bold text-stone-900 outline-none transition-colors placeholder:font-medium placeholder:text-stone-400 focus:border-brand-amber dark:border-gray-700 dark:bg-gray-950 dark:text-gray-100 dark:placeholder:text-gray-500 dark:focus:border-brand-amber dark:focus:bg-gray-950';
 export const inpSm = 'h-9 rounded-xl border border-stone-200 bg-white px-3 text-xs font-bold text-stone-900 outline-none transition-colors placeholder:font-medium placeholder:text-stone-400 focus:border-brand-amber dark:border-gray-700 dark:bg-gray-950 dark:text-gray-100 dark:placeholder:text-gray-500 dark:focus:border-brand-amber dark:focus:bg-gray-950';
 

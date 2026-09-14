@@ -1,9 +1,9 @@
 // app/my-inquiries/page.tsx
-// پنل مدیریت کاتالوگ قیمت — قرینهٔ کنسول کاتالوگ فروش (/my-catalogs):
+// پنل مدیریت اعلام خرید — قرینهٔ کنسول کاتالوگ فروش (/my-catalogs):
 //   انتخاب کسب‌وکار در /inquiries/new انجام می‌شود و کاربر مستقیم به همین پنل می‌آید؛
-//   اقلام قلم‌به‌قلم از همین‌جا اضافه می‌شوند (هر بار یک کالا + تیک کاتالوگ قیمت).
+//   اقلام قلم‌به‌قلم از همین‌جا اضافه می‌شوند (هر بار یک کالا + تیک اعلام خرید).
 //   تب‌ها: اقلام | پیشنهادها | تامین‌کنندگان | تنظیمات | انتشار — سوییچر دو-محصولی بالای پنل.
-// ✅ تب «تامین‌کنندگان»: شبکهٔ خرید↔فروش — دعوت/تایید تامین‌کننده‌های کاتالوگ قیمت
+// ✅ تب «تامین‌کنندگان»: شبکهٔ خرید↔فروش — دعوت/تایید تامین‌کننده‌های اعلام خرید
 'use client';
 
 import React, { useEffect, useMemo, useState } from 'react';
@@ -41,7 +41,7 @@ export default function MyInquiriesPage() {
     const queryClient = useQueryClient();
     const { isAuthenticated, _hydrated } = useSelector((s: RootState) => s.auth) as any;
     const hydrated = _hydrated !== false;
-    // «کاتالوگ قیمت کارنت» — پرسیست؛ با رفرش هم سرجاش می‌ماند
+    // «اعلام خرید کارنت» — پرسیست؛ با رفرش هم سرجاش می‌ماند
     const currentInquiryId = useSelector((s: RootState) => s.catalog.currentInquiryId);
 
     const [tab, setTab] = useState<string>('items');
@@ -96,7 +96,7 @@ export default function MyInquiriesPage() {
     }, []);
 
     useEffect(() => {
-        document.title = 'پنل کاتالوگ قیمت | دیمت';
+        document.title = 'پنل اعلام خرید | دیمت';
     }, []);
 
     useEffect(() => {
@@ -121,7 +121,7 @@ export default function MyInquiriesPage() {
                 itemId: item.id,
                 data: { urgent: !item.urgent },
             });
-            toast.success(item.urgent ? 'کاتالوگ قیمت این قلم تمام شد' : 'کاتالوگ قیمت فعال شد — تامین‌کننده‌ها قیمت می‌دن');
+            toast.success(item.urgent ? 'اعلام خرید این قلم تمام شد' : 'اعلام خرید فعال شد — تامین‌کننده‌ها قیمت می‌دن');
         } catch (e: any) {
             toast.error(e?.response?.data?.message || 'تغییر وضعیت ناموفق بود');
         } finally {
@@ -161,14 +161,14 @@ export default function MyInquiriesPage() {
         const next = currentRow.status === 'open' ? 'closed' : 'open';
         try {
             await updateInquiry.mutateAsync({ id: currentRow.id, data: { status: next } });
-            toast.success(next === 'open' ? 'کاتالوگ قیمت باز شد' : 'کاتالوگ قیمت بسته شد');
+            toast.success(next === 'open' ? 'اعلام خرید باز شد' : 'اعلام خرید بسته شد');
         } catch (e: any) {
             toast.error(e?.response?.data?.message || 'تغییر وضعیت ناموفق بود');
         }
     };
 
     const removeCatalog = async () => {
-        if (!currentRow || !window.confirm('این کاتالوگ قیمت برای همیشه حذف شود؟')) return;
+        if (!currentRow || !window.confirm('این اعلام خرید برای همیشه حذف شود؟')) return;
         try {
             await deleteInquiry.mutateAsync(currentRow.id);
             toast.success('حذف شد');
@@ -204,7 +204,7 @@ export default function MyInquiriesPage() {
         const key = detail?.slug || detail?.id || currentInquiryId;
         if (key) router.push(`/${key}`);
     };
-    // 💾 بعد از ذخیرهٔ کارت ویزیت — لیست صفحه‌های خرید تازه شود (metadata.visitCard)
+    // 💾 بعد از ذخیرهٔ کارت ویزیت — لیست اعلام‌های خرید تازه شود (metadata.visitCard)
     const refreshInquiries = () => {
         queryClient.invalidateQueries({ queryKey: ['inquiries'] });
         queryClient.invalidateQueries({ queryKey: ['inquiry'] });
@@ -246,7 +246,7 @@ export default function MyInquiriesPage() {
                             <PackageSearch className="size-8" />
                         </span>
                         <div>
-                            <h3 className="text-lg font-black">هنوز کاتالوگ قیمتی نساختی</h3>
+                            <h3 className="text-lg font-black">هنوز اعلام خریدی نساختی</h3>
                             <p className="mt-1 text-sm text-stone-500 dark:text-gray-400">
                                 اول کسب‌وکار رو انتخاب کن — بقیه‌ش اینجاست.
                             </p>
@@ -254,7 +254,7 @@ export default function MyInquiriesPage() {
                         <a href="/inquiries/new"
                             className="flex h-11 items-center gap-2 rounded-full bg-brand-amber px-6 text-sm font-extrabold text-white shadow-lg shadow-brand-amber/30 transition-colors hover:bg-brand-amber-strong">
                             <Plus className="size-4" />
-                            ساخت کاتالوگ قیمت
+                            ساخت اعلام خرید
                         </a>
                     </div>
                 ) : (
@@ -341,7 +341,7 @@ export default function MyInquiriesPage() {
                             ) : (
                                 <div className="grid place-items-center rounded-3xl border border-stone-100 bg-white py-14 text-center dark:border-gray-800 dark:bg-gray-900">
                                     <ClipboardList className="size-10 text-stone-300 dark:text-gray-700" />
-                                    <p className="mt-3 text-sm font-bold text-stone-400">کاتالوگ قیمت پیدا نشد</p>
+                                    <p className="mt-3 text-sm font-bold text-stone-400">اعلام خرید پیدا نشد</p>
                                 </div>
                             )}
                         </div>
@@ -355,7 +355,7 @@ export default function MyInquiriesPage() {
                             editItem={editItem}
                         />
 
-                        {/* مدال واحدهای اختصاصی کاتالوگ قیمت */}
+                        {/* مدال واحدهای اختصاصی اعلام خرید */}
                         <UnitSettingsModal
                             isOpen={unitsOpen}
                             onClose={() => setUnitsOpen(false)}
@@ -367,11 +367,11 @@ export default function MyInquiriesPage() {
                                 return { units };
                             }}
                             onSaved={() => { /* کش با invalidate تازه می‌شود */ }}
-                            title="واحدهای کاتالوگ قیمت"
+                            title="واحدهای اعلام خرید"
                             showQtyFields={false}
                         />
 
-                        {/* ✅ کیت اشتراک‌گذاری صفحهٔ خرید — مخاطبان تلفن + واتساپ/تلگرام + QR چاپی */}
+                        {/* ✅ کیت اشتراک‌گذاری اعلام خرید — مخاطبان تلفن + واتساپ/تلگرام + QR چاپی */}
                         {detail && (
                             <ShareKitModal
                                 open={shareOpen}
@@ -383,7 +383,7 @@ export default function MyInquiriesPage() {
                             />
                         )}
 
-                        {/* 🪪 استودیوی کارت ویزیت صفحهٔ خرید — برای تامین‌کننده‌ها؛ ذخیره در metadata */}
+                        {/* 🪪 استودیوی کارت ویزیت اعلام خرید — برای تامین‌کننده‌ها؛ ذخیره در metadata */}
                         {detail && (
                             <VisitCardModal
                                 open={cardOpen}

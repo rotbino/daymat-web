@@ -56,7 +56,7 @@ export default function CatalogFooter({ catalog }: { catalog: any; onGoHome?: ()
                 <div className="pt-4 border-t border-gray-100 dark:border-gray-800 flex flex-col items-center gap-2">
                     <button onClick={() => router.push(createHref)}>
                         <div className="relative h-14 w-56"><Image src="/images/logo2.png" alt="دیمت" fill className="object-contain" unoptimized /></div>
-                        <p className="text-[13px] font-bold text-gray-500 dark:text-gray-400">دیمت، ساخت کاتالوگ قیمت</p>
+                        <p className="text-[13px] font-bold text-gray-500 dark:text-gray-400">دیمت، ساخت اعلام خرید</p>
                     </button>
                 </div>
 

@@ -416,7 +416,7 @@ export default function VerifyPaymentsPage() {
                     <p className="text-sm text-on-surface-variant mt-1">
                         {searchTerm || statusFilter !== 'all'
                             ? 'با فیلترهای اعمال‌شده هیچ فیشی پیدا نشد'
-                            : 'هیچ کاتالوگ قیمت اعتباری ثبت نشده است'}
+                            : 'هیچ اعلام خرید اعتباری ثبت نشده است'}
                     </p>
                 </div>
             ) : (

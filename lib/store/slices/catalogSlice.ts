@@ -19,7 +19,7 @@ export interface CurrentCatalogSnapshot {
 interface CatalogState {
     currentCatalogId: string | null;
     currentCatalog: CurrentCatalogSnapshot | null;
-    /** «کاتالوگ قیمت کارنت» — انتخاب سوییچر برای محصول دوم (پرسیست) */
+    /** «اعلام خرید کارنت» — انتخاب سوییچر برای محصول دوم (پرسیست) */
     currentInquiryId: string | null;
 }
 
@@ -38,7 +38,7 @@ const catalogSlice = createSlice({
             state.currentCatalogId = action.payload?.id ?? null;
             state.currentCatalog = action.payload;
         },
-        /** انتخاب کاتالوگ قیمت کارنت — از سوییچر یا لینک عمیق */
+        /** انتخاب اعلام خرید کارنت — از سوییچر یا لینک عمیق */
         setCurrentInquiry: (state, action: PayloadAction<string | null>) => {
             state.currentInquiryId = action.payload;
         },

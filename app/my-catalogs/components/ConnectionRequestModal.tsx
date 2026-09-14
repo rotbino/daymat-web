@@ -4,7 +4,7 @@
 //   سورتِ مرتبط‌سازی: هم‌شهری → هم‌استان → پیش‌شمارهٔ تلفن (مثل ۰۹۱۸ همدان) → مکملِ زنجیرهٔ کاری
 //   فیلترها: استان | شهر | صنف (سطح ۱) | زمینهٔ فعالیت (سطح ۲) | نوعِ فروش (تب کاتالوگ‌ها)
 //   نوع درخواست بسته به تب و مقصد:
-//     کسب‌وکارها → «کاتالوگ قیمت» (مشتری ثبت می‌شود؛ تایید با صاحب کسب‌وکار)
+//     کسب‌وکارها → «اعلام خرید» (مشتری ثبت می‌شود؛ تایید با صاحب کسب‌وکار)
 //     کاتالوگ‌ها → «درخواست تامین‌کنندگی» یا اگر کاتالوگ مقصد خدماتی باشد «درخواست تامین خدمات»
 //     افراد     → «دعوت به همکاری در فروش» (پذیرش با خودِ دعوت‌شده)
 'use client';
@@ -181,7 +181,7 @@ export default function ConnectionRequestModal({ open, onClose, catalogId, canAs
                 businessId: b.id,
                 ...(assignTo ? { sellerUserId: assignTo } : {}),
             });
-            toast.success((res?.message || 'کاتالوگ قیمت ارسال شد — در انتظار تایید صاحب کسب‌وکار') + quotaSuffix(res?.quota));
+            toast.success((res?.message || 'اعلام خرید ارسال شد — در انتظار تایید صاحب کسب‌وکار') + quotaSuffix(res?.quota));
             markSent(`biz-${b.id}`);
             refreshQuota();
         } catch (e: any) {
@@ -502,7 +502,7 @@ export default function ConnectionRequestModal({ open, onClose, catalogId, canAs
                                         onClick={() => (isBiz ? sendBuyerRequest(item) : isCat ? sendSupplierOrService(item) : sendSellerInvite(item))}
                                         className="px-3 py-2 rounded-xl bg-primary text-white text-xs font-bold flex-shrink-0 flex items-center gap-1.5 hover:opacity-90 active:scale-95 transition"
                                     >
-                                        {isBiz && <><ShoppingBasket className="w-3.5 h-3.5" /> کاتالوگ قیمت</>}
+                                        {isBiz && <><ShoppingBasket className="w-3.5 h-3.5" /> اعلام خرید</>}
                                         {isCat && !isServiceCat && <><Truck className="w-3.5 h-3.5" /> درخواست تامین‌کنندگی</>}
                                         {isCat && isServiceCat && <><Wrench className="w-3.5 h-3.5" /> درخواست تامین خدمات</>}
                                         {!isBiz && !isCat && <><Handshake className="w-3.5 h-3.5" /> دعوت</>}

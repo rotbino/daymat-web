@@ -570,7 +570,7 @@ export const useManualPurchase = () => {
         mutationFn: (data: PurchaseCreditDto) => apiService.credit.manualPurchase(data),
         onSuccess: () => {
             queryClient.invalidateQueries({ queryKey: ['credit', 'balance'] });
-            toast.success('کاتالوگ قیمت با موفقیت ثبت شد');
+            toast.success('اعلام خرید با موفقیت ثبت شد');
         },
         onError: (error: ApiError) => toast.error(error.message || 'خطا در ثبت درخواست'),
     });
@@ -1707,14 +1707,14 @@ export const useRemoveContact = () => {
 };
 
 // ═══════════════════════════════════════════════════════════
-// INQUIRY HOOKS — کاتالوگ قیمت (استعلام قیمت)
+// INQUIRY HOOKS — اعلام خرید (استعلام قیمت)
 // ═══════════════════════════════════════════════════════════
 
 export interface InquiryListParams {
     q?: string; city?: string; tag?: string; page?: number; limit?: number;
 }
 
-/** دیوار عمومی صفحه‌های خرید — بدون نیاز به ورود */
+/** دیوار عمومی اعلام‌های خرید — بدون نیاز به ورود */
 export const usePublicInquiries = (params: InquiryListParams = {}) => {
     return useQuery({
         queryKey: ['inquiries', 'public', params],
@@ -1724,7 +1724,7 @@ export const usePublicInquiries = (params: InquiryListParams = {}) => {
     });
 };
 
-/** جزئیات یک کاتالوگ قیمت (مالک: به‌همراه پیشنهادها) */
+/** جزئیات یک اعلام خرید (مالک: به‌همراه پیشنهادها) */
 export const useInquiry = (idOrSlug?: string) => {
     return useQuery({
         queryKey: ['inquiry', 'detail', idOrSlug],
@@ -1733,7 +1733,7 @@ export const useInquiry = (idOrSlug?: string) => {
     });
 };
 
-/** صفحه‌های خرید من */
+/** اعلام‌های خرید من */
 export const useMyInquiries = () => {
     const { hasAccess } = useAuthState();
     return useQuery({
@@ -1811,9 +1811,9 @@ export const useUpdateOfferStatus = () => {
     });
 };
 
-// ─── قلم‌به‌قلم (پنل کاتالوگ قیمت) ───
+// ─── قلم‌به‌قلم (پنل اعلام خرید) ───
 
-/** پیشنهادهای دریافتی یک کاتالوگ قیمت (فقط مالک) — پنل */
+/** پیشنهادهای دریافتی یک اعلام خرید (فقط مالک) — پنل */
 export const useInquiryOffers = (inquiryId?: string) => {
     const { hasAccess } = useAuthState();
     return useQuery({
@@ -1824,7 +1824,7 @@ export const useInquiryOffers = (inquiryId?: string) => {
     });
 };
 
-/** افزودن یک قلم به کاتالوگ قیمت */
+/** افزودن یک قلم به اعلام خرید */
 export const useAddInquiryItem = () => {
     const qc = useQueryClient();
     return useMutation({
@@ -1837,7 +1837,7 @@ export const useAddInquiryItem = () => {
     });
 };
 
-/** ویرایش یک قلم — شامل تاگل کاتالوگ قیمت */
+/** ویرایش یک قلم — شامل تاگل اعلام خرید */
 export const useUpdateInquiryItem = () => {
     const qc = useQueryClient();
     return useMutation({
@@ -1863,9 +1863,9 @@ export const useRemoveInquiryItem = () => {
     });
 };
 
-// ─── اعضای کاتالوگ قیمت — تامین‌کننده‌های تاییدشده (شبکهٔ خرید↔فروش) ───
+// ─── اعضای اعلام خرید — تامین‌کننده‌های تاییدشده (شبکهٔ خرید↔فروش) ───
 
-/** فهرست تامین‌کننده‌های یک کاتالوگ قیمت (مالک) */
+/** فهرست تامین‌کننده‌های یک اعلام خرید (مالک) */
 export const useInquiryMembers = (inquiryId?: string) => {
     const { hasAccess } = useAuthState();
     return useQuery({
@@ -1915,7 +1915,7 @@ export const useDecideInquiryMember = () => {
     });
 };
 
-/** فرصت‌های فروش تامین‌کننده — دعوت‌ها + کاتالوگ قیمتهای فوری (تب «کاتالوگ قیمت» پنل فروش) */
+/** فرصت‌های فروش تامین‌کننده — دعوت‌ها + اقلام فوری (تب «اعلام خرید» پنل فروش) */
 export const useInquiryOpportunities = () => {
     const { hasAccess } = useAuthState();
     return useQuery({

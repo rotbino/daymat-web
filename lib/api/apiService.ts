@@ -1377,10 +1377,10 @@ export const apiService = {
     },
 
     // ============================================================
-    // INQUIRY — کاتالوگ قیمت (استعلام قیمت)
+    // INQUIRY — اعلام خرید (استعلام قیمت)
     // ============================================================
     inquiry: {
-        /** دیوار عمومی صفحه‌های خرید باز */
+        /** دیوار عمومی اعلام‌های خرید باز */
         publicList: (params: { q?: string; city?: string; tag?: string; page?: number; limit?: number } = {}): Promise<InquiryListResponse> => {
             const sp = new URLSearchParams();
             Object.entries(params).forEach(([k, v]) => {
@@ -1403,7 +1403,7 @@ export const apiService = {
         checkSlug: (slug: string, excludeId?: string): Promise<{ available: boolean; reason?: string; slug?: string }> =>
             apiRequest(`/inquiry/check-slug?slug=${encodeURIComponent(slug)}${excludeId ? `&excludeId=${excludeId}` : ''}`),
 
-        /** ساخت کاتالوگ قیمت */
+        /** ساخت اعلام خرید */
         create: (data: CreateInquiryPayload): Promise<InquiryDetail> =>
             apiRequest('/inquiry', { method: 'POST', data }),
 
@@ -1414,16 +1414,16 @@ export const apiService = {
         remove: (id: string): Promise<{ message: string }> =>
             apiRequest(`/inquiry/${id}`, { method: 'DELETE' }),
 
-        /** صفحه‌های خرید من */
+        /** اعلام‌های خرید من */
         mine: (): Promise<InquiryListItem[]> =>
             apiRequest('/inquiry/mine'),
 
-        // ─── مدیریت قلم‌به‌قلم (پنل کاتالوگ قیمت) ───
+        // ─── مدیریت قلم‌به‌قلم (پنل اعلام خرید) ───
         /** افزودن یک قلم — هر بار یک کالا */
         addItem: (inquiryId: string, data: CreateInquiryItemPayload): Promise<InquiryItem> =>
             apiRequest(`/inquiry/${inquiryId}/items`, { method: 'POST', data }),
 
-        /** ویرایش یک قلم (شامل تاگل کاتالوگ قیمت urgent) */
+        /** ویرایش یک قلم (شامل تاگل اعلام خرید urgent) */
         updateItem: (inquiryId: string, itemId: string, data: Partial<CreateInquiryItemPayload>): Promise<InquiryItem> =>
             apiRequest(`/inquiry/${inquiryId}/items/${itemId}`, { method: 'PATCH', data }),
 
@@ -1447,12 +1447,12 @@ export const apiService = {
         myOffers: (): Promise<InquiryOffer[]> =>
             apiRequest('/inquiry/my-offers'),
 
-        // ─── اعضای کاتالوگ قیمت — تامین‌کننده‌های تاییدشده (شبکهٔ خرید↔فروش) ───
-        /** 🪪 ذخیره/حذف مشخصات کارت ویزیت صفحهٔ خرید — قرینهٔ کاتالوگ فروش */
+        // ─── اعضای اعلام خرید — تامین‌کننده‌های تاییدشده (شبکهٔ خرید↔فروش) ───
+        /** 🪪 ذخیره/حذف مشخصات کارت ویزیت اعلام خرید — قرینهٔ کاتالوگ فروش */
         updateVisitCard: (inquiryId: string, spec: Record<string, any> | null): Promise<any> =>
             apiRequest(`/inquiry/${inquiryId}/visit-card`, { method: 'PATCH', data: { spec } }),
 
-        /** فهرست تامین‌کننده‌های این کاتالوگ قیمت (مالک) */
+        /** فهرست تامین‌کننده‌های این اعلام خرید (مالک) */
         getMembers: (inquiryId: string): Promise<any[]> =>
             apiRequest(`/inquiry/${inquiryId}/members`),
 
@@ -1476,7 +1476,7 @@ export const apiService = {
         removeMember: (inquiryId: string, memberId: string): Promise<any> =>
             apiRequest(`/inquiry/${inquiryId}/members/${memberId}`, { method: 'DELETE' }),
 
-        /** فرصت‌های فروش تامین‌کننده — دعوت‌ها + کاتالوگ قیمتهای فوریِ صفحه‌های خریدِ عضوش */
+        /** فرصت‌های فروش تامین‌کننده — دعوت‌ها + اقلام فوریِ اعلام‌های خریدِ عضوش */
         opportunities: (): Promise<{ catalogs: any[]; invitations: any[]; requests: any[]; leads: any[] }> =>
             apiRequest('/inquiry/opportunities'),
     },

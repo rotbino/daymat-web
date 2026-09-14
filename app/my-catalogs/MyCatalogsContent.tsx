@@ -81,7 +81,7 @@ export default function MyCatalogsContent() {
         staleTime: 60_000,
     });
 
-    // ✅ شبکهٔ خرید↔فروش — دعوت‌های در انتظار پذیرش (بج قرمز تب «کاتالوگ قیمت»)
+    // ✅ شبکهٔ خرید↔فروش — دعوت‌های در انتظار پذیرش (بج قرمز تب «اعلام خرید»)
     const { data: oppsData } = useInquiryOpportunities();
     const pendingInvites = (oppsData?.invitations ?? []).length;
 
@@ -90,7 +90,7 @@ export default function MyCatalogsContent() {
     const { data: pendingApprovals } = useMyPendingApprovals();
     const pendingTotal = pendingSummary?.total || 0;
     const approvals: any[] = pendingApprovals?.items || [];
-    // ✅ صفحه‌های خرید من — در همان سوییچر کنار کاتالوگ‌های فروش (محصول دوم دیمت)
+    // ✅ اعلام‌های خرید من — در همان سوییچر کنار کاتالوگ‌های فروش (محصول دوم دیمت)
     const { data: myInquiriesRaw } = useMyInquiries();
     const myInquiries: any[] = useMemo(() => myInquiriesRaw ?? [], [myInquiriesRaw]);
     const catalogs = useMemo(
@@ -289,9 +289,9 @@ export default function MyCatalogsContent() {
     const canShare = !!(currentCatalog as any)?.slug;
 
     const goNewCatalog = () => router.push('/business/register');
-    // کاتالوگ قیمت جدید — فرم محصول دوم
+    // اعلام خرید جدید — فرم محصول دوم
     const goNewInquiry = () => router.push('/inquiries/new');
-    // انتخاب کاتالوگ قیمت از سوییچر → پرش به مدیریت آن + ثبت «کاتالوگ قیمت کارنت» (پرسیست)
+    // انتخاب اعلام خرید از سوییچر → پرش به مدیریت آن + ثبت «اعلام خرید کارنت» (پرسیست)
     const selectInquiry = (id: string) => {
         dispatch(setCurrentInquiry(id));
         router.push(`/my-inquiries?catalog=${id}`);
@@ -351,7 +351,7 @@ export default function MyCatalogsContent() {
         : [
               { key: 'products' as Tab, label: 'محصولات', icon: Package, count: products.length },
               { key: 'team' as Tab, label: 'اعضا', icon: Users, alert: pendingTotal },
-              { key: 'leads' as Tab, label: 'کاتالوگ قیمت', mobileLabel: 'خریدها', icon: Megaphone, alert: pendingInvites },
+              { key: 'leads' as Tab, label: 'سرنخ‌های فروش', mobileLabel: 'سرنخ‌ها', icon: Megaphone, alert: pendingInvites },
               { key: 'profile' as Tab, label: 'مشخصات', icon: IdCard },
               { key: 'stats' as Tab, label: 'آمار', icon: BarChart3 },
               { key: 'publish' as Tab, label: 'انتشار', icon: Globe, count: memberships.length > 0 ? memberships.length : undefined },
@@ -501,7 +501,7 @@ export default function MyCatalogsContent() {
                     <TeamTab catalogId={currentCatalog.id} />
                 )}
 
-                {/* ✅ تب کاتالوگ قیمت — شبکهٔ خرید↔فروش از سمت تامین‌کننده */}
+                {/* ✅ تب اعلام خرید — شبکهٔ خرید↔فروش از سمت تامین‌کننده */}
                 {tab === 'leads' && (
                     <LeadsTab />
                 )}
