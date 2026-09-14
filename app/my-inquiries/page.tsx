@@ -247,6 +247,7 @@ export default function MyInquiriesPage() {
                                     onSelectInquiry={selectInquiry}
                                     onSelectCatalog={selectSalesCatalog}
                                     onNew={() => router.push('/inquiries/new')}
+                                    onNewCatalog={() => router.push('/business/register')}
                                 />
                             </div>
                             <InquiryConsoleTabs items={tabItems} active={tab} onChange={setTab} />

@@ -1,22 +1,27 @@
 // app/my-inquiries/components/InquiryIdentityBar.tsx
 // نوار هویت کاتالوگ خرید — قرینهٔ CatalogIdentityBar (سوییچر دو-محصولی)
 // هر دو نوع کاتالوگ در منو با برچسب پرانتزی؛ انتخاب فروش → مدیریت کاتالوگ فروش
+// پایینِ سوییچر: «کاتالوگ جدید» → مدال دو-گزینه‌ای (خرید یا فروش؟) — قرینهٔ سوییچر فروش
 // پالت صفحهٔ خرید: سنگی/کهربایی (هماهنگ با کارت‌های همین صفحه)
 'use client';
 
 import React, { useState } from 'react';
 import { Check, ChevronDown, ClipboardList, Plus } from 'lucide-react';
 import { cn } from '@/lib/utils';
+import NewCatalogChoiceModal from '@/app/components/NewCatalogChoiceModal';
 
-export default function InquiryIdentityBar({ inquiries, catalogs, currentInquiryId, onSelectInquiry, onSelectCatalog, onNew }: {
+export default function InquiryIdentityBar({ inquiries, catalogs, currentInquiryId, onSelectInquiry, onSelectCatalog, onNew, onNewCatalog }: {
     inquiries: any[];
     catalogs: any[];
     currentInquiryId: string | null;
     onSelectInquiry: (id: string) => void;
     onSelectCatalog: (id: string) => void;
     onNew: () => void;
+    /** ساخت کاتالوگ فروش — از مدال «کاتالوگ جدید» (درخواست کاربر) */
+    onNewCatalog: () => void;
 }) {
     const [open, setOpen] = useState(false);
+    const [newOpen, setNewOpen] = useState(false);
     const current = inquiries.find((w) => w.id === currentInquiryId) || null;
     const multi = inquiries.length + catalogs.length > 1;
 
@@ -102,14 +107,22 @@ export default function InquiryIdentityBar({ inquiries, catalogs, currentInquiry
                             </>
                         )}
                         <div className="my-1 border-t border-stone-100 dark:border-gray-800" />
-                        <button type="button" role="menuitem" onClick={() => { setOpen(false); onNew(); }}
+                        {/* کاتالوگ جدید — اول می‌پرسد خرید یا فروش (ایدهٔ مالک) */}
+                        <button type="button" role="menuitem" onClick={() => { setOpen(false); setNewOpen(true); }}
                                 className="flex h-11 w-full items-center gap-2.5 rounded-xl px-3 text-right text-[13px] font-extrabold text-amber-700 transition-colors hover:bg-brand-amber-soft dark:text-amber-400 dark:hover:bg-amber-500/10">
                             <Plus className="size-4" />
-                            کاتالوگ خرید جدید
+                            کاتالوگ جدید
                         </button>
                     </div>
                 </>
             )}
+
+            {/* مدال انتخاب نوع کاتالوگ */}
+            <NewCatalogChoiceModal
+                open={newOpen}
+                onClose={() => setNewOpen(false)}
+                onPick={(kind) => { setNewOpen(false); if (kind === 'purchase') onNew(); else onNewCatalog(); }}
+            />
         </div>
     );
 }

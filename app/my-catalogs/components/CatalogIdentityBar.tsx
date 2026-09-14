@@ -3,6 +3,7 @@
 // شیر + چشم (مشاهدهٔ کاتالوگ عمومی) + ⋯
 // ✅ سوییچر دو-محصولی: کاتالوگ‌های فروش و کاتالوگ‌های خرید با برچسب پرانتزی
 //    کنار نام — انتخاب کاتالوگ خرید به مدیریت آن پرش می‌کند (درخواست کاربر)
+// ✅ پایینِ سوییچر: «کاتالوگ جدید» → مدال دو-گزینه‌ای (خرید یا فروش؟) — ایدهٔ مالک
 // (کارت ویزیت به تب انتشار منتقل شد با نام «ساخت کارت ویزیت کاتالوگ» — بنا بر بازخورد کاربر)
 // موبایل: دکمه‌ها کوچک‌تر (w-9) تا برای عنوان جا بماند (بازخورد کاربر)
 // ⚠️ قانون: حالت تاریک همیشه چک شده
@@ -12,6 +13,7 @@ import React, { useState } from 'react';
 import Image from 'next/image';
 import { Check, ChevronDown, ClipboardList, Ellipsis, Eye, Key, LibraryBig, Plus, Share2 } from 'lucide-react';
 import { cn } from '@/lib/utils';
+import NewCatalogChoiceModal from '@/app/components/NewCatalogChoiceModal';
 
 export default function CatalogIdentityBar({ catalogs, inquiries = [], currentCatalog, canShare, onSelect, onSelectInquiry, onShare, onPreview, onNewCatalog, onNewInquiry, onChangePassword }: {
     catalogs: any[];
@@ -29,6 +31,7 @@ export default function CatalogIdentityBar({ catalogs, inquiries = [], currentCa
 }) {
     const [open, setOpen] = useState(false);
     const [menuOpen, setMenuOpen] = useState(false);
+    const [newOpen, setNewOpen] = useState(false);
     const multi = catalogs.length + inquiries.length > 1;
     const logoSrc = currentCatalog?.logoFile?.path || currentCatalog?.logoUrl;
 
@@ -193,9 +196,26 @@ export default function CatalogIdentityBar({ catalogs, inquiries = [], currentCa
                                 ))}
                             </>
                         )}
+
+                        {/* کاتالوگ جدید — اول می‌پرسد خرید یا فروش (ایدهٔ مالک) */}
+                        <div className="my-1 border-t border-outline-variant/20 dark:border-gray-800" />
+                        <button type="button" role="menuitem"
+                                onClick={() => { setOpen(false); setNewOpen(true); }}
+                                className="w-full flex items-center gap-2.5 h-11 px-3 rounded-lg text-right text-[13px] font-extrabold
+                                    text-primary hover:bg-surface-container-high dark:hover:bg-gray-800 transition-colors">
+                            <Plus className="w-4 h-4" />
+                            کاتالوگ جدید
+                        </button>
                     </div>
                 </>
             )}
+
+            {/* مدال انتخاب نوع کاتالوگ */}
+            <NewCatalogChoiceModal
+                open={newOpen}
+                onClose={() => setNewOpen(false)}
+                onPick={(kind) => { setNewOpen(false); if (kind === 'sale') onNewCatalog(); else onNewInquiry?.(); }}
+            />
         </div>
     );
 }
