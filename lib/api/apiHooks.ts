@@ -200,9 +200,9 @@ export const useCreateCatalog = () => {
         onSuccess: () => {
             queryClient.invalidateQueries({ queryKey: ['cataloges'] });
             queryClient.invalidateQueries({ queryKey: ['catalog', 'active'] });
-            queryClient.invalidateQueries({ queryKey: ['catalogs'] }); // کش صفحهٔ «مدیریت کاتالوگ»
+            queryClient.invalidateQueries({ queryKey: ['catalogs'] }); // کش صفحه «مدیریت کاتالوگ»
         },
-        // ✅ توست خطا اینجا نمی‌زنیم — صفحهٔ فراخوان (register) خطاها را با کد و پیام اختصاصی مدیریت می‌کند
+        // ✅ توست خطا اینجا نمی‌زنیم — صفحه فراخوان (register) خطاها را با کد و پیام اختصاصی مدیریت می‌کند
         //    (قبلاً اینجا + catchِ صفحه هر دو توست می‌زدند = دو پیام برای یک خطا)
     });
 };
@@ -1035,7 +1035,7 @@ export const useUpdateBusinessEntity = () => {
     });
 };
 
-// ✅ جزئیات کامل کسب‌وکار — صفحهٔ مدیریت کسب‌وکار (با کاتالوگ‌ها، تیم و زمینه‌های فعالیت)
+// ✅ جزئیات کامل کسب‌وکار — صفحه مدیریت کسب‌وکار (با کاتالوگ‌ها، تیم و زمینه‌های فعالیت)
 export const useBusinessDetail = (id?: string | null) => {
     return useQuery({
         queryKey: ['business-detail', id],
@@ -1085,7 +1085,7 @@ export const useMyBusinessMembership = (businessId?: string | null, enabled = tr
     });
 };
 
-// ✅ لیست تیم کاری — فقط مدیر (صفحهٔ مدیریت کسب‌وکار)
+// ✅ لیست تیم کاری — فقط مدیر (صفحه مدیریت کسب‌وکار)
 export const useBusinessMembers = (businessId?: string | null, enabled = true) => {
     return useQuery({
         queryKey: ['business-members', businessId],
@@ -1707,14 +1707,14 @@ export const useRemoveContact = () => {
 };
 
 // ═══════════════════════════════════════════════════════════
-// INQUIRY HOOKS — کاتالوگ خرید (استعلام قیمت)
+// INQUIRY HOOKS — صفحه خرید (استعلام قیمت)
 // ═══════════════════════════════════════════════════════════
 
 export interface InquiryListParams {
     q?: string; city?: string; tag?: string; page?: number; limit?: number;
 }
 
-/** دیوار عمومی کاتالوگ‌های خرید — بدون نیاز به ورود */
+/** دیوار عمومی صفحه‌های خرید — بدون نیاز به ورود */
 export const usePublicInquiries = (params: InquiryListParams = {}) => {
     return useQuery({
         queryKey: ['inquiries', 'public', params],
@@ -1724,7 +1724,7 @@ export const usePublicInquiries = (params: InquiryListParams = {}) => {
     });
 };
 
-/** جزئیات یک کاتالوگ خرید (مالک: به‌همراه پیشنهادها) */
+/** جزئیات یک صفحه خرید (مالک: به‌همراه پیشنهادها) */
 export const useInquiry = (idOrSlug?: string) => {
     return useQuery({
         queryKey: ['inquiry', 'detail', idOrSlug],
@@ -1733,7 +1733,7 @@ export const useInquiry = (idOrSlug?: string) => {
     });
 };
 
-/** کاتالوگ‌های خرید من */
+/** صفحه‌های خرید من */
 export const useMyInquiries = () => {
     const { hasAccess } = useAuthState();
     return useQuery({
@@ -1811,9 +1811,9 @@ export const useUpdateOfferStatus = () => {
     });
 };
 
-// ─── قلم‌به‌قلم (پنل کاتالوگ خرید) ───
+// ─── قلم‌به‌قلم (پنل صفحه خرید) ───
 
-/** پیشنهادهای دریافتی یک کاتالوگ خرید (فقط مالک) — پنل */
+/** پیشنهادهای دریافتی یک صفحه خرید (فقط مالک) — پنل */
 export const useInquiryOffers = (inquiryId?: string) => {
     const { hasAccess } = useAuthState();
     return useQuery({
@@ -1824,7 +1824,7 @@ export const useInquiryOffers = (inquiryId?: string) => {
     });
 };
 
-/** افزودن یک قلم به کاتالوگ خرید */
+/** افزودن یک قلم به صفحه خرید */
 export const useAddInquiryItem = () => {
     const qc = useQueryClient();
     return useMutation({
@@ -1863,9 +1863,9 @@ export const useRemoveInquiryItem = () => {
     });
 };
 
-// ─── اعضای کاتالوگ خرید — تامین‌کننده‌های تاییدشده (شبکهٔ خرید↔فروش) ───
+// ─── اعضای صفحه خرید — تامین‌کننده‌های تاییدشده (شبکهٔ خرید↔فروش) ───
 
-/** فهرست تامین‌کننده‌های یک کاتالوگ خرید (مالک) */
+/** فهرست تامین‌کننده‌های یک صفحه خرید (مالک) */
 export const useInquiryMembers = (inquiryId?: string) => {
     const { hasAccess } = useAuthState();
     return useQuery({
@@ -1888,7 +1888,7 @@ export const useAddInquiryMember = () => {
     });
 };
 
-/** درخواست عضویت تامین‌کننده با کاتالوگ فروشش (از گیت صفحهٔ عمومی) */
+/** درخواست عضویت تامین‌کننده با کاتالوگ فروشش (از گیت صفحه عمومی) */
 export const useRequestInquiryAccess = () => {
     const qc = useQueryClient();
     return useMutation({

@@ -1,8 +1,8 @@
 // app/my-inquiries/components/InquiryIdentityBar.tsx
-// نوار هویت کاتالوگ خرید — قرینهٔ CatalogIdentityBar (سوییچر دو-محصولی)
+// نوار هویت صفحه خرید — قرینهٔ CatalogIdentityBar (سوییچر دو-محصولی)
 // هر دو نوع کاتالوگ در منو با برچسب پرانتزی؛ انتخاب فروش → مدیریت کاتالوگ فروش
 // پایینِ سوییچر: «کاتالوگ جدید» → مدال دو-گزینه‌ای (خرید یا فروش؟) — قرینهٔ سوییچر فروش
-// پالت صفحهٔ خرید: سنگی/کهربایی (هماهنگ با کارت‌های همین صفحه)
+// پالت صفحه خرید: سنگی/کهربایی (هماهنگ با کارت‌های همین صفحه)
 'use client';
 
 import React, { useState } from 'react';
@@ -38,14 +38,14 @@ export default function InquiryIdentityBar({ inquiries, catalogs, currentInquiry
                 <span className="min-w-0 flex-1">
                     <span className="flex items-center gap-1.5 min-w-0">
                         <span className="truncate text-[15px] font-black text-stone-900 dark:text-gray-100">
-                            {current ? current.title : 'کاتالوگ‌های خرید من'}
+                            {current ? current.title : 'صفحه‌های خرید من'}
                         </span>
                         {multi && <ChevronDown className={cn('size-4 shrink-0 text-stone-400 transition-transform', open && 'rotate-180')} />}
                     </span>
                     <span className="mt-0.5 block text-[10px] font-bold text-stone-400 dark:text-gray-500">
                         {current
-                            ? (current.status === 'open' ? 'کاتالوگ خرید کارنت — باز' : 'کاتالوگ خرید کارنت — بسته')
-                            : (multi ? 'برای تغییر کاتالوگ لمس کن' : 'کاتالوگ خرید شما')}
+                            ? (current.status === 'open' ? 'صفحه خرید کارنت — باز' : 'صفحه خرید کارنت — بسته')
+                            : (multi ? 'برای تغییر کاتالوگ لمس کن' : 'صفحه خرید شما')}
                     </span>
                 </span>
             </button>
@@ -59,7 +59,7 @@ export default function InquiryIdentityBar({ inquiries, catalogs, currentInquiry
                             shadow-xl animate-in fade-in zoom-in-95 duration-150 max-h-[65vh] overflow-y-auto">
                         {inquiries.length > 0 && (
                             <p className="px-3 pt-1.5 pb-1 text-[10px] font-bold text-stone-400 dark:text-gray-500">
-                                کاتالوگ‌های خرید
+                                صفحه‌های خرید
                             </p>
                         )}
                         {inquiries.map((w) => {
@@ -76,7 +76,7 @@ export default function InquiryIdentityBar({ inquiries, catalogs, currentInquiry
                                         <span className={cn('truncate text-[13px] font-bold', active ? 'text-amber-700 dark:text-amber-400' : 'text-stone-800 dark:text-gray-200')}>
                                             {w.title}
                                         </span>
-                                        <span className="shrink-0 whitespace-nowrap text-[9px] font-bold text-amber-600/90 dark:text-amber-400/90">(کاتالوگ خرید)</span>
+                                        <span className="shrink-0 whitespace-nowrap text-[9px] font-bold text-amber-600/90 dark:text-amber-400/90">(صفحه خرید)</span>
                                     </span>
                                     {w.status === 'closed' && (
                                         <span className="shrink-0 rounded-full bg-stone-100 px-1.5 py-0.5 text-[9px] font-bold text-stone-400 dark:bg-gray-800">بسته</span>
@@ -107,11 +107,11 @@ export default function InquiryIdentityBar({ inquiries, catalogs, currentInquiry
                             </>
                         )}
                         <div className="my-1 border-t border-stone-100 dark:border-gray-800" />
-                        {/* کاتالوگ جدید — اول می‌پرسد خرید یا فروش (ایدهٔ مالک) */}
+                        {/* صفحه جدید — اول می‌پرسد خرید یا فروش (ایدهٔ مالک) */}
                         <button type="button" role="menuitem" onClick={() => { setOpen(false); setNewOpen(true); }}
                                 className="flex h-11 w-full items-center gap-2.5 rounded-xl px-3 text-right text-[13px] font-extrabold text-amber-700 transition-colors hover:bg-brand-amber-soft dark:text-amber-400 dark:hover:bg-amber-500/10">
                             <Plus className="size-4" />
-                            کاتالوگ جدید
+                            صفحه جدید
                         </button>
                     </div>
                 </>

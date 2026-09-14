@@ -1,14 +1,15 @@
 // app/my-inquiries/components/SettingsTab.tsx
-// تب تنظیمات پنل کاتالوگ خرید — مشخصات، شرایط، دسترسی و قیمت‌گیری، وضعیت
+// تب تنظیمات پنل صفحه خرید — مشخصات، شرایط، دسترسی و قیمت‌گیری، وضعیت
 // شامل فیلد «امکان ارسال قیمت برای خریدهای غیر فوری» (ایدهٔ مالک)
-// ✅ نمایانی سه‌گانه: عمومی (دیوار) | فقط با لینک | خصوصی (فقط تامین‌کننده‌های تاییدشده)
+// ✅ نمایانی دوگانه: عمومی (هرکس با لینک) | خصوصی (فقط تامین‌کننده‌های تاییدشده)
+//    دیوار عمومی حذف شد (تصمیم مالک) — صفحه خرید به بازارها عرضه می‌شود (گام بعد)
 //    مفهوم خصوصی به خود خریدار گفته می‌شود — یک خط زیر گزینه
 'use client';
 
 import React, { useEffect, useState } from 'react';
 import { motion } from 'framer-motion';
 import { toast } from 'sonner';
-import { Save, Boxes, Ban, RotateCcw, Trash2, Loader2, Lock, Globe, ShieldCheck } from 'lucide-react';
+import { Save, Boxes, Ban, RotateCcw, Trash2, Loader2, Globe, ShieldCheck } from 'lucide-react';
 import SwitchRow from './SwitchRow';
 import { inp } from '../../inquiries/utils';
 import type { InquiryDetail } from '@/lib/api/apiTypes';
@@ -33,7 +34,7 @@ export default function SettingsTab({ detail, onSave, onOpenUnits, onToggleStatu
     const [deadline, setDeadline] = useState('');
     const [deliveryNote, setDeliveryNote] = useState('');
     const [paymentTerms, setPaymentTerms] = useState('');
-    const [visibility, setVisibility] = useState<'public' | 'unlisted' | 'private'>('public');
+    const [visibility, setVisibility] = useState<'public' | 'private'>('public');
     const [allowNonUrgentOffers, setAllowNonUrgent] = useState(true);
 
     // با تعویض کاتالوگ، فرم از نو پر می‌شود
@@ -46,7 +47,7 @@ export default function SettingsTab({ detail, onSave, onOpenUnits, onToggleStatu
         setDeadline(detail.deadline ? new Date(detail.deadline).toISOString().slice(0, 16) : '');
         setDeliveryNote(detail.deliveryNote || '');
         setPaymentTerms(detail.paymentTerms || '');
-        setVisibility(detail.visibility === 'unlisted' ? 'unlisted' : detail.visibility === 'private' ? 'private' : 'public');
+        setVisibility(detail.visibility === 'private' ? 'private' : 'public');
         setAllowNonUrgent(detail.allowNonUrgentOffers !== false);
     }, [detail?.id]); // eslint-disable-line react-hooks/exhaustive-deps
 
@@ -79,7 +80,7 @@ export default function SettingsTab({ detail, onSave, onOpenUnits, onToggleStatu
             <motion.section initial={{ opacity: 0, y: 14 }} animate={{ opacity: 1, y: 0 }} className={card}>
                 <h2 className={cardTitle}>مشخصات</h2>
                 <div className="space-y-2.5">
-                    <input value={title} onChange={(e) => setTitle(e.target.value)} placeholder="عنوان کاتالوگ خرید" className={`${inp} w-full`} />
+                    <input value={title} onChange={(e) => setTitle(e.target.value)} placeholder="عنوان صفحه خرید" className={`${inp} w-full`} />
                     <textarea value={description} onChange={(e) => setDescription(e.target.value)} rows={2}
                         placeholder="توضیح کوتاه" className={`${inp} h-auto w-full py-2`} />
                     <input value={tagsRaw} onChange={(e) => setTagsRaw(e.target.value)} placeholder="برچسب‌ها — با ویرگول جدا کن" className={`${inp} w-full`} />
@@ -105,11 +106,10 @@ export default function SettingsTab({ detail, onSave, onOpenUnits, onToggleStatu
             <motion.section initial={{ opacity: 0, y: 14 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.1 }} className={card}>
                 <h2 className={cardTitle}>دسترسی و قیمت‌گیری</h2>
                 <div className="space-y-4">
-                    {/* نمایانی — سگمنت سه‌گانه؛ مفهوم هر گزینه یک خط زیرش */}
+                    {/* نمایانی — سگمنت دوگانه؛ مفهوم هر گزینه یک خط زیرش */}
                     <div>
-                        <div className="grid grid-cols-3 gap-1.5">
-                            {([['public', 'عمومی', 'روی دیوار همه می‌بینند', Globe],
-                               ['unlisted', 'فقط با لینک', 'بیرون از دیوار', Lock],
+                        <div className="grid grid-cols-2 gap-1.5">
+                            {([['public', 'عمومی', 'هرکس با لینک می‌بیند', Globe],
                                ['private', 'خصوصی', 'فقط تامین‌کننده‌های تاییدشده', ShieldCheck]] as const).map(([v, label, hint, Icon]) => (
                                 <button key={v} type="button" onClick={() => setVisibility(v)}
                                     className={`flex flex-col items-center gap-0.5 rounded-xl border-2 px-2 py-2.5 transition-all ${
@@ -125,7 +125,7 @@ export default function SettingsTab({ detail, onSave, onOpenUnits, onToggleStatu
                         </div>
                         {visibility === 'private' && (
                             <p className="mt-2 rounded-xl bg-brand-amber-soft/50 px-3 py-2 text-[10px] font-bold leading-4 text-amber-700 dark:bg-amber-500/5 dark:text-amber-400">
-                                تامین‌کننده‌ها را در تب «تامین‌کنندگان» اضافه کن — دیوار عمومی کاتالوگت را نشان نمی‌دهد
+                                تامین‌کننده‌ها را در تب «تامین‌کنندگان» اضافه کن — لینک و اعلام‌هایت فقط دست همان‌ها می‌رسد
                             </p>
                         )}
                     </div>

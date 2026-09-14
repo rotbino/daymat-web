@@ -253,7 +253,7 @@ export function PwaInstaller() {
                 <div className="grid grid-cols-3 gap-2 mt-4">
                     {[
                         { icon: <Zap size={17} />, label: 'اجرای سریع' },
-                        { icon: <WifiOff size={17} />, label: 'صفحهٔ آفلاین' },
+                        { icon: <WifiOff size={17} />, label: 'صفحه آفلاین' },
                         { icon: <Download size={17} />, label: 'آیکون روی گوشی' },
                     ].map((b) => (
                         <div
@@ -336,7 +336,7 @@ export function PwaInstaller() {
                                 <MoreVertical size={16} className="text-slate-700" />
                             </span>
                             <span className="text-[12.5px] text-slate-600 leading-5">
-                                از منوی مرورگر (⋮) گزینهٔ <b className="text-slate-800">«افزودن به صفحهٔ اصلی»</b> را انتخاب کن
+                                از منوی مرورگر (⋮) گزینهٔ <b className="text-slate-800">«افزودن به صفحه اصلی»</b> را انتخاب کن
                             </span>
                         </div>
                         <button

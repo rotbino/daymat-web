@@ -766,7 +766,7 @@ export const PERMISSION_LEVELS = {
 
 
 // ═══════════════════════════════════════════════════════════
-// INQUIRY — کاتالوگ خرید (استعلام قیمت)
+// INQUIRY — صفحه خرید (استعلام قیمت)
 // فلسفه: ساده به‌صورت پیش‌فرض، پیشرفته اختیاری (قطعهٔ صنعتی)
 // ═══════════════════════════════════════════════════════════
 
@@ -826,9 +826,9 @@ export interface InquiryBase {
     tags: string[];
     viewCount: number;
     offerCount: number;
-    /** ✅ امکان ارسال قیمت برای خریدهای غیر فوری (سایر کالاها) — تنظیمات کاتالوگ خرید */
+    /** ✅ امکان ارسال قیمت برای خریدهای غیر فوری (سایر کالاها) — تنظیمات صفحه خرید */
     allowNonUrgentOffers?: boolean;
-    /** ✅ واحدهای اختصاصی کاتالوگ خرید — [{ unitId }] */
+    /** ✅ واحدهای اختصاصی صفحه خرید — [{ unitId }] */
     units?: InquiryUnitPayload[] | null;
     createdAt: string;
     updatedAt: string;
@@ -836,7 +836,7 @@ export interface InquiryBase {
     business?: InquiryBusinessBrief | null;
 }
 
-/** ردیف دیوار عمومی و فهرست «کاتالوگ‌های خرید من» */
+/** ردیف دیوار عمومی و فهرست «صفحه‌های خرید من» */
 export interface InquiryListItem extends InquiryBase {
     _count?: { items: number };
 }
@@ -910,7 +910,7 @@ export interface CreateInquiryPayload {
     paymentTerms?: string;
     tags?: string[];
     businessId?: string;
-    units?: InquiryUnitPayload[];      // ✅ واحدهای اختصاصی کاتالوگ خرید (مثل کاتالوگ فروش)
+    units?: InquiryUnitPayload[];      // ✅ واحدهای اختصاصی صفحه خرید (مثل کاتالوگ فروش)
     allowNonUrgentOffers?: boolean;    // ✅ امکان ارسال قیمت برای خریدهای غیر فوری
 }
 

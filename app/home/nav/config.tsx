@@ -16,20 +16,20 @@ export interface NavItemDef {
 export const DESKTOP_NAV_ITEMS: NavItemDef[] = [
     { key: 'market', label: 'بازار', icon: Store, href: '/markets' },
     { key: 'catalogs', label: 'کاتالوگ فروش', icon: BookOpen, href: '/my-catalogs' },
-    { key: 'inquiries', label: 'کاتالوگ خرید', icon: ClipboardList, href: '/my-inquiries' },
+    { key: 'inquiries', label: 'صفحه خرید', icon: ClipboardList, href: '/my-inquiries' },
     { key: 'profile', label: 'پروفایل', icon: User, href: '/profile' },
 ];
 
 export const NAV: Record<NavMode, NavItemDef[]> = {
     'catalog-owner': [
         { key: 'catalogs', label: 'کاتالوگ فروش من', icon: BookOpen, href: '/my-catalogs' },
-        { key: 'inquiries', label: 'کاتالوگ خرید من', icon: ClipboardList, href: '/my-inquiries' },
+        { key: 'inquiries', label: 'صفحه خرید من', icon: ClipboardList, href: '/my-inquiries' },
         { key: 'profile', label: 'پروفایل', icon: User, href: '/profile' },
     ],
     member: [
         { key: 'market', label: 'بازار', icon: Store, href: '/markets' },
         { key: 'catalogs', label: 'کاتالوگ فروش', icon: BookOpen, href: '/my-catalogs' },
-        { key: 'inquiries', label: 'کاتالوگ خرید', icon: ClipboardList, href: '/my-inquiries' },
+        { key: 'inquiries', label: 'صفحه خرید', icon: ClipboardList, href: '/my-inquiries' },
         { key: 'profile', label: 'پروفایل', icon: User, href: '/profile' },
     ],
 };

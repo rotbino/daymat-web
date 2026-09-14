@@ -1,7 +1,7 @@
 // app/my-catalogs/components/LeadsTab.tsx
 // ✅ تب «درخواست خریدها» پنل کاتالوگ فروش — قلب شبکهٔ خرید↔فروش از سمت تامین‌کننده:
-//    ۱) دعوت‌های در انتظار — کاتالوگ‌های خریدی که تو را تامین‌کننده دعوت کرده‌اند (پذیرش/رد)
-//    ۲) اعلام خریدهای فوریِ کاتالوگ‌های خریدی که تامین‌کنندهٔ تاییدشده‌شان هستی
+//    ۱) دعوت‌های در انتظار — صفحه‌های خریدی که تو را تامین‌کننده دعوت کرده‌اند (پذیرش/رد)
+//    ۲) اعلام خریدهای فوریِ صفحه‌های خریدی که تامین‌کنندهٔ تاییدشده‌شان هستی
 //       روی هر قلم مستقیم قیمت می‌دهی (شیت مشترک پیشنهاد قیمت)
 //    سرنخ فروش بدون جست‌وجو — خریدار خودش اعلام می‌کند، تو فقط قیمت می‌دهی.
 'use client';
@@ -150,13 +150,8 @@ export default function LeadsTab() {
                         <Megaphone className="mx-auto size-9 text-stone-200 dark:text-gray-700" />
                         <p className="mt-2 text-[13px] font-black text-stone-500 dark:text-gray-400">هنوز اعلام خریدی برای تو نیست</p>
                         <p className="mx-auto mt-1 max-w-xs text-[11px] font-bold leading-5 text-stone-400 dark:text-gray-500">
-                            وقتی تامین‌کنندهٔ کاتالوگ خرید کسی باشی، اعلام خریدهای فوریش اینجا می‌آید
+                            وقتی تامین‌کنندهٔ صفحه خرید کسی باشی، اعلام خریدهای فوریش اینجا می‌آید
                         </p>
-                        <Link href="/inquiries"
-                            className="mt-3 inline-flex h-9 items-center gap-1.5 rounded-full bg-brand-amber-soft px-4 text-[11px] font-extrabold text-amber-700 transition-colors hover:bg-brand-amber-tint dark:bg-amber-500/10 dark:text-amber-400">
-                            دیوار کاتالوگ‌های خرید
-                            <ArrowLeft className="size-3.5" />
-                        </Link>
                     </div>
                 ) : (
                     <div className="space-y-2.5">
@@ -229,7 +224,7 @@ export default function LeadsTab() {
                                                 ))}
                                                 <Link href={`/inquiries/${lead.inquiry.slug || lead.inquiry.id}`}
                                                     className="flex items-center justify-center gap-1 pt-1 text-[11px] font-extrabold text-amber-700 hover:underline dark:text-amber-400">
-                                                    مشاهدهٔ کل کاتالوگ خرید
+                                                    مشاهدهٔ کل صفحه خرید
                                                     <ArrowLeft className="size-3" />
                                                 </Link>
                                             </div>
@@ -242,7 +237,7 @@ export default function LeadsTab() {
                 )}
             </div>
 
-            {/* شیت پیشنهاد قیمت — مشترک با صفحهٔ عمومی */}
+            {/* شیت پیشنهاد قیمت — مشترک با صفحه عمومی */}
             <OfferSheet
                 inquiry={offerTarget ? { id: offerTarget.inquiry.id } : null}
                 item={offerTarget?.item ?? null}

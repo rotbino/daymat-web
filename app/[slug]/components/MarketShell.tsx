@@ -33,7 +33,7 @@ export default function MarketShell({ slug, search }: Props) {
                     <Store className="w-12 h-12 text-on-surface-variant/30 mx-auto mb-4" />
                     <p className="text-lg font-bold text-on-surface">بازار یافت نشد</p>
                     <p className="text-xs text-on-surface-variant mt-2">ممکن است این بازار غیرفعال شده باشد.</p>
-                    <a href="/" className="mt-4 inline-block text-primary text-sm font-bold">رفتن به صفحهٔ اصلی</a>
+                    <a href="/" className="mt-4 inline-block text-primary text-sm font-bold">رفتن به صفحه اصلی</a>
                 </div>
             </div>
         );

@@ -120,7 +120,7 @@ export default function NavTabs({ guestMarketSlug }: { guestMarketSlug?: string 
     const segs = (pathname ?? '').split('/').filter(Boolean);
 
     const isMarketActive =
-        (pathname ?? '').startsWith('/market') || // /market و /markets — صفحهٔ لیست بازارها
+        (pathname ?? '').startsWith('/market') || // /market و /markets — صفحه لیست بازارها
         (segs.length === 1 &&
             !NON_MARKET_SEGMENTS.has(segs[0]) &&
             segs[0] === currentSlug);

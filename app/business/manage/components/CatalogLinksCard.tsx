@@ -1,7 +1,7 @@
 // app/business/manage/components/CatalogLinksCard.tsx
 // 🔗 کاتالوگ‌های این کسب‌وکار — فروش و خرید کنار هم (محصول دوم دیمت)
-// ✅ کاتالوگ‌های خرید (استعلام) با برچسب کهربایی کنار کاتالوگ‌های فروش
-// ✅ دو دکمهٔ ساخت جدا برای هر نوع — کاتالوگ خرید با bizId دیپ‌لینک می‌شود
+// ✅ صفحه‌های خرید (استعلام) با برچسب کهربایی کنار کاتالوگ‌های فروش
+// ✅ دو دکمهٔ ساخت جدا برای هر نوع — صفحه خرید با bizId دیپ‌لینک می‌شود
 // ✅ جای کارت در صفحه بالاتر آمده (درخواست کاربر: دسترسی راحت از کسب‌وکار)
 'use client';
 
@@ -30,7 +30,7 @@ const rowIn = (i: number) => ({
 
 export function CatalogLinksCard({ catalogs, inquiries = [], businessId }: {
     catalogs: ManageCatalogItem[];
-    /** کاتالوگ‌های خرید متصل به این کسب‌وکار (Inquiry با businessId) */
+    /** صفحه‌های خرید متصل به این کسب‌وکار (Inquiry با businessId) */
     inquiries?: any[];
     businessId?: string | null;
 }) {
@@ -53,7 +53,7 @@ export function CatalogLinksCard({ catalogs, inquiries = [], businessId }: {
         ? 'هنوز کاتالوگی نساخته‌اید'
         : [
               salesCount > 0 ? `${salesCount.toLocaleString('fa-IR')} کاتالوگ فروش` : null,
-              buyCount > 0 ? `${buyCount.toLocaleString('fa-IR')} کاتالوگ خرید` : null,
+              buyCount > 0 ? `${buyCount.toLocaleString('fa-IR')} صفحه خرید` : null,
           ].filter(Boolean).join(' · ');
 
     return (
@@ -74,7 +74,7 @@ export function CatalogLinksCard({ catalogs, inquiries = [], businessId }: {
                 <div className="rounded-xl border border-dashed border-outline-variant/50 p-4 flex flex-col items-center gap-2 text-center">
                     <Store className="w-6 h-6 text-on-surface-variant/40" />
                     <p className="text-[11px] text-on-surface-variant leading-4">
-                        کاتالوگ فروش برای نمایش محصولات، کاتالوگ خرید برای استعلام قیمت از تامین‌کننده‌ها.
+                        کاتالوگ فروش برای نمایش محصولات، صفحه خرید برای استعلام قیمت از تامین‌کننده‌ها.
                     </p>
                 </div>
             ) : (
@@ -127,7 +127,7 @@ export function CatalogLinksCard({ catalogs, inquiries = [], businessId }: {
                         </motion.div>
                     ))}
 
-                    {/* کاتالوگ‌های خرید — کنار فروش، با رنگ کهربایی محصول دوم */}
+                    {/* صفحه‌های خرید — کنار فروش، با رنگ کهربایی محصول دوم */}
                     {inquiries.map((w: any, i: number) => (
                         <motion.div
                             key={w.id}
@@ -140,7 +140,7 @@ export function CatalogLinksCard({ catalogs, inquiries = [], businessId }: {
                             <div className="flex-1 min-w-0">
                                 <div className="flex items-center gap-1.5 min-w-0">
                                     <p className="text-xs font-bold text-on-surface truncate">{w.title}</p>
-                                    <span className="text-[9px] font-bold text-amber-600/90 dark:text-amber-400/90 whitespace-nowrap flex-shrink-0">(کاتالوگ خرید)</span>
+                                    <span className="text-[9px] font-bold text-amber-600/90 dark:text-amber-400/90 whitespace-nowrap flex-shrink-0">(صفحه خرید)</span>
                                 </div>
                                 <div className="flex items-center gap-1.5 mt-0.5">
                                     {w.status && (
@@ -160,7 +160,7 @@ export function CatalogLinksCard({ catalogs, inquiries = [], businessId }: {
                             <button
                                 type="button"
                                 onClick={() => copyLink(`/inquiries/${w.slug || w.id}`, w.id)}
-                                aria-label="کپی لینک کاتالوگ خرید"
+                                aria-label="کپی لینک صفحه خرید"
                                 className="w-8 h-8 rounded-lg grid place-items-center text-on-surface-variant/60 hover:text-amber-600 hover:bg-amber-500/10 active:scale-90 transition-all flex-shrink-0"
                             >
                                 {copiedId === w.id ? <Check className="w-3.5 h-3.5 text-emerald-500" /> : <Copy className="w-3.5 h-3.5" />}
@@ -168,7 +168,7 @@ export function CatalogLinksCard({ catalogs, inquiries = [], businessId }: {
                             <Link
                                 href={`/inquiries/${w.slug || w.id}`}
                                 target="_blank"
-                                aria-label="مشاهده کاتالوگ خرید"
+                                aria-label="مشاهده صفحه خرید"
                                 className="w-8 h-8 rounded-lg grid place-items-center text-on-surface-variant/60 hover:text-amber-600 hover:bg-amber-500/10 active:scale-90 transition-all flex-shrink-0"
                             >
                                 <ExternalLink className="w-3.5 h-3.5" />
@@ -190,7 +190,7 @@ export function CatalogLinksCard({ catalogs, inquiries = [], businessId }: {
                     href={businessId ? `/inquiries/new?bizId=${businessId}` : '/inquiries/new'}
                     className="h-9 rounded-lg border border-brand-amber/40 text-amber-700 dark:text-amber-400 text-[11px] font-extrabold flex items-center justify-center gap-1 hover:bg-brand-amber-soft active:scale-95 transition-all"
                 >
-                    <Plus className="w-3.5 h-3.5" /> کاتالوگ خرید
+                    <Plus className="w-3.5 h-3.5" /> صفحه خرید
                 </Link>
             </div>
         </div>

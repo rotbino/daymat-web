@@ -30,13 +30,13 @@ import {
 
 /**
  * لندینگ دیمت — دو محصول جدا با دو لینک جدا:
- *   قرمز لاکی برند = کاتالوگ فروش (نمایش و تبلیغ)  |  کهربایی برند = کاتالوگ خرید (استعلام و خرید)
+ *   قرمز لاکی برند = کاتالوگ فروش (نمایش و تبلیغ)  |  کهربایی برند = صفحه خرید (استعلام و خرید)
  * لینک هر محصول زنجیرهٔ خودش را دارد:
  *   مهمان → /login?redirect=X (انتخاب کاربر حفظ می‌شود)  |  لاگین → مستقیم X
  *   X برای کاتالوگ فروش = فرم ساخت (/business/register)
- *   X برای کاتالوگ خرید = فرم ساخت (/inquiries/new)
+ *   X برای صفحه خرید = فرم ساخت (/inquiries/new)
  * نکتهٔ مهم: لینک کاتالوگ فروش فقط به دست خریدارها می‌رسد و
- * لینک کاتالوگ خرید فقط به دست تامین‌کننده‌ها — هرگز قاطی نمی‌شوند.
+ * لینک صفحه خرید فقط به دست تامین‌کننده‌ها — هرگز قاطی نمی‌شوند.
  */
 
 /* ------------------------------ motion helper ----------------------------- */
@@ -120,7 +120,7 @@ function MiniWall() {
         <span className="grid size-6 shrink-0 place-items-center rounded-full bg-amber-200 dark:bg-amber-500/25">
           <ClipboardList className="size-3.5 text-amber-800 dark:text-amber-300" />
         </span>
-        <span className="text-[11px] font-bold text-stone-700 dark:text-gray-200">کاتالوگ خرید من</span>
+        <span className="text-[11px] font-bold text-stone-700 dark:text-gray-200">صفحه خرید من</span>
         <span className="ms-auto size-2.5 rounded-full bg-amber-400 ring-2 ring-amber-300 dark:ring-amber-500/30" />
       </div>
       <div className="mt-2 grid grid-cols-2 gap-2">
@@ -274,31 +274,25 @@ function ProductCard({
 
 /* ------------------------------ live از روت ------------------------------- */
 
-/** سکشن زندهٔ روت: کاتالوگ‌های فروش نمونه + کاتالوگ‌های خرید باز — دو جدول جدا، دو محصول جدا */
-function LiveFromDaymat({ wallHref }: { wallHref: string }) {
+/** سکشن زندهٔ روت: کاتالوگ‌های فروش نمونه + صفحه‌های خرید باز — دو جدول جدا، دو محصول جدا */
+function LiveFromDaymat({ purchaseHref }: { purchaseHref: string }) {
   const { data: featured } = useQuery({
     queryKey: ['landing', 'featured-catalogs'],
     queryFn: () => apiService.catalog.getFeatured(4),
     staleTime: 60 * 1000,
   });
-  const { data: inquiries } = useQuery({
-    queryKey: ['landing', 'open-inquiries'],
-    queryFn: () => apiService.inquiry.publicList({ limit: 4 }),
-    staleTime: 30 * 1000,
-  });
 
   const catalogs = (featured?.items ?? []).slice(0, 4);
-  const walls = (inquiries?.items ?? []).slice(0, 4);
 
-  if (!catalogs.length && !walls.length) return null;
+  if (!catalogs.length) return null;
 
   return (
     <section aria-label="همین حالا توی دیمت" className="mx-auto max-w-6xl px-4 py-10 sm:px-6">
       <motion.div {...fadeUp()} className="mx-auto max-w-2xl text-center">
         <span className="text-sm font-black text-stone-400 dark:text-gray-500">همین حالا توی دیمت</span>
-        <h2 className="mt-2 text-3xl font-black sm:text-4xl">کاتالوگ‌های فروش و کاتالوگ‌های خرید، زنده</h2>
+        <h2 className="mt-2 text-3xl font-black sm:text-4xl">کاتالوگ‌های فروش، زنده</h2>
         <p className="mt-4 leading-8 text-stone-600 dark:text-gray-400">
-          دو فهرست جدا — یکی مال فروشنده‌هاست، یکی مال خریدارها؛ هر وقت دلت خواست ورود (کاوش) کن.
+          قیمت‌های واقعی فروشنده‌ها همین حالا روی تابلوی دیمت است — و صفحه خرید هم چند دقیقه بیشتر نمی‌برد.
         </p>
       </motion.div>
 
@@ -338,44 +332,21 @@ function LiveFromDaymat({ wallHref }: { wallHref: string }) {
           </motion.div>
         )}
 
-        {/* کاتالوگ‌های خرید باز */}
-        {walls.length > 0 && (
-          <motion.div {...fadeUp(0.2)}
-            className="rounded-3xl border-2 border-brand-amber-tint bg-white p-6 shadow-sm dark:bg-gray-900">
-            <div className="flex items-center justify-between">
-              <h3 className="flex items-center gap-2 text-lg font-black text-amber-600 dark:text-amber-400">
-                <ClipboardList className="size-5" /> کاتالوگ‌های خرید باز
-              </h3>
-              <Link href={wallHref} className="text-xs font-bold text-amber-600 hover:underline dark:text-amber-400">بساز +</Link>
-            </div>
-            <ul className="mt-4 space-y-2">
-              {walls.map((w, i) => (
-                <motion.li key={w.id} initial={{ opacity: 0, x: -16 }} whileInView={{ opacity: 1, x: 0 }}
-                  viewport={{ once: true }} transition={{ delay: i * 0.06 }}>
-                  <Link href={`/inquiries/${w.slug || w.id}`}
-                    className="flex items-center gap-3 rounded-2xl border border-stone-100 px-3 py-2.5 transition-colors hover:border-brand-amber-tint hover:bg-brand-amber-soft/60
-                    dark:border-gray-800 dark:hover:bg-gray-800/60">
-                    <span className="grid size-9 shrink-0 place-items-center rounded-xl bg-brand-amber-soft text-amber-600 dark:text-amber-400">
-                      <ShoppingBasket className="size-4" />
-                    </span>
-                    <span className="min-w-0 flex-1">
-                      <span className="block truncate text-sm font-extrabold text-stone-800 dark:text-gray-200">{w.title}</span>
-                      <span className="block text-[11px] text-stone-400 dark:text-gray-500">
-                        {[w.city, `${(w._count?.items ?? 0).toLocaleString('fa-IR')} قلم`].filter(Boolean).join(' · ')}
-                      </span>
-                    </span>
-                    <Eye className="size-4 shrink-0 text-stone-300 dark:text-gray-600" />
-                  </Link>
-                </motion.li>
-              ))}
-            </ul>
-            <Link href="/inquiries"
-              className="mt-4 flex h-10 items-center justify-center gap-1.5 rounded-full border border-brand-amber-tint text-xs font-extrabold text-amber-700 transition-colors hover:bg-brand-amber-soft dark:text-amber-400">
-              دیدن کل دیوار کاتالوگ‌های خرید
-              <ArrowLeft className="size-3.5" />
-            </Link>
-          </motion.div>
-        )}
+        {/* صفحه خرید — CTA ساخت */}
+        <motion.div {...fadeUp(0.2)}
+          className="flex flex-col justify-center rounded-3xl border-2 border-brand-amber-tint bg-white p-6 shadow-sm dark:bg-gray-900">
+          <h3 className="flex items-center gap-2 text-lg font-black text-amber-600 dark:text-amber-400">
+            <ClipboardList className="size-5" /> صفحه خرید
+          </h3>
+          <p className="mt-3 text-sm font-bold leading-7 text-stone-500 dark:text-gray-400">
+            لیست خریدت را بنویس — تامین‌کننده‌ها اعلام خریدهایت را می‌بینند و قیمت می‌دهند؛
+            تو بهترینش را انتخاب می‌کنی.
+          </p>
+          <Link href={purchaseHref}
+            className="mt-4 flex h-10 items-center justify-center gap-1.5 rounded-full bg-brand-amber text-xs font-extrabold text-white shadow-md shadow-brand-amber/25 transition-colors hover:bg-brand-amber-strong">
+            بساز +
+          </Link>
+        </motion.div>
       </div>
     </section>
   );
@@ -390,7 +361,7 @@ export default function Landing() {
   const toolHref = (path: string) =>
     isAuthenticated ? path : `/login?redirect=${encodeURIComponent(path)}`;
   const catalogHref = toolHref('/business/register'); // کاتالوگ فروش — فرم ساخت
-  const wallHref = toolHref('/inquiries/new');        // کاتالوگ خرید — فرم ساخت (محصول مستقل)
+  const purchaseHref = toolHref('/inquiries/new');    // صفحه خرید — فرم ساخت (محصول مستقل)
 
   return (
     <div className="min-h-screen bg-[#FFFDF7] text-stone-900 dark:bg-gray-950 dark:text-gray-100">
@@ -448,7 +419,7 @@ export default function Landing() {
                 {...fadeUp(0.2)}
                 className="mx-auto mt-5 max-w-2xl text-base leading-8 text-stone-600 dark:text-gray-400 sm:text-lg">
                 پس دو تا محصول ساده ساخته‌ایم: «کاتالوگ فروش» برای نمایش و تبلیغ چیزی که می‌فروشی،
-                و «کاتالوگ خرید» برای استعلام قیمت چیزی که می‌خری. هر کدام یک لینک جداست؛
+                و «صفحه خرید» برای استعلام قیمت چیزی که می‌خری. هر کدام یک لینک جداست؛
                 با چند کلیک بساز و فقط لینکِ همان را بین همان آدم‌ها پخش کن.
               </motion.p>
 
@@ -484,7 +455,7 @@ export default function Landing() {
                   <span
                     className="rounded-full border border-brand-amber-tint bg-white px-3 py-1 text-[10px] font-bold text-amber-700 shadow-sm
                     dark:bg-gray-900 dark:text-amber-300 sm:text-xs">
-                    کاتالوگ خرید — لینکش مالِ تامین‌کننده‌ها
+                    صفحه خرید — لینکش مالِ تامین‌کننده‌ها
                   </span>
                 </div>
               </motion.div>
@@ -497,11 +468,11 @@ export default function Landing() {
               <span className="text-sm font-black text-stone-400 dark:text-gray-500">دو محصول جدا</span>
               <h2 className="mt-2 text-3xl font-black leading-snug sm:text-4xl">
                 برای فروشت <span className="text-brand-red">کاتالوگ فروش</span>، برای خریدت{' '}
-                <span className="text-brand-amber">کاتالوگ خرید</span>
+                <span className="text-brand-amber">صفحه خرید</span>
               </h2>
               <p className="mt-4 leading-8 text-stone-600 dark:text-gray-400">
                 هر کدام چند دقیقه‌ای ساخته می‌شود و یک لینک ساده تحویل می‌دهد؛
-                هر لینک هم فقط به مسیر خودش می‌رود — کاتالوگ فروش پیش خریدارها، کاتالوگ خرید پیش تامین‌کننده‌ها.
+                هر لینک هم فقط به مسیر خودش می‌رود — کاتالوگ فروش پیش خریدارها، صفحه خرید پیش تامین‌کننده‌ها.
               </p>
             </motion.div>
 
@@ -538,8 +509,8 @@ export default function Landing() {
                 tone="amber"
                 icon={ClipboardList}
                 chip="استعلام قیمت خرید"
-                title="ساخت کاتالوگ خرید"
-                desc="لیست چیزهایی که می‌خری رو بنویس، لینک کاتالوگ خریدت رو بده تامین‌کننده‌ها؛ اون‌ها قیمت بدن، تو بهترین رو انتخاب کن."
+                title="ساخت صفحه خرید"
+                desc="لیست چیزهایی که می‌خری رو بنویس، لینک صفحه خریدت رو بده تامین‌کننده‌ها؛ اون‌ها قیمت بدن، تو بهترین رو انتخاب کن."
                 illustration={<MiniWall />}
                 steps={[
                   {
@@ -548,7 +519,7 @@ export default function Landing() {
                   },
                   {
                     title: 'لینکش رو بده تامین‌کننده‌ها',
-                    desc: 'فقط همین لینک کاتالوگ خرید پخش می‌شه؛ کاتالوگ فروشت اصلاً درگیر این ماجرا نیست.',
+                    desc: 'فقط همین لینک صفحه خرید پخش می‌شه؛ کاتالوگ فروشت اصلاً درگیر این ماجرا نیست.',
                   },
                   {
                     title: 'بهترین قیمت رو انتخاب کن',
@@ -556,8 +527,8 @@ export default function Landing() {
                   },
                 ]}
                 audience={['سوپرمارکت‌ها', 'کارخانه‌ها', 'پروژه‌ها', 'خدمات']}
-                cta="کاتالوگ خرید بساز"
-                href={wallHref}
+                cta="صفحه خرید بساز"
+                href={purchaseHref}
               />
             </div>
           </section>
@@ -571,7 +542,7 @@ export default function Landing() {
                 <span className="text-brand-red">وصل</span> می‌شن
               </h2>
               <p className="mt-4 leading-8 text-stone-600 dark:text-gray-400">
-                خریدار تامین‌کننده‌هاش را از روی کاتالوگ فروششان به کاتالوگ خریدش اضافه می‌کند؛
+                خریدار تامین‌کننده‌هاش را از روی کاتالوگ فروششان به صفحه خریدش اضافه می‌کند؛
                 هر وقت چیزی فوری لازم داشت، اعلام خریدش مستقیم دست همان‌ها می‌رسد.
               </p>
             </motion.div>
@@ -656,7 +627,7 @@ export default function Landing() {
                       <span
                         className="rounded-full border-2 border-dashed border-brand-amber-tint px-3 py-1 text-xs font-bold text-amber-700
                         dark:text-amber-300">
-                        بعداً: کاتالوگ خرید
+                        بعداً: صفحه خرید
                       </span>
                     </div>
                     <p className="mt-2 text-sm leading-7 text-stone-600 dark:text-gray-400">
@@ -671,7 +642,7 @@ export default function Landing() {
                       </span>
                     </div>
                     <p className="mt-2 text-sm leading-7 text-stone-600 dark:text-gray-400">
-                      هر وقت خواست جنس عمده بخره، یه کاتالوگ خرید جدا می‌سازه و فقط لینک همون رو می‌ده دست کارخونه‌ها.
+                      هر وقت خواست جنس عمده بخره، یه صفحه خرید جدا می‌سازه و فقط لینک همون رو می‌ده دست کارخونه‌ها.
                     </p>
                   </div>
                 </div>
@@ -693,7 +664,7 @@ export default function Landing() {
                     <div className="flex flex-wrap items-center gap-2">
                       <span
                         className="rounded-full bg-brand-amber-soft px-3 py-1 text-xs font-black text-amber-800 dark:text-amber-300">
-                        شروع با کاتالوگ خرید
+                        شروع با صفحه خرید
                       </span>
                       <ArrowLeft aria-hidden className="size-4 text-stone-400 dark:text-gray-600" />
                       <span
@@ -733,7 +704,7 @@ export default function Landing() {
           </section>
 
           {/* -------------------------- live از روت دیمت ------------------------- */}
-          <LiveFromDaymat wallHref={wallHref} />
+          <LiveFromDaymat purchaseHref={purchaseHref} />
 
           {/* ------------------------------ final CTA --------------------------- */}
           <section id="start" aria-label="شروع" className="mx-auto max-w-4xl scroll-mt-24 px-4 pb-20 pt-12 sm:px-6">
@@ -757,10 +728,10 @@ export default function Landing() {
                     ساخت کاتالوگ فروش
                   </Link>
                   <Link
-                    href={wallHref}
+                    href={purchaseHref}
                     className="inline-flex h-12 items-center gap-2 rounded-full bg-brand-amber px-7 text-base font-extrabold text-white shadow-lg shadow-brand-amber/30 transition-colors hover:bg-brand-amber-strong">
                     <ClipboardList className="size-4" />
-                    ساخت کاتالوگ خرید
+                    ساخت صفحه خرید
                   </Link>
                 </div>
                 <p className="mt-5 text-xs font-medium text-stone-400 dark:text-gray-500">
@@ -777,7 +748,7 @@ export default function Landing() {
             className="mx-auto flex max-w-6xl flex-col items-center justify-between gap-3 px-4 py-8 sm:flex-row sm:px-6">
             <div className="flex items-center gap-2.5">
               <Image src="/images/logo3.png" alt="دیمت" width={80} height={28} className="h-7 w-auto object-contain" unoptimized />
-              <span className="hidden text-sm text-stone-400 dark:text-gray-500 sm:inline">— فروش با کاتالوگ فروش، خرید با کاتالوگ خرید</span>
+              <span className="hidden text-sm text-stone-400 dark:text-gray-500 sm:inline">— فروش با کاتالوگ فروش، خرید با صفحه خرید</span>
             </div>
             <nav className="flex items-center gap-4 text-xs font-bold text-stone-500 dark:text-gray-400">
               <Link href="/docs/about" className="hover:text-brand-red">درباره ما</Link>

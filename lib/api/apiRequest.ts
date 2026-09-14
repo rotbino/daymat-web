@@ -107,7 +107,7 @@ api.interceptors.response.use(
 
 // ============================================================
 // 🌐 گارد اینترنت قبل از هر کال — جریان درست به روایت کاربر:
-//    اول اینترنت بررسی شود؛ اگر قطع بود سریع به صفحهٔ آفلاین برود و
+//    اول اینترنت بررسی شود؛ اگر قطع بود سریع به صفحه آفلاین برود و
 //    اصلاً سراغ کال اندپوینت‌ها نرود؛ اگر وصل بود آن‌وقت کال انجام شود.
 //    (وقتی اینترنت وصل است صفر تأخیر اضافه دارد — کش ۳۰ثانیه‌ای)
 // ============================================================
@@ -117,7 +117,7 @@ const gateInternet = async (): Promise<boolean> => {
     if (typeof window === 'undefined') return true; // سمت سرور گاردی نداریم
     const online = await ensureInternet();
     if (!online) {
-        // اینترنت قطع است → صفحهٔ آفلاین (بدون هدر رفتن وقت روی کال)
+        // اینترنت قطع است → صفحه آفلاین (بدون هدر رفتن وقت روی کال)
         handleNetworkFailure();
         throw new ApiError(0, OFFLINE_MESSAGE, { errorCode: 'NETWORK_OFFLINE' });
     }
@@ -138,7 +138,7 @@ export const apiRequest = async <T = any>(
     } catch (err: any) {
         // ⏱ خطای سطح شبکه (بدون پاسخ HTTP): قطع اینترنت، تایم‌اوت، اتصال ردشده
         // به‌جای متن خام axios («Network Error» / «timeout of 15000ms exceeded»)
-        // پیام فارسی واضح برمی‌گردد و کاربر به صفحهٔ وضعیت هدایت می‌شود
+        // پیام فارسی واضح برمی‌گردد و کاربر به صفحه وضعیت هدایت می‌شود
         if (!err.response) {
             handleNetworkFailure(); // پروب فعال: قطع اینترنت → offline.html | بک/دی‌بی قطع → server-unavailable
             throw new ApiError(0, getFriendlyErrorMessage(err), {
@@ -182,7 +182,7 @@ export const apiFileRequest = async <T = any>(
         noteApiSuccess();
         return response.data;
     } catch (err: any) {
-        // خطای سطح شبکه (بدون پاسخ HTTP) → پیام فارسی یکدست + هدایت به صفحهٔ وضعیت
+        // خطای سطح شبکه (بدون پاسخ HTTP) → پیام فارسی یکدست + هدایت به صفحه وضعیت
         if (!err.response) {
             handleNetworkFailure();
             throw new ApiError(0, getFriendlyErrorMessage(err), {

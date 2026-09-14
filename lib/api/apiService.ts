@@ -141,7 +141,7 @@ export const apiService = {
         delete: (id: string): Promise<any> =>
             apiRequest(`/business/${id}`, { method: 'DELETE' }),
 
-        // ✅ زمینه‌های فعالیت — جایگزینی کامل لیست (صفحهٔ مدیریت کسب‌وکار)
+        // ✅ زمینه‌های فعالیت — جایگزینی کامل لیست (صفحه مدیریت کسب‌وکار)
         setActivities: (id: string, activityIds: string[]): Promise<{ success: boolean; count: number }> =>
             apiRequest(`/business/${id}/activities`, { method: 'PUT', data: { activityIds } }),
 
@@ -1377,10 +1377,10 @@ export const apiService = {
     },
 
     // ============================================================
-    // INQUIRY — کاتالوگ خرید (استعلام قیمت)
+    // INQUIRY — صفحه خرید (استعلام قیمت)
     // ============================================================
     inquiry: {
-        /** دیوار عمومی کاتالوگ‌های خرید باز */
+        /** دیوار عمومی صفحه‌های خرید باز */
         publicList: (params: { q?: string; city?: string; tag?: string; page?: number; limit?: number } = {}): Promise<InquiryListResponse> => {
             const sp = new URLSearchParams();
             Object.entries(params).forEach(([k, v]) => {
@@ -1395,7 +1395,7 @@ export const apiService = {
         get: (idOrSlug: string): Promise<InquiryDetail> =>
             apiRequest(`/inquiry/${encodeURIComponent(idOrSlug)}`),
 
-        /** ساخت کاتالوگ خرید */
+        /** ساخت صفحه خرید */
         create: (data: CreateInquiryPayload): Promise<InquiryDetail> =>
             apiRequest('/inquiry', { method: 'POST', data }),
 
@@ -1406,11 +1406,11 @@ export const apiService = {
         remove: (id: string): Promise<{ message: string }> =>
             apiRequest(`/inquiry/${id}`, { method: 'DELETE' }),
 
-        /** کاتالوگ‌های خرید من */
+        /** صفحه‌های خرید من */
         mine: (): Promise<InquiryListItem[]> =>
             apiRequest('/inquiry/mine'),
 
-        // ─── مدیریت قلم‌به‌قلم (پنل کاتالوگ خرید) ───
+        // ─── مدیریت قلم‌به‌قلم (پنل صفحه خرید) ───
         /** افزودن یک قلم — هر بار یک کالا */
         addItem: (inquiryId: string, data: CreateInquiryItemPayload): Promise<InquiryItem> =>
             apiRequest(`/inquiry/${inquiryId}/items`, { method: 'POST', data }),
@@ -1439,8 +1439,8 @@ export const apiService = {
         myOffers: (): Promise<InquiryOffer[]> =>
             apiRequest('/inquiry/my-offers'),
 
-        // ─── اعضای کاتالوگ خرید — تامین‌کننده‌های تاییدشده (شبکهٔ خرید↔فروش) ───
-        /** فهرست تامین‌کننده‌های این کاتالوگ خرید (مالک) */
+        // ─── اعضای صفحه خرید — تامین‌کننده‌های تاییدشده (شبکهٔ خرید↔فروش) ───
+        /** فهرست تامین‌کننده‌های این صفحه خرید (مالک) */
         getMembers: (inquiryId: string): Promise<any[]> =>
             apiRequest(`/inquiry/${inquiryId}/members`),
 
@@ -1464,7 +1464,7 @@ export const apiService = {
         removeMember: (inquiryId: string, memberId: string): Promise<any> =>
             apiRequest(`/inquiry/${inquiryId}/members/${memberId}`, { method: 'DELETE' }),
 
-        /** فرصت‌های فروش تامین‌کننده — دعوت‌ها + اعلام خریدهای فوریِ کاتالوگ‌های خریدِ عضوش */
+        /** فرصت‌های فروش تامین‌کننده — دعوت‌ها + اعلام خریدهای فوریِ صفحه‌های خریدِ عضوش */
         opportunities: (): Promise<{ catalogs: any[]; invitations: any[]; requests: any[]; leads: any[] }> =>
             apiRequest('/inquiry/opportunities'),
     },

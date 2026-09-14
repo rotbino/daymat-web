@@ -22,7 +22,7 @@ export function postPriceLabel(arm?: any | null): string {
 }
 
 /**
- * مقصد دکمه — دقیقاً مثل دکمهٔ صفحهٔ اول (Landing):
+ * مقصد دکمه — دقیقاً مثل دکمهٔ صفحه اول (Landing):
  *   لاگین → /my-catalogs (اگر کاتالوگ نداشته باشد همان‌جا کارت «ثبت کاتالوگ» را می‌بیند)
  *   مهمان → /login?redirect=/my-catalogs (بعد از ورود/ثبت‌نام به همان مسیر می‌رسد)
  */

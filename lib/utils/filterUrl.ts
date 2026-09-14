@@ -89,7 +89,7 @@ function setOrDelete(params: URLSearchParams, key: string, value: string | null 
 /**
  * تنها نقطهٔ ساخت URL فیلترها در کل برنامه.
  * undefined = دست نخوردن پارامتر | null = حذف | رشته = مقداردهی
- * پیش‌فرض: هر تغییر فیلتر، page را حذف می‌کند (بازگشت به صفحهٔ اول).
+ * پیش‌فرض: هر تغییر فیلتر، page را حذف می‌کند (بازگشت به صفحه اول).
  */
 export function buildFilterHref(
     basePath: string,

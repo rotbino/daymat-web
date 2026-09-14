@@ -44,7 +44,7 @@ export default function ProfilePage() {
     const { data: myBizData, isLoading: myBizLoading } = useMyBusinesses();
     const myBusinesses: any[] = (myBizData?.items ?? []).filter((b: any) => b.canEdit);
 
-    // کاتالوگ‌های خرید هر کسب‌وکار — شمارش کنار کاتالوگ‌های فروش (محصول دوم)
+    // صفحه‌های خرید هر کسب‌وکار — شمارش کنار کاتالوگ‌های فروش (محصول دوم)
     const { data: myInqData } = useMyInquiries();
     const inquiryCountByBiz = useMemo(() => {
         // ⚠️ useMyInquiries آرایه را مستقیم برمی‌گرداند (نه {items}) — قبلاً myInqData?.items می‌گرفتیم → همیشه صفر
@@ -53,8 +53,8 @@ export default function ProfilePage() {
         items.forEach((w: any) => {
             if (w.businessId) map[w.businessId] = (map[w.businessId] || 0) + 1;
         });
-        // فال‌بک برای کاتالوگ‌های خریدِ قدیمی بدون businessId — اگر کاربر فقط یک کسب‌وکار قابل‌مدیریت دارد،
-        // شمارش‌شان به همان کسب‌وکار اضافه می‌شود تا پروفایل، کاتالوگ خرید را نشان دهد
+        // فال‌بک برای صفحه‌های خریدِ قدیمی بدون businessId — اگر کاربر فقط یک کسب‌وکار قابل‌مدیریت دارد،
+        // شمارش‌شان به همان کسب‌وکار اضافه می‌شود تا پروفایل، صفحه خرید را نشان دهد
         const orphanCount = items.filter((w: any) => !w.businessId).length;
         if (orphanCount > 0 && myBusinesses.length === 1) {
             const onlyId = myBusinesses[0].id;
@@ -205,7 +205,7 @@ export default function ProfilePage() {
                                                     ? `${(b._count?.catalogs ?? 0).toLocaleString('fa-IR')} کاتالوگ فروش`
                                                     : null,
                                                 (inquiryCountByBiz[b.id] ?? 0) > 0
-                                                    ? `${(inquiryCountByBiz[b.id] ?? 0).toLocaleString('fa-IR')} کاتالوگ خرید`
+                                                    ? `${(inquiryCountByBiz[b.id] ?? 0).toLocaleString('fa-IR')} صفحه خرید`
                                                     : null,
                                             ]
                                                 .filter(Boolean)

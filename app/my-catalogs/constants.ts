@@ -1,5 +1,5 @@
 // app/my-catalogs/constants.ts
-// ثابت‌ها و هلپرهای مشترک صفحهٔ «کاتالوگ‌های من»
+// ثابت‌ها و هلپرهای مشترک صفحه «کاتالوگ‌های من»
 
 import { BadgeCheck, Hourglass, PauseCircle, Store, Package, Wrench, XCircle } from 'lucide-react';
 

@@ -1,5 +1,5 @@
 // app/my-catalogs/MyCatalogsContent.tsx
-// ارکستراتور صفحهٔ «مدیریت کاتالوگ» — نسخهٔ تب‌محور (ترند روز):
+// ارکستراتور صفحه «مدیریت کاتالوگ» — نسخهٔ تب‌محور (ترند روز):
 //   مشخصات | محصولات | آمار | انتشار — هر بخش در تب خودش، خلوت و متمرکز
 // توسعه‌پذیر: امکان جدید (مثل سفارشات) = فقط یک آیتم جدید در tabItems
 // ⚠️ قانون: حالت تاریک همیشه چک شده
@@ -90,7 +90,7 @@ export default function MyCatalogsContent() {
     const { data: pendingApprovals } = useMyPendingApprovals();
     const pendingTotal = pendingSummary?.total || 0;
     const approvals: any[] = pendingApprovals?.items || [];
-    // ✅ کاتالوگ‌های خرید من — در همان سوییچر کنار کاتالوگ‌های فروش (محصول دوم دیمت)
+    // ✅ صفحه‌های خرید من — در همان سوییچر کنار کاتالوگ‌های فروش (محصول دوم دیمت)
     const { data: myInquiriesRaw } = useMyInquiries();
     const myInquiries: any[] = useMemo(() => myInquiriesRaw ?? [], [myInquiriesRaw]);
     const catalogs = useMemo(
@@ -289,9 +289,9 @@ export default function MyCatalogsContent() {
     const canShare = !!(currentCatalog as any)?.slug;
 
     const goNewCatalog = () => router.push('/business/register');
-    // کاتالوگ خرید جدید — فرم محصول دوم
+    // صفحه خرید جدید — فرم محصول دوم
     const goNewInquiry = () => router.push('/inquiries/new');
-    // انتخاب کاتالوگ خرید از سوییچر → پرش به مدیریت آن + ثبت «کاتالوگ خرید کارنت» (پرسیست)
+    // انتخاب صفحه خرید از سوییچر → پرش به مدیریت آن + ثبت «صفحه خرید کارنت» (پرسیست)
     const selectInquiry = (id: string) => {
         dispatch(setCurrentInquiry(id));
         router.push(`/my-inquiries?catalog=${id}`);
