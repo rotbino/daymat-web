@@ -89,8 +89,8 @@ export default function MarketContent({ search: searchProp }: { search?: string 
 
     const { data, isPending, isFetching, isFetchingNextPage, hasNextPage, fetchNextPage, isPlaceholderData } = useVitrine(vitrineSlug, queryParams);
 
-    // 🪧 تابلوی اعلام‌های خرید — تب دوم بازار (قرینهٔ تابلوی قیمت)
-    const [boardTab, setBoardTab] = useState<'price' | 'inquiry'>('price');
+    // 🪧 تابلوی اعلام‌های خرید — تب دوم بازار؛ انتخاب تابلو از ناو (هدر دسکتاپ / فوتر موبایل) با ‎?board=
+    const boardTab: 'price' | 'inquiry' = searchParams.get('board') === 'inquiry' ? 'inquiry' : 'price';
     const { data: inqBoard, isPending: inqBoardPending } = useInquiryArmBoard(vitrineSlug || undefined);
     const inqItems = inqBoard?.items ?? [];
 
@@ -380,21 +380,6 @@ export default function MarketContent({ search: searchProp }: { search?: string 
                                 </button>
                             </div>
                         )}
-                        {/* 🪧 سوییچ دو-تابلویی: قیمت‌ها | اعلام‌های خرید */}
-                        <div className="mb-4 inline-flex p-1 rounded-full bg-surface-container dark:bg-gray-800/80 border border-outline-variant/30 dark:border-gray-700">
-                            <button type="button" onClick={() => setBoardTab('price')}
-                                className={`flex h-9 items-center gap-1.5 rounded-full px-4 text-[12px] font-extrabold transition-colors ${boardTab === 'price' ? 'bg-white dark:bg-gray-900 text-primary shadow-sm' : 'text-on-surface-variant dark:text-gray-400'}`}>
-                                تابلوی قیمت
-                            </button>
-                            <button type="button" onClick={() => setBoardTab('inquiry')}
-                                className={`flex h-9 items-center gap-1.5 rounded-full px-4 text-[12px] font-extrabold transition-colors ${boardTab === 'inquiry' ? 'bg-white dark:bg-gray-900 text-amber-700 dark:text-amber-400 shadow-sm' : 'text-on-surface-variant dark:text-gray-400'}`}>
-                                <Megaphone className="size-3.5" />
-                                اعلام‌های خرید
-                                {inqItems.length > 0 && (
-                                    <span className="rounded-full bg-brand-amber px-1.5 py-0.5 text-[9px] font-black text-white">{inqItems.length.toLocaleString('fa-IR')}</span>
-                                )}
-                            </button>
-                        </div>
                         {boardTab === 'inquiry' ? (
                             inqBoardPending ? (
                                 <div className="text-center py-16"><Loader2 className="w-6 h-6 animate-spin text-amber-500 mx-auto" /></div>

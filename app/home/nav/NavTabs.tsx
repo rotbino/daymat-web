@@ -3,14 +3,14 @@
 
 import React, { Suspense } from 'react';
 import Link from 'next/link';
-import { usePathname } from 'next/navigation';
+import { usePathname, useSearchParams } from 'next/navigation';
 import { useSelector } from 'react-redux';
 import { RootState } from '@/lib/store/store';
-import { Bell, BookOpen, Store, ShoppingCart, User } from 'lucide-react';
+import { Bell, BookOpen, Store, User } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { useNavMode } from './useNavMode';
 import { useUnreadNotifications } from './useUnreadNotifications';
-import { NAV, NavItemDef } from './config';
+import { NAV, NavItemDef, BOARD_ITEMS, boardHref, BoardTab } from './config';
 import ArmSwitcher from '@/components/ArmSwitcher';
 import PostPriceButton from '@/components/PostPriceButton';
 import { LocationFilter } from '@/app/components/LocationFilter';
@@ -52,6 +52,82 @@ function NotifBadge({ count }: { count: number }) {
 }
 
 // ═══════════════════════════════════════════
+// دو تابلوی بازار در هدر/فوتر — جای سوییچ درون‌صفحه
+//   فروشندگان (Tags) → تابلوی قیمت | خریداران (ShoppingCart) → تابلوی اعلام‌های خرید
+// ═══════════════════════════════════════════
+
+/** تب‌های دسکتاپِ دو تابلو — در هدر، کنار تب بازار */
+function BoardTabsInner({ slug, pathname }: { slug: string | null | undefined; pathname: string }) {
+    const searchParams = useSearchParams();
+    const board: BoardTab = searchParams.get('board') === 'inquiry' ? 'inquiry' : 'price';
+    const onMarket = !!slug && (pathname.replace(/\/+$/, '') || '/') === `/${slug}`;
+
+    return (
+        <>
+            {BOARD_ITEMS.map((b) => {
+                const active = onMarket && board === b.board;
+                return (
+                    <Link key={b.key} href={boardHref(slug, b.board)} scroll={false}
+                          className={cn(
+                              'h-9 px-3 flex items-center gap-1.5 rounded text-[13px] font-extrabold transition-colors flex-shrink-0',
+                              active
+                                  ? b.board === 'inquiry'
+                                      ? 'bg-amber-500/10 text-amber-700 dark:text-amber-400'
+                                      : 'bg-primary/5 text-primary'
+                                  : 'text-on-surface-variant hover:text-on-surface hover:bg-surface-container-high',
+                          )}>
+                        <b.icon className="w-4 h-4" />
+                        {b.label}
+                    </Link>
+                );
+            })}
+        </>
+    );
+}
+
+function BoardTabs({ slug, pathname }: { slug: string | null | undefined; pathname: string }) {
+    return <Suspense fallback={null}><BoardTabsInner slug={slug} pathname={pathname} /></Suspense>;
+}
+
+/** فوتر موبایل مهمان روی صفحهٔ بازار — دو تابلو */
+function GuestBoardFooterInner({ slug, pathname }: { slug: string; pathname: string }) {
+    const searchParams = useSearchParams();
+    const board: BoardTab = searchParams.get('board') === 'inquiry' ? 'inquiry' : 'price';
+    const onMarket = (pathname.replace(/\/+$/, '') || '/') === `/${slug}`;
+
+    return (
+        <nav className="lg:hidden fixed bottom-0 inset-x-0 z-50 bg-white/95 dark:bg-gray-900/95 backdrop-blur-md
+            border-t border-outline-variant/20 dark:border-gray-800 pb-[env(safe-area-inset-bottom)]
+            shadow-[0_-2px_12px_rgba(0,0,0,0.06)] dark:shadow-[0_-2px_12px_rgba(0,0,0,0.4)]">
+            <div className="grid grid-cols-2 max-w-lg mx-auto">
+                {BOARD_ITEMS.map((b) => {
+                    const active = onMarket && board === b.board;
+                    return active ? (
+                        <span key={b.key}
+                              className="relative flex flex-col items-center justify-center py-2.5 gap-0.5 text-primary cursor-default">
+                            <b.icon className="w-[23px] h-[23px] stroke-[2.4]" />
+                            <span className="text-[10px] font-extrabold">{b.label}</span>
+                            <span className="absolute top-0 inset-x-7 h-[3px] rounded-b-full bg-primary" />
+                        </span>
+                    ) : (
+                        <Link key={b.key} href={boardHref(slug, b.board)} scroll={false}
+                              className="relative flex flex-col items-center justify-center py-2.5 gap-0.5
+                                  text-on-surface-variant/70 hover:text-primary active:scale-95 transition-all">
+                            <b.icon className="w-[23px] h-[23px]" />
+                            <span className="text-[10px] font-bold">{b.label}</span>
+                        </Link>
+                    );
+                })}
+            </div>
+        </nav>
+    );
+}
+
+function GuestBoardFooter({ slug, pathname }: { slug: string; pathname: string }) {
+    return <Suspense fallback={null}><GuestBoardFooterInner slug={slug} pathname={pathname} /></Suspense>;
+}
+
+// ═══════════════════════════════════════════
 // ناو مهمان — فقط روی صفحات بازار
 // ═══════════════════════════════════════════
 function GuestMarketNav({ slug, pathname }: { slug: string; pathname: string }) {
@@ -59,6 +135,7 @@ function GuestMarketNav({ slug, pathname }: { slug: string; pathname: string }) 
     const onMarket = cleanPath === `/${slug}`;
 
     return (
+        <>
         <nav className="hidden lg:block bg-white dark:bg-gray-900 border-b border-outline-variant/15 dark:border-gray-800/60
             shadow-[0_2px_10px_rgba(0,0,0,0.06)] sticky top-0 z-40">
             <div className="px-4 xl:px-6 h-16 flex items-center gap-2.5">
@@ -76,7 +153,7 @@ function GuestMarketNav({ slug, pathname }: { slug: string; pathname: string }) 
                 </Suspense>
                 <div className="flex-1" />
 
-                {/* تب‌های عمومی مهمان */}
+                {/* تب‌های عمومی مهمان + دو تابلوی بازار */}
                 <Link href={`/${slug}`}
                       className={cn(
                           'h-9 px-4 flex items-center gap-1.5 rounded text-[13px] font-extrabold transition-colors flex-shrink-0',
@@ -86,6 +163,7 @@ function GuestMarketNav({ slug, pathname }: { slug: string; pathname: string }) 
                       )}>
                     <Store className="w-4 h-4" /> بازار
                 </Link>
+                <BoardTabs slug={slug} pathname={pathname} />
                 <Link href={`/login?redirect=${encodeURIComponent('/business/register?intent=catalog')}`}
                       className="h-9 px-4 flex items-center gap-1.5 rounded text-[13px] font-bold
                           text-on-surface-variant hover:text-on-surface hover:bg-surface-container-high
@@ -97,6 +175,10 @@ function GuestMarketNav({ slug, pathname }: { slug: string; pathname: string }) 
               {/*  <PostPriceButton size="desktop" />*/}
             </div>
         </nav>
+
+        {/* فوتر موبایل مهمان — دو تابلوی بازار */}
+        <GuestBoardFooter slug={slug} pathname={pathname} />
+        </>
     );
 }
 
@@ -185,6 +267,9 @@ export default function NavTabs({ guestMarketSlug }: { guestMarketSlug?: string 
                         <Store className="w-[21px] h-[21px]" />
                     </IconLink>
 
+                    {/* دو تابلوی بازار — فروشندگان | خریداران (جای سوییچ درون‌صفحه) */}
+                    <BoardTabs slug={currentSlug} pathname={pathname ?? ''} />
+
                     {/* کاتالوگ */}
                     <IconLink href="/my-catalogs" title="کاتالوگ‌های من — افزودن کالا از همین‌جا" ariaLabel="کاتالوگ‌های من"
                               active={isCatalogActive}>
@@ -230,10 +315,12 @@ export default function NavTabs({ guestMarketSlug }: { guestMarketSlug?: string 
             </nav>
 
             {/* ═══ موبایل — نوار پایین ═══ */}
-            <MobileBottomNav
-                currentSlug={currentSlug}
-                pathname={pathname ?? ''}
-            />
+            <Suspense fallback={null}>
+                <MobileBottomNav
+                    currentSlug={currentSlug}
+                    pathname={pathname ?? ''}
+                />
+            </Suspense>
         </>
     );
 }
@@ -241,18 +328,26 @@ export default function NavTabs({ guestMarketSlug }: { guestMarketSlug?: string 
 // ─── نوار پایین موبایل ───
 function MobileBottomNav({ currentSlug, pathname }: { currentSlug: string | null; pathname: string }) {
     const { mode, loading } = useNavMode();
+    const searchParams = useSearchParams();
     if (loading) return null;
     const items = NAV[mode];
     if (!items || items.length === 0) return null;
 
     const segs = pathname.split('/').filter(Boolean);
     const seg = segs.length === 1 ? segs[0] : null;
+    const compact = items.length > 4;
+    const onArmMarket = !!seg && !NON_MARKET_SEGMENTS.has(seg) && seg === currentSlug;
+    const boardParam: BoardTab = searchParams.get('board') === 'inquiry' ? 'inquiry' : 'price';
 
     const isActive = (item: NavItemDef) => {
         switch (item.key) {
             case 'market':
                 return pathname.startsWith('/market') || // /market و /markets
-                    (!!seg && !NON_MARKET_SEGMENTS.has(seg) && seg === currentSlug);
+                    onArmMarket;
+            case 'sellers':
+                return onArmMarket && boardParam === 'price';
+            case 'buyers':
+                return onArmMarket && boardParam === 'inquiry';
             case 'catalogs':
                 return pathname.startsWith('/my-catalogs') ||
                     pathname.startsWith('/business') ||
@@ -264,7 +359,17 @@ function MobileBottomNav({ currentSlug, pathname }: { currentSlug: string | null
         }
     };
 
-    const gridCls = items.length === 2 ? 'grid-cols-2' : items.length === 3 ? 'grid-cols-3' : 'grid-cols-4';
+    // آدرس پویا: تابلوهای بازار روی صفحهٔ بازارِ جاری می‌نشینند
+    const itemHref = (item: NavItemDef) =>
+        item.key === 'sellers' ? boardHref(currentSlug, 'price')
+        : item.key === 'buyers' ? boardHref(currentSlug, 'inquiry')
+        : item.href;
+
+    const gridCls = items.length <= 2 ? 'grid-cols-2'
+        : items.length === 3 ? 'grid-cols-3'
+        : items.length === 4 ? 'grid-cols-4'
+        : items.length === 5 ? 'grid-cols-5'
+        : 'grid-cols-6';
 
     return (
         <nav className="lg:hidden fixed bottom-0 inset-x-0 z-50 bg-white/95 dark:bg-gray-900/95 backdrop-blur-md
@@ -276,16 +381,16 @@ function MobileBottomNav({ currentSlug, pathname }: { currentSlug: string | null
                     return active ? (
                         <span key={item.key}
                               className="relative flex flex-col items-center justify-center py-2.5 gap-0.5 text-primary cursor-default">
-                            <item.icon className="w-[23px] h-[23px] stroke-[2.4]" />
-                            <span className="text-[10px] font-extrabold">{item.label}</span>
-                            <span className="absolute top-0 inset-x-7 h-[3px] rounded-b-full bg-primary" />
+                            <item.icon className={cn(compact ? 'w-[21px] h-[21px]' : 'w-[23px] h-[23px]', 'stroke-[2.4]')} />
+                            <span className={compact ? 'text-[9px] font-extrabold' : 'text-[10px] font-extrabold'}>{item.label}</span>
+                            <span className="absolute top-0 inset-x-5 h-[3px] rounded-b-full bg-primary" />
                         </span>
                     ) : (
-                        <Link key={item.key} href={item.href} scroll={false}
+                        <Link key={item.key} href={itemHref(item)} scroll={false}
                               className="relative flex flex-col items-center justify-center py-2.5 gap-0.5
                                   text-on-surface-variant/70 hover:text-primary active:scale-95 transition-all">
-                            <item.icon className="w-[23px] h-[23px]" />
-                            <span className="text-[10px] font-bold">{item.label}</span>
+                            <item.icon className={compact ? 'w-[21px] h-[21px]' : 'w-[23px] h-[23px]'} />
+                            <span className={compact ? 'text-[9px] font-bold' : 'text-[10px] font-bold'}>{item.label}</span>
                         </Link>
                     );
                 })}
