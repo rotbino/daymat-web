@@ -26,6 +26,17 @@ export const BOARD_ITEMS: { key: BoardKey; label: string; icon: any; board: Boar
 export const boardHref = (slug: string | null | undefined, board: BoardTab) =>
     !slug ? '/markets' : board === 'inquiry' ? `/${slug}/buyers` : `/${slug}`;
 
+/**
+ * آیا این تابلو در بازار داده‌شده فعال است؟
+ * ملاک: config.modules.{priceTable|buyLead}.enabled — undefined = روشن (پیش‌فرض)
+ * مدیر از تنظیمات بازار ← ماژول‌ها ← «تابلوهای بازار» کنترل می‌کند.
+ */
+export const boardEnabled = (arm: any | null | undefined, board: BoardTab) => {
+    if (!arm) return true;
+    const moduleKey = board === 'inquiry' ? 'buyLead' : 'priceTable';
+    return (arm as any)?.config?.modules?.[moduleKey]?.enabled !== false;
+};
+
 export interface NavItemDef {
     key: string;
     label: string;

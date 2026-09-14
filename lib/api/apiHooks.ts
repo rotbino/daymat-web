@@ -382,7 +382,7 @@ export function useInvalidateVitrine() {
  * - placeholderData: هنگام تغییر فیلتر، لیست قبلی محو نمی‌شود (بدون فلشِ لودینگ)
  * - هر صفحه حداکثر ۱۰ صفحه در حافظه (maxPages) تا کش باد نکند
  */
-export const useVitrine = (slug: string, params: Record<string, any> = {}) => {
+export const useVitrine = (slug: string, params: Record<string, any> = {}, options?: { enabled?: boolean }) => {
     const normalized = useMemo(() => normalizeVitrineParams(params), [params]);
 
     return useInfiniteQuery({
@@ -395,7 +395,7 @@ export const useVitrine = (slug: string, params: Record<string, any> = {}) => {
             if (!totalPages || totalPages <= 1) return undefined;
             return (lastPageParam as number) < totalPages ? (lastPageParam as number) + 1 : undefined;
         },
-        enabled: !!slug,
+        enabled: !!slug && (options?.enabled ?? true),
         staleTime: 1000 * 60 * 5,
         gcTime: 1000 * 60 * 30,
         placeholderData: keepPreviousData,

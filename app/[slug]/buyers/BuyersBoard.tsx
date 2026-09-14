@@ -10,6 +10,7 @@ import { useMarketInit } from '@/lib/hooks/useMarketInit';
 import { useInquiryArmBoard } from '@/lib/api/apiHooks';
 import { Megaphone, Loader2, ShoppingCart, ArrowLeft, Building2 } from 'lucide-react';
 import NavTabs from '@/app/home/nav/NavTabs';
+import { boardEnabled } from '@/app/home/nav/config';
 import AppHeader from '@/app/components/AppHeader';
 import SearchBox from '@/components/home/SearchBox';
 
@@ -23,6 +24,10 @@ export default function BuyersBoard({ slug }: { slug: string }) {
     const currentArm = useSelector((s: RootState) => s.arm.currentArm);
     const searchParams = useSearchParams();
     const q = (searchParams.get('search') || '').trim();
+
+    // ✅ ماژول‌های بازار — تابلوی خرید خاموش → حالت غیرفعال (بدون درخواست API)
+    const buyersOn = boardEnabled(currentArm, 'inquiry');
+    const sellersOn = boardEnabled(currentArm, 'price');
 
     const { data: board, isPending } = useInquiryArmBoard(slug);
     const items = board?.items ?? [];
@@ -87,10 +92,10 @@ export default function BuyersBoard({ slug }: { slug: string }) {
                         </div>
                         <div className="min-w-0">
                             <h1 className="text-lg font-black text-stone-900 dark:text-amber-100 truncate">
-                                درخواست‌های خرید {armName && `بازار ${armName}`}
+                                تابلوی خرید {armName && `بازار ${armName}`}
                             </h1>
                             <p className="text-[11px] font-bold text-amber-800/80 dark:text-amber-300/70 mt-0.5">
-                                خریدارانِ عضو، لیست خریدشان را اینجا منتشر می‌کنند — فروشنده هستی؟ قیمت پیشنهادی بده.
+                                درخواست‌های خریدِ خریدارانِ عضو اینجاست — فروشنده هستی؟ قیمت پیشنهادی بده.
                             </p>
                         </div>
                     </div>
@@ -98,6 +103,23 @@ export default function BuyersBoard({ slug }: { slug: string }) {
             </header>
 
             <main className="max-w-5xl mx-auto px-4 py-5">
+                {/* ✅ تابلوی خرید خاموش — مدیر از ماژول‌ها روشن کند */}
+                {!buyersOn ? (
+                    <div className="text-center py-16">
+                        <div className="w-16 h-16 rounded-2xl bg-surface-container-high dark:bg-gray-800 grid place-items-center mx-auto mb-4">
+                            <ShoppingCart className="w-8 h-8 text-on-surface-variant/25" />
+                        </div>
+                        <p className="text-sm font-bold text-on-surface dark:text-gray-200">تابلوی خرید این بازار غیرفعال است</p>
+                        <p className="mt-1 text-[11px] text-on-surface-variant/70">مدیر بازار این تابلو را در ماژول‌ها خاموش کرده است.</p>
+                        {sellersOn && (
+                            <Link href={`/${slug}`}
+                                  className="mt-5 inline-flex h-10 px-5 items-center rounded-xl bg-primary text-on-primary text-[12px] font-bold shadow-sm hover:bg-primary/90 transition-colors">
+                                رفتن به تابلوی قیمت (فروشندگان)
+                            </Link>
+                        )}
+                    </div>
+                ) : (
+                <>
                 {/* نوار وضعیت — تعداد + فیلتر جاری */}
                 <div className="flex items-center justify-between gap-3 mb-3.5 px-1">
                     <p className="text-[11px] font-bold text-stone-500 dark:text-gray-400">
@@ -133,6 +155,8 @@ export default function BuyersBoard({ slug }: { slug: string }) {
                             <InquiryCard key={inq.id} inq={inq} />
                         ))}
                     </div>
+                )}
+                </>
                 )}
             </main>
         </div>

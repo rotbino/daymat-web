@@ -3,15 +3,17 @@
 import React, { useState } from 'react';
 import { useSelector } from 'react-redux';
 import { RootState } from '@/lib/store/store';
+import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import {
     useArmBuyers, useArmBuyerCandidates,
     useAddBuyer, useRemoveBuyer, useToggleBuyerPaused,
 } from '@/lib/api/apiHooks';
+import { apiService } from '@/lib/api/apiService';
 import { toast } from 'sonner';
 import {
     ShoppingCart, Search, X, PauseCircle, PlayCircle, Trash2, Loader2,
     Plus, Building2, MapPin, ExternalLink, User, Phone, ArrowUpDown,
-    Package, ChevronLeft,
+    Package, ChevronLeft, Megaphone, Eye,
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import Link from 'next/link';
@@ -43,6 +45,8 @@ function BuyersContent({ slug, armName }: { slug: string; armName: string }) {
     const [searchInput, setSearchInput] = useState('');
     const [showAddModal, setShowAddModal] = useState(false);
     const [confirmRemoveId, setConfirmRemoveId] = useState<string | null>(null);
+    // ✅ انتخابگر «تابلوی خرید» — خریدارِ جاری برای مدیریت تابلوهای خریدش در این بازار
+    const [boardsMember, setBoardsMember] = useState<any>(null);
     const [filter, setFilter] = useState<FilterValue>({});
     const [sortBy, setSortBy] = useState('joinedAt');
     const [sortOrder, setSortOrder] = useState<'asc' | 'desc'>('desc');
@@ -276,6 +280,15 @@ function BuyersContent({ slug, armName }: { slug: string; armName: string }) {
                                                         </>
                                                     ) : (
                                                         <>
+                                                            {/* ✅ تابلوی خرید — مدیریت تابلوهای خرید این خریدار در بازار */}
+                                                            <button
+                                                                onClick={() => setBoardsMember(b)}
+                                                                title="تابلوی خرید — انتشار درخواست‌های خریدش در تابلوی خرید بازار"
+                                                                className="h-8 px-2.5 rounded-lg text-amber-700 dark:text-amber-400 bg-amber-500/10
+                                                                    hover:bg-amber-500/20 text-[10px] font-extrabold inline-flex items-center gap-1 transition-colors"
+                                                            >
+                                                                <Megaphone className="w-3.5 h-3.5" /> تابلوی خرید
+                                                            </button>
                                                             <button
                                                                 onClick={() => pauseMut.mutate({ membershipId: b.membershipId, paused: !isPaused })}
                                                                 disabled={busyPause}
@@ -397,6 +410,15 @@ function BuyersContent({ slug, armName }: { slug: string; armName: string }) {
                                                 </>
                                             ) : (
                                                 <>
+                                                    {/* ✅ تابلوی خرید — نسخهٔ موبایل */}
+                                                    <button
+                                                        onClick={() => setBoardsMember(b)}
+                                                        title="تابلوی خرید — انتشار درخواست‌های خریدش در تابلوی خرید بازار"
+                                                        className="h-8 px-2.5 rounded-lg text-amber-700 dark:text-amber-400 bg-amber-500/10
+                                                            hover:bg-amber-500/20 text-[10px] font-extrabold inline-flex items-center gap-1 transition-colors"
+                                                    >
+                                                        <Megaphone className="w-3.5 h-3.5" /> تابلوی خرید
+                                                    </button>
                                                     <button
                                                         onClick={() => pauseMut.mutate({ membershipId: b.membershipId, paused: !isPaused })}
                                                         disabled={busyPause}
@@ -433,6 +455,144 @@ function BuyersContent({ slug, armName }: { slug: string; armName: string }) {
             {showAddModal && (
                 <AddBuyerModal slug={slug} onClose={() => setShowAddModal(false)} />
             )}
+
+            {/* ─── انتخابگر «تابلوی خرید» — تابلوهای خریدِ این خریدار در بازار ─── */}
+            {boardsMember && (
+                <MemberBoardsModal slug={slug} member={boardsMember} onClose={() => setBoardsMember(null)} />
+            )}
+        </div>
+    );
+}
+
+// ═══ انتخابگر «تابلوی خرید» — هر خریدار می‌تواند چند تابلوی خرید داشته باشد؛
+//     هر تابلو را جدا می‌شود روی تابلوی خرید بازار منتشر یا حذف کرد (InquiryPublication) ═══
+function MemberBoardsModal({ slug, member, onClose }: { slug: string; member: any; onClose: () => void }) {
+    const queryClient = useQueryClient();
+    const userId = member.user?.id;
+    const memberName = member.business?.name || member.user?.fullName || 'خریدار';
+
+    const boardsQ = useQuery({
+        queryKey: ['member-inquiries', slug, userId],
+        queryFn: () => apiService.arm.getMemberInquiries(slug, userId),
+        enabled: !!userId,
+        staleTime: 15_000,
+    });
+
+    const toggleMut = useMutation({
+        mutationFn: ({ inquiryId, published }: { inquiryId: string; published: boolean }) =>
+            apiService.arm.toggleInquiryPublish(slug, inquiryId, published),
+        onSuccess: (_d, v) => {
+            toast.success(v.published
+                ? `تابلوی خرید ${memberName} روی تابلوی خرید بازار منتشر شد`
+                : `تابلوی خرید ${memberName} از تابلوی خرید بازار حذف شد`);
+            queryClient.invalidateQueries({ queryKey: ['member-inquiries', slug, userId] });
+            queryClient.invalidateQueries({ queryKey: ['inquiry-arm-board', slug] }); // تابلوی عمومی هم رفرش شود
+        },
+        onError: (e: any) => toast.error(e?.data?.message || e?.message || 'خطا در تغییر وضعیت انتشار'),
+    });
+
+    const boards: any[] = boardsQ.data?.items ?? [];
+
+    return (
+        <div className="fixed inset-0 z-[70] flex items-end sm:items-center justify-center">
+            <div className="absolute inset-0 bg-black/50 backdrop-blur-sm" onClick={onClose} />
+            <div className="relative w-full sm:max-w-lg max-h-[85vh] overflow-y-auto
+                bg-white dark:bg-gray-900 rounded-t-2xl sm:rounded-2xl border border-outline-variant/30
+                shadow-2xl p-5 space-y-4">
+                {/* هدر */}
+                <div className="flex items-start justify-between gap-3">
+                    <div className="flex items-center gap-2.5 min-w-0">
+                        <div className="w-10 h-10 rounded-xl bg-amber-500/10 grid place-items-center flex-shrink-0">
+                            <Megaphone className="w-5 h-5 text-amber-600 dark:text-amber-400" />
+                        </div>
+                        <div className="min-w-0">
+                            <h3 className="text-sm font-extrabold text-on-surface">تابلوهای خرید {memberName}</h3>
+                            <p className="text-[10px] text-on-surface-variant/70 mt-0.5">
+                                هر تابلوی خرید را روشن کنی، درخواست‌هایش روی تابلوی خرید بازار می‌نشیند
+                            </p>
+                        </div>
+                    </div>
+                    <button onClick={onClose} className="p-1.5 rounded-full hover:bg-surface-container-high flex-shrink-0">
+                        <X className="w-4 h-4 text-on-surface-variant" />
+                    </button>
+                </div>
+
+                {/* لیست تابلوها */}
+                {boardsQ.isPending ? (
+                    <div className="space-y-2.5">
+                        {[0, 1].map((i) => <div key={i} className="h-16 rounded-xl bg-surface-container-high/50 animate-pulse" />)}
+                    </div>
+                ) : boards.length === 0 ? (
+                    <div className="text-center py-10">
+                        <ShoppingCart className="w-10 h-10 text-on-surface-variant/20 mx-auto mb-3" />
+                        <p className="text-sm font-bold text-on-surface">این خریدار هنوز تابلوی خریدی نساخته</p>
+                        <p className="text-[11px] text-on-surface-variant/70 mt-1">وقتی تابلوی خریدش آماده شد، همین‌جا به بازار اضافه‌اش می‌کنی</p>
+                    </div>
+                ) : (
+                    <div className="space-y-2.5">
+                        {boards.map((q) => {
+                            const published = q.publishState === 'published' && !q.optOut;
+                            const busy = toggleMut.isPending && toggleMut.variables?.inquiryId === q.id;
+                            return (
+                                <div key={q.id}
+                                     className={cn(
+                                         'flex items-center gap-3 rounded-xl border p-3.5 transition-all',
+                                         published
+                                             ? 'border-amber-500/40 bg-amber-500/5'
+                                             : 'border-outline-variant/30 bg-surface-container-lowest',
+                                     )}>
+                                    <div className="flex-1 min-w-0">
+                                        <p className="text-[13px] font-extrabold text-on-surface truncate">{q.title}</p>
+                                        <div className="flex items-center gap-2.5 text-[10px] text-on-surface-variant/70 mt-1 flex-wrap">
+                                            <span className="inline-flex items-center gap-1">
+                                                <Package className="w-3 h-3" /> {fmt(q.itemsCount)} قلم
+                                            </span>
+                                            {q.offersCount > 0 && <span>{fmt(q.offersCount)} پیشنهاد قیمت</span>}
+                                            {q.city && <span>{q.city}</span>}
+                                            {q.optOut && (
+                                                <span className="text-[9px] font-bold px-1.5 py-0.5 rounded bg-gray-100 text-gray-500 dark:bg-gray-800">
+                                                    خود خریدار خاموش کرده
+                                                </span>
+                                            )}
+                                        </div>
+                                    </div>
+                                    {busy ? (
+                                        <Loader2 className="w-4.5 h-4.5 animate-spin text-amber-500 flex-shrink-0" />
+                                    ) : (
+                                        <label className="relative inline-flex items-center cursor-pointer flex-shrink-0">
+                                            <input
+                                                type="checkbox"
+                                                checked={published}
+                                                disabled={q.optOut} // خودِ خریدار خاموش کرده — مدیر نمی‌تواند اجبارش کند
+                                                onChange={(e) => toggleMut.mutate({ inquiryId: q.id, published: e.target.checked })}
+                                                className="sr-only peer"
+                                            />
+                                            <div className={cn(
+                                                "w-10 h-5.5 rounded-full relative transition-all duration-200",
+                                                published
+                                                    ? 'bg-amber-500 after:translate-x-4.5'
+                                                    : 'bg-outline-variant after:translate-x-0',
+                                                q.optOut && 'opacity-40 cursor-not-allowed',
+                                                "after:content-[''] after:absolute after:top-0.5 after:left-0.5 after:bg-white after:rounded-full after:h-4.5 after:w-4.5 after:transition-all after:duration-200 after:shadow-sm",
+                                            )} />
+                                        </label>
+                                    )}
+                                </div>
+                            );
+                        })}
+                    </div>
+                )}
+
+                {/* فوتر — پیش‌نمایش تابلوی عمومی */}
+                <div className="pt-1">
+                    <Link href={`/${slug}/buyers`}
+                          className="h-9 w-full rounded-xl border border-outline-variant/40 text-[11px] font-bold
+                              text-on-surface-variant hover:text-primary hover:border-primary/40 transition-colors
+                              inline-flex items-center justify-center gap-1.5">
+                        <Eye className="w-3.5 h-3.5" /> دیدن تابلوی خرید بازار
+                    </Link>
+                </div>
+            </div>
         </div>
     );
 }

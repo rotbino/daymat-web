@@ -20,9 +20,9 @@ export async function generateMetadata({ params }: Props) {
         const arm = await apiService.arm.fetchArmData(slug);
         if (arm) {
             return {
-                title: `درخواست‌های خرید خریداران ${arm.name} | دیمت`,
+                title: `تابلوی خرید بازار ${arm.name} | دیمت`,
                 alternates: { canonical: `/${slug}/buyers` },
-                description: arm.slogan || `اعلام‌های خرید خریداران بازار ${arm.name} — قیمت پیشنهادی بدهید`,
+                description: arm.slogan || `تابلوی خرید بازار ${arm.name} — درخواست‌های خرید خریداران و پیشنهاد قیمت`,
             };
         }
     } catch {}

@@ -26,6 +26,7 @@ import AdCard from '@/components/home/AdCard';
 import AdModal from '@/components/home/AdModal';
 import MembershipModal from '@/components/home/MembershipModal';
 import NavTabs from '@/app/home/nav/NavTabs';
+import { boardEnabled } from '@/app/home/nav/config';
 import {LocationFilter} from "@/app/components/LocationFilter";
 
 export default function MarketContent({ search: searchProp }: { search?: string }) {
@@ -89,7 +90,12 @@ export default function MarketContent({ search: searchProp }: { search?: string 
     }), [baseFilterParams, categoryFromUrl, searchFromUrl, minqFromUrl, minstockFromUrl, sortFromUrl,
          brandFromUrl, minpFromUrl, maxpFromUrl, chkFromUrl, chkminFromUrl, chkmaxFromUrl, pageFromUrl]);
 
-    const { data, isPending, isFetching, isFetchingNextPage, hasNextPage, fetchNextPage, isPlaceholderData } = useVitrine(vitrineSlug, queryParams);
+    const { data, isPending, isFetching, isFetchingNextPage, hasNextPage, fetchNextPage, isPlaceholderData } = useVitrine(vitrineSlug, queryParams, { enabled: boardEnabled(currentArm, 'price') });
+
+    // ✅ ماژول‌های بازار (تنظیمات ← ماژول‌ها ← تابلوهای بازار)
+    //    تابلوی قیمت خاموش → هوم به تابلوی خریداران می‌رود (اولین تابلوی فعال)
+    const sellersOn = boardEnabled(currentArm, 'price');
+    const buyersOn = boardEnabled(currentArm, 'inquiry');
 
     // ✅ لگسی ‎?board=inquiry — آدرس‌های قدیمی به صفحهٔ مستقل خریداران می‌روند
     useEffect(() => {
@@ -97,6 +103,13 @@ export default function MarketContent({ search: searchProp }: { search?: string 
             router.replace(`/${currentSlug}/buyers`);
         }
     }, [searchParams, currentSlug, router]);
+
+    // ✅ تابلوی قیمت خاموش و تابلوی خرید روشن → این صفحه جایی ندارد؛ برو خریداران
+    useEffect(() => {
+        if (!sellersOn && buyersOn && currentSlug && !armLoading) {
+            router.replace(`/${currentSlug}/buyers`);
+        }
+    }, [sellersOn, buyersOn, currentSlug, armLoading, router]);
 
     const ads = useMemo(() => data?.pages.flatMap((p: any) => p?.ads ?? []) ?? [], [data]);
     const total = data?.pages?.[0]?.pagination?.total;
@@ -269,6 +282,17 @@ export default function MarketContent({ search: searchProp }: { search?: string 
 
     if (armLoading || isCheckingArm) {
         return <div className="min-h-screen flex items-center justify-center"><div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary mx-auto" /></div>;
+    }
+
+    // ✅ هر دو تابلو خاموش — بازاری بدون تابلو (مدیر از ماژول‌ها روشن کند)
+    if (!sellersOn && !buyersOn) {
+        return (
+            <div className="min-h-screen flex items-center justify-center bg-surface dark:bg-gray-950"><div className="text-center px-6">
+                <div className="w-24 h-24 bg-surface-container-high dark:bg-gray-800 rounded-2xl flex items-center justify-center mx-auto mb-6"><Store className="w-12 h-12 text-on-surface-variant/30" /></div>
+                <h2 className="text-2xl font-bold text-on-surface dark:text-gray-100 mb-3">این بازار فعلاً تابلوی فعالی ندارد</h2>
+                <p className="text-sm text-on-surface-variant dark:text-gray-400 mx-auto leading-relaxed">مدیر بازار هنوز تابلوی قیمت یا تابلوی خرید را فعال نکرده است.</p>
+            </div></div>
+        );
     }
 
     if (currentArm) {

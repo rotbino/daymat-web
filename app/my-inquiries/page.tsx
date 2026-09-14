@@ -96,7 +96,7 @@ export default function MyInquiriesPage() {
     }, []);
 
     useEffect(() => {
-        document.title = 'پنل اعلام خرید | دیمت';
+        document.title = 'تابلوی خرید من | دیمت';
     }, []);
 
     useEffect(() => {

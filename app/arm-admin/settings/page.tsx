@@ -20,6 +20,7 @@ import { cn } from '@/lib/utils';
 import { GeneralSection } from '@/app/admin/arm/components/GeneralSection';
 import { PaymentSection } from '@/app/admin/arm/components/PaymentSection';
 import { ModuleSettingsSection } from '@/app/admin/arm/components/ModuleSettingsSection';
+import { BoardModulesSection } from '@/app/admin/arm/components/BoardModulesSection';
 import { AccessRulesSection } from '@/app/admin/arm/components/AccessRulesSection';
 import { EconomySection } from '@/app/admin/arm/components/EconomySection';
 import { FormLabelsSection } from '@/app/admin/arm/components/FormLabelsSection';
@@ -257,13 +258,15 @@ export default function ArmAdminSettings() {
 
                     {activeTab === 'modules' && (
                         <div className="space-y-6">
+                            {/* ✅ سوییچ تابلوهای بازار — تعیین اینکه این بازار کدام تابلوها را دارد */}
+                            <BoardModulesSection watch={watch} setValue={handleSetValue} />
                             <ModuleSettingsSection
                                 watch={watch}
                                 setValue={handleSetValue}
                                 onSave={() => {}}
                                 isSaving={saving}
                                 moduleKey="priceTable"
-                                moduleName="تابلوی قیمت"
+                                moduleName="تابلوی قیمت — فروشندگان"
                                 isAdmin={isSystemAdmin}
                             />
                             <ModuleSettingsSection
@@ -272,7 +275,7 @@ export default function ArmAdminSettings() {
                                 onSave={() => {}}
                                 isSaving={saving}
                                 moduleKey="buyLead"
-                                moduleName="تابلوی اعلام خرید"
+                                moduleName="تابلوی خرید بازار — خریداران"
                                 isAdmin={isSystemAdmin}
                             />
                             <ModuleSettingsSection

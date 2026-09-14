@@ -10,7 +10,7 @@ import { BookOpen, User, Tags, ShoppingCart, Bell } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { useNavMode } from './useNavMode';
 import { useUnreadNotifications } from './useUnreadNotifications';
-import { NAV, MOBILE_NAV_ITEMS, NavItemDef, boardHref } from './config';
+import { NAV, MOBILE_NAV_ITEMS, NavItemDef, boardHref, boardEnabled } from './config';
 import ArmSwitcher from '@/components/ArmSwitcher';
 import { LocationFilter } from '@/app/components/LocationFilter';
 import HeaderMenu from '@/app/components/HeaderMenu';
@@ -109,6 +109,10 @@ function GuestMarketNav({ slug, pathname }: { slug: string; pathname: string }) 
     const cleanPath = pathname.replace(/\/+$/, '') || '/';
     const onSellers = cleanPath === `/${slug}`;
     const onBuyers = cleanPath === `/${slug}/buyers`;
+    // ✅ ماژول‌های بازار — تابلوی خاموش از ناو مهمان هم حذف می‌شود
+    const currentArm = useSelector((s: RootState) => s.arm.currentArm);
+    const sellersOn = boardEnabled(currentArm, 'price');
+    const buyersOn = boardEnabled(currentArm, 'inquiry');
 
     return (
         <>
@@ -129,11 +133,15 @@ function GuestMarketNav({ slug, pathname }: { slug: string; pathname: string }) 
                 </React.Suspense>
                 <div className="flex-1" />
 
-                {/* سه آیتم مهمان — عنوان زیر آیکون */}
-                <NavItemLink item={{ key: 'sellers', label: 'فروشندگان', icon: Tags, href: `/${slug}` }}
-                             href={`/${slug}`} active={onSellers} />
-                <NavItemLink item={{ key: 'buyers', label: 'خریداران', icon: ShoppingCart, href: `/${slug}/buyers` }}
-                             href={`/${slug}/buyers`} active={onBuyers} />
+                {/* سه آیتم مهمان — عنوان زیر آیکون (تابلوی خاموش حذف می‌شود) */}
+                {sellersOn && (
+                    <NavItemLink item={{ key: 'sellers', label: 'فروشندگان', icon: Tags, href: `/${slug}` }}
+                                 href={`/${slug}`} active={onSellers} />
+                )}
+                {buyersOn && (
+                    <NavItemLink item={{ key: 'buyers', label: 'خریداران', icon: ShoppingCart, href: `/${slug}/buyers` }}
+                                 href={`/${slug}/buyers`} active={onBuyers} />
+                )}
                 <Link href={`/login?redirect=${encodeURIComponent('/business/register?intent=catalog')}`}
                       className="h-14 w-[72px] flex flex-col items-center justify-center gap-1 rounded-lg text-on-surface-variant
                           hover:text-on-surface hover:bg-surface-container-high transition-colors flex-shrink-0">
@@ -147,9 +155,9 @@ function GuestMarketNav({ slug, pathname }: { slug: string; pathname: string }) 
         <nav className="lg:hidden fixed bottom-0 inset-x-0 z-50 bg-white/95 dark:bg-gray-900/95 backdrop-blur-md
             border-t border-outline-variant/20 dark:border-gray-800 pb-[env(safe-area-inset-bottom)]
             shadow-[0_-2px_12px_rgba(0,0,0,0.06)] dark:shadow-[0_-2px_12px_rgba(0,0,0,0.4)]">
-            <div className="grid grid-cols-3 max-w-lg mx-auto">
-                <FooterItem href={`/${slug}`} label="فروشندگان" icon={Tags} active={onSellers} />
-                <FooterItem href={`/${slug}/buyers`} label="خریداران" icon={ShoppingCart} active={onBuyers} amber />
+            <div className={cn('grid max-w-lg mx-auto', sellersOn && buyersOn ? 'grid-cols-3' : 'grid-cols-2')}>
+                {sellersOn && <FooterItem href={`/${slug}`} label="فروشندگان" icon={Tags} active={onSellers} />}
+                {buyersOn && <FooterItem href={`/${slug}/buyers`} label="خریداران" icon={ShoppingCart} active={onBuyers} amber />}
                 <FooterItem href={`/login?redirect=${encodeURIComponent('/business/register?intent=catalog')}`}
                             label="کاتالوگ من" icon={BookOpen} />
             </div>
@@ -196,7 +204,12 @@ export default function NavTabs({ guestMarketSlug }: { guestMarketSlug?: string 
     if (loading) return null;
 
     const p = pathname ?? '';
-    const items = NAV.member; // ✅ ناو ۵تایی واحد — هر دو مود یکسان
+    // ✅ ماژول‌های بازار — تابلوی خاموش از ناو حذف می‌شود (تنظیمات بازار ← ماژول‌ها)
+    const sellersOn = boardEnabled(currentArm, 'price');
+    const buyersOn = boardEnabled(currentArm, 'inquiry');
+    const items = NAV.member.filter((i) =>
+        (i.key !== 'sellers' || sellersOn) && (i.key !== 'buyers' || buyersOn),
+    );
 
     // آدرس پویا: فروشندگان → ‎/{slug} (هوم) | خریداران → ‎/{slug}/buyers
     const itemHref = (item: NavItemDef) =>
@@ -250,14 +263,21 @@ function MobileBottomNav({ currentSlug, pathname }: {
     currentSlug: string | null; pathname: string;
 }) {
     const { loading } = useNavMode();
+    const currentArm = useSelector((s: RootState) => s.arm.currentArm);
     if (loading) return null;
-    const items = MOBILE_NAV_ITEMS;
+    // ✅ ماژول‌های بازار — تابلوی خاموش از فوتر هم حذف می‌شود
+    const sellersOn = boardEnabled(currentArm, 'price');
+    const buyersOn = boardEnabled(currentArm, 'inquiry');
+    const items = MOBILE_NAV_ITEMS.filter((i) =>
+        (i.key !== 'sellers' || sellersOn) && (i.key !== 'buyers' || buyersOn),
+    );
+    const gridCls = items.length <= 3 ? 'grid-cols-3' : 'grid-cols-4';
 
     return (
         <nav className="lg:hidden fixed bottom-0 inset-x-0 z-50 bg-white/95 dark:bg-gray-900/95 backdrop-blur-md
             border-t border-outline-variant/20 dark:border-gray-800 pb-[env(safe-area-inset-bottom)]
             shadow-[0_-2px_12px_rgba(0,0,0,0.06)] dark:shadow-[0_-2px_12px_rgba(0,0,0,0.4)]">
-            <div className="grid grid-cols-4 max-w-lg mx-auto">
+            <div className={cn('grid max-w-lg mx-auto', gridCls)}>
                 {items.map((item) => {
                     const active = navActive(item.key, pathname, currentSlug);
                     const href = item.key === 'sellers' ? boardHref(currentSlug, 'price')

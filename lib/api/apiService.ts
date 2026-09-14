@@ -584,6 +584,14 @@ export const apiService = {
         getUserArms: (): Promise<any[]> =>
             apiRequest('/arm/user/my-arms'),
 
+        // ✅ تابلوهای خریدِ یک عضو + وضعیت انتشارشان در این بازار — انتخابگر پنل مالک
+        getMemberInquiries: (slug: string, userId: string): Promise<any> =>
+            apiRequest(`/arm/${slug}/members/${userId}/inquiries`),
+
+        // ✅ انتشار/توقف «تابلوی خرید» خریدار در تابلوی خرید بازار (مالک دفتر یا مدیر بازار)
+        toggleInquiryPublish: (slug: string, inquiryId: string, published: boolean): Promise<any> =>
+            apiRequest(`/arm/${slug}/inquiry-publish`, { method: 'PATCH', data: { inquiryId, published } }),
+
         getCategoryTree: (slug: string, nodeId?: string): Promise<any> =>
             apiRequest(`/arm/${slug}/categories${nodeId ? `?nodeId=${nodeId}` : ''}`),
 
