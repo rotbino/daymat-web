@@ -226,7 +226,7 @@ export function ArmForm({ initialData, onSubmit, isSubmitting = false, isEditMod
                                 onSave={handleAutoSave}
                                 isSaving={isSubmitting || isAutoSaving}
                                 moduleKey="priceTable"
-                                moduleName="تابلوی قیمت"
+                                moduleName="دیوار فروشندگان — تابلوی قیمت"
                                 moduleIcon={TrendingUp}
                                 isAdmin={isSystemAdmin}
                             />
@@ -235,9 +235,18 @@ export function ArmForm({ initialData, onSubmit, isSubmitting = false, isEditMod
                                 setValue={setValue}
                                 onSave={handleAutoSave}
                                 isSaving={isSubmitting || isAutoSaving}
-                                moduleKey="buyLead"
-                                moduleName="تابلوی اعلام خرید"
+                                moduleKey="buyLeadWall"
+                                moduleName="دیوار خریداران"
                                 moduleIcon={ShoppingCart}
+                                isAdmin={isSystemAdmin}
+                            />
+                            <ModuleSettingsSection
+                                watch={watch}
+                                setValue={setValue}
+                                onSave={handleAutoSave}
+                                isSaving={isSubmitting || isAutoSaving}
+                                moduleKey="buyLeadBoard"
+                                moduleName="تابلوی خرید"
                                 isAdmin={isSystemAdmin}
                             />
                         </div>

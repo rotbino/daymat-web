@@ -7,28 +7,29 @@ import { Tags, ShoppingCart, ExternalLink } from 'lucide-react';
 import { cn } from '@/lib/utils';
 
 /**
- * ✅ «تابلوهای بازار» — سوییچ روشن/خاموش دو تابلوی اصلی در تب ماژول‌ها
+ * ✅ «دیوارهای بازار» — سوییچ روشن/خاموش دو دیوار اصلی در تب ماژول‌ها
  *   مقدار روی config.modules.{priceTable|buyLead}.enabled می‌نویسد (undefined = روشن).
  *   ناوبری سایت، صفحهٔ خریداران و API تابلوها همین فلاگ را ملاک قرار می‌دهند:
- *     - تابلوی قیمت خاموش → لینک «فروشندگان» حذف و ‎/{slug} به خریداران می‌رود
- *     - تابلوی خرید خاموش → لینک «خریداران» حذف و GET /inquiry/arm/:slug خطای BOARD_DISABLED می‌دهد
+ *     - دیوار فروشندگان خاموش → لینک «فروشندگان» حذف و ‎/{slug} به خریداران می‌رود
+ *     - دیوار خریداران خاموش → لینک «خریداران» حذف و GET /inquiry/arm/:slug خطای BOARD_DISABLED می‌دهد
+ *   💡 ماژول‌های همیشه‌فعال (کاتالوگ فروش / تابلوی خرید) سوییچ ندارند — تنظیماتشان در کارت‌های زیرین است.
  */
 
 const BOARDS = [
     {
         key: 'priceTable' as const,
-        label: 'تابلوی قیمت',
-        sub: 'فروشندگان — صفحهٔ اول سایت (هوم)',
-        hint: 'قیمت‌های عمدهٔ فروشندگان روی همین تابلو می‌نشیند',
+        label: 'دیوار فروشندگان',
+        sub: 'تابلوی قیمت — صفحهٔ اول بازار (هوم)',
+        hint: 'آگهی‌ها و قیمت‌های عمدهٔ فروشندگانِ عضو روی این دیوار می‌نشیند',
         icon: Tags,
         accent: 'text-primary',
         activeCls: 'bg-primary/5 border-primary/30',
     },
     {
         key: 'buyLead' as const,
-        label: 'تابلوی خرید بازار',
-        sub: 'خریداران — صفحهٔ ‎/buyers',
-        hint: 'تابلوهای خریدِ خریدارانِ عضو، اینجا منتشر می‌شود',
+        label: 'دیوار خریداران',
+        sub: 'تابلوهای خرید اعضا — صفحهٔ ‎/buyers',
+        hint: 'تابلوی خریدِ هر خریدار را مدیر روی این دیوار می‌گذارد تا درخواست‌های همکاری‌اش دیده شود',
         icon: ShoppingCart,
         accent: 'text-amber-600 dark:text-amber-400',
         activeCls: 'bg-amber-500/5 border-amber-500/30',
@@ -53,9 +54,9 @@ export function BoardModulesSection({ watch, setValue }: {
     return (
         <div className="space-y-3">
             <div>
-                <h3 className="text-sm font-extrabold text-on-surface">تابلوهای بازار</h3>
+                <h3 className="text-sm font-extrabold text-on-surface">دیوارهای بازار</h3>
                 <p className="text-[11px] text-on-surface-variant/70 mt-0.5">
-                    تعیین کن این بازار کدام تابلوها را داشته باشد — ناوبری، صفحات و API همین‌جا کنترل می‌شود.
+                    تعیین کن این بازار کدام دیوارها را داشته باشد — ناوبری، صفحات و API همین‌جا کنترل می‌شود.
                 </p>
             </div>
 
@@ -109,7 +110,7 @@ export function BoardModulesSection({ watch, setValue }: {
             {bothOff && (
                 <div className="rounded-lg bg-amber-50 dark:bg-amber-900/20 border border-amber-200/60 dark:border-amber-800/50 px-3.5 py-2.5">
                     <p className="text-[11px] font-bold text-amber-800 dark:text-amber-300">
-                        هر دو تابلو خاموش است — بازاری بدون تابلو برای بازدیدکننده قابل استفاده نیست. حداقل یکی را روشن نگه دار.
+                        هر دو دیوار خاموش است — بازاری بدون دیوار برای بازدیدکننده قابل استفاده نیست. حداقل یکی را روشن نگه دار.
                     </p>
                 </div>
             )}

@@ -258,15 +258,16 @@ export default function ArmAdminSettings() {
 
                     {activeTab === 'modules' && (
                         <div className="space-y-6">
-                            {/* ✅ سوییچ تابلوهای بازار — تعیین اینکه این بازار کدام تابلوها را دارد */}
+                            {/* ✅ سوییچ دیوارهای بازار — تعیین اینکه این بازار کدام دیوارها را دارد */}
                             <BoardModulesSection watch={watch} setValue={handleSetValue} />
+                            {/* ✅ چهار ماژول: دو دیوارِ قابل‌خاموش‌کردن + دو ماژول همیشه‌فعال با تنظیمات جدا */}
                             <ModuleSettingsSection
                                 watch={watch}
                                 setValue={handleSetValue}
                                 onSave={() => {}}
                                 isSaving={saving}
                                 moduleKey="priceTable"
-                                moduleName="تابلوی قیمت — فروشندگان"
+                                moduleName="دیوار فروشندگان — تابلوی قیمت و آگهی‌ها"
                                 isAdmin={isSystemAdmin}
                             />
                             <ModuleSettingsSection
@@ -274,8 +275,17 @@ export default function ArmAdminSettings() {
                                 setValue={handleSetValue}
                                 onSave={() => {}}
                                 isSaving={saving}
-                                moduleKey="buyLead"
-                                moduleName="تابلوی خرید بازار — خریداران"
+                                moduleKey="buyLeadWall"
+                                moduleName="دیوار خریداران — نمایش تابلوهای خرید اعضا"
+                                isAdmin={isSystemAdmin}
+                            />
+                            <ModuleSettingsSection
+                                watch={watch}
+                                setValue={handleSetValue}
+                                onSave={() => {}}
+                                isSaving={saving}
+                                moduleKey="buyLeadBoard"
+                                moduleName="تابلوی خریدِ هر خریدار — درخواست همکاری"
                                 isAdmin={isSystemAdmin}
                             />
                             <ModuleSettingsSection
@@ -284,7 +294,7 @@ export default function ArmAdminSettings() {
                                 onSave={() => {}}
                                 isSaving={saving}
                                 moduleKey="catalog"
-                                moduleName="کاتالوگ — سقف‌ها و عضوگیری"
+                                moduleName="کاتالوگ فروشِ هر فروشنده — سقف‌ها و عضوگیری"
                                 isAdmin={isSystemAdmin}
                             />
                         </div>

@@ -76,9 +76,9 @@ const PERMISSIONS: PermissionItem[] = [
     { key: 'general.canEditBanner', label: 'ویرایش بنر', category: 'general' },
 
     // ========== ماژول‌ها ==========
-    { key: 'modules.canEditPriceTable', label: 'ویرایش تابلوی قیمت', category: 'modules' },
-    { key: 'modules.canEditBuyLead', label: 'ویرایش اعلام خرید', category: 'modules' },
-    { key: 'modules.canEditCatalog', label: 'ویرایش ماژول کاتالوگ (سقف‌ها و عضوگیری)', category: 'modules' },
+    { key: 'modules.canEditPriceTable', label: 'ویرایش دیوار فروشندگان (تابلوی قیمت)', category: 'modules' },
+    { key: 'modules.canEditBuyLead', label: 'ویرایش دیوار خریداران و تابلوی خرید', category: 'modules' },
+    { key: 'modules.canEditCatalog', label: 'ویرایش کاتالوگ فروش (سقف‌ها و عضوگیری)', category: 'modules' },
 
     // ========== عضویت ==========
     { key: 'accessRules.canEdit', label: 'ویرایش تنظیمات عضویت', category: 'access' },

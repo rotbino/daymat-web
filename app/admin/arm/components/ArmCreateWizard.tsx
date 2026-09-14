@@ -45,8 +45,8 @@ const STEPS = [
     { id: 'basics', title: 'اطلاعات پایه', icon: Palette, required: true },
     { id: 'categories', title: 'دسته‌بندی', icon: Settings, required: true },
     { id: 'locations', title: 'موقعیت‌ها', icon: MapPin, required: true },
-    { id: 'priceTable', title: 'تابلو قیمت', icon: TrendingUp, required: false },
-    { id: 'buyLead', title: 'اعلام خرید', icon: ShoppingCart, required: false },
+    { id: 'priceTable', title: 'دیوار فروشندگان', icon: TrendingUp, required: false },
+    { id: 'buyLead', title: 'دیوار خریداران', icon: ShoppingCart, required: false },
     { id: 'access', title: 'عضویت', icon: Settings, required: false },
     { id: 'payment', title: 'پرداخت', icon: CreditCard, required: false },
     { id: 'economy', title: 'اقتصاد', icon: Store, required: false },
@@ -394,23 +394,34 @@ export function ArmCreateWizard() {
                         onSave={() => {}}
                         isSaving={false}
                         moduleKey="priceTable"
-                        moduleName="تابلوی قیمت"
+                        moduleName="دیوار فروشندگان — تابلوی قیمت"
                         moduleIcon={TrendingUp}
                         isAdmin={true}
                     />
                 );
             case 'buyLead':
                 return (
-                    <ModuleSettingsSection
-                        watch={watch}
-                        setValue={setValue}
-                        onSave={() => {}}
-                        isSaving={false}
-                        moduleKey="buyLead"
-                        moduleName="تابلوی اعلام خرید"
-                        moduleIcon={ShoppingCart}
-                        isAdmin={true}
-                    />
+                    <div className="space-y-6">
+                        <ModuleSettingsSection
+                            watch={watch}
+                            setValue={setValue}
+                            onSave={() => {}}
+                            isSaving={false}
+                            moduleKey="buyLeadWall"
+                            moduleName="دیوار خریداران — نمایش تابلوهای خرید اعضا"
+                            moduleIcon={ShoppingCart}
+                            isAdmin={true}
+                        />
+                        <ModuleSettingsSection
+                            watch={watch}
+                            setValue={setValue}
+                            onSave={() => {}}
+                            isSaving={false}
+                            moduleKey="buyLeadBoard"
+                            moduleName="تابلوی خریدِ هر خریدار — درخواست همکاری"
+                            isAdmin={true}
+                        />
+                    </div>
                 );
             case 'access':
                 return (

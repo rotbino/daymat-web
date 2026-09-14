@@ -92,7 +92,7 @@ export default function BuyersBoard({ slug }: { slug: string }) {
                         </div>
                         <div className="min-w-0">
                             <h1 className="text-lg font-black text-stone-900 dark:text-amber-100 truncate">
-                                تابلوی خرید {armName && `بازار ${armName}`}
+                                دیوار خریداران {armName && `بازار ${armName}`}
                             </h1>
                             <p className="text-[11px] font-bold text-amber-800/80 dark:text-amber-300/70 mt-0.5">
                                 درخواست‌های خریدِ خریدارانِ عضو اینجاست — فروشنده هستی؟ قیمت پیشنهادی بده.
@@ -109,8 +109,8 @@ export default function BuyersBoard({ slug }: { slug: string }) {
                         <div className="w-16 h-16 rounded-2xl bg-surface-container-high dark:bg-gray-800 grid place-items-center mx-auto mb-4">
                             <ShoppingCart className="w-8 h-8 text-on-surface-variant/25" />
                         </div>
-                        <p className="text-sm font-bold text-on-surface dark:text-gray-200">تابلوی خرید این بازار غیرفعال است</p>
-                        <p className="mt-1 text-[11px] text-on-surface-variant/70">مدیر بازار این تابلو را در ماژول‌ها خاموش کرده است.</p>
+                        <p className="text-sm font-bold text-on-surface dark:text-gray-200">دیوار خریداران این بازار غیرفعال است</p>
+                        <p className="mt-1 text-[11px] text-on-surface-variant/70">مدیر بازار این دیوار را در ماژول‌ها خاموش کرده است.</p>
                         {sellersOn && (
                             <Link href={`/${slug}`}
                                   className="mt-5 inline-flex h-10 px-5 items-center rounded-xl bg-primary text-on-primary text-[12px] font-bold shadow-sm hover:bg-primary/90 transition-colors">

@@ -283,7 +283,7 @@ function BuyersContent({ slug, armName }: { slug: string; armName: string }) {
                                                             {/* ✅ تابلوی خرید — مدیریت تابلوهای خرید این خریدار در بازار */}
                                                             <button
                                                                 onClick={() => setBoardsMember(b)}
-                                                                title="تابلوی خرید — انتشار درخواست‌های خریدش در تابلوی خرید بازار"
+                                                                title="تابلوی خرید — انتشار درخواست‌های خریدش در دیوار خریداران"
                                                                 className="h-8 px-2.5 rounded-lg text-amber-700 dark:text-amber-400 bg-amber-500/10
                                                                     hover:bg-amber-500/20 text-[10px] font-extrabold inline-flex items-center gap-1 transition-colors"
                                                             >
@@ -413,7 +413,7 @@ function BuyersContent({ slug, armName }: { slug: string; armName: string }) {
                                                     {/* ✅ تابلوی خرید — نسخهٔ موبایل */}
                                                     <button
                                                         onClick={() => setBoardsMember(b)}
-                                                        title="تابلوی خرید — انتشار درخواست‌های خریدش در تابلوی خرید بازار"
+                                                        title="تابلوی خرید — انتشار درخواست‌های خریدش در دیوار خریداران"
                                                         className="h-8 px-2.5 rounded-lg text-amber-700 dark:text-amber-400 bg-amber-500/10
                                                             hover:bg-amber-500/20 text-[10px] font-extrabold inline-flex items-center gap-1 transition-colors"
                                                     >
@@ -465,7 +465,7 @@ function BuyersContent({ slug, armName }: { slug: string; armName: string }) {
 }
 
 // ═══ انتخابگر «تابلوی خرید» — هر خریدار می‌تواند چند تابلوی خرید داشته باشد؛
-//     هر تابلو را جدا می‌شود روی تابلوی خرید بازار منتشر یا حذف کرد (InquiryPublication) ═══
+//     هر تابلو را جدا می‌شود روی دیوار خریداران منتشر یا حذف کرد (InquiryPublication) ═══
 function MemberBoardsModal({ slug, member, onClose }: { slug: string; member: any; onClose: () => void }) {
     const queryClient = useQueryClient();
     const userId = member.user?.id;
@@ -483,8 +483,8 @@ function MemberBoardsModal({ slug, member, onClose }: { slug: string; member: an
             apiService.arm.toggleInquiryPublish(slug, inquiryId, published),
         onSuccess: (_d, v) => {
             toast.success(v.published
-                ? `تابلوی خرید ${memberName} روی تابلوی خرید بازار منتشر شد`
-                : `تابلوی خرید ${memberName} از تابلوی خرید بازار حذف شد`);
+                ? `تابلوی خرید ${memberName} روی دیوار خریداران منتشر شد`
+                : `تابلوی خرید ${memberName} از دیوار خریداران حذف شد`);
             queryClient.invalidateQueries({ queryKey: ['member-inquiries', slug, userId] });
             queryClient.invalidateQueries({ queryKey: ['inquiry-arm-board', slug] }); // تابلوی عمومی هم رفرش شود
         },
@@ -508,7 +508,7 @@ function MemberBoardsModal({ slug, member, onClose }: { slug: string; member: an
                         <div className="min-w-0">
                             <h3 className="text-sm font-extrabold text-on-surface">تابلوهای خرید {memberName}</h3>
                             <p className="text-[10px] text-on-surface-variant/70 mt-0.5">
-                                هر تابلوی خرید را روشن کنی، درخواست‌هایش روی تابلوی خرید بازار می‌نشیند
+                                هر تابلوی خرید را روشن کنی، درخواست‌هایش روی دیوار خریداران می‌نشیند
                             </p>
                         </div>
                     </div>
@@ -589,7 +589,7 @@ function MemberBoardsModal({ slug, member, onClose }: { slug: string; member: an
                           className="h-9 w-full rounded-xl border border-outline-variant/40 text-[11px] font-bold
                               text-on-surface-variant hover:text-primary hover:border-primary/40 transition-colors
                               inline-flex items-center justify-center gap-1.5">
-                        <Eye className="w-3.5 h-3.5" /> دیدن تابلوی خرید بازار
+                        <Eye className="w-3.5 h-3.5" /> دیدن دیوار خریداران
                     </Link>
                 </div>
             </div>

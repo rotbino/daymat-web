@@ -20,7 +20,7 @@ type RuleNode = {
     min?: number;
     max?: number;
     suffix?: string;
-    defaultValue?: boolean; // ✅ مقدار پیش‌فرض بولین (وقتی هنوز ست نشده)
+    defaultValue?: boolean | number; // ✅ مقدار پیش‌فرض (بولی یا عددی) وقتی هنوز ست نشده
     children?: RuleNode[];
     hasToggle?: boolean;
 };
@@ -53,9 +53,13 @@ const ICON_MAP: Record<string, any> = {
 };
 
 // ─── تعریف تنظیمات هر ماژول (گروه‌بندی شده) ───
-const moduleConfigs: Record<string, { title: string; icon: any; groups: RuleGroup[] }> = {
+// ✅ چهار ماژول بازار:
+//   دیوار فروشندگان (priceTable) — قابل خاموش‌کردن | دیوار خریداران (buyLeadWall) — قابل خاموش‌کردن
+//   تابلوی خرید (buyLeadBoard) — همیشه فعال | کاتالوگ فروش (catalog) — همیشه فعال
+//   💡 configKey: کلید واقعی در config.modules — «دیوار خریداران» و «تابلوی خرید» هر دو از buyLead می‌خوانند
+const moduleConfigs: Record<string, { title: string; icon: any; configKey?: string; alwaysOn?: boolean; groups: RuleGroup[] }> = {
     priceTable: {
-        title: 'تابلوی قیمت',
+        title: 'دیوار فروشندگان',
         icon: TrendingUp,
         groups: [
             // ═══════════════════════════════════════
@@ -182,24 +186,49 @@ const moduleConfigs: Record<string, { title: string; icon: any; groups: RuleGrou
             },
         ],
     },
-    buyLead: {
-        title: 'تابلوی خرید بازار',
+    // ✅ دیوار خریداران — دیوارِ نمایش تابلوهای خرید اعضا (قابل خاموش‌کردن)
+    buyLeadWall: {
+        title: 'دیوار خریداران',
         icon: ShoppingCart,
+        configKey: 'buyLead',
         groups: [
             {
-                groupTitle: 'تنظیمات',
+                groupTitle: 'دسترسی به دیوار',
                 groupIcon: 'Shield',
                 rules: [
-                    { key: 'requireMembershipToView', label: 'پیوستن به بازار برای مشاهده درخواست‌ها', hint: 'فقط اعضای بازار ببینند', icon: 'Shield' },
-                    { key: 'requireMembershipToSubmit', label: 'پیوستن به بازار برای ثبت درخواست', hint: 'فقط اعضای بازار ثبت کنند', icon: 'Shield' },
-                    { key: 'maxActiveRequestsPerUser', label: 'حداکثر درخواست فعال', icon: 'Package', isNumber: true, min: 1, max: 50, suffix: 'عدد' },
+                    { key: 'requireMembershipToView', label: 'پیوستن به بازار برای مشاهده درخواست‌ها', hint: 'فقط اعضای بازار درخواست‌های روی دیوار را ببینند', icon: 'Shield' },
+                ],
+            },
+        ],
+    },
+    // ✅ تابلوی خرید — ماژول همیشه‌فعالِ هر خریدار؛ مدیر آن را روی دیوار خریداران می‌گذارد
+    buyLeadBoard: {
+        title: 'تابلوی خرید',
+        icon: Edit2,
+        configKey: 'buyLead',
+        alwaysOn: true,
+        groups: [
+            {
+                groupTitle: 'سقف‌ها',
+                groupIcon: 'Layers',
+                rules: [
+                    { key: 'maxFreeRequests', label: 'حداکثر درخواست همکاری رایگان', hint: 'سهمیهٔ رایگان درخواست‌های همکاری هر خریدار در این بازار', icon: 'Star', isNumber: true, min: 0, max: 1000, suffix: 'عدد', defaultValue: 50 },
+                    { key: 'maxActiveRequestsPerUser', label: 'حداکثر درخواست فعال', hint: 'سقف درخواست‌های هم‌زمانِ فعال هر خریدار', icon: 'Package', isNumber: true, min: 1, max: 50, suffix: 'عدد' },
+                ],
+            },
+            {
+                groupTitle: 'دسترسی',
+                groupIcon: 'Shield',
+                rules: [
+                    { key: 'requireMembershipToSubmit', label: 'پیوستن به بازار برای ثبت درخواست', hint: 'فقط اعضای بازار بتوانند درخواست همکاری ثبت کنند', icon: 'Shield' },
                 ],
             },
         ],
     },
     catalog: {
-        title: 'کاتالوگ',
+        title: 'کاتالوگ فروش',
         icon: BookOpen,
+        alwaysOn: true,
         groups: [
             {
                 groupTitle: 'سقف‌های کاتالوگ',
@@ -207,7 +236,7 @@ const moduleConfigs: Record<string, { title: string; icon: any; groups: RuleGrou
                 rules: [
                     {
                         key: 'freeAdLimit',
-                        label: 'تعداد آگهی رایگان',
+                        label: 'حداکثر تعداد آگهی رایگان',
                         hint: 'سهمیه آگهی رایگان هر کاتالوگ در این بازار',
                         icon: 'Star',
                         isNumber: true,
@@ -305,6 +334,7 @@ interface ModuleSettingsSectionProps {
     moduleKey: string;
     moduleName: string;
     isAdmin?: boolean;
+    moduleIcon?: any; // ✅ سازگاری با فرم‌های قدیمی — آیکون واقعی از moduleConfigs می‌آید
 }
 
 export function ModuleSettingsSection({
@@ -323,11 +353,14 @@ export function ModuleSettingsSection({
     const canEdit = isAdmin || moduleAccess.canEdit === true;
     const isOwnerWithNoAccess = !isAdmin && !canEdit;
 
-    const moduleSettings = watch(`config.modules.${moduleKey}`) || {};
-    const isEnabled = moduleSettings.enabled ?? true;
-
     const config = moduleConfigs[moduleKey];
     if (!config) return null;
+
+    // ✅ کلید واقعی در config.modules — «دیوار خریداران» و «تابلوی خرید» هر دو از buyLead می‌خوانند
+    const configKey = config.configKey || moduleKey;
+    const moduleSettings = watch(`config.modules.${configKey}`) || {};
+    // ماژول‌های همیشه‌فعال (کاتالوگ فروش / تابلوی خرید) سوییچ ندارند و همیشه باز render می‌شوند
+    const isEnabled = config.alwaysOn ? true : (moduleSettings.enabled ?? true);
 
     const ModuleIcon = config.icon;
 
@@ -354,7 +387,7 @@ export function ModuleSettingsSection({
             current = current[key];
         }
         current[path[path.length - 1]] = value;
-        setValue(`config.modules.${moduleKey}`, newSettings);
+        setValue(`config.modules.${configKey}`, newSettings);
     };
 
     // ─── رندر بازگشتی یک گره ───
@@ -456,7 +489,10 @@ export function ModuleSettingsSection({
         }
 
         // گره برگ
-        const isActive = node.isNumber ? (value > (node.min || 0)) : (value ?? node.defaultValue ?? false);
+        const displayValue = node.isNumber
+            ? (value ?? (typeof node.defaultValue === 'number' ? node.defaultValue : node.min ?? 0))
+            : undefined;
+        const isActive = node.isNumber ? (displayValue > (node.min || 0)) : (value ?? node.defaultValue ?? false);
 
         return (
             <div key={node.key} className={cn(
@@ -481,7 +517,7 @@ export function ModuleSettingsSection({
                     <div className="flex items-center gap-1 flex-shrink-0">
                         <input
                             type="number"
-                            value={value ?? node.min ?? 0}
+                            value={displayValue}
                             onChange={(e) => setValueByPath(fullPath, parseFloat(e.target.value) || 0)}
                             min={node.min} max={node.max}
                             disabled={!canEdit}
@@ -535,7 +571,12 @@ export function ModuleSettingsSection({
                 </div>
 
                 <div className="flex items-center gap-3">
-                    {canEdit ? (
+                    {config.alwaysOn ? (
+                        <span className="inline-flex items-center gap-1.5 rounded-full bg-emerald-50 dark:bg-emerald-900/20 border border-emerald-200/60 dark:border-emerald-800/50 px-2.5 py-1">
+                            <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 flex-shrink-0" />
+                            <span className="text-[10px] font-bold text-emerald-700 dark:text-emerald-400">همیشه فعال</span>
+                        </span>
+                    ) : canEdit ? (
                         <label className="relative inline-flex items-center cursor-pointer">
                             <input
                                 type="checkbox"

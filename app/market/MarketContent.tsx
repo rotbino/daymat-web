@@ -284,13 +284,13 @@ export default function MarketContent({ search: searchProp }: { search?: string 
         return <div className="min-h-screen flex items-center justify-center"><div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary mx-auto" /></div>;
     }
 
-    // ✅ هر دو تابلو خاموش — بازاری بدون تابلو (مدیر از ماژول‌ها روشن کند)
+    // ✅ هر دو دیوار خاموش — بازاری بدون دیوار (مدیر از ماژول‌ها روشن کند)
     if (!sellersOn && !buyersOn) {
         return (
             <div className="min-h-screen flex items-center justify-center bg-surface dark:bg-gray-950"><div className="text-center px-6">
                 <div className="w-24 h-24 bg-surface-container-high dark:bg-gray-800 rounded-2xl flex items-center justify-center mx-auto mb-6"><Store className="w-12 h-12 text-on-surface-variant/30" /></div>
-                <h2 className="text-2xl font-bold text-on-surface dark:text-gray-100 mb-3">این بازار فعلاً تابلوی فعالی ندارد</h2>
-                <p className="text-sm text-on-surface-variant dark:text-gray-400 mx-auto leading-relaxed">مدیر بازار هنوز تابلوی قیمت یا تابلوی خرید را فعال نکرده است.</p>
+                <h2 className="text-2xl font-bold text-on-surface dark:text-gray-100 mb-3">این بازار فعلاً دیوار فعالی ندارد</h2>
+                <p className="text-sm text-on-surface-variant dark:text-gray-400 mx-auto leading-relaxed">مدیر بازار هنوز دیوار فروشندگان یا دیوار خریداران را فعال نکرده است.</p>
             </div></div>
         );
     }

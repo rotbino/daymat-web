@@ -588,7 +588,7 @@ export const apiService = {
         getMemberInquiries: (slug: string, userId: string): Promise<any> =>
             apiRequest(`/arm/${slug}/members/${userId}/inquiries`),
 
-        // ✅ انتشار/توقف «تابلوی خرید» خریدار در تابلوی خرید بازار (مالک دفتر یا مدیر بازار)
+        // ✅ انتشار/توقف «تابلوی خرید» خریدار روی دیوار خریداران بازار (مالک دفتر یا مدیر بازار)
         toggleInquiryPublish: (slug: string, inquiryId: string, published: boolean): Promise<any> =>
             apiRequest(`/arm/${slug}/inquiry-publish`, { method: 'PATCH', data: { inquiryId, published } }),
 
