@@ -1,4 +1,6 @@
 // app/market/MarketContent.tsx
+// ✅ صفحهٔ فروشندگان — تابلوی قیمت (هومِ دیمت: ‎/{slug})
+//    تابلوی خریداران (اعلام‌های خرید) صفحهٔ مستقل دارد: ‎/{slug}/buyers
 'use client';
 import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { useRouter, usePathname, useSearchParams } from 'next/navigation';
@@ -7,10 +9,10 @@ import { useSelector } from 'react-redux';
 import { RootState } from '@/lib/store/store';
 import { useQueryClient } from '@tanstack/react-query';
 import AppHeader from '@/app/components/AppHeader';
-import { useArms, useVitrine, useInquiryArmBoard, vitrineKeys, normalizeVitrineParams } from '@/lib/api/apiHooks';
+import { useArms, useVitrine, vitrineKeys, normalizeVitrineParams } from '@/lib/api/apiHooks';
 import { apiService } from '@/lib/api/apiService';
 import { toast } from 'sonner';
-import { Package, RefreshCw, Archive, Clock, Wrench, Loader2, ShieldCheck, Store, Megaphone } from 'lucide-react';
+import { Package, RefreshCw, Archive, Clock, Wrench, Loader2, ShieldCheck, Store } from 'lucide-react';
 import { useFilters } from '@/lib/hooks/useFilters';
 import { cn } from '@/lib/utils';
 import { buildFilterHref, findNodeById } from '@/lib/utils/filterUrl';
@@ -89,10 +91,12 @@ export default function MarketContent({ search: searchProp }: { search?: string 
 
     const { data, isPending, isFetching, isFetchingNextPage, hasNextPage, fetchNextPage, isPlaceholderData } = useVitrine(vitrineSlug, queryParams);
 
-    // 🪧 تابلوی اعلام‌های خرید — تب دوم بازار؛ انتخاب تابلو از ناو (هدر دسکتاپ / فوتر موبایل) با ‎?board=
-    const boardTab: 'price' | 'inquiry' = searchParams.get('board') === 'inquiry' ? 'inquiry' : 'price';
-    const { data: inqBoard, isPending: inqBoardPending } = useInquiryArmBoard(vitrineSlug || undefined);
-    const inqItems = inqBoard?.items ?? [];
+    // ✅ لگسی ‎?board=inquiry — آدرس‌های قدیمی به صفحهٔ مستقل خریداران می‌روند
+    useEffect(() => {
+        if (searchParams.get('board') === 'inquiry' && currentSlug) {
+            router.replace(`/${currentSlug}/buyers`);
+        }
+    }, [searchParams, currentSlug, router]);
 
     const ads = useMemo(() => data?.pages.flatMap((p: any) => p?.ads ?? []) ?? [], [data]);
     const total = data?.pages?.[0]?.pagination?.total;
@@ -380,52 +384,7 @@ export default function MarketContent({ search: searchProp }: { search?: string 
                                 </button>
                             </div>
                         )}
-                        {boardTab === 'inquiry' ? (
-                            inqBoardPending ? (
-                                <div className="text-center py-16"><Loader2 className="w-6 h-6 animate-spin text-amber-500 mx-auto" /></div>
-                            ) : inqItems.length === 0 ? (
-                                <div className="text-center py-16">
-                                    <Megaphone className="w-10 h-10 text-stone-300 dark:text-gray-700 mx-auto mb-3" />
-                                    <p className="text-sm font-bold text-on-surface-variant dark:text-gray-400">هنوز اعلام خریدی روی این تابلو نیست</p>
-                                    <p className="mt-1 text-[11px] font-bold text-stone-400 dark:text-gray-500">سوپرمارکت‌های عضو، لیست خریدشان را اینجا منتشر می‌کنند</p>
-                                </div>
-                            ) : (
-                                <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-3">
-                                    {inqItems.map((q: any) => (
-                                        <Link key={q.id} href={`/${q.slug || q.id}`}
-                                            className="block rounded-2xl border border-outline-variant/30 bg-white dark:border-gray-800 dark:bg-gray-900 p-4
-                                                shadow-[0_2px_12px_-6px_rgba(15,23,42,0.14)] hover:shadow-[0_6px_20px_-8px_rgba(15,23,42,0.22)] transition-shadow">
-                                            <div className="flex items-start justify-between gap-2">
-                                                <div className="min-w-0">
-                                                    <p className="truncate text-[13px] font-black text-stone-900 dark:text-gray-100">{q.title}</p>
-                                                    <p className="mt-0.5 truncate text-[11px] font-bold text-stone-400 dark:text-gray-500">
-                                                        {q.business?.name || q.owner?.fullName || 'خریدار'}{q.city ? ` · ${q.city}` : ''}
-                                                    </p>
-                                                </div>
-                                                <span className="shrink-0 rounded-full bg-brand-amber px-2 py-0.5 text-[9px] font-black text-white">
-                                                    {(q.items?.length ?? 0).toLocaleString('fa-IR')} قلم فوری
-                                                </span>
-                                            </div>
-                                            {q.items?.length > 0 && (
-                                                <div className="mt-2 flex flex-wrap gap-1.5">
-                                                    {q.items.slice(0, 3).map((it: any) => (
-                                                        <span key={it.id} className="rounded-full bg-brand-amber-soft px-2 py-0.5 text-[10px] font-bold text-amber-800 dark:text-amber-300">
-                                                            {it.name}{it.quantity ? ` — ${Number(it.quantity).toLocaleString('fa-IR')} ${it.unit || ''}` : ''}
-                                                        </span>
-                                                    ))}
-                                                </div>
-                                            )}
-                                            <div className="mt-3 flex items-center justify-between">
-                                                <span className="text-[10px] font-bold text-stone-400 dark:text-gray-500">
-                                                    {q.visibility === 'private' ? 'خصوصی — درخواست همکاری' : 'پیشنهاد قیمت برای همه'}
-                                                </span>
-                                                <span className="text-[11px] font-extrabold text-amber-700 dark:text-amber-400">مشاهده و قیمت بده ←</span>
-                                            </div>
-                                        </Link>
-                                    ))}
-                                </div>
-                            )
-                        ) : isPending ? (
+                        {isPending ? (
                             <div className="text-center py-20">
                                 <div className="animate-spin rounded-full h-10 w-10 border-2 border-primary border-t-transparent mx-auto mb-4" />
                                 <p className="text-sm text-on-surface-variant dark:text-gray-400">در حال بارگذاری قیمت‌ها...</p>

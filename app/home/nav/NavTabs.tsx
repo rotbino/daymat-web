@@ -1,34 +1,31 @@
 // app/home/nav/NavTabs.tsx
 'use client';
 
-import React, { Suspense } from 'react';
+import React from 'react';
 import Link from 'next/link';
-import { usePathname, useSearchParams } from 'next/navigation';
+import { usePathname } from 'next/navigation';
 import { useSelector } from 'react-redux';
 import { RootState } from '@/lib/store/store';
-import { Bell, BookOpen, Store, User } from 'lucide-react';
+import { BookOpen, User, Tags, ShoppingCart, Bell } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { useNavMode } from './useNavMode';
 import { useUnreadNotifications } from './useUnreadNotifications';
-import { NAV, NavItemDef, BOARD_ITEMS, boardHref, BoardTab } from './config';
+import { NAV, NavItemDef, boardHref } from './config';
 import ArmSwitcher from '@/components/ArmSwitcher';
-import PostPriceButton from '@/components/PostPriceButton';
 import { LocationFilter } from '@/app/components/LocationFilter';
 import HeaderMenu from '@/app/components/HeaderMenu';
 import SearchBox from '@/components/home/SearchBox';
 
 /**
- * ناوبری دیمت (نسخهٔ ۵ — مهمان‌پذیر روی بازار):
+ * ناوبری دیمت (نسخهٔ ۶ — بدون «هوم»، دو تابلوی مستقل):
  *
- *   کاربرِ لاگین (دسکتاپ):
- *   [لوگو+نام+شعار بازار ▾]    [🔍 سرچ وسط]    [🏪 بازار] [📚 کاتالوگ] [🔔n] [👤] [⋯]
+ *   «هوم» وجود ندارد — هوم همان صفحهٔ فروشندگان است (تابلوی قیمت: ‎/{slug}).
+ *   خریداران صفحهٔ مستقل دارد: ‎/{slug}/buyers (تم کهربایی).
+ *   ترتیب ۵ آیتم قفل است: فروشندگان، خریداران، کاتالوگ من، اعلان، پروفایل
  *
- *   مهمان:
- *   - روی صفحات بازار (وقتی MarketContent پراپ guestMarketSlug بدهد):
- *     [لوگو+نام+شعار بازار]    [🔍 سرچ وسط]    [🏪 بازار] [📚 کاتالوگ‌ها] [ورود | عضویت]
- *     → سطحِ جذب: گوگل و لینک ویروسی کاربر را اینجا می‌آورد؛ ناو راه کشف را باز می‌کند
- *   - روی کاتالوگ عمومی: هیچ ناو (فوترِ ویروسی کافی است)
- *   - موبایل: MarketContent خودش MobileHeader را برای همه (حتی مهمان) می‌گذارد
+ *   دسکتاپ (لاگین):  [برند بازار ▾] [🔍 وسط] [۵ آیتم — عنوانِ ریز زیر هر آیکون] [⋯]
+ *   موبایل (لاگین):   نوار پایین ۵تایی + زنگولهٔ اعلان همیشه بالا (MobileHeader)
+ *   مهمان (روی بازار): همان ساختار با ۳ آیتم — فروشندگان | خریداران | کاتالوگ من
  */
 
 const NON_MARKET_SEGMENTS = new Set([
@@ -40,9 +37,9 @@ const NON_MARKET_SEGMENTS = new Set([
 function NotifBadge({ count }: { count: number }) {
     if (count <= 0) return null;
     return (
-        <span className="absolute -top-1 -end-0.5 z-10">
+        <span className="absolute -top-1.5 -end-1.5 z-10">
             <span className="relative inline-flex items-center justify-center
-                min-w-[18px] h-[18px] px-1 rounded-full bg-error text-white text-[9.5px] font-extrabold
+                min-w-[17px] h-[17px] px-1 rounded-full bg-error text-white text-[9.5px] font-extrabold
                 shadow-sm ring-2 ring-white dark:ring-gray-900">
                 {count > 99 ? '۹۹+' : count.toLocaleString('fa-IR')}
             </span>
@@ -51,88 +48,67 @@ function NotifBadge({ count }: { count: number }) {
     );
 }
 
-// ═══════════════════════════════════════════
-// دو تابلوی بازار در هدر/فوتر — جای سوییچ درون‌صفحه
-//   فروشندگان (Tags) → تابلوی قیمت | خریداران (ShoppingCart) → تابلوی اعلام‌های خرید
-// ═══════════════════════════════════════════
+// ═══ تشخیص آیتم فعال — مشترک بین دسکتاپ و موبایل ═══
+function navActive(key: string, pathname: string, currentSlug: string | null | undefined): boolean {
+    const segs = pathname.split('/').filter(Boolean);
+    const seg = segs.length === 1 ? segs[0] : null;
+    const onArmMarket = !!seg && !NON_MARKET_SEGMENTS.has(seg) && seg === currentSlug;
 
-/** تب‌های دسکتاپِ دو تابلو — در هدر، کنار تب بازار */
-function BoardTabsInner({ slug, pathname }: { slug: string | null | undefined; pathname: string }) {
-    const searchParams = useSearchParams();
-    const board: BoardTab = searchParams.get('board') === 'inquiry' ? 'inquiry' : 'price';
-    const onMarket = !!slug && (pathname.replace(/\/+$/, '') || '/') === `/${slug}`;
+    switch (key) {
+        case 'sellers':
+            // صفحهٔ فروشندگان = خودِ تابلو (‎/{slug}) + فال‌بک لیست بازارها
+            return onArmMarket || pathname.startsWith('/markets');
+        case 'buyers':
+            // صفحهٔ مستقل خریداران: ‎/{slug}/buyers
+            return !!currentSlug && (pathname === `/${currentSlug}/buyers` || pathname.startsWith(`/${currentSlug}/buyers/`));
+        case 'catalogs':
+            return pathname.startsWith('/my-catalogs') ||
+                pathname.startsWith('/business') ||
+                pathname.endsWith('/dashboard');
+        case 'notifications':
+            return pathname.startsWith('/notifications');
+        case 'profile':
+            return pathname.startsWith('/profile');
+        default:
+            return false;
+    }
+}
 
+// ═══ آیتم ناو با عنوانِ زیر آیکون (دسکتاپ + موبایل یک زبان بصری) ═══
+function NavItemLink({ item, href, active, compact, badge }: {
+    item: NavItemDef; href: string; active: boolean; compact?: boolean; badge?: React.ReactNode;
+}) {
+    const amber = item.key === 'buyers'; // هویت کهربایی تابلوی خریداران
     return (
-        <>
-            {BOARD_ITEMS.map((b) => {
-                const active = onMarket && board === b.board;
-                return (
-                    <Link key={b.key} href={boardHref(slug, b.board)} scroll={false}
-                          className={cn(
-                              'h-9 px-3 flex items-center gap-1.5 rounded text-[13px] font-extrabold transition-colors flex-shrink-0',
-                              active
-                                  ? b.board === 'inquiry'
-                                      ? 'bg-amber-500/10 text-amber-700 dark:text-amber-400'
-                                      : 'bg-primary/5 text-primary'
-                                  : 'text-on-surface-variant hover:text-on-surface hover:bg-surface-container-high',
-                          )}>
-                        <b.icon className="w-4 h-4" />
-                        {b.label}
-                    </Link>
-                );
-            })}
-        </>
+        <Link href={href} scroll={false} aria-label={item.label} title={item.label}
+              className={cn(
+                  'relative flex-shrink-0 flex flex-col items-center justify-center gap-1 rounded-lg transition-colors',
+                  compact ? 'h-14 w-14' : 'h-14 w-16 xl:w-[72px] px-1',
+                  active
+                      ? amber
+                          ? 'text-amber-700 dark:text-amber-400 bg-amber-500/10'
+                          : 'text-primary bg-primary/5'
+                      : 'text-on-surface-variant hover:text-on-surface hover:bg-surface-container-high',
+              )}>
+            <span className="relative">
+                <item.icon className={cn(compact ? 'w-[21px] h-[21px]' : 'w-[21px] h-[21px]', active && 'stroke-[2.2]')} />
+                {badge}
+            </span>
+            <span className={cn('leading-none whitespace-nowrap', compact ? 'text-[9px]' : 'text-[10px]',
+                active ? 'font-extrabold' : 'font-bold')}>
+                {item.label}
+            </span>
+        </Link>
     );
 }
 
-function BoardTabs({ slug, pathname }: { slug: string | null | undefined; pathname: string }) {
-    return <Suspense fallback={null}><BoardTabsInner slug={slug} pathname={pathname} /></Suspense>;
-}
-
-/** فوتر موبایل مهمان روی صفحهٔ بازار — دو تابلو */
-function GuestBoardFooterInner({ slug, pathname }: { slug: string; pathname: string }) {
-    const searchParams = useSearchParams();
-    const board: BoardTab = searchParams.get('board') === 'inquiry' ? 'inquiry' : 'price';
-    const onMarket = (pathname.replace(/\/+$/, '') || '/') === `/${slug}`;
-
-    return (
-        <nav className="lg:hidden fixed bottom-0 inset-x-0 z-50 bg-white/95 dark:bg-gray-900/95 backdrop-blur-md
-            border-t border-outline-variant/20 dark:border-gray-800 pb-[env(safe-area-inset-bottom)]
-            shadow-[0_-2px_12px_rgba(0,0,0,0.06)] dark:shadow-[0_-2px_12px_rgba(0,0,0,0.4)]">
-            <div className="grid grid-cols-2 max-w-lg mx-auto">
-                {BOARD_ITEMS.map((b) => {
-                    const active = onMarket && board === b.board;
-                    return active ? (
-                        <span key={b.key}
-                              className="relative flex flex-col items-center justify-center py-2.5 gap-0.5 text-primary cursor-default">
-                            <b.icon className="w-[23px] h-[23px] stroke-[2.4]" />
-                            <span className="text-[10px] font-extrabold">{b.label}</span>
-                            <span className="absolute top-0 inset-x-7 h-[3px] rounded-b-full bg-primary" />
-                        </span>
-                    ) : (
-                        <Link key={b.key} href={boardHref(slug, b.board)} scroll={false}
-                              className="relative flex flex-col items-center justify-center py-2.5 gap-0.5
-                                  text-on-surface-variant/70 hover:text-primary active:scale-95 transition-all">
-                            <b.icon className="w-[23px] h-[23px]" />
-                            <span className="text-[10px] font-bold">{b.label}</span>
-                        </Link>
-                    );
-                })}
-            </div>
-        </nav>
-    );
-}
-
-function GuestBoardFooter({ slug, pathname }: { slug: string; pathname: string }) {
-    return <Suspense fallback={null}><GuestBoardFooterInner slug={slug} pathname={pathname} /></Suspense>;
-}
-
 // ═══════════════════════════════════════════
-// ناو مهمان — فقط روی صفحات بازار
+// ناو مهمان — فقط روی صفحات بازار (‎/{slug} و ‎/{slug}/buyers)
 // ═══════════════════════════════════════════
 function GuestMarketNav({ slug, pathname }: { slug: string; pathname: string }) {
     const cleanPath = pathname.replace(/\/+$/, '') || '/';
-    const onMarket = cleanPath === `/${slug}`;
+    const onSellers = cleanPath === `/${slug}`;
+    const onBuyers = cleanPath === `/${slug}/buyers`;
 
     return (
         <>
@@ -140,54 +116,74 @@ function GuestMarketNav({ slug, pathname }: { slug: string; pathname: string }) 
             shadow-[0_2px_10px_rgba(0,0,0,0.06)] sticky top-0 z-40">
             <div className="px-4 xl:px-6 h-16 flex items-center gap-2.5">
 
-                {/* برند فرزند — بازارِ مهمان (لوگو + نام + شعار) — نسخهٔ دسکتاپ تا لوگو واقعاً دیده شود */}
+                {/* برند فرزند — بازارِ مهمان (لوگو + نام + شعار) */}
                 <ArmSwitcher variant="desktop" />
 
                 {/* سرچ وسط — دو فنر دو طرف تا لوگو و شعار جا باز کنند */}
                 <div className="flex-1" />
-                <Suspense fallback={<div className="w-full max-w-xl h-10 rounded-xl bg-surface-container-high/70 animate-pulse" />}>
+                <React.Suspense fallback={<div className="w-full max-w-xl h-10 rounded-xl bg-surface-container-high/70 animate-pulse" />}>
                     <div className="w-full max-w-xl min-w-0 flex gap-1">
                         <SearchBox compact className="w-full" />
                         <div className="flex-shrink-0"><LocationFilter /></div>
                     </div>
-                </Suspense>
+                </React.Suspense>
                 <div className="flex-1" />
 
-                {/* تب‌های عمومی مهمان + دو تابلوی بازار */}
-                <Link href={`/${slug}`}
-                      className={cn(
-                          'h-9 px-4 flex items-center gap-1.5 rounded text-[13px] font-extrabold transition-colors flex-shrink-0',
-                          onMarket
-                              ? 'text-primary bg-primary/5'
-                              : 'text-on-surface-variant hover:text-on-surface hover:bg-surface-container-high',
-                      )}>
-                    <Store className="w-4 h-4" /> بازار
-                </Link>
-                <BoardTabs slug={slug} pathname={pathname} />
+                {/* سه آیتم مهمان — عنوان زیر آیکون */}
+                <NavItemLink item={{ key: 'sellers', label: 'فروشندگان', icon: Tags, href: `/${slug}` }}
+                             href={`/${slug}`} active={onSellers} />
+                <NavItemLink item={{ key: 'buyers', label: 'خریداران', icon: ShoppingCart, href: `/${slug}/buyers` }}
+                             href={`/${slug}/buyers`} active={onBuyers} />
                 <Link href={`/login?redirect=${encodeURIComponent('/business/register?intent=catalog')}`}
-                      className="h-9 px-4 flex items-center gap-1.5 rounded text-[13px] font-bold
-                          text-on-surface-variant hover:text-on-surface hover:bg-surface-container-high
-                          transition-colors flex-shrink-0">
-                    <BookOpen className="w-4 h-4" /> کاتالوگ من
+                      className="h-14 w-[72px] flex flex-col items-center justify-center gap-1 rounded-lg text-on-surface-variant
+                          hover:text-on-surface hover:bg-surface-container-high transition-colors flex-shrink-0">
+                    <BookOpen className="w-[21px] h-[21px]" />
+                    <span className="text-[10px] font-bold leading-none whitespace-nowrap">کاتالوگ من</span>
                 </Link>
-
-                {/* CTA ثبت قیمت — لیبل بر اساس نوع بازار؛ مهمان → ثبت‌نام/ورود بعدش /my-catalogs */}
-              {/*  <PostPriceButton size="desktop" />*/}
             </div>
         </nav>
 
-        {/* فوتر موبایل مهمان — دو تابلوی بازار */}
-        <GuestBoardFooter slug={slug} pathname={pathname} />
+        {/* فوتر موبایل مهمان — سه آیتم */}
+        <nav className="lg:hidden fixed bottom-0 inset-x-0 z-50 bg-white/95 dark:bg-gray-900/95 backdrop-blur-md
+            border-t border-outline-variant/20 dark:border-gray-800 pb-[env(safe-area-inset-bottom)]
+            shadow-[0_-2px_12px_rgba(0,0,0,0.06)] dark:shadow-[0_-2px_12px_rgba(0,0,0,0.4)]">
+            <div className="grid grid-cols-3 max-w-lg mx-auto">
+                <FooterItem href={`/${slug}`} label="فروشندگان" icon={Tags} active={onSellers} />
+                <FooterItem href={`/${slug}/buyers`} label="خریداران" icon={ShoppingCart} active={onBuyers} amber />
+                <FooterItem href={`/login?redirect=${encodeURIComponent('/business/register?intent=catalog')}`}
+                            label="کاتالوگ من" icon={BookOpen} />
+            </div>
+        </nav>
         </>
+    );
+}
+
+function FooterItem({ href, label, icon: Icon, active, amber }: {
+    href: string; label: string; icon: any; active?: boolean; amber?: boolean;
+}) {
+    return active ? (
+        <span className={cn('relative flex flex-col items-center justify-center py-2.5 gap-0.5 cursor-default',
+            amber ? 'text-amber-700 dark:text-amber-400' : 'text-primary')}>
+            <Icon className="w-[23px] h-[23px] stroke-[2.4]" />
+            <span className="text-[10px] font-extrabold">{label}</span>
+            <span className={cn('absolute top-0 inset-x-7 h-[3px] rounded-b-full', amber ? 'bg-amber-500' : 'bg-primary')} />
+        </span>
+    ) : (
+        <Link href={href} scroll={false}
+              className="relative flex flex-col items-center justify-center py-2.5 gap-0.5
+                  text-on-surface-variant/70 hover:text-primary active:scale-95 transition-all">
+            <Icon className="w-[23px] h-[23px]" />
+            <span className="text-[10px] font-bold">{label}</span>
+        </Link>
     );
 }
 
 // ═══════════════════════════════════════════
 export default function NavTabs({ guestMarketSlug }: { guestMarketSlug?: string } = {}) {
     const pathname = usePathname();
-    const { isAuthenticated, user } = useSelector((s: RootState) => s.auth);
+    const { isAuthenticated } = useSelector((s: RootState) => s.auth);
     const { currentSlug, currentArm } = useSelector((s: RootState) => s.arm);
-    const { mode, loading } = useNavMode();
+    const { loading } = useNavMode();
     const unread = useUnreadNotifications();
 
     // ─── مهمان: فقط روی صفحات بازار ناو مهمان ───
@@ -199,42 +195,14 @@ export default function NavTabs({ guestMarketSlug }: { guestMarketSlug?: string 
     }
     if (loading) return null;
 
-    const segs = (pathname ?? '').split('/').filter(Boolean);
+    const p = pathname ?? '';
+    const items = NAV.member; // ✅ ناو ۵تایی واحد — هر دو مود یکسان
 
-    const isMarketActive =
-        (pathname ?? '').startsWith('/market') || // /market و /markets — صفحه لیست بازارها
-        (segs.length === 1 &&
-            !NON_MARKET_SEGMENTS.has(segs[0]) &&
-            segs[0] === currentSlug);
-
-    const isCatalogActive = !!pathname && (
-        pathname.startsWith('/my-catalogs') ||
-        pathname.startsWith('/business') ||
-        pathname.endsWith('/dashboard')
-    );
-    const isNotifActive = !!pathname && pathname.startsWith('/notifications');
-    const isProfileActive = !!pathname && pathname.startsWith('/profile');
-
-    // 🖼️ کد عکس پروفایل — کامنت شد به درخواست کاربر (آیکون جایگزین شد). برای بازگشت، این خط و بلاک JSX پایین را از کامنت خارج کن
-    // const avatar = (user as any)?.avatarFile?.thumbnailPath || (user as any)?.avatarUrl;
-
-    const IconLink = ({
-                          href, title, active, children, badge, ariaLabel,
-                      }: {
-        href: string; title: string; active: boolean; children: React.ReactNode; badge?: React.ReactNode; ariaLabel: string;
-    }) => (
-        <Link href={href} aria-label={ariaLabel} title={title}
-              className={cn(
-                  'relative flex-shrink-0 w-10 h-10 rounded-full grid place-items-center transition-colors',
-                  // بدون دایرهٔ پس‌زمینه — فقط خود آیکون رنگی می‌شود (ساده و هماهنگ)
-                  active
-                      ? 'text-primary'
-                      : 'text-on-surface-variant hover:text-primary',
-              )}>
-            {children}
-            {badge}
-        </Link>
-    );
+    // آدرس پویا: فروشندگان → ‎/{slug} (هوم) | خریداران → ‎/{slug}/buyers
+    const itemHref = (item: NavItemDef) =>
+        item.key === 'sellers' ? boardHref(currentSlug, 'price')
+        : item.key === 'buyers' ? boardHref(currentSlug, 'inquiry')
+        : item.href;
 
     return (
         <>
@@ -243,154 +211,81 @@ export default function NavTabs({ guestMarketSlug }: { guestMarketSlug?: string 
                 shadow-[0_2px_10px_rgba(0,0,0,0.06)] sticky top-0 z-40">
                 <div className="px-4 xl:px-6 h-16 flex items-center gap-2.5">
 
-                    {/* برند فرزند — لوگو + نام + شعار بازار فعلی — نسخهٔ دسکتاپ تا لوگو واقعاً دیده شود */}
+                    {/* برند فرزند — لوگو + نام + شعار بازار فعلی */}
                     <ArmSwitcher variant="desktop" />
 
                     {/* سرچ وسط — دو فنر دو طرف تا لوگو و شعار جا باز کنند */}
                     <div className="flex-1" />
-                    <Suspense fallback={<div className="w-full max-w-xl h-10 rounded-xl bg-surface-container-high/70 animate-pulse" />}>
+                    <React.Suspense fallback={<div className="w-full max-w-xl h-10 rounded-xl bg-surface-container-high/70 animate-pulse" />}>
                         <div className="w-full max-w-xl min-w-0 flex gap-1">
                             <SearchBox compact className="w-full" />
                             <div className="flex-shrink-0"><LocationFilter /></div>
                         </div>
-                    </Suspense>
+                    </React.Suspense>
                     <div className="flex-1" />
 
-                    {/* ✅ دکمهٔ ثبت قیمت — لیبل بر اساس نوع بازار (عمده/خرده/خدمات) */}
-                    {/*<PostPriceButton size="desktop" />*/}
-
-                    {/* بازار */}
-                    <IconLink href={currentSlug ? `/${currentSlug}` : '/markets'}
-                              title={currentArm?.name ? `تابلوی ${currentArm.name}` : 'بازارها'}
-                              ariaLabel="بازار"
-                              active={isMarketActive}>
-                        <Store className="w-[21px] h-[21px]" />
-                    </IconLink>
-
-                    {/* دو تابلوی بازار — فروشندگان | خریداران (جای سوییچ درون‌صفحه) */}
-                    <BoardTabs slug={currentSlug} pathname={pathname ?? ''} />
-
-                    {/* کاتالوگ */}
-                    <IconLink href="/my-catalogs" title="کاتالوگ‌های من — افزودن کالا از همین‌جا" ariaLabel="کاتالوگ‌های من"
-                              active={isCatalogActive}>
-                        <BookOpen className="w-[21px] h-[21px]" />
-                    </IconLink>
-
-                    {/* اعلان */}
-                    <IconLink href="/notifications" title="اعلان‌ها" ariaLabel="اعلان‌ها"
-                              active={isNotifActive}
-                              badge={<NotifBadge count={unread} />}>
-                        <Bell className="w-[21px] h-[21px]" />
-                    </IconLink>
-
-                    {/* ═══ پروفایل — آیکون مثل بقیهٔ تب‌ها (حتی اگر کاربر لاگین باشد عکس نشان داده نمی‌شود) ═══ */}
-                    <IconLink href="/profile" title="پروفایل من" ariaLabel="پروفایل من"
-                              active={isProfileActive}>
-                        <User className="w-[21px] h-[21px]" />
-                    </IconLink>
-
-                    {/* ═══ نسخهٔ قبلی با عکس پروفایل کاربر — کامنت شد به درخواست کاربر؛ پاک نشده برای بازگشت احتمالی ═══
-                    <Link href="/profile" aria-label="پروفایل من" title="پروفایل من"
-                          className={cn(
-                              'relative flex-shrink-0 w-10 h-10 rounded-full transition-all',
-                              isProfileActive
-                                  ? 'ring-2 ring-primary ring-offset-2 ring-offset-white dark:ring-offset-gray-900'
-                                  : 'ring-1 ring-outline-variant/40 hover:ring-primary/50',
-                          )}>
-                        <span className="w-full h-full rounded-full overflow-hidden bg-primary/10 grid place-items-center">
-                            {avatar ? (
-                                // eslint-disable-next-line @next/next/no-img-element
-                                <img src={avatar} alt="" className="w-full h-full object-cover" />
-                            ) : (
-                                <span className="text-[13px] font-extrabold text-primary">
-                                    {(user?.fullName || 'ک').trim().charAt(0)}
-                                </span>
-                            )}
-                        </span>
-                    </Link>
-                    ═══ پایان نسخهٔ عکس ═══ */}
+                    {/* ✅ ۵ آیتم ناو — عنوانِ ریز زیر هر آیکون (خوانا برای کاربر) */}
+                    {items.map((item) => (
+                        <NavItemLink
+                            key={item.key}
+                            item={item}
+                            href={itemHref(item)}
+                            active={navActive(item.key, p, currentSlug)}
+                            badge={item.key === 'notifications' ? <NotifBadge count={unread} /> : undefined}
+                        />
+                    ))}
 
                     <HeaderMenu />
                 </div>
             </nav>
 
-            {/* ═══ موبایل — نوار پایین ═══ */}
-            <Suspense fallback={null}>
-                <MobileBottomNav
-                    currentSlug={currentSlug}
-                    pathname={pathname ?? ''}
-                />
-            </Suspense>
+            {/* ═══ موبایل — نوار پایین ۵تایی ═══ */}
+            <MobileBottomNav currentSlug={currentSlug} pathname={p} unread={unread} />
         </>
     );
 }
 
-// ─── نوار پایین موبایل ───
-function MobileBottomNav({ currentSlug, pathname }: { currentSlug: string | null; pathname: string }) {
-    const { mode, loading } = useNavMode();
-    const searchParams = useSearchParams();
+// ─── نوار پایین موبایل (۵ آیتم ثابت) ───
+function MobileBottomNav({ currentSlug, pathname, unread }: {
+    currentSlug: string | null; pathname: string; unread: number;
+}) {
+    const { loading } = useNavMode();
     if (loading) return null;
-    const items = NAV[mode];
-    if (!items || items.length === 0) return null;
-
-    const segs = pathname.split('/').filter(Boolean);
-    const seg = segs.length === 1 ? segs[0] : null;
-    const compact = items.length > 4;
-    const onArmMarket = !!seg && !NON_MARKET_SEGMENTS.has(seg) && seg === currentSlug;
-    const boardParam: BoardTab = searchParams.get('board') === 'inquiry' ? 'inquiry' : 'price';
-
-    const isActive = (item: NavItemDef) => {
-        switch (item.key) {
-            case 'market':
-                return pathname.startsWith('/market') || // /market و /markets
-                    onArmMarket;
-            case 'sellers':
-                return onArmMarket && boardParam === 'price';
-            case 'buyers':
-                return onArmMarket && boardParam === 'inquiry';
-            case 'catalogs':
-                return pathname.startsWith('/my-catalogs') ||
-                    pathname.startsWith('/business') ||
-                    pathname.endsWith('/dashboard');
-            case 'profile':
-                return pathname.startsWith('/profile');
-            default:
-                return pathname === item.href || pathname.startsWith(`${item.href}/`);
-        }
-    };
-
-    // آدرس پویا: تابلوهای بازار روی صفحهٔ بازارِ جاری می‌نشینند
-    const itemHref = (item: NavItemDef) =>
-        item.key === 'sellers' ? boardHref(currentSlug, 'price')
-        : item.key === 'buyers' ? boardHref(currentSlug, 'inquiry')
-        : item.href;
-
-    const gridCls = items.length <= 2 ? 'grid-cols-2'
-        : items.length === 3 ? 'grid-cols-3'
-        : items.length === 4 ? 'grid-cols-4'
-        : items.length === 5 ? 'grid-cols-5'
-        : 'grid-cols-6';
+    const items = NAV.member;
 
     return (
         <nav className="lg:hidden fixed bottom-0 inset-x-0 z-50 bg-white/95 dark:bg-gray-900/95 backdrop-blur-md
             border-t border-outline-variant/20 dark:border-gray-800 pb-[env(safe-area-inset-bottom)]
             shadow-[0_-2px_12px_rgba(0,0,0,0.06)] dark:shadow-[0_-2px_12px_rgba(0,0,0,0.4)]">
-            <div className={cn('grid max-w-lg mx-auto', gridCls)}>
+            <div className="grid grid-cols-5 max-w-lg mx-auto">
                 {items.map((item) => {
-                    const active = isActive(item);
+                    const active = navActive(item.key, pathname, currentSlug);
+                    const href = item.key === 'sellers' ? boardHref(currentSlug, 'price')
+                        : item.key === 'buyers' ? boardHref(currentSlug, 'inquiry')
+                        : item.href;
                     return active ? (
                         <span key={item.key}
-                              className="relative flex flex-col items-center justify-center py-2.5 gap-0.5 text-primary cursor-default">
-                            <item.icon className={cn(compact ? 'w-[21px] h-[21px]' : 'w-[23px] h-[23px]', 'stroke-[2.4]')} />
-                            <span className={compact ? 'text-[9px] font-extrabold' : 'text-[10px] font-extrabold'}>{item.label}</span>
-                            <span className="absolute top-0 inset-x-5 h-[3px] rounded-b-full bg-primary" />
+                              className={cn('relative flex flex-col items-center justify-center py-2.5 gap-0.5 cursor-default',
+                                  item.key === 'buyers'
+                                      ? 'text-amber-700 dark:text-amber-400'
+                                      : 'text-primary')}>
+                            <span className="relative">
+                                <item.icon className="w-[22px] h-[22px] stroke-[2.4]" />
+                                {item.key === 'notifications' && <NotifBadge count={unread} />}
+                            </span>
+                            <span className="text-[9px] font-extrabold">{item.label}</span>
+                            <span className={cn('absolute top-0 inset-x-5 h-[3px] rounded-b-full',
+                                item.key === 'buyers' ? 'bg-amber-500' : 'bg-primary')} />
                         </span>
                     ) : (
-                        <Link key={item.key} href={itemHref(item)} scroll={false}
+                        <Link key={item.key} href={href} scroll={false}
                               className="relative flex flex-col items-center justify-center py-2.5 gap-0.5
                                   text-on-surface-variant/70 hover:text-primary active:scale-95 transition-all">
-                            <item.icon className={compact ? 'w-[21px] h-[21px]' : 'w-[23px] h-[23px]'} />
-                            <span className={compact ? 'text-[9px] font-bold' : 'text-[10px] font-bold'}>{item.label}</span>
+                            <span className="relative">
+                                <item.icon className="w-[22px] h-[22px]" />
+                                {item.key === 'notifications' && <NotifBadge count={unread} />}
+                            </span>
+                            <span className="text-[9px] font-bold">{item.label}</span>
                         </Link>
                     );
                 })}
