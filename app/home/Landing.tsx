@@ -30,13 +30,13 @@ import {
 
 /**
  * لندینگ دیمت — دو محصول جدا با دو لینک جدا:
- *   قرمز لاکی برند = کاتالوگ فروش (نمایش و تبلیغ)  |  کهربایی برند = صفحه اعلان نیاز (استعلام و خرید)
+ *   قرمز لاکی برند = کاتالوگ فروش (نمایش و تبلیغ)  |  کهربایی برند = صفحه درخواست قیمت (استعلام و خرید)
  * لینک هر محصول زنجیرهٔ خودش را دارد:
  *   مهمان → /login?redirect=X (انتخاب کاربر حفظ می‌شود)  |  لاگین → مستقیم X
  *   X برای کاتالوگ فروش = فرم ساخت (/business/register)
- *   X برای صفحه اعلان نیاز = فرم ساخت (/inquiries/new)
+ *   X برای صفحه درخواست قیمت = فرم ساخت (/inquiries/new)
  * نکتهٔ مهم: لینک کاتالوگ فروش فقط به دست خریدارها می‌رسد و
- * لینک صفحه اعلان نیاز فقط به دست تامین‌کننده‌ها — هرگز قاطی نمی‌شوند.
+ * لینک صفحه درخواست قیمت فقط به دست تامین‌کننده‌ها — هرگز قاطی نمی‌شوند.
  */
 
 /* ------------------------------ motion helper ----------------------------- */
@@ -120,7 +120,7 @@ function MiniWall() {
         <span className="grid size-6 shrink-0 place-items-center rounded-full bg-amber-200 dark:bg-amber-500/25">
           <ClipboardList className="size-3.5 text-amber-800 dark:text-amber-300" />
         </span>
-        <span className="text-[11px] font-bold text-stone-700 dark:text-gray-200">صفحه اعلان نیاز من</span>
+        <span className="text-[11px] font-bold text-stone-700 dark:text-gray-200">صفحه درخواست قیمت من</span>
         <span className="ms-auto size-2.5 rounded-full bg-amber-400 ring-2 ring-amber-300 dark:ring-amber-500/30" />
       </div>
       <div className="mt-2 grid grid-cols-2 gap-2">
@@ -292,7 +292,7 @@ function LiveFromDaymat({ purchaseHref }: { purchaseHref: string }) {
         <span className="text-sm font-black text-stone-400 dark:text-gray-500">همین حالا توی دیمت</span>
         <h2 className="mt-2 text-3xl font-black sm:text-4xl">کاتالوگ‌های فروش، زنده</h2>
         <p className="mt-4 leading-8 text-stone-600 dark:text-gray-400">
-          قیمت‌های واقعی فروشنده‌ها همین حالا روی تابلوی دیمت است — و صفحه اعلان نیاز هم چند دقیقه بیشتر نمی‌برد.
+          قیمت‌های واقعی فروشنده‌ها همین حالا روی تابلوی دیمت است — و صفحه درخواست قیمت هم چند دقیقه بیشتر نمی‌برد.
         </p>
       </motion.div>
 
@@ -332,14 +332,14 @@ function LiveFromDaymat({ purchaseHref }: { purchaseHref: string }) {
           </motion.div>
         )}
 
-        {/* صفحه اعلان نیاز — CTA ساخت */}
+        {/* صفحه درخواست قیمت — CTA ساخت */}
         <motion.div {...fadeUp(0.2)}
           className="flex flex-col justify-center rounded-3xl border-2 border-brand-amber-tint bg-white p-6 shadow-sm dark:bg-gray-900">
           <h3 className="flex items-center gap-2 text-lg font-black text-amber-600 dark:text-amber-400">
-            <ClipboardList className="size-5" /> صفحه اعلان نیاز
+            <ClipboardList className="size-5" /> صفحه درخواست قیمت
           </h3>
           <p className="mt-3 text-sm font-bold leading-7 text-stone-500 dark:text-gray-400">
-            لیست خریدت را بنویس — تامین‌کننده‌ها اعلام خریدهایت را می‌بینند و قیمت می‌دهند؛
+            لیست خریدت را بنویس — تامین‌کننده‌ها درخواست قیمتهایت را می‌بینند و قیمت می‌دهند؛
             تو بهترینش را انتخاب می‌کنی.
           </p>
           <Link href={purchaseHref}
@@ -361,7 +361,7 @@ export default function Landing() {
   const toolHref = (path: string) =>
     isAuthenticated ? path : `/login?redirect=${encodeURIComponent(path)}`;
   const catalogHref = toolHref('/business/register'); // کاتالوگ فروش — فرم ساخت
-  const purchaseHref = toolHref('/inquiries/new');    // صفحه اعلان نیاز — فرم ساخت (محصول مستقل)
+  const purchaseHref = toolHref('/inquiries/new');    // صفحه درخواست قیمت — فرم ساخت (محصول مستقل)
 
   return (
     <div className="min-h-screen bg-[#FFFDF7] text-stone-900 dark:bg-gray-950 dark:text-gray-100">
@@ -419,7 +419,7 @@ export default function Landing() {
                 {...fadeUp(0.2)}
                 className="mx-auto mt-5 max-w-2xl text-base leading-8 text-stone-600 dark:text-gray-400 sm:text-lg">
                 پس دو تا محصول ساده ساخته‌ایم: «کاتالوگ فروش» برای نمایش و تبلیغ چیزی که می‌فروشی،
-                و «صفحه اعلان نیاز» برای استعلام قیمت چیزی که می‌خری. هر کدام یک لینک جداست؛
+                و «صفحه درخواست قیمت» برای استعلام قیمت چیزی که می‌خری. هر کدام یک لینک جداست؛
                 با چند کلیک بساز و فقط لینکِ همان را بین همان آدم‌ها پخش کن.
               </motion.p>
 
@@ -455,7 +455,7 @@ export default function Landing() {
                   <span
                     className="rounded-full border border-brand-amber-tint bg-white px-3 py-1 text-[10px] font-bold text-amber-700 shadow-sm
                     dark:bg-gray-900 dark:text-amber-300 sm:text-xs">
-                    صفحه اعلان نیاز — لینکش مالِ تامین‌کننده‌ها
+                    صفحه درخواست قیمت — لینکش مالِ تامین‌کننده‌ها
                   </span>
                 </div>
               </motion.div>
@@ -468,11 +468,11 @@ export default function Landing() {
               <span className="text-sm font-black text-stone-400 dark:text-gray-500">دو محصول جدا</span>
               <h2 className="mt-2 text-3xl font-black leading-snug sm:text-4xl">
                 برای فروشت <span className="text-brand-red">کاتالوگ فروش</span>، برای خریدت{' '}
-                <span className="text-brand-amber">صفحه اعلان نیاز</span>
+                <span className="text-brand-amber">صفحه درخواست قیمت</span>
               </h2>
               <p className="mt-4 leading-8 text-stone-600 dark:text-gray-400">
                 هر کدام چند دقیقه‌ای ساخته می‌شود و یک لینک ساده تحویل می‌دهد؛
-                هر لینک هم فقط به مسیر خودش می‌رود — کاتالوگ فروش پیش خریدارها، صفحه اعلان نیاز پیش تامین‌کننده‌ها.
+                هر لینک هم فقط به مسیر خودش می‌رود — کاتالوگ فروش پیش خریدارها، صفحه درخواست قیمت پیش تامین‌کننده‌ها.
               </p>
             </motion.div>
 
@@ -509,8 +509,8 @@ export default function Landing() {
                 tone="amber"
                 icon={ClipboardList}
                 chip="استعلام قیمت خرید"
-                title="ساخت صفحه اعلان نیاز"
-                desc="لیست چیزهایی که می‌خری رو بنویس، لینک صفحه اعلان نیازت رو بده تامین‌کننده‌ها؛ اون‌ها قیمت بدن، تو بهترین رو انتخاب کن."
+                title="ساخت صفحه درخواست قیمت"
+                desc="لیست چیزهایی که می‌خری رو بنویس، لینک صفحه درخواست قیمتت رو بده تامین‌کننده‌ها؛ اون‌ها قیمت بدن، تو بهترین رو انتخاب کن."
                 illustration={<MiniWall />}
                 steps={[
                   {
@@ -519,7 +519,7 @@ export default function Landing() {
                   },
                   {
                     title: 'لینکش رو بده تامین‌کننده‌ها',
-                    desc: 'فقط همین لینک صفحه اعلان نیاز پخش می‌شه؛ کاتالوگ فروشت اصلاً درگیر این ماجرا نیست.',
+                    desc: 'فقط همین لینک صفحه درخواست قیمت پخش می‌شه؛ کاتالوگ فروشت اصلاً درگیر این ماجرا نیست.',
                   },
                   {
                     title: 'بهترین قیمت رو انتخاب کن',
@@ -527,7 +527,7 @@ export default function Landing() {
                   },
                 ]}
                 audience={['سوپرمارکت‌ها', 'کارخانه‌ها', 'پروژه‌ها', 'خدمات']}
-                cta="صفحه اعلان نیاز بساز"
+                cta="صفحه درخواست قیمت بساز"
                 href={purchaseHref}
               />
             </div>
@@ -542,8 +542,8 @@ export default function Landing() {
                 <span className="text-brand-red">وصل</span> می‌شن
               </h2>
               <p className="mt-4 leading-8 text-stone-600 dark:text-gray-400">
-                خریدار تامین‌کننده‌هاش را از روی کاتالوگ فروششان به صفحه اعلان نیازش اضافه می‌کند؛
-                هر وقت چیزی فوری لازم داشت، اعلام خریدش مستقیم دست همان‌ها می‌رسد.
+                خریدار تامین‌کننده‌هاش را از روی کاتالوگ فروششان به صفحه درخواست قیمتش اضافه می‌کند؛
+                هر وقت چیزی فوری لازم داشت، درخواست قیمتش مستقیم دست همان‌ها می‌رسد.
               </p>
             </motion.div>
 
@@ -553,13 +553,13 @@ export default function Landing() {
                   icon: Megaphone,
                   tone: 'amber' as const,
                   title: 'خریدار اعلام می‌کند',
-                  desc: 'قلم را می‌نویسی، تیک «اعلام خرید» را می‌زنی — بالای کاتالوگت می‌نشیند.',
+                  desc: 'قلم را می‌نویسی، تیک «درخواست قیمت» را می‌زنی — بالای کاتالوگت می‌نشیند.',
                 },
                 {
                   icon: BellRing,
                   tone: 'red' as const,
                   title: 'تامین‌کنندهٔ تاییدشده فوری می‌فهمد',
-                  desc: 'اعلام خرید در تب «اعلان نیازها»ی پنل فروشش می‌آید و اعلان می‌گیرد.',
+                  desc: 'درخواست قیمت در تب «درخواست قیمت»ی پنل فروشش می‌آید و اعلان می‌گیرد.',
                 },
                 {
                   icon: Handshake,
@@ -627,7 +627,7 @@ export default function Landing() {
                       <span
                         className="rounded-full border-2 border-dashed border-brand-amber-tint px-3 py-1 text-xs font-bold text-amber-700
                         dark:text-amber-300">
-                        بعداً: صفحه اعلان نیاز
+                        بعداً: صفحه درخواست قیمت
                       </span>
                     </div>
                     <p className="mt-2 text-sm leading-7 text-stone-600 dark:text-gray-400">
@@ -642,7 +642,7 @@ export default function Landing() {
                       </span>
                     </div>
                     <p className="mt-2 text-sm leading-7 text-stone-600 dark:text-gray-400">
-                      هر وقت خواست جنس عمده بخره، یه صفحه اعلان نیاز جدا می‌سازه و فقط لینک همون رو می‌ده دست کارخونه‌ها.
+                      هر وقت خواست جنس عمده بخره، یه صفحه درخواست قیمت جدا می‌سازه و فقط لینک همون رو می‌ده دست کارخونه‌ها.
                     </p>
                   </div>
                 </div>
@@ -664,7 +664,7 @@ export default function Landing() {
                     <div className="flex flex-wrap items-center gap-2">
                       <span
                         className="rounded-full bg-brand-amber-soft px-3 py-1 text-xs font-black text-amber-800 dark:text-amber-300">
-                        شروع با صفحه اعلان نیاز
+                        شروع با صفحه درخواست قیمت
                       </span>
                       <ArrowLeft aria-hidden className="size-4 text-stone-400 dark:text-gray-600" />
                       <span
@@ -731,7 +731,7 @@ export default function Landing() {
                     href={purchaseHref}
                     className="inline-flex h-12 items-center gap-2 rounded-full bg-brand-amber px-7 text-base font-extrabold text-white shadow-lg shadow-brand-amber/30 transition-colors hover:bg-brand-amber-strong">
                     <ClipboardList className="size-4" />
-                    ساخت صفحه اعلان نیاز
+                    ساخت صفحه درخواست قیمت
                   </Link>
                 </div>
                 <p className="mt-5 text-xs font-medium text-stone-400 dark:text-gray-500">
@@ -748,7 +748,7 @@ export default function Landing() {
             className="mx-auto flex max-w-6xl flex-col items-center justify-between gap-3 px-4 py-8 sm:flex-row sm:px-6">
             <div className="flex items-center gap-2.5">
               <Image src="/images/logo3.png" alt="دیمت" width={80} height={28} className="h-7 w-auto object-contain" unoptimized />
-              <span className="hidden text-sm text-stone-400 dark:text-gray-500 sm:inline">— فروش با کاتالوگ فروش، خرید با صفحه اعلان نیاز</span>
+              <span className="hidden text-sm text-stone-400 dark:text-gray-500 sm:inline">— فروش با کاتالوگ فروش، خرید با صفحه درخواست قیمت</span>
             </div>
             <nav className="flex items-center gap-4 text-xs font-bold text-stone-500 dark:text-gray-400">
               <Link href="/docs/about" className="hover:text-brand-red">درباره ما</Link>

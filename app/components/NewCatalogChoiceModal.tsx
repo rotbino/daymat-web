@@ -31,7 +31,7 @@ const OPTIONS: { kind: 'sale' | 'purchase'; title: string; desc: string; icon: R
     },
     {
         kind: 'purchase',
-        title: 'صفحه اعلان نیاز',
+        title: 'صفحه درخواست قیمت',
         desc: 'گرفتن قیمت از تامین‌کننده‌ها',
         icon: ClipboardList,
         card: 'border-brand-amber-tint bg-brand-amber-soft/70 hover:bg-brand-amber-soft hover:border-brand-amber/50 active:scale-[0.985]',

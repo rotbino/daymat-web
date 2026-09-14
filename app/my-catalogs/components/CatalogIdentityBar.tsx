@@ -2,7 +2,7 @@
 // نوار هویت کاتالوگ — سوییچر سبک اینستاگرام (لوگو + نام + فلش پایین)
 // شیر + چشم (مشاهدهٔ کاتالوگ عمومی) + ⋯
 // ✅ سوییچر دو-محصولی: کاتالوگ‌های فروش و صفحه‌های خرید با برچسب پرانتزی
-//    کنار نام — انتخاب صفحه اعلان نیاز به مدیریت آن پرش می‌کند (درخواست کاربر)
+//    کنار نام — انتخاب صفحه درخواست قیمت به مدیریت آن پرش می‌کند (درخواست کاربر)
 // ✅ پایینِ سوییچر: «کاتالوگ جدید» → مدال دو-گزینه‌ای (خرید یا فروش؟) — ایدهٔ مالک
 // (کارت ویزیت به تب انتشار منتقل شد با نام «ساخت کارت ویزیت کاتالوگ» — بنا بر بازخورد کاربر)
 // موبایل: دکمه‌ها کوچک‌تر (w-9) تا برای عنوان جا بماند (بازخورد کاربر)
@@ -115,7 +115,7 @@ export default function CatalogIdentityBar({ catalogs, inquiries = [], currentCa
                             {onNewInquiry && (
                                 <button type="button" onClick={() => { setMenuOpen(false); onNewInquiry(); }}
                                         className="w-full flex items-center gap-2.5 h-10 px-3 rounded-md text-[13px] text-on-surface hover:bg-surface-container-high dark:hover:bg-gray-800 transition-colors">
-                                    <ClipboardList className="w-4 h-4 text-amber-600 dark:text-amber-400" /> صفحه اعلان نیاز جدید
+                                    <ClipboardList className="w-4 h-4 text-amber-600 dark:text-amber-400" /> صفحه درخواست قیمت جدید
                                 </button>
                             )}
                             <button type="button" onClick={() => { setMenuOpen(false); onChangePassword(); }}
@@ -186,7 +186,7 @@ export default function CatalogIdentityBar({ catalogs, inquiries = [], currentCa
                                         </span>
                                         <span className="min-w-0 flex-1 flex items-center gap-1">
                                             <span className="text-[13px] font-bold text-on-surface truncate">{w.title}</span>
-                                            <span className="text-[9px] font-bold text-amber-600/90 dark:text-amber-400/90 whitespace-nowrap flex-shrink-0">(صفحه اعلان نیاز)</span>
+                                            <span className="text-[9px] font-bold text-amber-600/90 dark:text-amber-400/90 whitespace-nowrap flex-shrink-0">(صفحه درخواست قیمت)</span>
                                         </span>
                                         {w.status === 'closed' && (
                                             <span className="text-[9px] font-bold text-stone-400 bg-stone-100 dark:bg-gray-800

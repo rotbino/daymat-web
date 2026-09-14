@@ -77,7 +77,7 @@ const PERMISSIONS: PermissionItem[] = [
 
     // ========== ماژول‌ها ==========
     { key: 'modules.canEditPriceTable', label: 'ویرایش تابلوی قیمت', category: 'modules' },
-    { key: 'modules.canEditBuyLead', label: 'ویرایش اعلان نیاز', category: 'modules' },
+    { key: 'modules.canEditBuyLead', label: 'ویرایش درخواست قیمت', category: 'modules' },
     { key: 'modules.canEditCatalog', label: 'ویرایش ماژول کاتالوگ (سقف‌ها و عضوگیری)', category: 'modules' },
 
     // ========== عضویت ==========

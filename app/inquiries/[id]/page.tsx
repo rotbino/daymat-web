@@ -1,6 +1,6 @@
 // app/inquiries/[id]/page.tsx
-// صفحه اعلان نیاز عمومی — همان چیزی که تامین‌کننده با لینک می‌بیند:
-//   ۱) «اعلام خریدهای فعال» بالای صفحه — اقلامی که خریدار همین حالا قیمت می‌خواهد
+// صفحه درخواست قیمت عمومی — همان چیزی که تامین‌کننده با لینک می‌بیند:
+//   ۱) «درخواست قیمتهای فعال» بالای صفحه — اقلامی که خریدار همین حالا قیمت می‌خواهد
 //   ۲) «سایر کالاهایی که معمولا می‌خرد» — قیمت‌گیری‌شان بسته به تنظیمات خریدار
 //      (امکان ارسال قیمت برای خریدهای غیر فوری)
 //   پیشنهاد قیمت قلم‌به‌قلم در شیت ثبت می‌شود؛ مالک: مدیریت در پنل.
@@ -51,7 +51,7 @@ export default function InquiryDetailPage({ params }: { params: Promise<{ id: st
     const [offerTarget, setOfferTarget] = useState<{ id?: string; name: string; quantity?: number | null; unit?: string | null } | null>(null);
 
     useEffect(() => {
-        if (inquiry?.title) document.title = `${inquiry.title} | صفحه اعلان نیاز دیمت`;
+        if (inquiry?.title) document.title = `${inquiry.title} | صفحه درخواست قیمت دیمت`;
     }, [inquiry?.title]);
 
     const isOwner = !!inquiry?.isOwner;
@@ -94,7 +94,7 @@ export default function InquiryDetailPage({ params }: { params: Promise<{ id: st
         const next = inquiry.status === 'open' ? 'closed' : 'open';
         try {
             await updateInquiry.mutateAsync({ id: inquiry.id, data: { status: next } });
-            toast.success(next === 'open' ? 'صفحه اعلان نیاز باز شد' : 'صفحه اعلان نیاز بسته شد');
+            toast.success(next === 'open' ? 'صفحه درخواست قیمت باز شد' : 'صفحه درخواست قیمت بسته شد');
             refetch();
         } catch (e: any) {
             toast.error(e?.response?.data?.message || 'تغییر وضعیت ناموفق بود');
@@ -102,7 +102,7 @@ export default function InquiryDetailPage({ params }: { params: Promise<{ id: st
     };
 
     const remove = async () => {
-        if (!inquiry || !window.confirm('صفحه اعلان نیاز برای همیشه حذف شود؟')) return;
+        if (!inquiry || !window.confirm('صفحه درخواست قیمت برای همیشه حذف شود؟')) return;
         try {
             await deleteInquiry.mutateAsync(inquiry.id);
             toast.success('حذف شد');
@@ -125,7 +125,7 @@ export default function InquiryDetailPage({ params }: { params: Promise<{ id: st
             <div className="grid min-h-screen place-items-center bg-[#FFFDF7] px-4 text-center dark:bg-gray-950">
                 <div>
                     <Package className="mx-auto size-14 text-stone-300 dark:text-gray-700" />
-                    <h1 className="mt-4 text-xl font-black">این صفحه اعلان نیاز پیدا نشد</h1>
+                    <h1 className="mt-4 text-xl font-black">این صفحه درخواست قیمت پیدا نشد</h1>
                     <p className="mt-2 text-sm text-stone-500">ممکن است حذف شده باشد یا لینک اشتباه باشد.</p>
                     <Link href="/" className="mt-5 inline-flex h-11 items-center gap-2 rounded-full bg-brand-amber px-6 text-sm font-extrabold text-white">
                         رفتن به دیمت
@@ -225,18 +225,18 @@ export default function InquiryDetailPage({ params }: { params: Promise<{ id: st
                     )}
                 </motion.section>
 
-                {/* ═══ اعلام خریدهای فعال — بالای کاتالوگ ═══ */}
+                {/* ═══ درخواست قیمتهای فعال — بالای کاتالوگ ═══ */}
                 <section className="mt-6">
                     <h2 className="mb-3 flex items-center gap-2 text-sm font-black text-amber-700 dark:text-amber-400">
                         <Megaphone className="size-4" />
-                        اعلام خریدهای فعال
+                        درخواست قیمتهای فعال
                         <span className="rounded-full bg-brand-amber px-2 py-0.5 text-[9px] font-black text-white">{faNum(urgentItems.length)}</span>
                     </h2>
 
                     {urgentItems.length === 0 ? (
                         <div className="rounded-2xl border border-dashed border-stone-200 bg-white px-4 py-5 text-center dark:border-gray-800 dark:bg-gray-900">
                             <p className="text-xs font-bold text-stone-400 dark:text-gray-500">
-                                فعلاً اعلام خرید فعالی نیست — لیست معمول خرید پایین‌تره.
+                                فعلاً درخواست قیمت فعالی نیست — لیست معمول خرید پایین‌تره.
                             </p>
                         </div>
                     ) : (
@@ -405,7 +405,7 @@ export default function InquiryDetailPage({ params }: { params: Promise<{ id: st
                         {(inquiry.offers?.length ?? 0) === 0 ? (
                             <div className="rounded-3xl border-2 border-dashed border-brand-amber-tint bg-white px-6 py-10 text-center dark:bg-gray-900">
                                 <p className="text-sm font-bold text-stone-500 dark:text-gray-400">هنوز پیشنهادی نیومده.</p>
-                                <p className="mt-1 text-xs text-stone-400 dark:text-gray-500">لینک صفحه اعلان نیازت رو برای تامین‌کننده‌ها بفرست.</p>
+                                <p className="mt-1 text-xs text-stone-400 dark:text-gray-500">لینک صفحه درخواست قیمتت رو برای تامین‌کننده‌ها بفرست.</p>
                             </div>
                         ) : (
                             <div className="space-y-3">
@@ -516,7 +516,7 @@ function PrivateGate({ inquiry, onDone }: { inquiry: any; onDone: () => void }) 
                 <span className="mx-auto grid size-14 place-items-center rounded-2xl bg-brand-amber-soft dark:bg-amber-500/10">
                     <Lock className="size-6 text-amber-600 dark:text-amber-400" />
                 </span>
-                <h1 className="mt-4 text-lg font-black">صفحه اعلان نیاز خصوصی</h1>
+                <h1 className="mt-4 text-lg font-black">صفحه درخواست قیمت خصوصی</h1>
                 {inquiry.title && <p className="mt-1 text-sm font-bold text-stone-500 dark:text-gray-400">«{inquiry.title}»</p>}
                 <p className="mx-auto mt-3 max-w-xs text-[12px] font-bold leading-6 text-stone-500 dark:text-gray-400">
                     فقط تامین‌کننده‌های تاییدشده محتوایش را می‌بینند — با کاتالوگ فروشت درخواست بده
@@ -530,7 +530,7 @@ function PrivateGate({ inquiry, onDone }: { inquiry: any; onDone: () => void }) 
                     </Link>
                 ) : requested ? (
                     <p className="mt-5 rounded-2xl bg-emerald-50 px-4 py-3 text-[12px] font-extrabold text-emerald-700 dark:bg-emerald-900/20 dark:text-emerald-300">
-                        درخواستت ثبت شد — به‌محض تایید، اعلام خریدها اینجا می‌آید
+                        درخواستت ثبت شد — به‌محض تایید، درخواست قیمتها اینجا می‌آید
                     </p>
                 ) : catsLoading ? (
                     <Loader2 className="mx-auto mt-5 size-5 animate-spin text-stone-300" />

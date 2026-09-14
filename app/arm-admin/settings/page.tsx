@@ -272,7 +272,7 @@ export default function ArmAdminSettings() {
                                 onSave={() => {}}
                                 isSaving={saving}
                                 moduleKey="buyLead"
-                                moduleName="تابلوی اعلان نیاز"
+                                moduleName="تابلوی درخواست قیمت"
                                 isAdmin={isSystemAdmin}
                             />
                             <ModuleSettingsSection

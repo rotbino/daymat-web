@@ -37,7 +37,7 @@ const EVENT_LABEL: Record<string, string> = {
     seller_left: 'خودش از اعضا خارج شد',
     seller_role_changed: 'نقش بیزینسی‌اش عوض شد',
     buyer_approved: 'به‌عنوان خریدار تایید شد',
-    buyer_rejected: 'اعلان نیازارش رد شد',
+    buyer_rejected: 'درخواست قیمتارش رد شد',
     supplier_approved: 'به‌عنوان تامین‌کننده تایید شد',
     supplier_rejected: 'درخواست تامین‌کننده‌اش رد شد',
     supplier_removed: 'تامین‌کننده‌اش حذف شد',
@@ -191,7 +191,7 @@ export default function TeamTab({ catalogId }: Props) {
     const activeCustomers = customers.filter((c) => c.customerStatus === 'active');
 
     // ✅ سه بخش (بنا بر مدل جدید شبکهٔ خرید↔فروش):
-    //    ۱) خریدارها — از روی صفحه اعلان نیازشان (نه فقط کسب‌وکارشان)
+    //    ۱) خریدارها — از روی صفحه درخواست قیمتشان (نه فقط کسب‌وکارشان)
     //    ۲) تیم فروش و مدیریت — فروشنده/بازاریاب/مالک/مدیر
     //    ۳) تامین‌کننده‌ها و خدمات — لِین کاتالوگ فروش
     const decorate = (m: any) => ({
@@ -237,7 +237,7 @@ export default function TeamTab({ catalogId }: Props) {
                                         <MapPin className="w-3 h-3" />{cityChip}
                                     </span>
                                 )}
-                                {/* ✅ صفحه اعلان نیازِ خریدار — شبکهٔ خرید↔فروش */}
+                                {/* ✅ صفحه درخواست قیمتِ خریدار — شبکهٔ خرید↔فروش */}
                                 {(m.purchaseCatalogs?.length ?? 0) > 0 && (
                                     <span className="inline-flex items-center gap-1 flex-shrink-0 rounded-full bg-brand-amber-soft px-2 py-0.5 text-[9px] font-black text-amber-700 dark:bg-amber-500/10 dark:text-amber-400">
                                         <ClipboardList className="h-2.5 w-2.5" />
@@ -483,11 +483,11 @@ export default function TeamTab({ catalogId }: Props) {
                 </div>
             )}
 
-            {/* ✅ خریدارها — از روی صفحه اعلان نیازشان (قلب شبکهٔ خرید↔فروش) */}
+            {/* ✅ خریدارها — از روی صفحه درخواست قیمتشان (قلب شبکهٔ خرید↔فروش) */}
             <div className={cn(CARD_CLS, 'p-2')}>
                 <p className="flex items-center gap-1.5 px-2 pt-2 pb-1 text-[11px] font-black text-primary">
                     <Handshake className="h-3.5 w-3.5" />
-                    خریدارها — با صفحه اعلان نیازشان
+                    خریدارها — با صفحه درخواست قیمتشان
                 </p>
                 {buyerRows.map((m: any) => <React.Fragment key={m.id}>{rowFor(m)}</React.Fragment>)}
                 {buyerRows.length === 0 && (
