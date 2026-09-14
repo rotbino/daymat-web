@@ -16,12 +16,19 @@ interface Props {
     onChange: (slug: string) => void;
     excludeId?: string;
     initialError?: 'taken' | 'reserved' | null;
+    /** اسلاگ ذخیره‌شدهٔ فعلی (حالت ویرایش) — «own» با آن سنجیده می‌شود نه با value */
+    initialSlug?: string;
+    /** گزارش وضعیت به والد برای گیت ارسال — 'taken' | 'reserved' | null */
+    onStatus?: (status: 'taken' | 'reserved' | null) => void;
+    placeholder?: string;
 }
 
-export default function SlugEditor({ value, onChange, excludeId, initialError }: Props) {
+export default function SlugEditor({ value, onChange, excludeId, initialError, initialSlug, onStatus, placeholder }: Props) {
     const debounced = useDebounced(value, 450);
     const slug = slugify(debounced);
-    const isOwn = slug === slugify(value);
+    // ✅ isOwn یعنی «همان آدرس ذخیره‌شده» — با initialSlug سنجیده می‌شود (نه valueِ در حال تایپ)
+    const isOwn = !!initialSlug && slug === slugify(initialSlug);
+    const lastReported = React.useRef<string | null>(null);
 
     const localStatus: SlugStatus = useMemo(() => {
         if (!slug) return 'empty';
@@ -49,6 +56,15 @@ export default function SlugEditor({ value, onChange, excludeId, initialError }:
         if (data?.available === true) return 'ok';
         return 'checking';
     }, [slug, isFetching, data, isOwn, localStatus, initialError, value]);
+
+    // گزارش به والد — فقط وقتی تغییر معنایی (گیت ارسال فرم)
+    React.useEffect(() => {
+        const report = status === 'taken' || status === 'reserved' ? status : null;
+        if (lastReported.current !== report) {
+            lastReported.current = report;
+            onStatus?.(report);
+        }
+    }, [status, onStatus]);
 
     const handleChange = (raw: string) => {
         onChange(raw.toLowerCase().replace(/[^a-z0-9-]/g, '').slice(0, 40));
@@ -87,7 +103,7 @@ export default function SlugEditor({ value, onChange, excludeId, initialError }:
                     autoCorrect="off"
                     spellCheck={false}
                     className="flex-1 min-w-0 px-3 text-[13px] font-bold outline-none bg-transparent text-left"
-                    placeholder="my-catalog"
+                    placeholder={placeholder || 'my-catalog'}
                 />
             </div>
             <p className={cn('text-[10px] flex items-center gap-1.5 px-1', ui.cls)}>

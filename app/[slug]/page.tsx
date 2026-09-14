@@ -1,7 +1,8 @@
 // app/[slug]/page.tsx
-// ✅ روت واحد کاتالوگ + بازار:
-//    resolver سمت سرور تعیین می‌کند این slug کاتالوگ است یا تابلوی بازار.
-//    اولویت با کاتالوگ (Catalog) است؛ تداخل اسلاگ با قید دو-جدولی در checkSlug جلوگیری می‌شود.
+// ✅ روت واحد کاتالوگ + بازار + صفحهٔ اعلان خرید:
+//    resolver سمت سرور تعیین می‌کند این slug کاتالوگ است یا تابلوی بازار یا صفحهٔ اعلان خرید.
+//    اولویت با کاتالوگ (Catalog) است؛ تداخل اسلاگ با قید سه-جدولی (کاتالوگ/بازار/اعلام خرید)
+//    در checkSlug هر دو سرویس جلوگیری می‌شود.
 //    اسلش انتهایی و انکودینگ نرمال می‌شود.
 
 import React from 'react';
@@ -10,6 +11,7 @@ import { notFound } from 'next/navigation';
 import { apiService } from '@/lib/api/apiService';
 import CatalogClient from './CatalogClient';
 import MarketShell from './components/MarketShell';
+import InquiryPublicClient from '../inquiries/[id]/InquiryPublicClient';
 
 interface Props {
     params: Promise<{ slug: string }>;
@@ -48,6 +50,23 @@ export async function generateMetadata({ params }: Props) {
         }
     } catch {}
 
+    // ۳) صفحهٔ اعلان خرید؟ — رزولور سبک (بدون شمارش بازدید)
+    try {
+        const inquiry = await apiService.inquiry.resolveSlug(slug);
+        if (inquiry) {
+            return {
+                title: `${inquiry.title} | دیمت`,
+                alternates: { canonical: `/${slug}` },
+                description: inquiry.description || `اعلام خرید ${inquiry.business?.name || ''} — ${inquiry.city || 'دیمت'}`.trim(),
+                openGraph: {
+                    title: inquiry.title,
+                    description: inquiry.description || undefined,
+                    images: inquiry.business?.logoUrl ? [inquiry.business.logoUrl] : [],
+                },
+            };
+        }
+    } catch {}
+
     return { title: 'دیمت | کاتالوگ روزانه قیمت' };
 }
 
@@ -58,10 +77,11 @@ export default async function SlugPage({ params, searchParams }: Props) {
     const slug = decodeURIComponent(rawSlug).replace(/\/+$/, '').trim(); // ✅ اسلش انتهایی + انکودینگ
     if (!slug) notFound();
 
-    // ✅ resolver موازی — دو کوئری عمومی، سریع، بدون وابستگی به هم
-    const [catalog, arm] = await Promise.all([
+    // ✅ resolver موازی — سه کوئری عمومی، سریع، بدون وابستگی به هم
+    const [catalog, arm, inquiry] = await Promise.all([
         apiService.catalog.getBySlug(slug).catch(() => null),
         apiService.arm.fetchArmData(slug).catch(() => null),
+        apiService.inquiry.resolveSlug(slug).catch(() => null),
     ]);
 
     // ─── کاتالوگ ───
@@ -98,6 +118,11 @@ export default async function SlugPage({ params, searchParams }: Props) {
     // ─── بازار ───
     if (arm) {
         return <MarketShell slug={slug} search={search} />;
+    }
+
+    // ─── صفحهٔ اعلان خرید — همان کلاینت مسیر قدیمی /inquiries/[id] ───
+    if (inquiry) {
+        return <InquiryPublicClient idOrSlug={slug} />;
     }
 
     // ─── هیچ‌کدام ───

@@ -159,14 +159,14 @@ export function CatalogLinksCard({ catalogs, inquiries = [], businessId }: {
                             </div>
                             <button
                                 type="button"
-                                onClick={() => copyLink(`/inquiries/${w.slug || w.id}`, w.id)}
+                                onClick={() => copyLink(`/${w.slug || w.id}`, w.id)}
                                 aria-label="کپی لینک صفحه درخواست قیمت"
                                 className="w-8 h-8 rounded-lg grid place-items-center text-on-surface-variant/60 hover:text-amber-600 hover:bg-amber-500/10 active:scale-90 transition-all flex-shrink-0"
                             >
                                 {copiedId === w.id ? <Check className="w-3.5 h-3.5 text-emerald-500" /> : <Copy className="w-3.5 h-3.5" />}
                             </button>
                             <Link
-                                href={`/inquiries/${w.slug || w.id}`}
+                                href={`/${w.slug || w.id}`}
                                 target="_blank"
                                 aria-label="مشاهده صفحه درخواست قیمت"
                                 className="w-8 h-8 rounded-lg grid place-items-center text-on-surface-variant/60 hover:text-amber-600 hover:bg-amber-500/10 active:scale-90 transition-all flex-shrink-0"

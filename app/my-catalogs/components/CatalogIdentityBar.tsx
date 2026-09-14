@@ -1,9 +1,10 @@
 // app/my-catalogs/components/CatalogIdentityBar.tsx
 // نوار هویت کاتالوگ — سوییچر سبک اینستاگرام (لوگو + نام + فلش پایین)
 // شیر + چشم (مشاهدهٔ کاتالوگ عمومی) + ⋯
-// ✅ سوییچر دو-محصولی: کاتالوگ‌های فروش و صفحه‌های خرید با برچسب پرانتزی
+// ✅ سوییچر دو-محصولی: کاتالوگ‌های فروش و صفحه‌های درخواست قیمت با برچسب پرانتزی
 //    کنار نام — انتخاب صفحه درخواست قیمت به مدیریت آن پرش می‌کند (درخواست کاربر)
-// ✅ پایینِ سوییچر: «کاتالوگ جدید» → مدال دو-گزینه‌ای (خرید یا فروش؟) — ایدهٔ مالک
+// ✅ پایینِ سوییچر: لینک ساخت فقط برای نوعی که هنوز ندارد (ایدهٔ مالک:
+//    هر کاربر از هر نوع یکی — سیستم پر از کاتالوگ سرگردان نشود؛ دومی‌ها از زیر ⋯ یا پروفایل کسب‌وکار)
 // (کارت ویزیت به تب انتشار منتقل شد با نام «ساخت کارت ویزیت کاتالوگ» — بنا بر بازخورد کاربر)
 // موبایل: دکمه‌ها کوچک‌تر (w-9) تا برای عنوان جا بماند (بازخورد کاربر)
 // ⚠️ قانون: حالت تاریک همیشه چک شده
@@ -13,7 +14,6 @@ import React, { useState } from 'react';
 import Image from 'next/image';
 import { Check, ChevronDown, ClipboardList, Ellipsis, Eye, Key, LibraryBig, Plus, Share2 } from 'lucide-react';
 import { cn } from '@/lib/utils';
-import NewCatalogChoiceModal from '@/app/components/NewCatalogChoiceModal';
 
 export default function CatalogIdentityBar({ catalogs, inquiries = [], currentCatalog, canShare, onSelect, onSelectInquiry, onShare, onPreview, onNewCatalog, onNewInquiry, onChangePassword }: {
     catalogs: any[];
@@ -31,8 +31,12 @@ export default function CatalogIdentityBar({ catalogs, inquiries = [], currentCa
 }) {
     const [open, setOpen] = useState(false);
     const [menuOpen, setMenuOpen] = useState(false);
-    const [newOpen, setNewOpen] = useState(false);
     const multi = catalogs.length + inquiries.length > 1;
+    // ✅ ایدهٔ مالک: لینک ساخت در سوییچر فقط برای نوعی که هنوز ندارد — هر دو داشت، هیچ‌کدام
+    const missingInquiry = inquiries.length === 0;
+    const missingCatalog = catalogs.length === 0;
+    // سوییچر حتی برای تک-آیتمی وقتی نوعی را ندارد باز می‌شود تا لینک ساخت را ببیند
+    const canOpen = multi || missingInquiry || missingCatalog;
     const logoSrc = currentCatalog?.logoFile?.path || currentCatalog?.logoUrl;
 
     const identity = (
@@ -52,7 +56,7 @@ export default function CatalogIdentityBar({ catalogs, inquiries = [], currentCa
                             {currentCatalog?.teamMode === 'admin' ? 'مدیر' : currentCatalog?.teamMode === 'pending' ? 'در انتظار' : 'فروشنده'}
                         </span>
                     )}
-                    {multi && <ChevronDown className={cn('w-4 h-4 text-on-surface-variant/60 flex-shrink-0 transition-transform', open && 'rotate-180')} />}
+                    {canOpen && <ChevronDown className={cn('w-4 h-4 text-on-surface-variant/60 flex-shrink-0 transition-transform', open && 'rotate-180')} />}
                 </span>
                 <span className="block text-[10px] text-on-surface-variant/70">
                     {multi ? 'برای تغییر کاتالوگ لمس کن' : 'کاتالوگ شما'}
@@ -64,7 +68,7 @@ export default function CatalogIdentityBar({ catalogs, inquiries = [], currentCa
     return (
         <div className="relative flex items-center justify-between gap-1.5 lg:gap-2">
             {/* سوییچر / نمایش هویت */}
-            {multi ? (
+            {canOpen ? (
                 <button type="button" onClick={() => setOpen((o) => !o)} aria-expanded={open}
                         aria-label="تغییر کاتالوگ"
                         className="min-w-0 flex-1 text-right rounded-lg py-1 ps-1 pe-2 -ms-1 hover:bg-surface-container-high/60
@@ -128,7 +132,7 @@ export default function CatalogIdentityBar({ catalogs, inquiries = [], currentCa
             </div>
 
             {/* منوی سوییچ — هر دو نوع کاتالوگ با برچسب پرانتزی (درخواست کاربر) */}
-            {open && multi && (
+            {open && canOpen && (
                 <>
                     <div className="fixed inset-0 z-40" onClick={() => setOpen(false)} />
                     <div role="menu" className="absolute top-full start-0 mt-1.5 z-50 w-80 max-w-[calc(100vw-2rem)] p-1.5
@@ -197,25 +201,34 @@ export default function CatalogIdentityBar({ catalogs, inquiries = [], currentCa
                             </>
                         )}
 
-                        {/* کاتالوگ جدید — اول می‌پرسد خرید یا فروش (ایدهٔ مالک) */}
-                        <div className="my-1 border-t border-outline-variant/20 dark:border-gray-800" />
-                        <button type="button" role="menuitem"
-                                onClick={() => { setOpen(false); setNewOpen(true); }}
-                                className="w-full flex items-center gap-2.5 h-11 px-3 rounded-lg text-right text-[13px] font-extrabold
-                                    text-primary hover:bg-surface-container-high dark:hover:bg-gray-800 transition-colors">
-                            <Plus className="w-4 h-4" />
-                            کاتالوگ جدید
-                        </button>
+                        {/* ساخت — فقط برای نوعِ غایب (ایدهٔ مالک: جلوگیری از کاتالوگ‌های سرگردان؛
+                            دومی‌ها از زیر ⋯ یا پروفایل کسب‌وکار پیدا می‌شوند) */}
+                        {(missingCatalog || missingInquiry) && (
+                            <>
+                                <div className="my-1 border-t border-outline-variant/20 dark:border-gray-800" />
+                                {missingCatalog && (
+                                    <button type="button" role="menuitem"
+                                            onClick={() => { setOpen(false); onNewCatalog(); }}
+                                            className="w-full flex items-center gap-2.5 h-11 px-3 rounded-lg text-right text-[13px] font-extrabold
+                                                text-primary hover:bg-surface-container-high dark:hover:bg-gray-800 transition-colors">
+                                        <Plus className="w-4 h-4" />
+                                        ساخت کاتالوگ فروش
+                                    </button>
+                                )}
+                                {missingInquiry && onNewInquiry && (
+                                    <button type="button" role="menuitem"
+                                            onClick={() => { setOpen(false); onNewInquiry(); }}
+                                            className="w-full flex items-center gap-2.5 h-11 px-3 rounded-lg text-right text-[13px] font-extrabold
+                                                text-amber-700 hover:bg-brand-amber-soft/60 dark:text-amber-400 dark:hover:bg-amber-500/10 transition-colors">
+                                        <Plus className="w-4 h-4" />
+                                        ساخت صفحه درخواست قیمت
+                                    </button>
+                                )}
+                            </>
+                        )}
                     </div>
                 </>
             )}
-
-            {/* مدال انتخاب نوع کاتالوگ */}
-            <NewCatalogChoiceModal
-                open={newOpen}
-                onClose={() => setNewOpen(false)}
-                onPick={(kind) => { setNewOpen(false); if (kind === 'sale') onNewCatalog(); else onNewInquiry?.(); }}
-            />
         </div>
     );
 }

@@ -1395,6 +1395,14 @@ export const apiService = {
         get: (idOrSlug: string): Promise<InquiryDetail> =>
             apiRequest(`/inquiry/${encodeURIComponent(idOrSlug)}`),
 
+        /** رزولور سبک اسلاگ برای مسیر ریشه /{slug} — فقط متادیتا، بدون شمارش بازدید */
+        resolveSlug: (slug: string): Promise<InquiryDetail> =>
+            apiRequest(`/inquiry/slug-resolve?slug=${encodeURIComponent(slug)}`),
+
+        /** چک زندهٔ آدرس عمومی — فضای سراسری (کاتالوگ + بازار + صفحهٔ اعلان خرید) */
+        checkSlug: (slug: string, excludeId?: string): Promise<{ available: boolean; reason?: string; slug?: string }> =>
+            apiRequest(`/inquiry/check-slug?slug=${encodeURIComponent(slug)}${excludeId ? `&excludeId=${excludeId}` : ''}`),
+
         /** ساخت صفحه درخواست قیمت */
         create: (data: CreateInquiryPayload): Promise<InquiryDetail> =>
             apiRequest('/inquiry', { method: 'POST', data }),

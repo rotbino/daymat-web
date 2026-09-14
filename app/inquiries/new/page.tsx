@@ -16,7 +16,8 @@ import { setCurrentInquiry } from '@/lib/store/slices/catalogSlice';
 import { useMyBusinesses, useCreateInquiry, useMyInquiries } from '@/lib/api/apiHooks';
 import { toast } from 'sonner';
 import BusinessSelector from '@/app/components/BusinessSelector';
-import { ClipboardList, Loader2, Megaphone, Send, Building2, Globe, Lock } from 'lucide-react';
+import SlugEditor from '@/app/my-catalogs/SlugEditor';
+import { ClipboardList, Loader2, Megaphone, Send, Building2, Globe, Lock, Link2 } from 'lucide-react';
 
 const fadeUp = (delay = 0) => ({
     initial: { opacity: 0, y: 18 },
@@ -33,6 +34,9 @@ export default function NewInquiryPage() {
 
     const [biz, setBiz] = useState<any | null>(null);
     const [visibility, setVisibility] = useState<'public' | 'private'>('public');
+    // ✅ آدرس عمومی صفحه — مثل کاتالوگ فروش کاربر خودش انتخاب می‌کند (daymat.ir/supey)
+    const [slug, setSlug] = useState('');
+    const [slugStatus, setSlugStatus] = useState<'taken' | 'reserved' | null>(null);
     const [submitting, setSubmitting] = useState(false);
     const bizRef = useRef<HTMLDivElement | null>(null);
 
@@ -90,18 +94,33 @@ export default function NewInquiryPage() {
             return;
         }
         if (checkExisting(biz)) return;
+        // ✅ آدرس عمومی اجباری است — لینک کوتاهِ قابل گفتن (خواستهٔ مالک)
+        if (slug.trim().length < 3) {
+            toast.error('آدرس صفحه را بنویس — حداقل ۳ حرف انگلیسی');
+            return;
+        }
+        if (slugStatus) {
+            toast.error('این آدرس در دسترس نیست — کمی عوضش کن');
+            return;
+        }
         setSubmitting(true);
         try {
             const res = await create.mutateAsync({
                 title: `صفحه درخواست قیمت ${biz.name || ''}`.trim().slice(0, 140),
                 businessId: biz.id,
                 visibility,
+                slug: slug.trim(),
             });
             toast.success('صفحه درخواست قیمتت ساخته شد — حالا قلم‌ها رو اضافه کن');
             dispatch(setCurrentInquiry(res.id));
             router.replace(`/my-inquiries?catalog=${res.id}&add=1`);
         } catch (e: any) {
-            toast.error(e?.response?.data?.message || 'ساختن صفحه درخواست قیمت ناموفق بود');
+            const code = e?.response?.data?.errorCode;
+            if (code === 'SLUG_TAKEN' || code === 'SLUG_RESERVED' || code === 'INVALID_SLUG') {
+                toast.error(e?.response?.data?.message || 'این آدرس در دسترس نیست — کمی عوضش کن');
+            } else {
+                toast.error(e?.response?.data?.message || 'ساختن صفحه درخواست قیمت ناموفق بود');
+            }
         } finally {
             setSubmitting(false);
         }
@@ -171,6 +190,21 @@ export default function NewInquiryPage() {
                                     </button>
                                 ))}
                             </div>
+                            {/* 📍 آدرس عمومی صفحه — کاربر خودش انتخاب می‌کند (مثل کاتالوگ فروش) */}
+                            <div className="mb-3 rounded-2xl border border-stone-100 bg-white p-3 dark:border-gray-800 dark:bg-gray-900">
+                                <div className="mb-2 flex items-center gap-1.5">
+                                    <Link2 className="size-3.5 text-amber-600 dark:text-amber-400" />
+                                    <span className="text-[12px] font-black text-stone-700 dark:text-gray-200">آدرس صفحه</span>
+                                    <span className="text-[9px] font-bold text-stone-400 dark:text-gray-500">— لینک کوتاهی که راحت می‌گویی و می‌فرستی</span>
+                                </div>
+                                <SlugEditor
+                                    value={slug}
+                                    onChange={(s) => { setSlug(s); setSlugStatus(null); }}
+                                    onStatus={setSlugStatus}
+                                    placeholder="supey"
+                                />
+                            </div>
+
                             <motion.button
                                 whileTap={{ scale: 0.97 }}
                                 onClick={submit}

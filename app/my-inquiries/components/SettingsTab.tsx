@@ -9,8 +9,9 @@
 import React, { useEffect, useState } from 'react';
 import { motion } from 'framer-motion';
 import { toast } from 'sonner';
-import { Save, Boxes, Ban, RotateCcw, Trash2, Loader2, Globe, ShieldCheck } from 'lucide-react';
+import { Save, Boxes, Ban, RotateCcw, Trash2, Loader2, Globe, ShieldCheck, Link2 } from 'lucide-react';
 import SwitchRow from './SwitchRow';
+import SlugEditor from '@/app/my-catalogs/SlugEditor';
 import { inp } from '../../inquiries/utils';
 import type { InquiryDetail } from '@/lib/api/apiTypes';
 
@@ -36,6 +37,9 @@ export default function SettingsTab({ detail, onSave, onOpenUnits, onToggleStatu
     const [paymentTerms, setPaymentTerms] = useState('');
     const [visibility, setVisibility] = useState<'public' | 'private'>('public');
     const [allowNonUrgentOffers, setAllowNonUrgent] = useState(true);
+    // ✅ آدرس عمومی — قابل ویرایش مثل کاتالوگ فروش (لینک قدیمی /inquiries/{id} هم همچنان کار می‌کند)
+    const [slug, setSlug] = useState('');
+    const [slugStatus, setSlugStatus] = useState<'taken' | 'reserved' | null>(null);
 
     // با تعویض کاتالوگ، فرم از نو پر می‌شود
     useEffect(() => {
@@ -49,11 +53,21 @@ export default function SettingsTab({ detail, onSave, onOpenUnits, onToggleStatu
         setPaymentTerms(detail.paymentTerms || '');
         setVisibility(detail.visibility === 'private' ? 'private' : 'public');
         setAllowNonUrgent(detail.allowNonUrgentOffers !== false);
+        setSlug(detail.slug || '');
+        setSlugStatus(null);
     }, [detail?.id]); // eslint-disable-line react-hooks/exhaustive-deps
 
     const save = async () => {
         if (!title.trim()) {
             toast.error('عنوان خالی نمی‌تونه باشه');
+            return;
+        }
+        if (slug.trim() && slug.trim().length < 3) {
+            toast.error('آدرس صفحه حداقل ۳ حرف انگلیسی');
+            return;
+        }
+        if (slugStatus) {
+            toast.error('این آدرس در دسترس نیست — کمی عوضش کن');
             return;
         }
         try {
@@ -67,10 +81,16 @@ export default function SettingsTab({ detail, onSave, onOpenUnits, onToggleStatu
                 paymentTerms: paymentTerms.trim() || undefined,
                 visibility,
                 allowNonUrgentOffers,
+                ...(slug.trim() && slug.trim() !== (detail.slug || '') ? { slug: slug.trim() } : {}),
             });
             toast.success('تنظیمات ذخیره شد');
         } catch (e: any) {
-            toast.error(e?.response?.data?.message || 'ذخیره ناموفق بود');
+            const code = e?.response?.data?.errorCode;
+            if (code === 'SLUG_TAKEN' || code === 'SLUG_RESERVED' || code === 'INVALID_SLUG') {
+                toast.error(e?.response?.data?.message || 'این آدرس در دسترس نیست — کمی عوضش کن');
+            } else {
+                toast.error(e?.response?.data?.message || 'ذخیره ناموفق بود');
+            }
         }
     };
 
@@ -85,6 +105,21 @@ export default function SettingsTab({ detail, onSave, onOpenUnits, onToggleStatu
                         placeholder="توضیح کوتاه" className={`${inp} h-auto w-full py-2`} />
                     <input value={tagsRaw} onChange={(e) => setTagsRaw(e.target.value)} placeholder="برچسب‌ها — با ویرگول جدا کن" className={`${inp} w-full`} />
                     <input value={city} onChange={(e) => setCity(e.target.value)} placeholder="شهر" className={`${inp} w-full`} />
+                    {/* 📍 آدرس عمومی — لینک کوتاه ریشه‌ای daymat.ir/{آدرس} */}
+                    <div className="rounded-2xl border border-stone-100 bg-stone-50 p-3 dark:border-gray-800 dark:bg-gray-950/60">
+                        <div className="mb-2 flex items-center gap-1.5">
+                            <Link2 className="size-3.5 text-amber-600 dark:text-amber-400" />
+                            <span className="text-[11px] font-black text-stone-600 dark:text-gray-300">آدرس صفحه</span>
+                        </div>
+                        <SlugEditor
+                            value={slug}
+                            onChange={(s) => { setSlug(s); setSlugStatus(null); }}
+                            onStatus={setSlugStatus}
+                            excludeId={detail.id}
+                            initialSlug={detail.slug || ''}
+                            placeholder="supey"
+                        />
+                    </div>
                 </div>
             </motion.section>
 

@@ -437,7 +437,7 @@ export default function CatalogEditModal({ isOpen, onClose, catalog, salesTypeLo
                             </div>
                         ) : (
                             <div className="space-y-2">
-                                <SlugEditor value={slug} onChange={setSlug} excludeId={catalog.id} />
+                                <SlugEditor value={slug} onChange={setSlug} excludeId={catalog.id} initialSlug={catalog.slug} />
                                 {catalog.slug && (
                                     <div className="rounded bg-amber-50 dark:bg-amber-900/15 border border-amber-200/70 dark:border-amber-800/50 p-2.5 flex items-start gap-2">
                                         <AlertTriangle className="w-3.5 h-3.5 text-amber-600 dark:text-amber-400 mt-0.5 flex-shrink-0" />
