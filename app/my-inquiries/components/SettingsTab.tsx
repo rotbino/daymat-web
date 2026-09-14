@@ -1,12 +1,14 @@
 // app/my-inquiries/components/SettingsTab.tsx
 // تب تنظیمات پنل کاتالوگ خرید — مشخصات، شرایط، دسترسی و قیمت‌گیری، وضعیت
 // شامل فیلد «امکان ارسال قیمت برای خریدهای غیر فوری» (ایدهٔ مالک)
+// ✅ نمایانی سه‌گانه: عمومی (دیوار) | فقط با لینک | خصوصی (فقط تامین‌کننده‌های تاییدشده)
+//    مفهوم خصوصی به خود خریدار گفته می‌شود — یک خط زیر گزینه
 'use client';
 
 import React, { useEffect, useState } from 'react';
 import { motion } from 'framer-motion';
 import { toast } from 'sonner';
-import { Save, Boxes, Ban, RotateCcw, Trash2, Loader2, Lock, Globe } from 'lucide-react';
+import { Save, Boxes, Ban, RotateCcw, Trash2, Loader2, Lock, Globe, ShieldCheck } from 'lucide-react';
 import SwitchRow from './SwitchRow';
 import { inp } from '../../inquiries/utils';
 import type { InquiryDetail } from '@/lib/api/apiTypes';
@@ -31,7 +33,7 @@ export default function SettingsTab({ detail, onSave, onOpenUnits, onToggleStatu
     const [deadline, setDeadline] = useState('');
     const [deliveryNote, setDeliveryNote] = useState('');
     const [paymentTerms, setPaymentTerms] = useState('');
-    const [visibility, setVisibility] = useState<'public' | 'unlisted'>('public');
+    const [visibility, setVisibility] = useState<'public' | 'unlisted' | 'private'>('public');
     const [allowNonUrgentOffers, setAllowNonUrgent] = useState(true);
 
     // با تعویض کاتالوگ، فرم از نو پر می‌شود
@@ -44,7 +46,7 @@ export default function SettingsTab({ detail, onSave, onOpenUnits, onToggleStatu
         setDeadline(detail.deadline ? new Date(detail.deadline).toISOString().slice(0, 16) : '');
         setDeliveryNote(detail.deliveryNote || '');
         setPaymentTerms(detail.paymentTerms || '');
-        setVisibility(detail.visibility === 'unlisted' ? 'unlisted' : 'public');
+        setVisibility(detail.visibility === 'unlisted' ? 'unlisted' : detail.visibility === 'private' ? 'private' : 'public');
         setAllowNonUrgent(detail.allowNonUrgentOffers !== false);
     }, [detail?.id]); // eslint-disable-line react-hooks/exhaustive-deps
 
@@ -103,19 +105,29 @@ export default function SettingsTab({ detail, onSave, onOpenUnits, onToggleStatu
             <motion.section initial={{ opacity: 0, y: 14 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.1 }} className={card}>
                 <h2 className={cardTitle}>دسترسی و قیمت‌گیری</h2>
                 <div className="space-y-4">
-                    {/* نمایانی — سگمنت */}
-                    <div className="grid grid-cols-2 gap-2 rounded-xl bg-stone-50 p-1 dark:bg-gray-950/60">
-                        {([['public', 'عمومی — روی دیوار', Globe], ['unlisted', 'فقط با لینک', Lock]] as const).map(([v, label, Icon]) => (
-                            <button key={v} type="button" onClick={() => setVisibility(v)}
-                                className={`flex h-9 items-center justify-center gap-1.5 rounded-lg text-[11px] font-extrabold transition-all ${
-                                    visibility === v
-                                        ? 'bg-white text-amber-700 shadow-sm dark:bg-gray-800 dark:text-amber-400'
-                                        : 'text-stone-400 hover:text-stone-600 dark:text-gray-500'
-                                }`}>
-                                <Icon className="size-3.5" />
-                                {label}
-                            </button>
-                        ))}
+                    {/* نمایانی — سگمنت سه‌گانه؛ مفهوم هر گزینه یک خط زیرش */}
+                    <div>
+                        <div className="grid grid-cols-3 gap-1.5">
+                            {([['public', 'عمومی', 'روی دیوار همه می‌بینند', Globe],
+                               ['unlisted', 'فقط با لینک', 'بیرون از دیوار', Lock],
+                               ['private', 'خصوصی', 'فقط تامین‌کننده‌های تاییدشده', ShieldCheck]] as const).map(([v, label, hint, Icon]) => (
+                                <button key={v} type="button" onClick={() => setVisibility(v)}
+                                    className={`flex flex-col items-center gap-0.5 rounded-xl border-2 px-2 py-2.5 transition-all ${
+                                        visibility === v
+                                            ? 'border-brand-amber bg-brand-amber-soft/60 dark:bg-amber-500/10'
+                                            : 'border-stone-100 hover:border-stone-200 dark:border-gray-800 dark:hover:border-gray-700'
+                                    }`}>
+                                    <Icon className={`size-4 ${visibility === v ? 'text-amber-600 dark:text-amber-400' : 'text-stone-300 dark:text-gray-600'}`} />
+                                    <span className={`text-[11px] font-black ${visibility === v ? 'text-amber-800 dark:text-amber-300' : 'text-stone-500 dark:text-gray-400'}`}>{label}</span>
+                                    <span className="text-center text-[8.5px] font-bold leading-3 text-stone-400 dark:text-gray-500">{hint}</span>
+                                </button>
+                            ))}
+                        </div>
+                        {visibility === 'private' && (
+                            <p className="mt-2 rounded-xl bg-brand-amber-soft/50 px-3 py-2 text-[10px] font-bold leading-4 text-amber-700 dark:bg-amber-500/5 dark:text-amber-400">
+                                تامین‌کننده‌ها را در تب «تامین‌کنندگان» اضافه کن — دیوار عمومی کاتالوگت را نشان نمی‌دهد
+                            </p>
+                        )}
                     </div>
 
                     {/* ✅ امکان ارسال قیمت برای خریدهای غیر فوری */}

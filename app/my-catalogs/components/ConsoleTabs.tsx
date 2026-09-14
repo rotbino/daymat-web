@@ -12,6 +12,8 @@ import { fmt, Tab } from '../constants';
 export interface ConsoleTabItem {
     key: Tab;
     label: string;
+    /** برچسب کوتاه‌تر موبایل — وقتی برچسب اصلی جا نمی‌شود (مثل «درخواست خریدها» → «خریدها») */
+    mobileLabel?: string;
     icon: any;
     count?: number;
     alert?: number; // ✅ بج قرمز — تعداد موارد در انتظار تعیین تکلیف
@@ -27,7 +29,7 @@ export default function ConsoleTabs({ items, active, onChange }: {
         <div className="pt-1 lg:pt-1.5">
             <nav aria-label="بخش‌های کاتالوگ"
                  className="flex items-stretch">
-                {items.map(({ key, label, icon: Icon, count, alert }) => {
+                {items.map(({ key, label, mobileLabel, icon: Icon, count, alert }) => {
                     const isActive = active === key;
                     return (
                         <button key={key} type="button" onClick={() => onChange(key)} aria-current={isActive ? 'page' : undefined}
@@ -45,7 +47,12 @@ export default function ConsoleTabs({ items, active, onChange }: {
                                 )}
                             </span>
                             <span className="flex items-center gap-1">
-                                {label}
+                                {mobileLabel ? (
+                                    <>
+                                        <span className="lg:hidden">{mobileLabel}</span>
+                                        <span className="hidden lg:inline">{label}</span>
+                                    </>
+                                ) : label}
                                 {typeof count === 'number' && (
                                     <span className={cn('min-w-4 h-4 lg:min-w-5 lg:h-[18px] px-1 lg:px-1.5 rounded-full text-[9px] lg:text-[10px] grid place-items-center transition-colors',
                                         isActive ? 'bg-primary text-on-primary' : 'bg-surface-container-high dark:bg-gray-800 text-on-surface-variant')}>

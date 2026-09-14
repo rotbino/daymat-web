@@ -2,7 +2,8 @@
 // پنل مدیریت کاتالوگ خرید — قرینهٔ کنسول کاتالوگ فروش (/my-catalogs):
 //   انتخاب کسب‌وکار در /inquiries/new انجام می‌شود و کاربر مستقیم به همین پنل می‌آید؛
 //   اقلام قلم‌به‌قلم از همین‌جا اضافه می‌شوند (هر بار یک کالا + تیک اعلام خرید).
-//   تب‌ها: اقلام | پیشنهادها | تنظیمات | انتشار — سوییچر دو-محصولی بالای پنل.
+//   تب‌ها: اقلام | پیشنهادها | تامین‌کنندگان | تنظیمات | انتشار — سوییچر دو-محصولی بالای پنل.
+// ✅ تب «تامین‌کنندگان»: شبکهٔ خرید↔فروش — دعوت/تایید تامین‌کننده‌های کاتالوگ خرید
 'use client';
 
 import React, { useEffect, useMemo, useState } from 'react';
@@ -13,7 +14,7 @@ import { setCurrentInquiry } from '@/lib/store/slices/catalogSlice';
 import { useQuery } from '@tanstack/react-query';
 import { apiService } from '@/lib/api/apiService';
 import {
-    useMyInquiries, useInquiry, useInquiryOffers,
+    useMyInquiries, useInquiry, useInquiryOffers, useInquiryMembers,
     useAddInquiryItem, useUpdateInquiryItem, useRemoveInquiryItem,
     useUpdateInquiry, useUpdateOfferStatus, useDeleteInquiry,
 } from '@/lib/api/apiHooks';
@@ -23,11 +24,12 @@ import InquiryIdentityBar from './components/InquiryIdentityBar';
 import InquiryConsoleTabs from './components/ConsoleTabs';
 import ItemsTab from './components/ItemsTab';
 import OffersTab from './components/OffersTab';
+import MembersTab from './components/MembersTab';
 import SettingsTab from './components/SettingsTab';
 import PublishTab from './components/PublishTab';
 import AddItemSheet from './components/AddItemSheet';
 import UnitSettingsModal from '@/app/ad/components/UnitSettingsModal';
-import { ClipboardList, Package, MessageSquareText, Settings, Globe, Plus, Loader2, PackageSearch } from 'lucide-react';
+import { ClipboardList, Package, MessageSquareText, Settings, Globe, Plus, Loader2, PackageSearch, Handshake } from 'lucide-react';
 import type { InquiryItem } from '@/lib/api/apiTypes';
 
 export default function MyInquiriesPage() {
@@ -71,7 +73,7 @@ export default function MyInquiriesPage() {
     useEffect(() => {
         const sp = new URLSearchParams(window.location.search);
         const t = sp.get('tab');
-        if (t && ['items', 'offers', 'settings', 'publish'].includes(t)) setTab(t);
+        if (t && ['items', 'offers', 'members', 'settings', 'publish'].includes(t)) setTab(t);
         // فقط وقتی ?catalog= هم هست — یعنی از جریان ساخت آمده‌ایم
         if (sp.get('add') === '1' && sp.get('catalog')) {
             const timer = window.setTimeout(() => {
@@ -192,9 +194,13 @@ export default function MyInquiriesPage() {
     };
 
     const pendingOffers = offers.filter((o: any) => o.status === 'pending').length;
+    // ✅ درخواست‌های عضویتِ در انتظار تایید — بج قرمز تب تامین‌کنندگان (سرویس اعضا)
+    const { data: membersData = [] } = useInquiryMembers(isOwner ? currentInquiryId ?? undefined : undefined);
+    const pendingMembers = (membersData as any[]).filter((m) => m.status === 'pending' && m.via === 'supplier_request').length;
     const tabItems = [
         { key: 'items', label: 'اقلام', icon: Package, count: detail?.items?.length },
         { key: 'offers', label: 'پیشنهادها', icon: MessageSquareText, alert: pendingOffers },
+        { key: 'members', label: 'تامین‌کنندگان', icon: Handshake, alert: pendingMembers },
         { key: 'settings', label: 'تنظیمات', icon: Settings },
         { key: 'publish', label: 'انتشار', icon: Globe },
     ];
@@ -282,6 +288,12 @@ export default function MyInquiriesPage() {
                                             busyOfferId={busyOfferId}
                                             onDecide={decideOffer}
                                             onGoPublish={() => setTab('publish')}
+                                        />
+                                    )}
+                                    {tab === 'members' && (
+                                        <MembersTab
+                                            inquiryId={detail.id}
+                                            visibility={detail.visibility || 'public'}
                                         />
                                     )}
                                     {tab === 'settings' && (

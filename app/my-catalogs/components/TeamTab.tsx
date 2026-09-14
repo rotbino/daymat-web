@@ -10,6 +10,7 @@ import { useRouter } from 'next/navigation';
 import {
     Users, UserPlus, MapPin, ShieldCheck, ShieldOff, Trash2, Check, X,
     Loader2, Search, Hourglass, History, LogOut, MoreVertical, ArrowLeftRight, Phone, Handshake,
+    ClipboardList, Truck,
 } from 'lucide-react';
 import { apiService } from '@/lib/api/apiService';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
@@ -189,17 +190,146 @@ export default function TeamTab({ catalogId }: Props) {
     const events: any[] = team.events || [];
     const activeCustomers = customers.filter((c) => c.customerStatus === 'active');
 
-    // فهرست ساده: کادر (مالک/مدیرها) → همکاران فروش (خودم اول) → تامین‌کننده‌ها → سرویس‌دهنده‌ها → خریدارها (خریدار من اول)
-    const ordered = [...staff, ...sellers, ...suppliers, ...services, ...activeCustomers]
-        .map((m: any) => ({
-            ...m,
-            __isMyCustomer: !!team.myRole?.isSeller && m.assignedSellerUserId === team.myRole?.userId,
-            __isMe: m.userId === team.myRole?.userId && !m.isOwner && !m.isAdmin,
-        }))
+    // ✅ سه بخش (بنا بر مدل جدید شبکهٔ خرید↔فروش):
+    //    ۱) خریدارها — از روی کاتالوگ خریدشان (نه فقط کسب‌وکارشان)
+    //    ۲) تیم فروش و مدیریت — فروشنده/بازاریاب/مالک/مدیر
+    //    ۳) تامین‌کننده‌ها و خدمات — لِین کاتالوگ فروش
+    const decorate = (m: any) => ({
+        ...m,
+        __isMyCustomer: !!team.myRole?.isSeller && m.assignedSellerUserId === team.myRole?.userId,
+        __isMe: m.userId === team.myRole?.userId && !m.isOwner && !m.isAdmin,
+    });
+    const buyerRows = activeCustomers.map(decorate)
+        .sort((a: any, b: any) => (a.__isMyCustomer ? 0 : 1) - (b.__isMyCustomer ? 0 : 1));
+    const teamRows = [...staff, ...sellers].map(decorate)
         .sort((a: any, b: any) => {
-            const rank = (m: any) => (m.isOwner ? 0 : m.isAdmin ? 1 : m.__isMe ? 2 : m.sellerStatus === 'active' ? 3 : m.supplierStatus === 'active' ? 4 : m.serviceStatus === 'active' ? 5 : m.__isMyCustomer ? 6 : 7);
+            const rank = (m: any) => (m.isOwner ? 0 : m.isAdmin ? 1 : m.__isMe ? 2 : m.sellerStatus === 'active' ? 3 : 4);
             return rank(a) - rank(b);
         });
+    const supplyRows = [...suppliers, ...services].map(decorate);
+    const rowFor = (m: any) => {
+                const bb = bizBadge(m);
+                const sb = sysBadge(m);
+                const personalSlug = m.supplierCatalog?.slug || m.customerBusiness?.slug || m.sellerBusiness?.slug || m.business?.slug || null;
+                const cityChip = m.sellerRegion || m.memberCity || (m.customerStatus ? m.customerBusiness?.city : null) || null;
+                const menuOpen = menuFor === m.id;
+                return (
+                    <div key={m.id} className={cn(
+                        'flex items-center gap-2.5 p-2.5 rounded-xl transition-colors',
+                        m.__isMyCustomer ? 'bg-primary/5' : 'hover:bg-gray-50 dark:hover:bg-gray-800/50',
+                    )}>
+                        <Avatar url={m.avatarUrl} name={m.fullName} />
+                        <div
+                            className="flex-1 min-w-0 cursor-pointer"
+                            onClick={() => personalSlug && router.push(`/${personalSlug}`)}
+                            title={personalSlug ? 'مشاهده صفحهٔ شخصی' : undefined}
+                        >
+                            <p className="font-bold text-sm text-gray-900 dark:text-gray-100 truncate">{m.fullName || 'بدون نام'}</p>
+                            <p className="text-[11px] text-gray-500 dark:text-gray-400 truncate mt-0.5 flex items-center gap-2">
+                                {(m.customerBusiness?.name || m.sellerBusiness?.name || m.supplierCatalog?.name || m.business?.name) && (
+                                    <span className="truncate">
+                                        {m.supplierCatalog?.name && m.supplierCatalog?.slug ? 'کاتالوگ: ' : ''}
+                                        {m.customerBusiness?.name || m.sellerBusiness?.name || m.supplierCatalog?.name || m.business?.name}
+                                    </span>
+                                )}
+                                {cityChip && (
+                                    <span className="inline-flex items-center gap-0.5 flex-shrink-0 text-gray-400">
+                                        <MapPin className="w-3 h-3" />{cityChip}
+                                    </span>
+                                )}
+                                {/* ✅ کاتالوگ خریدِ خریدار — شبکهٔ خرید↔فروش */}
+                                {(m.purchaseCatalogs?.length ?? 0) > 0 && (
+                                    <span className="inline-flex items-center gap-1 flex-shrink-0 rounded-full bg-brand-amber-soft px-2 py-0.5 text-[9px] font-black text-amber-700 dark:bg-amber-500/10 dark:text-amber-400">
+                                        <ClipboardList className="h-2.5 w-2.5" />
+                                        {m.purchaseCatalogs[0].title}{m.purchaseCatalogs.length > 1 ? ` +${m.purchaseCatalogs.length - 1}` : ''}
+                                    </span>
+                                )}
+                            </p>
+                        </div>
+
+                        {/* نقش بیزینسی */}
+                        <span className={cn(badgeBase, 'w-16 flex-shrink-0', bb?.cls || 'invisible')}>{bb?.text || '—'}</span>
+
+                        {/* منوی مدیریت */}
+                        {canManage && !m.isOwner && (
+                            <div className="relative flex-shrink-0">
+                                <button
+                                    onClick={() => setMenuFor(menuOpen ? null : m.id)}
+                                    className="p-2 rounded-full hover:bg-gray-100 dark:hover:bg-gray-800"
+                                >
+                                    <MoreVertical className="w-4 h-4" />
+                                </button>
+                                {menuOpen && (
+                                    <>
+                                        <div className="fixed inset-0 z-30" onClick={() => setMenuFor(null)} />
+                                        <div className="absolute left-0 top-full mt-1 z-40 w-52 bg-white dark:bg-gray-900 rounded-xl shadow-lg border border-outline-variant/30 py-1.5 text-xs">
+                                            {m.sellerStatus === 'active' && (
+                                                <button
+                                                    onClick={() => { setMenuFor(null); run(`rl-${m.id}`, () => apiService.catalog.team.setSellerRole(catalogId, m.id, m.sellerRole === 'visitor' ? 'seller' : 'visitor')); }}
+                                                    className="w-full flex items-center gap-2 px-3 py-2.5 hover:bg-gray-100 dark:hover:bg-gray-800 text-right"
+                                                >
+                                                    <ArrowLeftRight className="w-3.5 h-3.5" />
+                                                    تبدیل به {m.sellerRole === 'visitor' ? 'فروشنده' : 'ویزیتور'}
+                                                </button>
+                                            )}
+                                            {m.customerStatus === 'active' && (
+                                                <button
+                                                    onClick={() => { setMenuFor(null); setReassignTarget(m); }}
+                                                    className="w-full flex items-center gap-2 px-3 py-2.5 hover:bg-gray-100 dark:hover:bg-gray-800 text-right"
+                                                >
+                                                    <ArrowLeftRight className="w-3.5 h-3.5" />تغییر مسئولِ خریدار
+                                                </button>
+                                            )}
+                                            {m.sellerStatus === 'active' && (canManage || m.__isMe) && (
+                                                <button
+                                                    onClick={() => { setMenuFor(null); setRegionVal(m.sellerRegion || ''); setRegionTarget(m); }}
+                                                    className="w-full flex items-center gap-2 px-3 py-2.5 hover:bg-gray-100 dark:hover:bg-gray-800 text-right"
+                                                >
+                                                    <MapPin className="w-3.5 h-3.5" />{m.sellerRegion ? 'ویرایش منطقهٔ فروش' : 'ثبت منطقهٔ فروش'}
+                                                </button>
+                                            )}
+                                            {!m.isAdmin && (
+                                                <button
+                                                    onClick={() => { setMenuFor(null); run(`adm-${m.id}`, () => apiService.catalog.team.promoteToAdmin(catalogId, m.id), 'به مدیر ارتقا یافت'); }}
+                                                    className="w-full flex items-center gap-2 px-3 py-2.5 hover:bg-gray-100 dark:hover:bg-gray-800 text-right"
+                                                >
+                                                    <ShieldCheck className="w-3.5 h-3.5" />ارتقا به مدیر
+                                                </button>
+                                            )}
+                                            {m.isAdmin && (
+                                                <button
+                                                    onClick={() => { setMenuFor(null); run(`dem-${m.id}`, () => apiService.catalog.team.demoteToMember(catalogId, m.id), 'نقش مدیر گرفته شد'); }}
+                                                    className="w-full flex items-center gap-2 px-3 py-2.5 hover:bg-gray-100 dark:hover:bg-gray-800 text-right"
+                                                >
+                                                    <ShieldOff className="w-3.5 h-3.5" />سلب مدیریت
+                                                </button>
+                                            )}
+                                            <button
+                                                onClick={() => {
+                                                    if (window.confirm(`«${m.fullName}» از اعضا حذف شود؟ مشتری‌هایش بی‌مسئول می‌شوند.`)) {
+                                                        setMenuFor(null);
+                                                        run(`rm-${m.id}`, () => m.sellerStatus === 'active'
+                                                            ? apiService.catalog.team.removeSeller(catalogId, m.id)
+                                                            : m.supplierStatus === 'active'
+                                                                ? apiService.catalog.team.removeSupplier(catalogId, m.id)
+                                                                : apiService.catalog.team.removeCustomer(catalogId, m.id), 'عضو حذف شد');
+                                                    }
+                                                }}
+                                                className="w-full flex items-center gap-2 px-3 py-2.5 hover:bg-red-50 dark:hover:bg-red-900/20 text-red-600 dark:text-red-400 text-right"
+                                            >
+                                                <Trash2 className="w-3.5 h-3.5" />حذف عضو
+                                            </button>
+                                        </div>
+                                    </>
+                                )}
+                            </div>
+                        )}
+
+                        {/* نقش سیستمی */}
+                        <span className={cn(badgeBase, 'w-24 flex-shrink-0', sb?.cls || 'invisible')}>{sb?.text || '—'}</span>
+                    </div>
+                );
+    };
 
     const bizBadge = (m: any) => {
         if (m.__isMyCustomer) return { text: 'خریدار من', cls: 'bg-primary text-on-primary' };
@@ -229,7 +359,7 @@ export default function TeamTab({ catalogId }: Props) {
                 <div className="flex-1 min-w-0">
                     <p className="font-bold text-gray-900 dark:text-gray-100">اعضای کاتالوگ</p>
                     <p className="text-xs text-gray-500 dark:text-gray-400">
-                        {ordered.length.toLocaleString('fa-IR')} عضو · {activeCustomers.length.toLocaleString('fa-IR')} خریدار فعال
+                        {buyerRows.length.toLocaleString('fa-IR')} خریدار فعال
                         {canManage && pendingRequests.length > 0 && ` · ${pendingRequests.length.toLocaleString('fa-IR')} درخواست جدید`}
                     </p>
                 </div>
@@ -353,128 +483,39 @@ export default function TeamTab({ catalogId }: Props) {
                 </div>
             )}
 
-            {/* فهرست سادهٔ اعضا */}
+            {/* ✅ خریدارها — از روی کاتالوگ خریدشان (قلب شبکهٔ خرید↔فروش) */}
             <div className={cn(CARD_CLS, 'p-2')}>
-                {ordered.map((m: any) => {
-                    const bb = bizBadge(m);
-                    const sb = sysBadge(m);
-                    const personalSlug = m.supplierCatalog?.slug || m.customerBusiness?.slug || m.sellerBusiness?.slug || m.business?.slug || null;
-                    const cityChip = m.sellerRegion || m.memberCity || (m.customerStatus ? m.customerBusiness?.city : null) || null;
-                    const menuOpen = menuFor === m.id;
-                    return (
-                        <div key={m.id} className={cn(
-                            'flex items-center gap-2.5 p-2.5 rounded-xl transition-colors',
-                            m.__isMyCustomer ? 'bg-primary/5' : 'hover:bg-gray-50 dark:hover:bg-gray-800/50',
-                        )}>
-                            <Avatar url={m.avatarUrl} name={m.fullName} />
-                            <div
-                                className="flex-1 min-w-0 cursor-pointer"
-                                onClick={() => personalSlug && router.push(`/${personalSlug}`)}
-                                title={personalSlug ? 'مشاهده صفحهٔ شخصی' : undefined}
-                            >
-                                <p className="font-bold text-sm text-gray-900 dark:text-gray-100 truncate">{m.fullName || 'بدون نام'}</p>
-                                <p className="text-[11px] text-gray-500 dark:text-gray-400 truncate mt-0.5 flex items-center gap-2">
-                                    {(m.customerBusiness?.name || m.sellerBusiness?.name || m.supplierCatalog?.name || m.business?.name) && (
-                                        <span className="truncate">
-                                            {m.supplierCatalog?.name && m.supplierCatalog?.slug ? 'کاتالوگ: ' : ''}
-                                            {m.customerBusiness?.name || m.sellerBusiness?.name || m.supplierCatalog?.name || m.business?.name}
-                                        </span>
-                                    )}
-                                    {cityChip && (
-                                        <span className="inline-flex items-center gap-0.5 flex-shrink-0 text-gray-400">
-                                            <MapPin className="w-3 h-3" />{cityChip}
-                                        </span>
-                                    )}
-                                </p>
-                            </div>
-
-                            {/* نقش بیزینسی */}
-                            <span className={cn(badgeBase, 'w-16 flex-shrink-0', bb?.cls || 'invisible')}>{bb?.text || '—'}</span>
-
-                            {/* منوی مدیریت */}
-                            {canManage && !m.isOwner && (
-                                <div className="relative flex-shrink-0">
-                                    <button
-                                        onClick={() => setMenuFor(menuOpen ? null : m.id)}
-                                        className="p-2 rounded-full hover:bg-gray-100 dark:hover:bg-gray-800"
-                                    >
-                                        <MoreVertical className="w-4 h-4" />
-                                    </button>
-                                    {menuOpen && (
-                                        <>
-                                            <div className="fixed inset-0 z-30" onClick={() => setMenuFor(null)} />
-                                            <div className="absolute left-0 top-full mt-1 z-40 w-52 bg-white dark:bg-gray-900 rounded-xl shadow-lg border border-outline-variant/30 py-1.5 text-xs">
-                                                {m.sellerStatus === 'active' && (
-                                                    <button
-                                                        onClick={() => { setMenuFor(null); run(`rl-${m.id}`, () => apiService.catalog.team.setSellerRole(catalogId, m.id, m.sellerRole === 'visitor' ? 'seller' : 'visitor')); }}
-                                                        className="w-full flex items-center gap-2 px-3 py-2.5 hover:bg-gray-100 dark:hover:bg-gray-800 text-right"
-                                                    >
-                                                        <ArrowLeftRight className="w-3.5 h-3.5" />
-                                                        تبدیل به {m.sellerRole === 'visitor' ? 'فروشنده' : 'ویزیتور'}
-                                                    </button>
-                                                )}
-                                                {m.customerStatus === 'active' && (
-                                                    <button
-                                                        onClick={() => { setMenuFor(null); setReassignTarget(m); }}
-                                                        className="w-full flex items-center gap-2 px-3 py-2.5 hover:bg-gray-100 dark:hover:bg-gray-800 text-right"
-                                                    >
-                                                        <ArrowLeftRight className="w-3.5 h-3.5" />تغییر مسئولِ خریدار
-                                                    </button>
-                                                )}
-                                                {m.sellerStatus === 'active' && (canManage || m.__isMe) && (
-                                                    <button
-                                                        onClick={() => { setMenuFor(null); setRegionVal(m.sellerRegion || ''); setRegionTarget(m); }}
-                                                        className="w-full flex items-center gap-2 px-3 py-2.5 hover:bg-gray-100 dark:hover:bg-gray-800 text-right"
-                                                    >
-                                                        <MapPin className="w-3.5 h-3.5" />{m.sellerRegion ? 'ویرایش منطقهٔ فروش' : 'ثبت منطقهٔ فروش'}
-                                                    </button>
-                                                )}
-                                                {!m.isAdmin && (
-                                                    <button
-                                                        onClick={() => { setMenuFor(null); run(`adm-${m.id}`, () => apiService.catalog.team.promoteToAdmin(catalogId, m.id), 'به مدیر ارتقا یافت'); }}
-                                                        className="w-full flex items-center gap-2 px-3 py-2.5 hover:bg-gray-100 dark:hover:bg-gray-800 text-right"
-                                                    >
-                                                        <ShieldCheck className="w-3.5 h-3.5" />ارتقا به مدیر
-                                                    </button>
-                                                )}
-                                                {m.isAdmin && (
-                                                    <button
-                                                        onClick={() => { setMenuFor(null); run(`dem-${m.id}`, () => apiService.catalog.team.demoteToMember(catalogId, m.id), 'نقش مدیر گرفته شد'); }}
-                                                        className="w-full flex items-center gap-2 px-3 py-2.5 hover:bg-gray-100 dark:hover:bg-gray-800 text-right"
-                                                    >
-                                                        <ShieldOff className="w-3.5 h-3.5" />سلب مدیریت
-                                                    </button>
-                                                )}
-                                                <button
-                                                    onClick={() => {
-                                                        if (window.confirm(`«${m.fullName}» از اعضا حذف شود؟ مشتری‌هایش بی‌مسئول می‌شوند.`)) {
-                                                            setMenuFor(null);
-                                                            run(`rm-${m.id}`, () => m.sellerStatus === 'active'
-                                                                ? apiService.catalog.team.removeSeller(catalogId, m.id)
-                                                                : m.supplierStatus === 'active'
-                                                                    ? apiService.catalog.team.removeSupplier(catalogId, m.id)
-                                                                    : apiService.catalog.team.removeCustomer(catalogId, m.id), 'عضو حذف شد');
-                                                        }
-                                                    }}
-                                                    className="w-full flex items-center gap-2 px-3 py-2.5 hover:bg-red-50 dark:hover:bg-red-900/20 text-red-600 dark:text-red-400 text-right"
-                                                >
-                                                    <Trash2 className="w-3.5 h-3.5" />حذف عضو
-                                                </button>
-                                            </div>
-                                        </>
-                                    )}
-                                </div>
-                            )}
-
-                            {/* نقش سیستمی */}
-                            <span className={cn(badgeBase, 'w-24 flex-shrink-0', sb?.cls || 'invisible')}>{sb?.text || '—'}</span>
-                        </div>
-                    );
-                })}
-                {ordered.length === 0 && (
-                    <p className="py-6 text-center text-sm text-gray-400">هنوز عضوی در کاتالوگ نیست</p>
+                <p className="flex items-center gap-1.5 px-2 pt-2 pb-1 text-[11px] font-black text-primary">
+                    <Handshake className="h-3.5 w-3.5" />
+                    خریدارها — با کاتالوگ خریدشان
+                </p>
+                {buyerRows.map((m: any) => <React.Fragment key={m.id}>{rowFor(m)}</React.Fragment>)}
+                {buyerRows.length === 0 && (
+                    <p className="py-6 text-center text-sm text-gray-400">هنوز خریداری ثبت نشده — از «درخواست ارتباط» ثبت کن</p>
                 )}
             </div>
+
+            {/* تیم فروش و مدیریت — فروشنده/بازاریاب/مالک/مدیر */}
+            {(teamRows.length > 0) && (
+                <div className={cn(CARD_CLS, 'p-2')}>
+                    <p className="flex items-center gap-1.5 px-2 pt-2 pb-1 text-[11px] font-black text-emerald-700 dark:text-emerald-400">
+                        <Users className="h-3.5 w-3.5" />
+                        تیم فروش و مدیریت
+                    </p>
+                    {teamRows.map((m: any) => <React.Fragment key={m.id}>{rowFor(m)}</React.Fragment>)}
+                </div>
+            )}
+
+            {/* تامین‌کننده‌ها و خدمات — لِین کاتالوگ فروش */}
+            {(supplyRows.length > 0) && (
+                <div className={cn(CARD_CLS, 'p-2')}>
+                    <p className="flex items-center gap-1.5 px-2 pt-2 pb-1 text-[11px] font-black text-sky-700 dark:text-sky-400">
+                        <Truck className="h-3.5 w-3.5" />
+                        تامین‌کننده‌ها و خدمات
+                    </p>
+                    {supplyRows.map((m: any) => <React.Fragment key={m.id}>{rowFor(m)}</React.Fragment>)}
+                </div>
+            )}
 
             {/* خروج خودِ عضوِ فروش */}
             {team.myRole?.isSeller && !isOwner && (

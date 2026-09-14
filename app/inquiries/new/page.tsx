@@ -16,7 +16,7 @@ import { setCurrentInquiry } from '@/lib/store/slices/catalogSlice';
 import { useMyBusinesses, useCreateInquiry, useMyInquiries } from '@/lib/api/apiHooks';
 import { toast } from 'sonner';
 import BusinessSelector from '@/app/components/BusinessSelector';
-import { ClipboardList, Loader2, Megaphone, Send, Building2 } from 'lucide-react';
+import { ClipboardList, Loader2, Megaphone, Send, Building2, Globe, Lock } from 'lucide-react';
 
 const fadeUp = (delay = 0) => ({
     initial: { opacity: 0, y: 18 },
@@ -32,6 +32,7 @@ export default function NewInquiryPage() {
     const hydrated = _hydrated !== false;
 
     const [biz, setBiz] = useState<any | null>(null);
+    const [visibility, setVisibility] = useState<'public' | 'private'>('public');
     const [submitting, setSubmitting] = useState(false);
     const bizRef = useRef<HTMLDivElement | null>(null);
 
@@ -94,7 +95,7 @@ export default function NewInquiryPage() {
             const res = await create.mutateAsync({
                 title: `کاتالوگ خرید ${biz.name || ''}`.trim().slice(0, 140),
                 businessId: biz.id,
-                visibility: 'public',
+                visibility,
             });
             toast.success('کاتالوگ خریدت ساخته شد — حالا قلم‌ها رو اضافه کن');
             dispatch(setCurrentInquiry(res.id));
@@ -152,6 +153,24 @@ export default function NewInquiryPage() {
                             exit={{ opacity: 0, y: 14 }}
                             transition={{ duration: 0.3 }}
                             className="mt-5">
+                            {/* نمایانی — مفهومش به خود خریدار گفته می‌شود (دو گزینه، یک خط) */}
+                            <div className="mb-3 grid grid-cols-2 gap-2">
+                                {([['public', 'عمومی', 'اعلام خریدهایت همه می‌بینند', Globe],
+                                   ['private', 'خصوصی', 'فقط تامین‌کننده‌های تاییدشده', Lock]] as const).map(([v, label, hint, Icon]) => (
+                                    <button key={v} type="button" onClick={() => setVisibility(v)}
+                                        className={`flex items-center gap-2 rounded-2xl border-2 p-3 text-right transition-all ${
+                                            visibility === v
+                                                ? 'border-brand-amber bg-brand-amber-soft/60 dark:bg-amber-500/10'
+                                                : 'border-stone-100 hover:border-stone-200 dark:border-gray-800 dark:hover:border-gray-700'
+                                        }`}>
+                                        <Icon className={`size-4 shrink-0 ${visibility === v ? 'text-amber-600 dark:text-amber-400' : 'text-stone-300 dark:text-gray-600'}`} />
+                                        <span className="min-w-0">
+                                            <span className={`block text-[12px] font-black ${visibility === v ? 'text-amber-800 dark:text-amber-300' : 'text-stone-600 dark:text-gray-300'}`}>{label}</span>
+                                            <span className="block text-[9px] font-bold leading-3 text-stone-400 dark:text-gray-500">{hint}</span>
+                                        </span>
+                                    </button>
+                                ))}
+                            </div>
                             <motion.button
                                 whileTap={{ scale: 0.97 }}
                                 onClick={submit}

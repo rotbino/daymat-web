@@ -1862,3 +1862,66 @@ export const useRemoveInquiryItem = () => {
         },
     });
 };
+
+// ─── اعضای کاتالوگ خرید — تامین‌کننده‌های تاییدشده (شبکهٔ خرید↔فروش) ───
+
+/** فهرست تامین‌کننده‌های یک کاتالوگ خرید (مالک) */
+export const useInquiryMembers = (inquiryId?: string) => {
+    const { hasAccess } = useAuthState();
+    return useQuery({
+        queryKey: ['inquiry', 'members', inquiryId],
+        queryFn: () => apiService.inquiry.getMembers(inquiryId!),
+        enabled: !!inquiryId && hasAccess,
+        staleTime: 20 * 1000,
+    });
+};
+
+/** دعوت تامین‌کننده توسط خریدار */
+export const useAddInquiryMember = () => {
+    const qc = useQueryClient();
+    return useMutation({
+        mutationFn: ({ inquiryId, catalogId, note }: { inquiryId: string; catalogId: string; note?: string }) =>
+            apiService.inquiry.addMember(inquiryId, { catalogId, note }),
+        onSuccess: (_res, vars) => {
+            qc.invalidateQueries({ queryKey: ['inquiry', 'members', vars.inquiryId] });
+        },
+    });
+};
+
+/** درخواست عضویت تامین‌کننده با کاتالوگ فروشش (از گیت صفحهٔ عمومی) */
+export const useRequestInquiryAccess = () => {
+    const qc = useQueryClient();
+    return useMutation({
+        mutationFn: ({ inquiryId, catalogId, note }: { inquiryId: string; catalogId: string; note?: string }) =>
+            apiService.inquiry.requestAccess(inquiryId, { catalogId, note }),
+        onSuccess: () => {
+            qc.invalidateQueries({ queryKey: ['inquiry-opportunities'] });
+            qc.invalidateQueries({ queryKey: ['notifications'] });
+        },
+    });
+};
+
+/** تایید/رد/حذف عضو — بج اعلان‌ها هم باطل می‌شود */
+export const useDecideInquiryMember = () => {
+    const qc = useQueryClient();
+    return useMutation({
+        mutationFn: ({ inquiryId, memberId, status }: { inquiryId: string; memberId: string; status: 'active' | 'declined' | 'removed' }) =>
+            apiService.inquiry.decideMember(inquiryId, memberId, status),
+        onSuccess: (_res, vars) => {
+            qc.invalidateQueries({ queryKey: ['inquiry', 'members', vars.inquiryId] });
+            qc.invalidateQueries({ queryKey: ['inquiry-opportunities'] });
+            qc.invalidateQueries({ queryKey: ['notifications'] });
+        },
+    });
+};
+
+/** فرصت‌های فروش تامین‌کننده — دعوت‌ها + اعلام خریدهای فوری (تب «درخواست خریدها» پنل فروش) */
+export const useInquiryOpportunities = () => {
+    const { hasAccess } = useAuthState();
+    return useQuery({
+        queryKey: ['inquiry-opportunities'],
+        queryFn: () => apiService.inquiry.opportunities(),
+        enabled: hasAccess,
+        staleTime: 30 * 1000,
+    });
+};

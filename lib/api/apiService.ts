@@ -1438,6 +1438,35 @@ export const apiService = {
         /** پیشنهادهایی که من فرستاده‌ام */
         myOffers: (): Promise<InquiryOffer[]> =>
             apiRequest('/inquiry/my-offers'),
+
+        // ─── اعضای کاتالوگ خرید — تامین‌کننده‌های تاییدشده (شبکهٔ خرید↔فروش) ───
+        /** فهرست تامین‌کننده‌های این کاتالوگ خرید (مالک) */
+        getMembers: (inquiryId: string): Promise<any[]> =>
+            apiRequest(`/inquiry/${inquiryId}/members`),
+
+        /** جست‌وجوی کاتالوگ فروش برای دعوت تامین‌کننده (مالک) */
+        supplierCandidates: (inquiryId: string, q?: string): Promise<{ items: any[] }> =>
+            apiRequest(`/inquiry/${inquiryId}/supplier-candidates${q?.trim() ? `?q=${encodeURIComponent(q.trim())}` : ''}`),
+
+        /** دعوت تامین‌کننده توسط خریدار — تایید نهایی با تامین‌کننده */
+        addMember: (inquiryId: string, data: { catalogId: string; note?: string }): Promise<any> =>
+            apiRequest(`/inquiry/${inquiryId}/members`, { method: 'POST', data }),
+
+        /** درخواست عضویت تامین‌کننده با کاتالوگ فروشش — تایید با خریدار */
+        requestAccess: (inquiryId: string, data: { catalogId: string; note?: string }): Promise<any> =>
+            apiRequest(`/inquiry/${inquiryId}/request-access`, { method: 'POST', data }),
+
+        /** تایید/رد/حذف عضو — نقش مجاز بسته به مسیر دعوت/درخواست */
+        decideMember: (inquiryId: string, memberId: string, status: 'active' | 'declined' | 'removed'): Promise<any> =>
+            apiRequest(`/inquiry/${inquiryId}/members/${memberId}`, { method: 'PATCH', data: { status } }),
+
+        /** حذف عضو (خریدار) یا خروج (خود تامین‌کننده) */
+        removeMember: (inquiryId: string, memberId: string): Promise<any> =>
+            apiRequest(`/inquiry/${inquiryId}/members/${memberId}`, { method: 'DELETE' }),
+
+        /** فرصت‌های فروش تامین‌کننده — دعوت‌ها + اعلام خریدهای فوریِ کاتالوگ‌های خریدِ عضوش */
+        opportunities: (): Promise<{ catalogs: any[]; invitations: any[]; requests: any[]; leads: any[] }> =>
+            apiRequest('/inquiry/opportunities'),
     },
 
 };

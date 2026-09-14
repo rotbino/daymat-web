@@ -12,7 +12,7 @@ export default function PublishTab({ slug, id, title, visibility }: {
     slug?: string | null;
     id: string;
     title: string;
-    visibility: 'public' | 'unlisted';
+    visibility: 'public' | 'unlisted' | 'private';
 }) {
     const [copied, setCopied] = useState(false);
     const url = typeof window !== 'undefined' ? `${window.location.origin}/inquiries/${slug || id}` : `/inquiries/${slug || id}`;
@@ -91,12 +91,18 @@ export default function PublishTab({ slug, id, title, visibility }: {
                         : <Lock className="mt-0.5 size-4 shrink-0 text-stone-400" />}
                     <div className="min-w-0 flex-1">
                         <p className="text-xs font-extrabold text-stone-700 dark:text-gray-200">
-                            {visibility === 'public' ? 'کاتالوگت روی دیوار عمومی هم دیده می‌شه' : 'این کاتالوگ فقط با لینک دیده می‌شه'}
+                            {visibility === 'public'
+                                ? 'کاتالوگت روی دیوار عمومی هم دیده می‌شه'
+                                : visibility === 'private'
+                                    ? 'این کاتالوگ خصوصیه — فقط تامین‌کننده‌های تاییدشده می‌بینن'
+                                    : 'این کاتالوگ فقط با لینک دیده می‌شه'}
                         </p>
                         <p className="mt-0.5 text-[11px] font-bold leading-5 text-stone-400 dark:text-gray-500">
                             {visibility === 'public'
                                 ? 'تامین‌کننده‌ها توی دیوار کاتالوگ‌های خرید هم پیداش می‌کنن.'
-                                : 'برای دیده‌شدن روی دیوار، از تنظیمات عمومی‌ش کن.'}
+                                : visibility === 'private'
+                                    ? 'اعلام خریدهات فقط دست اعضای تب «تامین‌کنندگان» می‌رسه.'
+                                    : 'برای دیده‌شدن روی دیوار، از تنظیمات عمومی‌ش کن.'}
                         </p>
                     </div>
                 </div>

@@ -16,10 +16,11 @@ import { apiService } from '@/lib/api/apiService';
 import {
     useArms, useMyUncategorized, useSetOwnAdCategory,
     useCatalogPendingSummary, useMyPendingApprovals, useMyInquiries,
+    useInquiryOpportunities,
 } from '@/lib/api/apiHooks';
 import { toast } from 'sonner';
 import { cn } from '@/lib/utils';
-import { BarChart3, Globe, IdCard, Loader2, Package, Users, Hourglass, Check, X } from 'lucide-react';
+import { BarChart3, Globe, IdCard, Loader2, Package, Users, Hourglass, Check, X, Megaphone } from 'lucide-react';
 
 import UnitSettingsModal from '@/app/ad/components/UnitSettingsModal';
 import CategorySettingsModal from '@/app/ad/components/CategorySettingsModal';
@@ -38,6 +39,7 @@ import ProductsTab from './components/ProductsTab';
 import PublishTab from './components/PublishTab';
 import StatsTab from './components/StatsTab';
 import TeamTab from './components/TeamTab';
+import LeadsTab from './components/LeadsTab';
 import CatalogCategoryModal from './components/CatalogCategoryModal';
 import CatalogEditModal from './CatalogEditModal';
 import PublishToMarketModal from './PublishToMarketModal';
@@ -78,6 +80,10 @@ export default function MyCatalogsContent() {
         queryFn: () => apiService.catalog.getAll(),
         staleTime: 60_000,
     });
+
+    // ✅ شبکهٔ خرید↔فروش — دعوت‌های در انتظار پذیرش (بج قرمز تب «درخواست خریدها»)
+    const { data: oppsData } = useInquiryOpportunities();
+    const pendingInvites = (oppsData?.invitations ?? []).length;
 
     // ✅ بج قرمز برگهٔ اعضا + کارت «در انتظار تایید شما» — چرخهٔ عضویت
     const { data: pendingSummary } = useCatalogPendingSummary();
@@ -238,10 +244,11 @@ export default function MyCatalogsContent() {
         if (tab === 'profile' || tab === 'publish' || tab === 'stats') setTab('team');
     }, [isTeamEntry, teamMode, tab]);
 
-    // ✅ دیپ‌لینک اعلان‌ها — ?tab=team (مثلاً «بررسی درخواست‌های فروشندگی»)
+    // ✅ دیپ‌لینک اعلان‌ها — ?tab=team (بررسی درخواست‌های فروشندگی) و ?tab=leads (دعوت به تامین‌کنندگی)
     useEffect(() => {
-        if (new URLSearchParams(window.location.search).get('tab') === 'team') {
-            setTab('team');
+        const t = new URLSearchParams(window.location.search).get('tab');
+        if (t === 'team' || t === 'leads') {
+            setTab(t as Tab);
             window.history.replaceState({}, '', '/my-catalogs');
         }
     }, []);
@@ -344,6 +351,7 @@ export default function MyCatalogsContent() {
         : [
               { key: 'products' as Tab, label: 'محصولات', icon: Package, count: products.length },
               { key: 'team' as Tab, label: 'اعضا', icon: Users, alert: pendingTotal },
+              { key: 'leads' as Tab, label: 'درخواست خریدها', mobileLabel: 'خریدها', icon: Megaphone, alert: pendingInvites },
               { key: 'profile' as Tab, label: 'مشخصات', icon: IdCard },
               { key: 'stats' as Tab, label: 'آمار', icon: BarChart3 },
               { key: 'publish' as Tab, label: 'انتشار', icon: Globe, count: memberships.length > 0 ? memberships.length : undefined },
@@ -491,6 +499,11 @@ export default function MyCatalogsContent() {
                 {/* تب اعضا — مالک/مدیر/عضوِ فروش (بازار پخش) */}
                 {tab === 'team' && (
                     <TeamTab catalogId={currentCatalog.id} />
+                )}
+
+                {/* ✅ تب درخواست خریدها — شبکهٔ خرید↔فروش از سمت تامین‌کننده */}
+                {tab === 'leads' && (
+                    <LeadsTab />
                 )}
 
                 {/* تب انتشار */}

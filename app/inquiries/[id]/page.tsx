@@ -13,14 +13,18 @@ import { motion, AnimatePresence } from 'framer-motion';
 import { createPortal } from 'react-dom';
 import { useSelector } from 'react-redux';
 import { RootState } from '@/lib/store/store';
-import { useInquiry, useAddOffer, useUpdateOfferStatus, useUpdateInquiry, useDeleteInquiry } from '@/lib/api/apiHooks';
+import { useInquiry, useAddOffer, useUpdateOfferStatus, useUpdateInquiry, useDeleteInquiry, useRequestInquiryAccess } from '@/lib/api/apiHooks';
+import { apiService } from '@/lib/api/apiService';
+import { useQuery } from '@tanstack/react-query';
 import { toast } from 'sonner';
 import {
     ClipboardList, MapPin, Clock, User, Share2, Check, Loader2,
     Send, Package, Store, Eye, Trash2, Ban, RotateCcw, MessageSquareText,
     Truck, Wallet, ExternalLink, Phone, Megaphone, PackageSearch, X, Settings,
+    Lock, Handshake,
 } from 'lucide-react';
 import { faNum, faPrice, faTimeAgo, faDeadlineLeft, STATUS_FA, STATUS_CHIP } from '../utils';
+import OfferSheet from '@/app/components/OfferSheet';
 
 const fadeUp = (delay = 0) => ({
     initial: { opacity: 0, y: 18 },
@@ -29,137 +33,6 @@ const fadeUp = (delay = 0) => ({
     transition: { duration: 0.45, delay, ease: 'easeOut' as const },
 });
 
-const BASIS_OPTIONS = ['جمع کل', 'هر کیلو', 'هر عدد', 'هر کارتن', 'هر متر'];
-
-/** شیت ثبت پیشنهاد قیمت — برای یک قلم یا کل لیست */
-function OfferSheet({ inquiry, item, onClose }: {
-    inquiry: any;
-    item: { id?: string; name: string; quantity?: number | null; unit?: string | null } | null;
-    onClose: () => void;
-}) {
-    const addOffer = useAddOffer();
-    const [price, setPrice] = useState('');
-    const [basis, setBasis] = useState('جمع کل');
-    const [days, setDays] = useState('');
-    const [message, setMessage] = useState('');
-    const [phone, setPhone] = useState('');
-    const [sending, setSending] = useState(false);
-    const [mounted, setMounted] = useState(false);
-    useEffect(() => setMounted(true), []);
-
-    const submit = async () => {
-        const p = Number((price || '').replace(/[^\d.]/g, ''));
-        if (!p || p <= 0) {
-            toast.error('مبلغ پیشنهاد را بنویس');
-            return;
-        }
-        setSending(true);
-        try {
-            await addOffer.mutateAsync({
-                inquiryId: inquiry.id,
-                data: {
-                    itemId: item?.id,
-                    price: p,
-                    priceBasis: basis || undefined,
-                    deliveryDays: days ? Number(days.replace(/[^\d]/g, '')) : undefined,
-                    message: message.trim() || undefined,
-                    contactPhone: phone.trim() || undefined,
-                },
-            });
-            toast.success('پیشنهادت ثبت شد — خریدار می‌بینتش');
-            onClose();
-        } catch (e: any) {
-            toast.error(e?.response?.data?.message || 'ثبت پیشنهاد ناموفق بود');
-        } finally {
-            setSending(false);
-        }
-    };
-
-    if (!mounted) return null;
-    return createPortal(
-        <AnimatePresence>
-            {item && (
-                <div className="fixed inset-0 z-[85] flex items-end sm:items-center justify-center sm:p-4">
-                    <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}
-                        className="absolute inset-0 bg-black/50" onClick={sending ? undefined : onClose} />
-                    <motion.div
-                        initial={{ y: 60, opacity: 0 }} animate={{ y: 0, opacity: 1 }} exit={{ y: 60, opacity: 0 }}
-                        transition={{ type: 'spring', stiffness: 320, damping: 32 }}
-                        className="relative w-full sm:max-w-md max-h-[92dvh] overflow-y-auto scrollbar-slim
-                            rounded-t-3xl sm:rounded-2xl bg-white dark:bg-gray-900 shadow-2xl">
-                        <div className="sticky top-0 z-10 flex items-center justify-between border-b border-stone-100 bg-white/95 px-5 py-3.5 backdrop-blur dark:border-gray-800 dark:bg-gray-900/95">
-                            <h2 className="flex items-center gap-2 text-[15px] font-black">
-                                <Store className="size-4 text-brand-amber" />
-                                قیمتت رو بذار
-                            </h2>
-                            <button onClick={onClose} aria-label="بستن"
-                                className="grid size-8 place-items-center rounded-full text-stone-400 transition-colors hover:bg-stone-100 dark:hover:bg-gray-800">
-                                <X className="size-4" />
-                            </button>
-                        </div>
-
-                        <div className="px-5 py-4">
-                            {/* زمینهٔ قلم */}
-                            <div className="rounded-2xl border border-brand-amber-tint bg-brand-amber-soft/50 px-4 py-3 dark:bg-amber-500/10">
-                                <p className="text-sm font-extrabold text-amber-800 dark:text-amber-300">
-                                    {item.id ? item.name : 'کل لیست خرید'}
-                                </p>
-                                {(item.quantity || item.unit) && (
-                                    <p className="mt-0.5 text-[11px] font-bold text-amber-700/80 dark:text-amber-400/80">
-                                        {item.quantity ? faNum(item.quantity) : ''} {item.unit}
-                                    </p>
-                                )}
-                            </div>
-
-                            <div className="mt-4 space-y-3">
-                                <div className="grid grid-cols-2 gap-2">
-                                    <div className="col-span-2 sm:col-span-1">
-                                        <label className="mb-1 block text-[11px] font-extrabold text-stone-400">مبلغ (تومان)</label>
-                                        <input value={price} onChange={(e) => setPrice(e.target.value)} inputMode="numeric"
-                                            placeholder="مثلاً ۲٬۵۰۰٬۰۰۰"
-                                            className="h-11 w-full rounded-xl border border-stone-100 bg-stone-50 px-3 text-sm font-bold outline-none focus:border-brand-amber dark:border-gray-800 dark:bg-gray-950/60 dark:text-gray-100" />
-                                    </div>
-                                    <div className="col-span-2 sm:col-span-1">
-                                        <label className="mb-1 block text-[11px] font-extrabold text-stone-400">مبنا</label>
-                                        <select value={basis} onChange={(e) => setBasis(e.target.value)}
-                                            className="h-11 w-full rounded-xl border border-stone-100 bg-stone-50 px-3 text-sm font-bold outline-none focus:border-brand-amber dark:border-gray-800 dark:bg-gray-950/60 dark:text-gray-100 dark:[color-scheme:dark]">
-                                            {BASIS_OPTIONS.map((b) => <option key={b} value={b}>{b}</option>)}
-                                        </select>
-                                    </div>
-                                </div>
-                                <div>
-                                    <label className="mb-1 block text-[11px] font-extrabold text-stone-400">زمان تحویل (روز — اختیاری)</label>
-                                    <input value={days} onChange={(e) => setDays(e.target.value)} inputMode="numeric" placeholder="مثلاً ۳"
-                                        className="h-11 w-full rounded-xl border border-stone-100 bg-stone-50 px-3 text-sm outline-none focus:border-brand-amber dark:border-gray-800 dark:bg-gray-950/60 dark:text-gray-100" />
-                                </div>
-                                <div>
-                                    <label className="mb-1 block text-[11px] font-extrabold text-stone-400">پیام به خریدار (اختیاری)</label>
-                                    <textarea value={message} onChange={(e) => setMessage(e.target.value)} rows={2}
-                                        placeholder="مثلاً: تحویل درب انبار، فاکتور رسمی داریم"
-                                        className="w-full rounded-xl border border-stone-100 bg-stone-50 px-3 py-2 text-sm outline-none focus:border-brand-amber dark:border-gray-800 dark:bg-gray-950/60 dark:text-gray-100" />
-                                </div>
-                                <div>
-                                    <label className="mb-1 block text-[11px] font-extrabold text-stone-400">تلفن تماس (اختیاری)</label>
-                                    <input value={phone} onChange={(e) => setPhone(e.target.value)} inputMode="tel" dir="ltr" placeholder="۰۹۱۲…"
-                                        className="h-11 w-full rounded-xl border border-stone-100 bg-stone-50 px-3 text-sm outline-none focus:border-brand-amber dark:border-gray-800 dark:bg-gray-950/60 dark:text-gray-100" />
-                                </div>
-                                <motion.button
-                                    whileTap={{ scale: 0.97 }}
-                                    disabled={sending}
-                                    onClick={submit}
-                                    className="flex h-12 w-full items-center justify-center gap-2 rounded-full bg-brand-amber text-sm font-extrabold text-white shadow-lg shadow-brand-amber/30 transition-colors hover:bg-brand-amber-strong disabled:opacity-50">
-                                    {sending ? <Loader2 className="size-4 animate-spin" /> : <Send className="size-4" />}
-                                    ثبت پیشنهاد قیمت
-                                </motion.button>
-                            </div>
-                        </div>
-                    </motion.div>
-                </div>
-            )}
-        </AnimatePresence>,
-        document.body,
-    );
-}
 
 export default function InquiryDetailPage({ params }: { params: Promise<{ id: string }> }) {
     const { id } = use(params);
@@ -256,6 +129,11 @@ export default function InquiryDetailPage({ params }: { params: Promise<{ id: st
                 </div>
             </div>
         );
+    }
+
+    // ✅ گیت کاتالوگ خصوصی — فقط تامین‌کننده‌های تاییدشده محتوایش را می‌بینند
+    if ((inquiry as any).limited) {
+        return <PrivateGate inquiry={inquiry as any} onDone={() => refetch()} />;
     }
 
     return (
@@ -595,6 +473,100 @@ export default function InquiryDetailPage({ params }: { params: Promise<{ id: st
 
             {/* شیت ثبت پیشنهاد */}
             <OfferSheet inquiry={inquiry} item={offerTarget} onClose={() => setOfferTarget(null)} />
+        </div>
+    );
+}
+
+// ═══ گیت کاتالوگ خصوصی — فقط تامین‌کننده‌های تاییدشده وارد می‌شوند؛ بقیه درخواست عضویت می‌دهند ═══
+function PrivateGate({ inquiry, onDone }: { inquiry: any; onDone: () => void }) {
+    const isAuthenticated = useSelector((s: RootState) => s.auth.isAuthenticated);
+    const requestAccess = useRequestInquiryAccess();
+
+    // کاتالوگ‌های فروش من — برای درخواست عضویت
+    const { data: catalogsRaw, isLoading: catsLoading } = useQuery({
+        queryKey: ['catalogs'],
+        queryFn: () => apiService.catalog.getAll(),
+        enabled: isAuthenticated,
+        staleTime: 60_000,
+    });
+    const myCatalogs: any[] = catalogsRaw ?? [];
+    const [catalogId, setCatalogId] = useState<string>('');
+    const requested = !!requestAccess.isSuccess;
+
+    const send = async () => {
+        if (!catalogId) return;
+        try {
+            await requestAccess.mutateAsync({ inquiryId: inquiry.id, catalogId });
+            toast.success('درخواستت ثبت شد — منتظر تایید خریدار باش');
+            onDone();
+        } catch (e: any) {
+            toast.error(e?.response?.data?.message || 'ارسال درخواست ناموفق بود');
+        }
+    };
+
+    const loginHref = `/login?redirect=${encodeURIComponent(`/inquiries/${inquiry.slug || inquiry.id}`)}`;
+
+    return (
+        <div className="grid min-h-screen place-items-center bg-[#FFFDF7] px-4 dark:bg-gray-950">
+            <motion.div {...fadeUp()} className="w-full max-w-md rounded-3xl border-2 border-brand-amber-tint bg-white p-7 text-center shadow-sm dark:bg-gray-900">
+                <span className="mx-auto grid size-14 place-items-center rounded-2xl bg-brand-amber-soft dark:bg-amber-500/10">
+                    <Lock className="size-6 text-amber-600 dark:text-amber-400" />
+                </span>
+                <h1 className="mt-4 text-lg font-black">کاتالوگ خرید خصوصی</h1>
+                {inquiry.title && <p className="mt-1 text-sm font-bold text-stone-500 dark:text-gray-400">«{inquiry.title}»</p>}
+                <p className="mx-auto mt-3 max-w-xs text-[12px] font-bold leading-6 text-stone-500 dark:text-gray-400">
+                    فقط تامین‌کننده‌های تاییدشده محتوایش را می‌بینند — با کاتالوگ فروشت درخواست بده
+                </p>
+
+                {!isAuthenticated ? (
+                    <Link href={loginHref}
+                        className="mt-5 inline-flex h-12 items-center gap-2 rounded-full bg-brand-amber px-8 text-sm font-extrabold text-white shadow-lg shadow-brand-amber/25 transition-colors hover:bg-brand-amber-strong">
+                        <Handshake className="size-4" />
+                        ورود و درخواست عضویت
+                    </Link>
+                ) : requested ? (
+                    <p className="mt-5 rounded-2xl bg-emerald-50 px-4 py-3 text-[12px] font-extrabold text-emerald-700 dark:bg-emerald-900/20 dark:text-emerald-300">
+                        درخواستت ثبت شد — به‌محض تایید، اعلام خریدها اینجا می‌آید
+                    </p>
+                ) : catsLoading ? (
+                    <Loader2 className="mx-auto mt-5 size-5 animate-spin text-stone-300" />
+                ) : myCatalogs.length === 0 ? (
+                    <>
+                        <p className="mt-5 text-[12px] font-bold text-stone-500 dark:text-gray-400">اول یک کاتالوگ فروش بساز</p>
+                        <Link href="/business/register"
+                            className="mt-3 inline-flex h-11 items-center gap-2 rounded-full bg-brand-amber px-6 text-sm font-extrabold text-white transition-colors hover:bg-brand-amber-strong">
+                            ساخت کاتالوگ فروش
+                        </Link>
+                    </>
+                ) : (
+                    <>
+                        <div className="mt-5 max-h-44 space-y-1.5 overflow-y-auto pl-1 text-right">
+                            {myCatalogs.map((c: any) => (
+                                <button key={c.id} type="button" onClick={() => setCatalogId(c.id)}
+                                    className={`flex w-full items-center gap-2 rounded-xl border-2 p-2.5 text-right transition-all ${
+                                        catalogId === c.id
+                                            ? 'border-brand-amber bg-brand-amber-soft/50 dark:bg-amber-500/10'
+                                            : 'border-stone-100 hover:border-stone-200 dark:border-gray-800'
+                                    }`}>
+                                    <span className="grid size-8 shrink-0 place-items-center overflow-hidden rounded-lg bg-stone-100 dark:bg-gray-800">
+                                        {c.logoUrl
+                                            ? // eslint-disable-next-line @next/next/no-img-element
+                                              <img src={c.logoUrl} alt="" className="size-full object-cover" />
+                                            : <Store className="size-3.5 text-stone-400" />}
+                                    </span>
+                                    <span className="min-w-0 flex-1 truncate text-[12px] font-black text-stone-800 dark:text-gray-200">{c.name}</span>
+                                    {catalogId === c.id && <Check className="size-4 shrink-0 text-amber-600 dark:text-amber-400" />}
+                                </button>
+                            ))}
+                        </div>
+                        <motion.button whileTap={{ scale: 0.97 }} disabled={!catalogId || requestAccess.isPending} onClick={send}
+                            className="mt-4 flex h-12 w-full items-center justify-center gap-2 rounded-full bg-brand-amber text-sm font-extrabold text-white shadow-lg shadow-brand-amber/25 transition-colors hover:bg-brand-amber-strong disabled:opacity-50">
+                            {requestAccess.isPending ? <Loader2 className="size-4 animate-spin" /> : <Handshake className="size-4" />}
+                            درخواست تامین‌کنندگی
+                        </motion.button>
+                    </>
+                )}
+            </motion.div>
         </div>
     );
 }

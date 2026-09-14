@@ -14,10 +14,12 @@ import {
   ArrowDown,
   Eye,
   ArrowLeft,
+  BellRing,
   CheckCircle2,
   ClipboardList,
   Handshake,
   Link2,
+  Megaphone,
   Milk,
   Package,
   Plus,
@@ -557,6 +559,68 @@ export default function Landing() {
                 cta="کاتالوگ خرید بساز"
                 href={wallHref}
               />
+            </div>
+          </section>
+
+          {/* ----------------------- network: خرید ↔ فروش ----------------------- */}
+          <section aria-label="شبکهٔ خرید و فروش" className="mx-auto max-w-6xl px-4 py-14 sm:px-6">
+            <motion.div {...fadeUp()} className="mx-auto max-w-2xl text-center">
+              <span className="text-sm font-black text-stone-400 dark:text-gray-500">فقط یه کاتالوگ ساده نیست</span>
+              <h2 className="mt-2 text-3xl font-black leading-snug sm:text-4xl">
+                کاتالوگ‌ها به هم{' '}
+                <span className="text-brand-red">وصل</span> می‌شن
+              </h2>
+              <p className="mt-4 leading-8 text-stone-600 dark:text-gray-400">
+                خریدار تامین‌کننده‌هاش را از روی کاتالوگ فروششان به کاتالوگ خریدش اضافه می‌کند؛
+                هر وقت چیزی فوری لازم داشت، اعلام خریدش مستقیم دست همان‌ها می‌رسد.
+              </p>
+            </motion.div>
+
+            <div className="mx-auto mt-10 max-w-4xl space-y-3">
+              {[
+                {
+                  icon: Megaphone,
+                  tone: 'amber' as const,
+                  title: 'خریدار اعلام می‌کند',
+                  desc: 'قلم را می‌نویسی، تیک «اعلام خرید» را می‌زنی — بالای کاتالوگت می‌نشیند.',
+                },
+                {
+                  icon: BellRing,
+                  tone: 'red' as const,
+                  title: 'تامین‌کنندهٔ تاییدشده فوری می‌فهمد',
+                  desc: 'اعلام خرید در تب «درخواست خریدها»ی پنل فروشش می‌آید و اعلان می‌گیرد.',
+                },
+                {
+                  icon: Handshake,
+                  tone: 'amber' as const,
+                  title: 'قیمت‌ها همان‌جا رد و بدل می‌شود',
+                  desc: 'روی هر قلم قیمت می‌دهی؛ خریدار پیشنهادها را کنار هم می‌بیند و انتخاب می‌کند.',
+                },
+              ].map((s, i) => (
+                <motion.div
+                  key={s.title}
+                  {...fadeUp(0.05 * (i + 1))}
+                  className={`flex items-center gap-4 rounded-2xl border-2 p-4 sm:p-5 ${
+                    s.tone === 'amber'
+                      ? 'border-brand-amber-tint bg-brand-amber-soft/40 dark:bg-amber-500/5'
+                      : 'border-brand-red-tint bg-brand-red-soft/40 dark:bg-red-500/5'
+                  }`}
+                >
+                  <span
+                    className={`grid size-11 shrink-0 place-items-center rounded-xl ${
+                      s.tone === 'amber'
+                        ? 'bg-brand-amber text-white'
+                        : 'bg-brand-red text-white'
+                    }`}
+                  >
+                    <s.icon className="size-5" />
+                  </span>
+                  <div className="min-w-0">
+                    <p className="text-[15px] font-black text-stone-900 dark:text-gray-100">{s.title}</p>
+                    <p className="mt-0.5 text-[12px] font-bold leading-6 text-stone-500 dark:text-gray-400">{s.desc}</p>
+                  </div>
+                </motion.div>
+              ))}
             </div>
           </section>
 

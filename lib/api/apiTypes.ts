@@ -814,7 +814,7 @@ export interface InquiryBase {
     description?: string | null;
     slug?: string | null;
     businessId?: string | null;
-    visibility: 'public' | 'unlisted';
+    visibility: 'public' | 'unlisted' | 'private';
     status: 'open' | 'closed' | 'archived';
     deadline?: string | null;
     province?: string | null;
@@ -899,7 +899,7 @@ export interface CreateInquiryPayload {
     title: string;
     description?: string;
     items?: CreateInquiryItemPayload[];
-    visibility?: 'public' | 'unlisted';
+    visibility?: 'public' | 'unlisted' | 'private';
     deadline?: string;
     slug?: string;
     province?: string;
