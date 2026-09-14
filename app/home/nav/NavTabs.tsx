@@ -10,7 +10,7 @@ import { BookOpen, User, Tags, ShoppingCart, Bell } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { useNavMode } from './useNavMode';
 import { useUnreadNotifications } from './useUnreadNotifications';
-import { NAV, NavItemDef, boardHref } from './config';
+import { NAV, MOBILE_NAV_ITEMS, NavItemDef, boardHref } from './config';
 import ArmSwitcher from '@/components/ArmSwitcher';
 import { LocationFilter } from '@/app/components/LocationFilter';
 import HeaderMenu from '@/app/components/HeaderMenu';
@@ -239,25 +239,25 @@ export default function NavTabs({ guestMarketSlug }: { guestMarketSlug?: string 
                 </div>
             </nav>
 
-            {/* ═══ موبایل — نوار پایین ۵تایی ═══ */}
-            <MobileBottomNav currentSlug={currentSlug} pathname={p} unread={unread} />
+            {/* ═══ موبایل — نوار پایین ۴تایی (اعلان بالای سایت است، اینجا نیست) ═══ */}
+            <MobileBottomNav currentSlug={currentSlug} pathname={p} />
         </>
     );
 }
 
-// ─── نوار پایین موبایل (۵ آیتم ثابت) ───
-function MobileBottomNav({ currentSlug, pathname, unread }: {
-    currentSlug: string | null; pathname: string; unread: number;
+// ─── نوار پایین موبایل (۴ آیتم — اعلان بالای سایت است و اینجا تکرار نمی‌شود) ───
+function MobileBottomNav({ currentSlug, pathname }: {
+    currentSlug: string | null; pathname: string;
 }) {
     const { loading } = useNavMode();
     if (loading) return null;
-    const items = NAV.member;
+    const items = MOBILE_NAV_ITEMS;
 
     return (
         <nav className="lg:hidden fixed bottom-0 inset-x-0 z-50 bg-white/95 dark:bg-gray-900/95 backdrop-blur-md
             border-t border-outline-variant/20 dark:border-gray-800 pb-[env(safe-area-inset-bottom)]
             shadow-[0_-2px_12px_rgba(0,0,0,0.06)] dark:shadow-[0_-2px_12px_rgba(0,0,0,0.4)]">
-            <div className="grid grid-cols-5 max-w-lg mx-auto">
+            <div className="grid grid-cols-4 max-w-lg mx-auto">
                 {items.map((item) => {
                     const active = navActive(item.key, pathname, currentSlug);
                     const href = item.key === 'sellers' ? boardHref(currentSlug, 'price')
@@ -269,11 +269,8 @@ function MobileBottomNav({ currentSlug, pathname, unread }: {
                                   item.key === 'buyers'
                                       ? 'text-amber-700 dark:text-amber-400'
                                       : 'text-primary')}>
-                            <span className="relative">
-                                <item.icon className="w-[22px] h-[22px] stroke-[2.4]" />
-                                {item.key === 'notifications' && <NotifBadge count={unread} />}
-                            </span>
-                            <span className="text-[9px] font-extrabold">{item.label}</span>
+                            <item.icon className="w-[23px] h-[23px] stroke-[2.4]" />
+                            <span className="text-[10px] font-extrabold">{item.label}</span>
                             <span className={cn('absolute top-0 inset-x-5 h-[3px] rounded-b-full',
                                 item.key === 'buyers' ? 'bg-amber-500' : 'bg-primary')} />
                         </span>
@@ -281,11 +278,8 @@ function MobileBottomNav({ currentSlug, pathname, unread }: {
                         <Link key={item.key} href={href} scroll={false}
                               className="relative flex flex-col items-center justify-center py-2.5 gap-0.5
                                   text-on-surface-variant/70 hover:text-primary active:scale-95 transition-all">
-                            <span className="relative">
-                                <item.icon className="w-[22px] h-[22px]" />
-                                {item.key === 'notifications' && <NotifBadge count={unread} />}
-                            </span>
-                            <span className="text-[9px] font-bold">{item.label}</span>
+                            <item.icon className="w-[23px] h-[23px]" />
+                            <span className="text-[10px] font-bold">{item.label}</span>
                         </Link>
                     );
                 })}

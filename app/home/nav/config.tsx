@@ -49,3 +49,7 @@ export const NAV: Record<NavMode, NavItemDef[]> = {
     'catalog-owner': NAV_ITEMS,
     member: NAV_ITEMS,
 };
+
+// ✅ فوتر موبایل — ۴ آیتم؛ «اعلان» نیست چون همیشه بالای سایت است (MobileHeader)
+//    دسکتاپ همان NAV است — زنگوله در هدر دسکتاپ سر جایش می‌ماند.
+export const MOBILE_NAV_ITEMS: NavItemDef[] = NAV_ITEMS.filter((i) => i.key !== 'notifications');
