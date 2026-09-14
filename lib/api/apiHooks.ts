@@ -14,6 +14,7 @@ import {
     UploadFileResponse,
     DeleteFileResponse,
     CreateInquiryPayload,
+    CreateInquiryItemPayload,
     CreateOfferPayload,
 } from './apiTypes';
 import { toast } from 'sonner';
@@ -1806,6 +1807,58 @@ export const useUpdateOfferStatus = () => {
         onSuccess: () => {
             qc.invalidateQueries({ queryKey: ['inquiry'] });
             qc.invalidateQueries({ queryKey: ['inquiries', 'my-offers'] });
+        },
+    });
+};
+
+// ─── قلم‌به‌قلم (پنل کاتالوگ خرید) ───
+
+/** پیشنهادهای دریافتی یک کاتالوگ خرید (فقط مالک) — پنل */
+export const useInquiryOffers = (inquiryId?: string) => {
+    const { hasAccess } = useAuthState();
+    return useQuery({
+        queryKey: ['inquiry', 'offers', inquiryId],
+        queryFn: () => apiService.inquiry.getOffers(inquiryId!),
+        enabled: !!inquiryId && hasAccess,
+        staleTime: 30 * 1000,
+    });
+};
+
+/** افزودن یک قلم به کاتالوگ خرید */
+export const useAddInquiryItem = () => {
+    const qc = useQueryClient();
+    return useMutation({
+        mutationFn: ({ inquiryId, data }: { inquiryId: string; data: CreateInquiryItemPayload }) =>
+            apiService.inquiry.addItem(inquiryId, data),
+        onSuccess: (_res, vars) => {
+            qc.invalidateQueries({ queryKey: ['inquiry', 'detail', vars.inquiryId] });
+            qc.invalidateQueries({ queryKey: ['inquiries', 'mine'] });
+        },
+    });
+};
+
+/** ویرایش یک قلم — شامل تاگل اعلام خرید */
+export const useUpdateInquiryItem = () => {
+    const qc = useQueryClient();
+    return useMutation({
+        mutationFn: ({ inquiryId, itemId, data }: { inquiryId: string; itemId: string; data: Partial<CreateInquiryItemPayload> }) =>
+            apiService.inquiry.updateItem(inquiryId, itemId, data),
+        onSuccess: (_res, vars) => {
+            qc.invalidateQueries({ queryKey: ['inquiry', 'detail', vars.inquiryId] });
+            qc.invalidateQueries({ queryKey: ['inquiries', 'mine'] });
+        },
+    });
+};
+
+/** حذف یک قلم */
+export const useRemoveInquiryItem = () => {
+    const qc = useQueryClient();
+    return useMutation({
+        mutationFn: ({ inquiryId, itemId }: { inquiryId: string; itemId: string }) =>
+            apiService.inquiry.removeItem(inquiryId, itemId),
+        onSuccess: (_res, vars) => {
+            qc.invalidateQueries({ queryKey: ['inquiry', 'detail', vars.inquiryId] });
+            qc.invalidateQueries({ queryKey: ['inquiries', 'mine'] });
         },
     });
 };

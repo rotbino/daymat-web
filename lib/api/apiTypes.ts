@@ -779,6 +779,8 @@ export interface InquiryItem {
     id: string;
     inquiryId: string;
     name: string;
+    referenceItemId?: string | null;   // ✅ کالای مرجع
+    unitId?: string | null;            // ✅ واحد از مرجع واحد
     quantity?: number | null;
     unit?: string | null;
     brand?: string | null;
@@ -787,6 +789,9 @@ export interface InquiryItem {
     referenceUrl?: string | null;
     note?: string | null;
     order: number;
+    /** ✅ اعلام خرید فعال — بالای کاتالوگ عمومی در «درخواست‌های خرید جاری» */
+    urgent?: boolean | null;
+    urgentAt?: string | null;
     createdAt: string;
 }
 
@@ -821,6 +826,10 @@ export interface InquiryBase {
     tags: string[];
     viewCount: number;
     offerCount: number;
+    /** ✅ امکان ارسال قیمت برای خریدهای غیر فوری (سایر کالاها) — تنظیمات کاتالوگ خرید */
+    allowNonUrgentOffers?: boolean;
+    /** ✅ واحدهای اختصاصی کاتالوگ خرید — [{ unitId }] */
+    units?: InquiryUnitPayload[] | null;
     createdAt: string;
     updatedAt: string;
     owner?: InquiryOwnerBrief;
@@ -850,6 +859,8 @@ export interface InquiryOffer {
     id: string;
     inquiryId: string;
     itemId?: string | null;
+    /** ✅ نام قلم در لحظهٔ ثبت (اسنپ‌شات) */
+    itemName?: string | null;
     offererUserId: string;
     offerer?: InquiryOwnerBrief & { phone?: string | null };
     businessId?: string | null;
@@ -881,6 +892,7 @@ export interface CreateInquiryItemPayload {
     imageUrl?: string | null;
     referenceUrl?: string | null;
     note?: string | null;
+    urgent?: boolean;                  // ✅ اعلام خرید فعال
 }
 
 export interface CreateInquiryPayload {
@@ -899,6 +911,7 @@ export interface CreateInquiryPayload {
     tags?: string[];
     businessId?: string;
     units?: InquiryUnitPayload[];      // ✅ واحدهای اختصاصی کاتالوگ خرید (مثل کاتالوگ فروش)
+    allowNonUrgentOffers?: boolean;    // ✅ امکان ارسال قیمت برای خریدهای غیر فوری
 }
 
 export interface CreateOfferPayload {

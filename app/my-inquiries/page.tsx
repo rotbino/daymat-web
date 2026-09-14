@@ -1,77 +1,93 @@
 // app/my-inquiries/page.tsx
-// کاتالوگ‌های خرید من — مدیریت لیست‌های استعلام (محصول دوم دیمت)
+// پنل مدیریت کاتالوگ خرید — قرینهٔ کنسول کاتالوگ فروش (/my-catalogs):
+//   انتخاب کسب‌وکار در /inquiries/new انجام می‌شود و کاربر مستقیم به همین پنل می‌آید؛
+//   اقلام قلم‌به‌قلم از همین‌جا اضافه می‌شوند (هر بار یک کالا + تیک اعلام خرید).
+//   تب‌ها: اقلام | پیشنهادها | تنظیمات | انتشار — سوییچر دو-محصولی بالای پنل.
 'use client';
 
-import React, { useEffect, useRef, useState } from 'react';
-import Link from 'next/link';
+import React, { useEffect, useMemo, useState } from 'react';
 import { useRouter } from 'next/navigation';
-import { motion, AnimatePresence } from 'framer-motion';
 import { useDispatch, useSelector } from 'react-redux';
 import { RootState } from '@/lib/store/store';
 import { setCurrentInquiry } from '@/lib/store/slices/catalogSlice';
 import { useQuery } from '@tanstack/react-query';
 import { apiService } from '@/lib/api/apiService';
-import { useMyInquiries, useUpdateInquiry, useDeleteInquiry } from '@/lib/api/apiHooks';
+import {
+    useMyInquiries, useInquiry, useInquiryOffers,
+    useAddInquiryItem, useUpdateInquiryItem, useRemoveInquiryItem,
+    useUpdateInquiry, useUpdateOfferStatus, useDeleteInquiry,
+} from '@/lib/api/apiHooks';
 import { toast } from 'sonner';
 import NavTabs from '@/app/home/nav/NavTabs';
 import InquiryIdentityBar from './components/InquiryIdentityBar';
+import InquiryConsoleTabs from './components/ConsoleTabs';
+import ItemsTab from './components/ItemsTab';
+import OffersTab from './components/OffersTab';
+import SettingsTab from './components/SettingsTab';
+import PublishTab from './components/PublishTab';
+import AddItemSheet from './components/AddItemSheet';
 import UnitSettingsModal from '@/app/ad/components/UnitSettingsModal';
-import {
-    ClipboardList, Plus, MapPin, Clock, Users, Loader2,
-    Ban, RotateCcw, Trash2, ArrowLeft, PackageSearch, Eye, Boxes,
-} from 'lucide-react';
-import { faNum, faTimeAgo, faDeadlineLeft, STATUS_FA, STATUS_CHIP } from '../inquiries/utils';
-
-const fadeUp = (delay = 0) => ({
-    initial: { opacity: 0, y: 20 },
-    whileInView: { opacity: 1, y: 0 },
-    viewport: { once: true, margin: '-40px' as const },
-    transition: { duration: 0.5, delay, ease: 'easeOut' as const },
-});
+import { ClipboardList, Package, MessageSquareText, Settings, Globe, Plus, Loader2, PackageSearch } from 'lucide-react';
+import type { InquiryItem } from '@/lib/api/apiTypes';
 
 export default function MyInquiriesPage() {
     const router = useRouter();
     const dispatch = useDispatch();
     const { isAuthenticated, _hydrated } = useSelector((s: RootState) => s.auth) as any;
     const hydrated = _hydrated !== false;
-    // «کاتالوگ خرید کارنت» — پرسیست؛ با رفرش هم سرجاش می‌مونه (درخواست کاربر)
+    // «کاتالوگ خرید کارنت» — پرسیست؛ با رفرش هم سرجاش می‌ماند
     const currentInquiryId = useSelector((s: RootState) => s.catalog.currentInquiryId);
 
+    const [tab, setTab] = useState<string>('items');
+    const [sheetOpen, setSheetOpen] = useState(false);
+    const [editItem, setEditItem] = useState<InquiryItem | null>(null);
+    const [busyItemId, setBusyItemId] = useState<string | null>(null);
+    const [busyOfferId, setBusyOfferId] = useState<string | null>(null);
+    const [unitsOpen, setUnitsOpen] = useState(false);
+
     const { data: items, isLoading } = useMyInquiries();
-    const updateInquiry = useUpdateInquiry();
-    const deleteInquiry = useDeleteInquiry();
-    const [busyId, setBusyId] = useState<string | null>(null);
-    const cardRefs = useRef<Record<string, HTMLDivElement | null>>({});
-    // ✅ واحدهای اختصاصی کاتالوگ خرید — مثل کاتالوگ فروش (درخواست کاربر)
-    const [unitsTarget, setUnitsTarget] = useState<any | null>(null);
-
-    // کاتالوگ‌های فروش — برای سوییچر دو-محصولی (همان کشِ مشترک کنسول فروش)
-    const { data: catalogsRaw } = useQuery({
-        queryKey: ['catalogs'],
-        queryFn: () => apiService.catalog.getAll(),
-        enabled: hydrated && isAuthenticated,
-        staleTime: 60_000,
-    });
-    const salesCatalogs: any[] = (catalogsRaw ?? []).filter((c: any) => c.status === 'active');
     const list: any[] = items ?? [];
+    const currentRow = useMemo(() => list.find((w) => w.id === currentInquiryId) || null, [list, currentInquiryId]);
 
-    // انتخاب خودکار: اولویت ۱) ?catalog= لینک عمیق ۲) پرسیست ۳) اولین لیست
-    // (نکتهٔ پرسیست کهنه: اگر id قبلی حذف شده باشد، اولین لیست انتخاب می‌شود)
+    // جزئیات کاتالوگ کارنت (اقلام + isOwner)
+    const { data: detail, isLoading: detailLoading, refetch: refetchDetail } = useInquiry(currentInquiryId ?? undefined);
+    const isOwner = !!detail?.isOwner;
+
+    // پیشنهادهای دریافتی — فقط مالک (شمارش پیشنهاد هر قلم + تب پیشنهادها)
+    const { data: offers = [], isLoading: offersLoading, refetch: refetchOffers } = useInquiryOffers(isOwner ? currentInquiryId ?? undefined : undefined);
+
+    // انتخاب خودکار: ?catalog= لینک عمیق → پرسیست → اولین لیست
     useEffect(() => {
         if (isLoading || list.length === 0) return;
         if (currentInquiryId && list.some((w) => w.id === currentInquiryId)) return;
         const fromUrl = new URLSearchParams(window.location.search).get('catalog');
         const picked = fromUrl && list.some((w) => w.id === fromUrl) ? fromUrl : list[0].id;
         dispatch(setCurrentInquiry(picked));
-        if (fromUrl) {
-            window.history.replaceState({}, '', '/my-inquiries');
-            window.setTimeout(() => cardRefs.current[picked]?.scrollIntoView({ behavior: 'smooth', block: 'center' }), 400);
-        }
+        if (fromUrl) window.history.replaceState({}, '', '/my-inquiries');
         // eslint-disable-next-line react-hooks/exhaustive-deps
     }, [isLoading, list, currentInquiryId]);
 
+    // لینک عمیق تب + ?add=1 (بعد از ساخت کاتالوگ جدید مستقیم شیت افزودن باز می‌شود)
     useEffect(() => {
-        document.title = 'کاتالوگ‌های خرید من | دیمت';
+        const sp = new URLSearchParams(window.location.search);
+        const t = sp.get('tab');
+        if (t && ['items', 'offers', 'settings', 'publish'].includes(t)) setTab(t);
+        // فقط وقتی ?catalog= هم هست — یعنی از جریان ساخت آمده‌ایم
+        if (sp.get('add') === '1' && sp.get('catalog')) {
+            const timer = window.setTimeout(() => {
+                setEditItem(null);
+                setSheetOpen(true);
+            }, 350);
+            sp.delete('add');
+            const rest = sp.toString();
+            window.history.replaceState({}, '', '/my-inquiries' + (rest ? `?${rest}` : ''));
+            return () => window.clearTimeout(timer);
+        }
+        // eslint-disable-next-line react-hooks/exhaustive-deps
+    }, []);
+
+    useEffect(() => {
+        document.title = 'پنل کاتالوگ خرید | دیمت';
     }, []);
 
     useEffect(() => {
@@ -80,39 +96,108 @@ export default function MyInquiriesPage() {
         }
     }, [hydrated, isAuthenticated, router]);
 
-    const toggleStatus = async (id: string, current: string) => {
-        setBusyId(id);
+    // ─── جهش‌ها ───
+    const updateInquiry = useUpdateInquiry();
+    const updateItem = useUpdateInquiryItem();
+    const removeItem = useRemoveInquiryItem();
+    const updateOfferStatus = useUpdateOfferStatus();
+    const deleteInquiry = useDeleteInquiry();
+
+    const toggleUrgent = async (item: InquiryItem) => {
+        if (!currentInquiryId) return;
+        setBusyItemId(item.id);
         try {
-            await updateInquiry.mutateAsync({ id, data: { status: current === 'open' ? 'closed' : 'open' } });
-            toast.success(current === 'open' ? 'لیست بسته شد' : 'لیست باز شد');
+            await updateItem.mutateAsync({
+                inquiryId: currentInquiryId,
+                itemId: item.id,
+                data: { urgent: !item.urgent },
+            });
+            toast.success(item.urgent ? 'اعلام خرید این قلم تمام شد' : 'اعلام خرید فعال شد — تامین‌کننده‌ها قیمت می‌دن');
         } catch (e: any) {
             toast.error(e?.response?.data?.message || 'تغییر وضعیت ناموفق بود');
         } finally {
-            setBusyId(null);
+            setBusyItemId(null);
         }
     };
 
-    const remove = async (id: string) => {
-        if (!window.confirm('این کاتالوگ خرید برای همیشه حذف شود؟')) return;
-        setBusyId(id);
+    const deleteItem = async (item: InquiryItem) => {
+        if (!currentInquiryId || !window.confirm(`قلم «${item.name}» حذف شود؟`)) return;
+        setBusyItemId(item.id);
         try {
-            await deleteInquiry.mutateAsync(id);
-            toast.success('حذف شد');
+            await removeItem.mutateAsync({ inquiryId: currentInquiryId, itemId: item.id });
+            toast.success('قلم حذف شد');
         } catch (e: any) {
             toast.error(e?.response?.data?.message || 'حذف ناموفق بود');
         } finally {
-            setBusyId(null);
+            setBusyItemId(null);
         }
     };
 
-    // انتخاب از سوییچر — خرید: همین صفحه (پرسیست + اسکرول) | فروش: پرش به کنسول کاتالوگ فروش
+    const decideOffer = async (offerId: string, status: 'accepted' | 'rejected') => {
+        setBusyOfferId(offerId);
+        try {
+            await updateOfferStatus.mutateAsync({ offerId, status });
+            toast.success(status === 'accepted' ? 'پیشنهاد پذیرفته شد' : 'پیشنهاد رد شد');
+            refetchOffers();
+            refetchDetail();
+        } catch (e: any) {
+            toast.error(e?.response?.data?.message || 'تغییر وضعیت ناموفق بود');
+        } finally {
+            setBusyOfferId(null);
+        }
+    };
+
+    const toggleStatus = async () => {
+        if (!currentRow) return;
+        const next = currentRow.status === 'open' ? 'closed' : 'open';
+        try {
+            await updateInquiry.mutateAsync({ id: currentRow.id, data: { status: next } });
+            toast.success(next === 'open' ? 'کاتالوگ خرید باز شد' : 'کاتالوگ خرید بسته شد');
+        } catch (e: any) {
+            toast.error(e?.response?.data?.message || 'تغییر وضعیت ناموفق بود');
+        }
+    };
+
+    const removeCatalog = async () => {
+        if (!currentRow || !window.confirm('این کاتالوگ خرید برای همیشه حذف شود؟')) return;
+        try {
+            await deleteInquiry.mutateAsync(currentRow.id);
+            toast.success('حذف شد');
+            dispatch(setCurrentInquiry(null));
+        } catch (e: any) {
+            toast.error(e?.response?.data?.message || 'حذف ناموفق بود');
+        }
+    };
+
+    const saveSettings = async (data: Record<string, any>) => {
+        if (!currentInquiryId) return;
+        await updateInquiry.mutateAsync({ id: currentInquiryId, data }).then(() => refetchDetail());
+    };
+
+    // سوییچر دو-محصولی — کاتالوگ‌های فروش با کش مشترک کنسول فروش
+    const { data: catalogsRaw } = useQuery({
+        queryKey: ['catalogs'],
+        queryFn: () => apiService.catalog.getAll(),
+        enabled: hydrated && isAuthenticated,
+        staleTime: 60_000,
+    });
+    const salesCatalogs: any[] = (catalogsRaw ?? []).filter((c: any) => c.status === 'active');
+
     const selectInquiry = (id: string) => {
         dispatch(setCurrentInquiry(id));
-        window.setTimeout(() => cardRefs.current[id]?.scrollIntoView({ behavior: 'smooth', block: 'center' }), 150);
+        setTab('items');
     };
     const selectSalesCatalog = (id: string) => {
         router.push(`/my-catalogs?catalog=${id}`);
     };
+
+    const pendingOffers = offers.filter((o: any) => o.status === 'pending').length;
+    const tabItems = [
+        { key: 'items', label: 'اقلام', icon: Package, count: detail?.items?.length },
+        { key: 'offers', label: 'پیشنهادها', icon: MessageSquareText, alert: pendingOffers },
+        { key: 'settings', label: 'تنظیمات', icon: Settings },
+        { key: 'publish', label: 'انتشار', icon: Globe },
+    ];
 
     if (!hydrated || !isAuthenticated) {
         return (
@@ -126,171 +211,130 @@ export default function MyInquiriesPage() {
         <div className="min-h-screen bg-gradient-to-b from-surface via-surface to-surface-container-low/40
             dark:from-gray-950 dark:via-gray-950 dark:to-gray-900/40 pb-24">
             <NavTabs />
-            <main className="mx-auto max-w-4xl px-4 md:pt-6">
-                {/* سرآیند */}
-                <motion.div {...fadeUp()} className="mb-5 flex flex-wrap items-center justify-between gap-3">
-                    <div>
-                        <h1 className="flex items-center gap-2 text-xl font-black sm:text-2xl">
-                            <span className="grid size-9 place-items-center rounded-xl bg-brand-amber-soft text-amber-600 dark:text-amber-400">
-                                <ClipboardList className="size-5" />
-                            </span>
-                            کاتالوگ‌های خرید من
-                        </h1>
-                        <p className="mt-1 text-xs text-stone-400 dark:text-gray-500">
-                            لیست‌های خریدت اینجان؛ لینک هر کدوم رو بده تامین‌کننده‌ها تا قیمت بدن.
-                        </p>
-                    </div>
-                    <Link href="/inquiries/new"
-                        className="flex h-11 items-center gap-2 rounded-full bg-brand-amber px-5 text-sm font-extrabold text-white shadow-lg shadow-brand-amber/30 transition-colors hover:bg-brand-amber-strong">
-                        <Plus className="size-4" />
-                        کاتالوگ خرید جدید
-                    </Link>
-                </motion.div>
-
-                {/* سوییچر دو-محصولی — کاتالوگ کارنت خرید با پرسیست (درخواست کاربر) */}
-                {!isLoading && list.length > 0 && (
-                    <motion.div {...fadeUp(0.05)} className="mb-4">
-                        <InquiryIdentityBar
-                            inquiries={list}
-                            catalogs={salesCatalogs}
-                            currentInquiryId={currentInquiryId}
-                            onSelectInquiry={selectInquiry}
-                            onSelectCatalog={selectSalesCatalog}
-                            onNew={() => router.push('/inquiries/new')}
-                        />
-                    </motion.div>
-                )}
-
-                {/* لیست */}
+            <main className="mx-auto max-w-3xl px-4 md:pt-6">
                 {isLoading ? (
-                    <div className="grid gap-3">
-                        {Array.from({ length: 3 }).map((_, i) => (
-                            <div key={i} className="h-28 animate-pulse rounded-3xl bg-white/70 dark:bg-gray-900/70" />
-                        ))}
+                    <div className="grid gap-3 pt-4">
+                        {[0, 1].map((i) => <div key={i} className="h-28 animate-pulse rounded-3xl bg-white/70 dark:bg-gray-900/70" />)}
                     </div>
-                ) : (items ?? []).length === 0 ? (
-                    <motion.div {...fadeUp(0.1)} className="flex flex-col items-center gap-4 rounded-3xl border-2 border-dashed border-brand-amber-tint bg-white px-6 py-16 text-center dark:bg-gray-900">
+                ) : list.length === 0 ? (
+                    <div className="flex flex-col items-center gap-4 rounded-3xl border-2 border-dashed border-brand-amber-tint bg-white px-6 py-16 text-center dark:bg-gray-900">
                         <span className="grid size-16 place-items-center rounded-full bg-brand-amber-soft text-amber-500">
                             <PackageSearch className="size-8" />
                         </span>
                         <div>
                             <h3 className="text-lg font-black">هنوز کاتالوگ خریدی نساختی</h3>
                             <p className="mt-1 text-sm text-stone-500 dark:text-gray-400">
-                                لیست خریدت رو بنویس — از چند قلم ساده شروع کن، تامین‌کننده‌ها قیمت می‌دن.
+                                اول کسب‌وکار رو انتخاب کن — بقیه‌ش اینجاست.
                             </p>
                         </div>
-                        <Link href="/inquiries/new"
+                        <a href="/inquiries/new"
                             className="flex h-11 items-center gap-2 rounded-full bg-brand-amber px-6 text-sm font-extrabold text-white shadow-lg shadow-brand-amber/30 transition-colors hover:bg-brand-amber-strong">
                             <Plus className="size-4" />
-                            ساخت اولین کاتالوگ خرید
-                        </Link>
-                    </motion.div>
-                ) : (
-                    <div className="grid gap-3">
-                        <AnimatePresence>
-                            {(items ?? []).map((w, i) => {
-                                const dl = faDeadlineLeft(w.deadline);
-                                const busy = busyId === w.id;
-                                return (
-                                    <motion.div
-                                        key={w.id}
-                                        ref={(el) => { cardRefs.current[w.id] = el; }}
-                                        layout
-                                        initial={{ opacity: 0, y: 16 }}
-                                        animate={{ opacity: 1, y: 0 }}
-                                        exit={{ opacity: 0, scale: 0.97 }}
-                                        transition={{ delay: Math.min(i, 8) * 0.04 }}
-                                        className={`rounded-3xl border-2 bg-white p-4 shadow-sm transition-colors dark:bg-gray-900 sm:p-5 ${
-                                            w.id === currentInquiryId
-                                                ? 'border-brand-amber ring-2 ring-brand-amber/25'
-                                                : 'border-stone-100 hover:border-brand-amber-tint dark:border-gray-800'
-                                        }`}>
-                                        <div className="flex items-start justify-between gap-3">
-                                            <Link href={`/inquiries/${w.slug || w.id}`} className="group min-w-0 flex-1">
-                                                <div className="flex items-center gap-2">
-                                                    <h3 className="truncate text-base font-black text-stone-900 transition-colors group-hover:text-amber-700 dark:text-gray-100 dark:group-hover:text-amber-400">
-                                                        {w.title}
-                                                    </h3>
-                                                    {w.id === currentInquiryId && (
-                                                        <span className="shrink-0 rounded-full bg-brand-amber px-2 py-0.5 text-[9px] font-black text-white">
-                                                            کاتالوگ کارنت
-                                                        </span>
-                                                    )}
-                                                    <span className={`shrink-0 rounded-full px-2 py-0.5 text-[10px] font-extrabold ${STATUS_CHIP[w.status] ?? ''}`}>
-                                                        {STATUS_FA[w.status]}
-                                                    </span>
-                                                    {w.visibility === 'unlisted' && (
-                                                        <span className="shrink-0 rounded-full bg-stone-100 px-2 py-0.5 text-[10px] font-bold text-stone-400 dark:bg-gray-800">
-                                                            فقط با لینک
-                                                        </span>
-                                                    )}
-                                                </div>
-                                                <div className="mt-1.5 flex flex-wrap items-center gap-x-4 gap-y-1 text-[11px] font-bold text-stone-400 dark:text-gray-500">
-                                                    <span>{faNum(w._count?.items)} قلم</span>
-                                                    {w.city && <span className="flex items-center gap-1"><MapPin className="size-3" /> {w.city}</span>}
-                                                    {dl && (
-                                                        <span className={`flex items-center gap-1 ${dl.urgent ? 'text-red-500 dark:text-red-400' : ''}`}>
-                                                            <Clock className="size-3" /> {dl.text}
-                                                        </span>
-                                                    )}
-                                                    <span className="flex items-center gap-1 text-amber-600 dark:text-amber-400">
-                                                        <Users className="size-3" /> {faNum(w.offerCount)} پیشنهاد
-                                                    </span>
-                                                    <span>{faTimeAgo(w.createdAt)}</span>
-                                                </div>
-                                            </Link>
-
-                                            {/* اکشن‌ها */}
-                                            <div className="flex shrink-0 items-center gap-1">
-                                                <button onClick={() => setUnitsTarget(w)} aria-label="واحدهای این لیست" title="واحدهای این لیست خرید"
-                                                    className="grid size-9 place-items-center rounded-xl text-stone-400 transition-colors hover:bg-brand-amber-soft hover:text-amber-600">
-                                                    <Boxes className="size-4" />
-                                                </button>
-                                                <Link href={`/inquiries/${w.slug || w.id}`} aria-label="مشاهده"
-                                                    className="grid size-9 place-items-center rounded-xl text-stone-400 transition-colors hover:bg-brand-amber-soft hover:text-amber-600">
-                                                    <Eye className="size-4" />
-                                                </Link>
-                                                <button onClick={() => toggleStatus(w.id, w.status)} disabled={busy} aria-label={w.status === 'open' ? 'بستن' : 'بازکردن'}
-                                                    className="grid size-9 place-items-center rounded-xl text-stone-400 transition-colors hover:bg-stone-100 hover:text-stone-700 disabled:opacity-40 dark:hover:bg-gray-800 dark:hover:text-gray-200">
-                                                    {busy ? <Loader2 className="size-4 animate-spin" /> : w.status === 'open' ? <Ban className="size-4" /> : <RotateCcw className="size-4" />}
-                                                </button>
-                                                <button onClick={() => remove(w.id)} disabled={busy} aria-label="حذف"
-                                                    className="grid size-9 place-items-center rounded-xl text-stone-300 transition-colors hover:bg-red-50 hover:text-red-500 disabled:opacity-40 dark:hover:bg-red-500/10">
-                                                    <Trash2 className="size-4" />
-                                                </button>
-                                            </div>
-                                        </div>
-                                    </motion.div>
-                                );
-                            })}
-                        </AnimatePresence>
+                            ساخت کاتالوگ خرید
+                        </a>
                     </div>
-                )}
+                ) : (
+                    <>
+                        {/* هدر کنسول — هویت + تب‌ها در نوار سفید چسبان */}
+                        <div className="sticky top-0 lg:top-16 z-30 -mx-4 px-4 bg-white dark:bg-gray-900
+                                border-b border-outline-variant/20 dark:border-gray-800
+                                shadow-[0_6px_16px_-8px_rgba(15,23,42,0.28)] dark:shadow-[0_6px_16px_-8px_rgba(0,0,0,0.7)]">
+                            <div className="pb-4 pt-2">
+                                <InquiryIdentityBar
+                                    inquiries={list}
+                                    catalogs={salesCatalogs}
+                                    currentInquiryId={currentInquiryId}
+                                    onSelectInquiry={selectInquiry}
+                                    onSelectCatalog={selectSalesCatalog}
+                                    onNew={() => router.push('/inquiries/new')}
+                                />
+                            </div>
+                            <InquiryConsoleTabs items={tabItems} active={tab} onChange={setTab} />
+                        </div>
 
-                {/* مدال واحدهای اختصاصی کاتالوگ خرید — ذخیره روی خود استعلام (PATCH) */}
-                <UnitSettingsModal
-                    isOpen={!!unitsTarget}
-                    onClose={() => setUnitsTarget(null)}
-                    catalogId={unitsTarget?.id || ''}
-                    initialUnits={unitsTarget?.units ?? []}
-                    saveFn={async (units) => {
-                        if (!unitsTarget) return { units };
-                        await updateInquiry.mutateAsync({ id: unitsTarget.id, data: { units } });
-                        return { units };
-                    }}
-                    onSaved={() => { /* کش با invalidateQueries در useUpdateInquiry تازه می‌شود */ }}
-                    title="واحدهای کاتالوگ خرید"
-                    showQtyFields={false}
-                />
+                        {/* محتوای تب‌ها */}
+                        <div className="pt-4">
+                            {!currentInquiryId || (!detail && detailLoading) ? (
+                                <div className="grid gap-3">
+                                    {[0, 1].map((i) => <div key={i} className="h-24 animate-pulse rounded-2xl bg-white/70 dark:bg-gray-900/70" />)}
+                                </div>
+                            ) : detail ? (
+                                <>
+                                    {tab === 'items' && (
+                                        <ItemsTab
+                                            detail={detail}
+                                            offers={offers as any[]}
+                                            loading={detailLoading}
+                                            busyItemId={busyItemId}
+                                            onAdd={() => { setEditItem(null); setSheetOpen(true); }}
+                                            onEdit={(it) => { setEditItem(it); setSheetOpen(true); }}
+                                            onToggleUrgent={toggleUrgent}
+                                            onDelete={deleteItem}
+                                            onGoOffers={() => setTab('offers')}
+                                        />
+                                    )}
+                                    {tab === 'offers' && (
+                                        <OffersTab
+                                            detail={detail}
+                                            offers={offers as any[]}
+                                            loading={offersLoading}
+                                            busyOfferId={busyOfferId}
+                                            onDecide={decideOffer}
+                                            onGoPublish={() => setTab('publish')}
+                                        />
+                                    )}
+                                    {tab === 'settings' && (
+                                        <SettingsTab
+                                            detail={detail}
+                                            saving={updateInquiry.isPending}
+                                            onSave={saveSettings}
+                                            onOpenUnits={() => setUnitsOpen(true)}
+                                            onToggleStatus={toggleStatus}
+                                            onDelete={removeCatalog}
+                                        />
+                                    )}
+                                    {tab === 'publish' && (
+                                        <PublishTab
+                                            slug={detail.slug}
+                                            id={detail.id}
+                                            title={detail.title}
+                                            visibility={detail.visibility}
+                                        />
+                                    )}
+                                </>
+                            ) : (
+                                <div className="grid place-items-center rounded-3xl border border-stone-100 bg-white py-14 text-center dark:border-gray-800 dark:bg-gray-900">
+                                    <ClipboardList className="size-10 text-stone-300 dark:text-gray-700" />
+                                    <p className="mt-3 text-sm font-bold text-stone-400">کاتالوگ خرید پیدا نشد</p>
+                                </div>
+                            )}
+                        </div>
 
-                {/* پیش‌نمایش دیوار */}
-                {!isLoading && (items ?? []).length > 0 && (
-                    <motion.div {...fadeUp(0.15)} className="mt-6 flex items-center justify-between rounded-2xl border border-brand-amber-tint bg-brand-amber-soft/60 px-4 py-3 dark:bg-brand-amber-soft/20">
-                        <p className="text-xs font-bold text-amber-800 dark:text-amber-300">کاتالوگ‌های خرید باز همه روی دیوار عمومی هم دیده می‌شن.</p>
-                        <Link href="/inquiries" className="flex shrink-0 items-center gap-1 text-xs font-extrabold text-amber-700 hover:underline dark:text-amber-400">
-                            دیوار <ArrowLeft className="size-3.5" />
-                        </Link>
-                    </motion.div>
+                        {/* شیت افزودن/ویرایش قلم */}
+                        <AddItemSheet
+                            open={sheetOpen}
+                            onClose={() => setSheetOpen(false)}
+                            inquiryId={currentInquiryId || ''}
+                            catalogUnits={(detail?.units as any[] | undefined) ?? []}
+                            editItem={editItem}
+                        />
+
+                        {/* مدال واحدهای اختصاصی کاتالوگ خرید */}
+                        <UnitSettingsModal
+                            isOpen={unitsOpen}
+                            onClose={() => setUnitsOpen(false)}
+                            catalogId={currentInquiryId || ''}
+                            initialUnits={(detail?.units as any[] | undefined) ?? []}
+                            saveFn={async (units) => {
+                                await updateInquiry.mutateAsync({ id: currentInquiryId || '', data: { units } });
+                                refetchDetail();
+                                return { units };
+                            }}
+                            onSaved={() => { /* کش با invalidate تازه می‌شود */ }}
+                            title="واحدهای کاتالوگ خرید"
+                            showQtyFields={false}
+                        />
+                    </>
                 )}
             </main>
         </div>

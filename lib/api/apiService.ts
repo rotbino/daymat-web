@@ -16,8 +16,8 @@ import {
     PurchaseCreditDto,
     PurchaseCreditResponse,
     CreditBalance, User, BusinessEntity, BusinessTeamMember,
-    InquiryListResponse, InquiryDetail, InquiryListItem, InquiryOffer,
-    CreateInquiryPayload, CreateOfferPayload,
+    InquiryListResponse, InquiryDetail, InquiryListItem, InquiryOffer, InquiryItem,
+    CreateInquiryPayload, CreateInquiryItemPayload, CreateOfferPayload,
 } from './apiTypes';
 
 // ─── پارامترهای کشفِ مخاطبِ مرتبط (درخواست ارتباط) ───
@@ -1409,6 +1409,19 @@ export const apiService = {
         /** کاتالوگ‌های خرید من */
         mine: (): Promise<InquiryListItem[]> =>
             apiRequest('/inquiry/mine'),
+
+        // ─── مدیریت قلم‌به‌قلم (پنل کاتالوگ خرید) ───
+        /** افزودن یک قلم — هر بار یک کالا */
+        addItem: (inquiryId: string, data: CreateInquiryItemPayload): Promise<InquiryItem> =>
+            apiRequest(`/inquiry/${inquiryId}/items`, { method: 'POST', data }),
+
+        /** ویرایش یک قلم (شامل تاگل اعلام خرید urgent) */
+        updateItem: (inquiryId: string, itemId: string, data: Partial<CreateInquiryItemPayload>): Promise<InquiryItem> =>
+            apiRequest(`/inquiry/${inquiryId}/items/${itemId}`, { method: 'PATCH', data }),
+
+        /** حذف یک قلم */
+        removeItem: (inquiryId: string, itemId: string): Promise<{ message: string }> =>
+            apiRequest(`/inquiry/${inquiryId}/items/${itemId}`, { method: 'DELETE' }),
 
         /** ثبت پیشنهاد قیمت */
         addOffer: (inquiryId: string, data: CreateOfferPayload): Promise<InquiryOffer> =>

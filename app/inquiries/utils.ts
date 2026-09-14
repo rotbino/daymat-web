@@ -51,3 +51,10 @@ export const STATUS_CHIP: Record<string, string> = {
     rejected: 'bg-red-50 text-red-600 dark:bg-red-500/10 dark:text-red-400',
     withdrawn: 'bg-stone-100 text-stone-400 dark:bg-gray-800 dark:text-gray-500',
 };
+
+// ✅ کلاس واحد ورودی فرم‌های کاتالوگ خرید — متن در هر دو تم خوانا
+export const inp = 'h-10 rounded-xl border border-stone-200 bg-white px-3 text-sm font-bold text-stone-900 outline-none transition-colors placeholder:font-medium placeholder:text-stone-400 focus:border-brand-amber dark:border-gray-700 dark:bg-gray-950 dark:text-gray-100 dark:placeholder:text-gray-500 dark:focus:border-brand-amber dark:focus:bg-gray-950';
+export const inpSm = 'h-9 rounded-xl border border-stone-200 bg-white px-3 text-xs font-bold text-stone-900 outline-none transition-colors placeholder:font-medium placeholder:text-stone-400 focus:border-brand-amber dark:border-gray-700 dark:bg-gray-950 dark:text-gray-100 dark:placeholder:text-gray-500 dark:focus:border-brand-amber dark:focus:bg-gray-950';
+
+// پیشنهادهای پرکاربرد واحد — اگر در مرجع واحد باشند اول لیست می‌آیند
+export const UNIT_SUGGESTIONS = ['کیلوگرم', 'کارتن', 'عدد', 'بسته', 'لیتر', 'متر', 'تان'];

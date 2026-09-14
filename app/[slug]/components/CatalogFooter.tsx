@@ -22,9 +22,10 @@ export default function CatalogFooter({ catalog }: { catalog: any; onGoHome?: ()
     //    لینک ساخت کاتالوگ همیشه کد دعوتِ مالکِ همین کاتالوگ را حمل می‌کند
     //    → هر کس از این کاتالوگ وارد شود، «دعوت‌شدهٔ» او ثبت می‌شود
     const refCode: string | undefined = catalog?.owner?.referralCode;
+    // ✅ مسیر واقعی ساخت کاتالوگ — /business/register (مسیر قدیمی /catalog/register وجود ندارد)
     const registerPath = refCode
-        ? `/catalog/register?ref=${refCode}`
-        : '/catalog/register';
+        ? `/business/register?ref=${refCode}`
+        : '/business/register';
     const createHref = isAuthenticated
         ? registerPath
         : `/login?redirect=${encodeURIComponent(registerPath)}&intent=catalog`;
