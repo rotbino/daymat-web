@@ -16,7 +16,7 @@ import { apiService } from '@/lib/api/apiService';
 import {
     useMyInquiries, useInquiry, useInquiryOffers, useInquiryMembers,
     useAddInquiryItem, useUpdateInquiryItem, useRemoveInquiryItem,
-    useUpdateInquiry, useUpdateOfferStatus, useDeleteInquiry,
+    useUpdateInquiry, useUpdateOfferStatus,
 } from '@/lib/api/apiHooks';
 import { toast } from 'sonner';
 import NavTabs from '@/app/home/nav/NavTabs';
@@ -110,7 +110,6 @@ export default function MyInquiriesPage() {
     const updateItem = useUpdateInquiryItem();
     const removeItem = useRemoveInquiryItem();
     const updateOfferStatus = useUpdateOfferStatus();
-    const deleteInquiry = useDeleteInquiry();
 
     const toggleUrgent = async (item: InquiryItem) => {
         if (!currentInquiryId) return;
@@ -164,17 +163,6 @@ export default function MyInquiriesPage() {
             toast.success(next === 'open' ? 'اعلام خرید باز شد' : 'اعلام خرید بسته شد');
         } catch (e: any) {
             toast.error(e?.response?.data?.message || 'تغییر وضعیت ناموفق بود');
-        }
-    };
-
-    const removeCatalog = async () => {
-        if (!currentRow || !window.confirm('این اعلام خرید برای همیشه حذف شود؟')) return;
-        try {
-            await deleteInquiry.mutateAsync(currentRow.id);
-            toast.success('حذف شد');
-            dispatch(setCurrentInquiry(null));
-        } catch (e: any) {
-            toast.error(e?.response?.data?.message || 'حذف ناموفق بود');
         }
     };
 
@@ -323,7 +311,6 @@ export default function MyInquiriesPage() {
                                             onSave={saveSettings}
                                             onOpenUnits={() => setUnitsOpen(true)}
                                             onToggleStatus={toggleStatus}
-                                            onDelete={removeCatalog}
                                         />
                                     )}
                                     {tab === 'publish' && (

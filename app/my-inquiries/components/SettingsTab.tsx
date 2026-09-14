@@ -1,15 +1,14 @@
 // app/my-inquiries/components/SettingsTab.tsx
 // تب تنظیمات پنل اعلام خرید — مشخصات، شرایط، دسترسی و قیمت‌گیری، وضعیت
 // شامل فیلد «امکان ارسال قیمت برای خریدهای غیر فوری» (ایدهٔ مالک)
-// ✅ نمایانی دوگانه: عمومی (هرکس با لینک) | خصوصی (فقط تامین‌کننده‌های تاییدشده)
-//    دیوار عمومی حذف شد (تصمیم مالک) — اعلام خرید به بازارها عرضه می‌شود (گام بعد)
-//    مفهوم خصوصی به خود خریدار گفته می‌شود — یک خط زیر گزینه
+// ✅ نمایانی دوگانه: عمومی (هرکس با لینک) | خصوصی (همه لیست را می‌بینند؛ فقط اعضا قیمت می‌دهند)
+// ✅ حذف برداشته شد (تصمیم مالک): کاتالوگ حذف نمی‌شود — فقط پذیرش قیمت متوقف/بسته می‌شود
 'use client';
 
 import React, { useEffect, useState } from 'react';
 import { motion } from 'framer-motion';
 import { toast } from 'sonner';
-import { Save, Boxes, Ban, RotateCcw, Trash2, Loader2, Globe, ShieldCheck, Link2 } from 'lucide-react';
+import { Save, Boxes, Ban, RotateCcw, Loader2, Globe, ShieldCheck, Link2 } from 'lucide-react';
 import SwitchRow from './SwitchRow';
 import SlugEditor from '@/app/my-catalogs/SlugEditor';
 import { inp } from '../../inquiries/utils';
@@ -20,14 +19,13 @@ interface Props {
     onSave: (data: Record<string, any>) => Promise<void>;
     onOpenUnits: () => void;
     onToggleStatus: () => Promise<void>;
-    onDelete: () => Promise<void>;
     saving: boolean;
 }
 
 const card = 'rounded-2xl border border-stone-100 bg-white p-4 dark:border-gray-800 dark:bg-gray-900';
 const cardTitle = 'mb-3 text-[12px] font-black text-stone-400 dark:text-gray-500';
 
-export default function SettingsTab({ detail, onSave, onOpenUnits, onToggleStatus, onDelete, saving }: Props) {
+export default function SettingsTab({ detail, onSave, onOpenUnits, onToggleStatus, saving }: Props) {
     const [title, setTitle] = useState('');
     const [description, setDescription] = useState('');
     const [tagsRaw, setTagsRaw] = useState('');
@@ -144,8 +142,8 @@ export default function SettingsTab({ detail, onSave, onOpenUnits, onToggleStatu
                     {/* نمایانی — سگمنت دوگانه؛ مفهوم هر گزینه یک خط زیرش */}
                     <div>
                         <div className="grid grid-cols-2 gap-1.5">
-                            {([['public', 'عمومی', 'هرکس با لینک می‌بیند', Globe],
-                               ['private', 'خصوصی', 'فقط تامین‌کننده‌های تاییدشده', ShieldCheck]] as const).map(([v, label, hint, Icon]) => (
+                            {([['public', 'عمومی', 'هرکس با لینک می‌بیند و قیمت می‌دهد', Globe],
+                               ['private', 'خصوصی', 'همه لیست را می‌بینند؛ فقط اعضا قیمت می‌دهند', ShieldCheck]] as const).map(([v, label, hint, Icon]) => (
                                 <button key={v} type="button" onClick={() => setVisibility(v)}
                                     className={`flex flex-col items-center gap-0.5 rounded-xl border-2 px-2 py-2.5 transition-all ${
                                         visibility === v
@@ -160,7 +158,7 @@ export default function SettingsTab({ detail, onSave, onOpenUnits, onToggleStatu
                         </div>
                         {visibility === 'private' && (
                             <p className="mt-2 rounded-xl bg-brand-amber-soft/50 px-3 py-2 text-[10px] font-bold leading-4 text-amber-700 dark:bg-amber-500/5 dark:text-amber-400">
-                                تامین‌کننده‌ها را در تب «تامین‌کنندگان» اضافه کن — لینک و اعلام‌هایت فقط دست همان‌ها می‌رسد
+                                لیست برای همه دیده می‌شود و دکمهٔ قیمت فعال است — فقط اعضای تب «تامین‌کنندگان» می‌توانند قیمت بدهند؛ بقیه با لمس دکمه، درخواست همکاری می‌دهند
                             </p>
                         )}
                     </div>
@@ -199,19 +197,18 @@ export default function SettingsTab({ detail, onSave, onOpenUnits, onToggleStatu
                 ذخیره تغییرات
             </motion.button>
 
-            {/* وضعیت و خطر */}
+            {/* وضعیت — توقف/ادامهٔ پذیرش قیمت؛ کاتالوگ حذف‌شدنی نیست (تصمیم مالک) */}
             <motion.section initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ delay: 0.15 }} className={card}>
-                <h2 className={cardTitle}>وضعیت</h2>
+                <h2 className={cardTitle}>وضعیت پذیرش قیمت</h2>
                 <div className="flex flex-wrap gap-2">
                     <button onClick={onToggleStatus}
                         className="flex h-10 items-center gap-1.5 rounded-full border border-stone-200 px-4 text-xs font-bold text-stone-600 transition-colors hover:border-stone-400 dark:border-gray-700 dark:text-gray-300">
-                        {detail.status === 'open' ? <><Ban className="size-3.5" /> بستن کاتالوگ</> : <><RotateCcw className="size-3.5" /> بازکردن دوباره</>}
-                    </button>
-                    <button onClick={onDelete}
-                        className="flex h-10 items-center gap-1.5 rounded-full border border-red-100 px-4 text-xs font-bold text-red-500 transition-colors hover:bg-red-50 dark:border-red-500/20 dark:hover:bg-red-500/10">
-                        <Trash2 className="size-3.5" /> حذف
+                        {detail.status === 'open' ? <><Ban className="size-3.5" /> توقف پذیرش قیمت</> : <><RotateCcw className="size-3.5" /> بازکردن دوباره</>}
                     </button>
                 </div>
+                <p className="mt-2 text-[10px] font-bold leading-4 text-stone-400 dark:text-gray-500">
+                    اعلام خرید حذف‌شدنی نیست — با توقف پذیرش، پیشنهاد جدیدی نمی‌گیری و هر وقت خواستی دوباره بازش می‌کنی.
+                </p>
             </motion.section>
         </div>
     );

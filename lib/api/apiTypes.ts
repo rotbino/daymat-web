@@ -806,6 +806,8 @@ export interface InquiryBusinessBrief {
     name: string;
     logoUrl?: string | null;
     city?: string | null;
+    /** ☎️ شمارهٔ تماس عمومی کسب‌وکار — برای دکمهٔ تماس صفحهٔ اعلام خرید */
+    phone?: string | null;
 }
 
 export interface InquiryBase {
