@@ -1440,6 +1440,10 @@ export const apiService = {
             apiRequest('/inquiry/my-offers'),
 
         // ─── اعضای صفحه درخواست خرید — تامین‌کننده‌های تاییدشده (شبکهٔ خرید↔فروش) ───
+        /** 🪪 ذخیره/حذف مشخصات کارت ویزیت صفحهٔ خرید — قرینهٔ کاتالوگ فروش */
+        updateVisitCard: (inquiryId: string, spec: Record<string, any> | null): Promise<any> =>
+            apiRequest(`/inquiry/${inquiryId}/visit-card`, { method: 'PATCH', data: { spec } }),
+
         /** فهرست تامین‌کننده‌های این صفحه درخواست خرید (مالک) */
         getMembers: (inquiryId: string): Promise<any[]> =>
             apiRequest(`/inquiry/${inquiryId}/members`),

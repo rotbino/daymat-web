@@ -1,47 +1,43 @@
 // app/my-inquiries/components/PublishTab.tsx
-// تب انتشار پنل صفحه درخواست خرید — لینک + اشتراک‌گذاری (واتساپ/تلگرام/سیستمی) + وضعیت انتشار
+// تب انتشار پنل صفحه درخواست خرید — قرینهٔ تب انتشار کاتالوگ فروش:
+//   لینک عمومی + کیت اشتراک‌گذاری (مخاطبان تلفن، واتساپ/تلگرام، QR چاپی)
+//   + 🪪 کارت ویزیت برای تامین‌کننده‌ها (استودیو + پیش‌نمایش کارت ذخیره‌شده)
+//   + وضعیت انتشار
 'use client';
 
-import React, { useState } from 'react';
+import React from 'react';
 import { motion } from 'framer-motion';
 import Link from 'next/link';
+import { Copy, Eye, Globe, IdCard, Link2, Lock, Share2 } from 'lucide-react';
 import { toast } from 'sonner';
-import { Check, Copy, Eye, Globe, Link2, Lock, MessageCircle, Send, Share2 } from 'lucide-react';
+import { cn } from '@/lib/utils';
 
-export default function PublishTab({ slug, id, title, visibility }: {
+interface Props {
     slug?: string | null;
     id: string;
     title: string;
     visibility: 'public' | 'unlisted' | 'private';
-}) {
-    const [copied, setCopied] = useState(false);
+    /** باز کردن کیت اشتراک‌گذاری (مخاطبان، واتساپ/تلگرام، QR چاپی) */
+    onOpenShare: () => void;
+    /** 🪪 باز کردن استودیوی کارت ویزیت (قرینهٔ کاتالوگ فروش) */
+    onOpenCard: () => void;
+    /** کارت ذخیره‌شده (metadata.visitCard) — با بودنش پیش‌نمایش کارت نشان داده می‌شود */
+    savedCard?: any;
+}
+
+export default function PublishTab({ slug, id, title, visibility, onOpenShare, onOpenCard, savedCard }: Props) {
     const url = typeof window !== 'undefined' ? `${window.location.origin}/inquiries/${slug || id}` : `/inquiries/${slug || id}`;
-    const shareText = `صفحه درخواست خرید «${title}» — اگه تامین‌کننده‌ای، قیمت بده: ${url}`;
 
     const copy = async () => {
         try {
             await navigator.clipboard.writeText(url);
-            setCopied(true);
             toast.success('لینک کپی شد — بفرستش برای تامین‌کننده‌ها');
-            setTimeout(() => setCopied(false), 1800);
         } catch { /* noop */ }
     };
 
-    const nativeShare = async () => {
-        try {
-            if (navigator.share) {
-                await navigator.share({ title: `صفحه درخواست خرید — ${title}`, text: shareText, url });
-            } else {
-                await copy();
-            }
-        } catch { /* کاربر لغو کرد */ }
-    };
-
-    const btn = 'flex h-12 flex-1 flex-col items-center justify-center gap-1 rounded-2xl border border-stone-100 text-[10px] font-extrabold transition-colors hover:border-brand-amber-tint dark:border-gray-800';
-
     return (
         <div className="space-y-3">
-            {/* لینک کاتالوگ */}
+            {/* لینک عمومی صفحه — همان چیزی که تامین‌کننده می‌بیند */}
             <motion.section
                 initial={{ opacity: 0, y: 14 }} animate={{ opacity: 1, y: 0 }}
                 className="rounded-2xl border border-stone-100 bg-white p-4 dark:border-gray-800 dark:bg-gray-900">
@@ -53,31 +49,16 @@ export default function PublishTab({ slug, id, title, visibility }: {
                     </div>
                     <button onClick={copy} aria-label="کپی لینک"
                         className="grid size-11 shrink-0 place-items-center rounded-xl bg-brand-amber text-white shadow-md shadow-brand-amber/25 transition-colors hover:bg-brand-amber-strong">
-                        {copied ? <Check className="size-4" /> : <Copy className="size-4" />}
+                        <Copy className="size-4" />
                     </button>
                 </div>
             </motion.section>
 
-            {/* اشتراک‌گذاری */}
-            <motion.section
-                initial={{ opacity: 0, y: 14 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.05 }}
-                className="rounded-2xl border border-stone-100 bg-white p-4 dark:border-gray-800 dark:bg-gray-900">
-                <h2 className="mb-3 text-[12px] font-black text-stone-400 dark:text-gray-500">اشتراک‌گذاری</h2>
-                <div className="flex gap-2">
-                    <a href={`https://wa.me/?text=${encodeURIComponent(shareText)}`} target="_blank" rel="noreferrer" className={`${btn} text-emerald-600 hover:text-emerald-700`}>
-                        <MessageCircle className="size-5" />
-                        واتساپ
-                    </a>
-                    <a href={`https://t.me/share/url?url=${encodeURIComponent(url)}&text=${encodeURIComponent(`صفحه درخواست خرید «${title}»`)}`} target="_blank" rel="noreferrer" className={`${btn} text-sky-500 hover:text-sky-600`}>
-                        <Send className="size-5" />
-                        تلگرام
-                    </a>
-                    <button onClick={nativeShare} className={`${btn} text-stone-500 hover:text-stone-700 dark:text-gray-400`}>
-                        <Share2 className="size-5" />
-                        بیشتر
-                    </button>
-                </div>
-            </motion.section>
+            {/* کیت اشتراک‌گذاری — مخاطبان تلفن + واتساپ/تلگرام + QR چاپی */}
+            <ShareKitButton onOpen={onOpenShare} />
+
+            {/* 🪪 کارت ویزیت صفحهٔ خرید — برای تامین‌کننده‌ها (بنا بر خواستهٔ کاربر) */}
+            <VisitCardEntry savedCard={savedCard} onOpen={onOpenCard} />
 
             {/* وضعیت انتشار + پیش‌نمایش */}
             <motion.section
@@ -111,5 +92,68 @@ export default function PublishTab({ slug, id, title, visibility }: {
                 </Link>
             </motion.section>
         </div>
+    );
+}
+
+/** دکمهٔ کیت اشتراک‌گذاری — با کلیک، ShareKitModal در پنل باز می‌شود */
+function ShareKitButton({ onOpen }: { onOpen: () => void }) {
+    return (
+        <motion.button type="button" onClick={onOpen}
+            initial={{ opacity: 0, y: 14 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.05 }}
+            className="flex w-full items-center gap-3.5 rounded-2xl border border-brand-amber-tint bg-gradient-to-l from-brand-amber-soft/60 to-transparent p-4 text-right transition-colors hover:border-brand-amber dark:border-amber-500/20 dark:from-amber-500/10">
+            <span className="grid size-11 shrink-0 place-items-center rounded-2xl bg-brand-amber-soft dark:bg-amber-500/15">
+                <Share2 className="size-5 text-amber-600 dark:text-amber-400" />
+            </span>
+            <span className="min-w-0 flex-1">
+                <span className="block text-sm font-extrabold text-amber-700 dark:text-amber-300">کیت اشتراک‌گذاری صفحه</span>
+                <span className="mt-0.5 block text-[11px] font-bold text-stone-400 dark:text-gray-500">
+                    لینک + پیام آماده + ارسال به مخاطبین + QR چاپی
+                </span>
+            </span>
+        </motion.button>
+    );
+}
+
+/** 🪪 کارت ویزیت — با کارت ذخیره‌شده، پیش‌نمایشش همین‌جا دیده می‌شود */
+function VisitCardEntry({ savedCard, onOpen }: { savedCard?: any; onOpen: () => void }) {
+    const cardPreview = typeof savedCard?.preview === 'string' && savedCard.preview.startsWith('data:image')
+        ? savedCard.preview : null;
+    const savedLabel = savedCard?.updatedAt
+        ? new Date(savedCard.updatedAt).toLocaleDateString('fa-IR')
+        : null;
+
+    if (cardPreview) {
+        return (
+            <motion.button type="button" onClick={onOpen}
+                initial={{ opacity: 0, y: 14 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.08 }}
+                className={cn('flex w-full items-center gap-3.5 rounded-2xl border border-stone-100 bg-white p-3.5 text-right transition-colors hover:border-brand-amber dark:border-gray-800 dark:bg-gray-900')}>
+                <span className="h-[41px] w-[72px] shrink-0 overflow-hidden rounded-lg bg-white shadow-sm ring-1 ring-stone-200 dark:ring-gray-700">
+                    {/* eslint-disable-next-line @next/next/no-img-element */}
+                    <img src={cardPreview} alt="کارت ویزیت صفحه خرید" className="size-full object-cover" />
+                </span>
+                <span className="min-w-0 flex-1">
+                    <span className="block text-sm font-extrabold text-stone-800 dark:text-gray-200">کارت ویزیت صفحه خرید</span>
+                    <span className="mt-0.5 block truncate text-[11px] font-bold text-stone-400 dark:text-gray-500">
+                        {savedLabel ? `ذخیره‌شده در ${savedLabel} — ` : 'ذخیره‌شده — '}برای ویرایش لمس کن
+                    </span>
+                </span>
+                <IdCard className="size-4.5 shrink-0 text-amber-600 dark:text-amber-400" />
+            </motion.button>
+        );
+    }
+    return (
+        <motion.button type="button" onClick={onOpen}
+            initial={{ opacity: 0, y: 14 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.08 }}
+            className="flex w-full items-center gap-3.5 rounded-2xl border border-stone-100 bg-white p-4 text-right transition-colors hover:border-brand-amber dark:border-gray-800 dark:bg-gray-900">
+            <span className="grid size-11 shrink-0 place-items-center rounded-2xl bg-brand-amber-soft dark:bg-amber-500/15">
+                <IdCard className="size-5 text-amber-600 dark:text-amber-400" />
+            </span>
+            <span className="min-w-0 flex-1">
+                <span className="block text-sm font-extrabold text-amber-700 dark:text-amber-300">ساخت کارت ویزیت برای تامین‌کننده‌ها</span>
+                <span className="mt-0.5 block text-[11px] font-bold text-stone-400 dark:text-gray-500">
+                    طرح چاپی ۹×۵ با QR صفحهٔ خرید — کلاس‌کار بمان تویی
+                </span>
+            </span>
+        </motion.button>
     );
 }

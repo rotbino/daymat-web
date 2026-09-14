@@ -35,7 +35,11 @@ const fadeUp = (delay = 0) => ({
 
 
 export default function InquiryDetailPage({ params }: { params: Promise<{ id: string }> }) {
-    const { id } = use(params);
+    const { id: rawId } = use(params);
+    // ⚠️ Next.js این پارامتر را percent-encoded تحویل می‌دهد؛ اگر دوباره encode شود
+    // بک‌اند (Fastify maxParamLength=۱۰۰) با 414 جواب می‌دهد و چون پاسخِ 414 هدر CORS ندارد،
+    // مرورگر آن را «قطعی شبکه» می‌بیند → لوپ /server-unavailable. مثل /[slug] دیکود کن.
+    const id = (() => { try { return decodeURIComponent(rawId); } catch { return rawId; } })();
     const { isAuthenticated } = useSelector((s: RootState) => s.auth);
 
     const { data: inquiry, isLoading, isError, refetch } = useInquiry(id);

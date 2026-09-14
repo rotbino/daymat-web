@@ -29,12 +29,16 @@ import SettingsTab from './components/SettingsTab';
 import PublishTab from './components/PublishTab';
 import AddItemSheet from './components/AddItemSheet';
 import UnitSettingsModal from '@/app/ad/components/UnitSettingsModal';
+import ShareKitModal from '@/components/profile/ShareKitModal';
+import VisitCardModal from '@/components/profile/VisitCardModal';
+import { useQueryClient } from '@tanstack/react-query';
 import { ClipboardList, Package, MessageSquareText, Settings, Globe, Plus, Loader2, PackageSearch, Handshake } from 'lucide-react';
 import type { InquiryItem } from '@/lib/api/apiTypes';
 
 export default function MyInquiriesPage() {
     const router = useRouter();
     const dispatch = useDispatch();
+    const queryClient = useQueryClient();
     const { isAuthenticated, _hydrated } = useSelector((s: RootState) => s.auth) as any;
     const hydrated = _hydrated !== false;
     // «صفحه درخواست خرید کارنت» — پرسیست؛ با رفرش هم سرجاش می‌ماند
@@ -46,6 +50,9 @@ export default function MyInquiriesPage() {
     const [busyItemId, setBusyItemId] = useState<string | null>(null);
     const [busyOfferId, setBusyOfferId] = useState<string | null>(null);
     const [unitsOpen, setUnitsOpen] = useState(false);
+    // ✅ کیت اشتراک‌گذاری + استودیوی کارت ویزیت — دم دست از هدر و تب انتشار (خواستهٔ کاربر)
+    const [shareOpen, setShareOpen] = useState(false);
+    const [cardOpen, setCardOpen] = useState(false);
 
     const { data: items, isLoading } = useMyInquiries();
     const list: any[] = items ?? [];
@@ -192,6 +199,17 @@ export default function MyInquiriesPage() {
     const selectSalesCatalog = (id: string) => {
         router.push(`/my-catalogs?catalog=${id}`);
     };
+    // 👁 مشاهدهٔ صفحهٔ عمومی — همان آدرسی که کیت اشتراک می‌سازد (app/inquiries/[id])
+    const previewInquiry = () => {
+        const key = detail?.slug || detail?.id || currentInquiryId;
+        if (key) router.push(`/inquiries/${key}`);
+    };
+    // 💾 بعد از ذخیرهٔ کارت ویزیت — لیست صفحه‌های خرید تازه شود (metadata.visitCard)
+    const refreshInquiries = () => {
+        queryClient.invalidateQueries({ queryKey: ['inquiries'] });
+        queryClient.invalidateQueries({ queryKey: ['inquiry'] });
+    };
+    const savedVisitCard = (currentRow as any)?.metadata?.visitCard ?? (detail as any)?.metadata?.visitCard ?? null;
 
     const pendingOffers = offers.filter((o: any) => o.status === 'pending').length;
     // ✅ درخواست‌های عضویتِ در انتظار تایید — بج قرمز تب تامین‌کنندگان (سرویس اعضا)
@@ -254,6 +272,8 @@ export default function MyInquiriesPage() {
                                     onSelectCatalog={selectSalesCatalog}
                                     onNew={() => router.push('/inquiries/new')}
                                     onNewCatalog={() => router.push('/business/register')}
+                                    onShare={() => setShareOpen(true)}
+                                    onPreview={previewInquiry}
                                 />
                             </div>
                             <InquiryConsoleTabs items={tabItems} active={tab} onChange={setTab} />
@@ -312,6 +332,9 @@ export default function MyInquiriesPage() {
                                             id={detail.id}
                                             title={detail.title}
                                             visibility={detail.visibility}
+                                            onOpenShare={() => setShareOpen(true)}
+                                            onOpenCard={() => setCardOpen(true)}
+                                            savedCard={savedVisitCard}
                                         />
                                     )}
                                 </>
@@ -347,6 +370,33 @@ export default function MyInquiriesPage() {
                             title="واحدهای صفحه درخواست خرید"
                             showQtyFields={false}
                         />
+
+                        {/* ✅ کیت اشتراک‌گذاری صفحهٔ خرید — مخاطبان تلفن + واتساپ/تلگرام + QR چاپی */}
+                        {detail && (
+                            <ShareKitModal
+                                open={shareOpen}
+                                onClose={() => setShareOpen(false)}
+                                catalogName={detail.title}
+                                slug={detail.slug || detail.id}
+                                basePath="/inquiries"
+                                kind="inquiry"
+                            />
+                        )}
+
+                        {/* 🪪 استودیوی کارت ویزیت صفحهٔ خرید — برای تامین‌کننده‌ها؛ ذخیره در metadata */}
+                        {detail && (
+                            <VisitCardModal
+                                open={cardOpen}
+                                onClose={() => setCardOpen(false)}
+                                catalogName={detail.title}
+                                slug={detail.slug || detail.id}
+                                basePath="/inquiries"
+                                inquiryId={detail.id}
+                                savedSpec={savedVisitCard}
+                                onSaved={refreshInquiries}
+                                description={(detail as any)?.description || undefined}
+                            />
+                        )}
                     </>
                 )}
             </main>

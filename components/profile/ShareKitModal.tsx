@@ -26,9 +26,31 @@ interface Props {
     slug?: string;
     /** لوگوی کاتالوگ برای پوستر — اختیاری؛ نبودش حرف اول نام می‌نشیند */
     logoUrl?: string;
+    /** مسیر پایهٔ صفحهٔ عمومی — پیش‌فرض ریشهٔ سایت (کاتالوگ فروش)؛ صفحهٔ خرید: /inquiries */
+    basePath?: string;
+    /** نوع محصول — متن‌ها بر همین اساس تنظیم می‌شود (مخاطب کاتالوگ = مشتری؛ مخاطب صفحهٔ خرید = تامین‌کننده) */
+    kind?: 'catalog' | 'inquiry';
 }
 
-export default function ShareKitModal({ open, onClose, catalogName, slug, logoUrl }: Props) {
+const COPY_BY_KIND = {
+    catalog: {
+        title: 'کیت اشتراک‌گذاری کاتالوگ',
+        intro: 'کاتالوگ وقتی مشتری می‌آورد که دیده شود. لینک را در بیو اینستاگرام بگذار، برای مشتری‌های واتساپی‌ات بفرست یا در گروههای تلگرامی به اشتراک بگذار. QR چاپی برای ویترین هم اینجاست.',
+        shareText: (name: string) => `کاتالوگ ${name} رو ببین:`,
+        posterLine1: 'برای دیدن قیمت محصولات ما',
+        filePrefix: 'catalog-print',
+    },
+    inquiry: {
+        title: 'کیت اشتراک‌گذاری صفحه درخواست خرید',
+        intro: 'این صفحه وقتی تامین‌کننده می‌آورد که لینک دستش برسد. لینک را برای تامین‌کننده‌های واتساپی‌ات بفرست یا در گروه‌های خرید و تلگرام به اشتراک بگذار. QR چاپی هم برای دفتر و پروندهٔ خریدت هست.',
+        shareText: (name: string) => `صفحه درخواست خرید «${name}» — اگه تامین‌کننده‌ای، قیمت بده:`,
+        posterLine1: 'برای دیدن لیست خریدهای ما',
+        filePrefix: 'inquiry-print',
+    },
+} as const;
+
+export default function ShareKitModal({ open, onClose, catalogName, slug, logoUrl, basePath = '', kind = 'catalog' }: Props) {
+    const T = COPY_BY_KIND[kind];
     const [copied, setCopied] = useState(false);
     const [mounted, setMounted] = useState(false);
     const [posterBusy, setPosterBusy] = useState(false);
@@ -39,7 +61,7 @@ export default function ShareKitModal({ open, onClose, catalogName, slug, logoUr
     }, []);
 
     const url = mounted && slug && typeof window !== 'undefined'
-        ? `${window.location.origin}/${slug}`   // ⚠️ اگر کاتالوگ هنوز در /c/ است: `/c/${slug}`
+        ? `${window.location.origin}${basePath}/${slug}`   // ⚠️ اگر کاتالوگ هنوز در /c/ است: `/c/${slug}`
         : '';
 
     if (!mounted) return null;
@@ -50,13 +72,13 @@ export default function ShareKitModal({ open, onClose, catalogName, slug, logoUr
         if (!url) return;
         await navigator.clipboard.writeText(url).catch(() => {});
         setCopied(true);
-        toast.success('لینک کاتالوگ کپی شد');
+        toast.success('لینک کپی شد');
         setTimeout(() => setCopied(false), 2000);
     };
 
     const nativeShare = async () => {
         if (navigator.share) {
-            try { await navigator.share({ title: `کاتالوگ ${catalogName}`, url }); } catch {}
+            try { await navigator.share({ title: T.title, url }); } catch {}
         } else copy();
     };
 
@@ -112,7 +134,7 @@ export default function ShareKitModal({ open, onClose, catalogName, slug, logoUr
             ctx.direction = 'rtl';
             ctx.fillStyle = '#1a1c1e';
             ctx.font = `bold 47px ${CANVAS_FONT}`;
-            ctx.fillText('برای دیدن قیمت محصولات ما', W / 2, 210);
+            ctx.fillText(T.posterLine1, W / 2, 210);
             ctx.fillText('کیوآر کد زیر را اسکن کنید', W / 2, 280);
             ctx.strokeStyle = '#f59e0b';
             ctx.lineWidth = 3;
@@ -175,7 +197,7 @@ export default function ShareKitModal({ open, onClose, catalogName, slug, logoUr
             ctx.font = `28px ${CANVAS_FONT}`;
             ctx.fillText(url.replace(/^https?:\/\//, ''), W / 2, 1258);
 
-            triggerDownload(c.toDataURL('image/png'), `catalog-print-${slug || 'poster'}.png`);
+            triggerDownload(c.toDataURL('image/png'), `${T.filePrefix}-${slug || 'poster'}.png`);
             toast.success('پوستر چاپی دانلود شد');
         } catch {
             toast.error('ساخت تصویر چاپی ممکن نشد');
@@ -198,15 +220,13 @@ export default function ShareKitModal({ open, onClose, catalogName, slug, logoUr
                  className="bg-white dark:bg-gray-900 w-full sm:max-w-md rounded-t-3xl sm:rounded-2xl shadow-2xl
                     animate-in slide-in-from-bottom-4 sm:zoom-in-95 duration-300 max-h-[90dvh] overflow-y-auto scrollbar-slim text-on-surface">
                 <div className="flex items-center justify-between px-4 py-3 border-b border-outline-variant/20 dark:border-gray-800 sticky top-0 bg-white dark:bg-gray-900">
-                    <h3 className="text-sm font-extrabold">کیت اشتراک‌گذاری کاتالوگ</h3>
+                    <h3 className="text-sm font-extrabold">{T.title}</h3>
                     <button onClick={onClose} className="p-1.5 rounded-full hover:bg-surface-container-high dark:hover:bg-gray-800"><X className="w-4 h-4" /></button>
                 </div>
 
                 <div className="p-4 space-y-4">
                     <div className="bg-primary/5 border border-primary/15 dark:border-primary/25 rounded-xl p-3.5 text-xs leading-6 text-on-surface-variant">
-                        کاتالوگ وقتی مشتری می‌آورد که <b>دیده شود</b>. لینک را در بیو اینستاگرام بگذار، برای مشتری‌های واتساپی‌ات بفرست
-                        یا در گروههای تلگرامی به اشتراک بگذار. QR چاپی برای ویترین هم اینجاست و کارت ویزیت را از دکمهٔ
-                        <b> کارت ویزیت </b> بالای صفحه بساز.
+                        {T.intro}
                     </div>
 
                     {/* ✅ لینک خالص — قابل کپی */}
@@ -227,7 +247,7 @@ export default function ShareKitModal({ open, onClose, catalogName, slug, logoUr
                     {/* اکشن‌ها */}
                     <div className="grid grid-cols-4 gap-2">
                         <ActionBtn icon={MessageCircle} label="واتساپ" onClick={() => window.open(`https://wa.me/?text=${encodeURIComponent(url)}`, '_blank')} />
-                        <ActionBtn icon={Send} label="تلگرام" onClick={() => window.open(`https://t.me/share/url?url=${encodeURIComponent(url)}&text=${encodeURIComponent(`کاتالوگ ${catalogName}`)}`, '_blank')} />
+                        <ActionBtn icon={Send} label="تلگرام" onClick={() => window.open(`https://t.me/share/url?url=${encodeURIComponent(url)}&text=${encodeURIComponent(T.shareText(catalogName))}`, '_blank')} />
                         <ActionBtn icon={copied ? Check : Copy} label={copied ? 'کپی شد' : 'کپی لینک'} onClick={copy} />
                         <ActionBtn icon={Share2} label="سایر" onClick={nativeShare} />
                     </div>
@@ -236,7 +256,7 @@ export default function ShareKitModal({ open, onClose, catalogName, slug, logoUr
                     {url && (
                         <PhoneContactsPanel
                             url={url}
-                            message={`کاتالوگ ${catalogName} رو ببین:`}
+                            message={T.shareText(catalogName)}
                         />
                     )}
 

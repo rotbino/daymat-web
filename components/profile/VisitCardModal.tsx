@@ -39,6 +39,10 @@ interface Props {
     description?: string;
     /** شناسهٔ کاتالوگ — با بودنش دکمهٔ ذخیره فعال می‌شود */
     catalogId?: string;
+    /** 📋 شناسهٔ صفحه درخواست خرید — ذخیره در metadata صفحهٔ خرید (قرینهٔ کاتالوگ) */
+    inquiryId?: string;
+    /** مسیر پایهٔ صفحهٔ عمومی روی QR/کارت — پیش‌فرض ریشه؛ صفحهٔ خرید: /inquiries */
+    basePath?: string;
     /** کارت ذخیره‌شدهٔ قبلی (metadata.visitCard) — با باز شدن، کارت کاربر برمی‌گردد */
     savedSpec?: any;
     /** بعد از ذخیرهٔ موفق — برای تازه‌سازی لیست کاتالوگ‌ها */
@@ -50,7 +54,7 @@ const BG_TEMPLATES = buildBgTemplates();
 
 const W = 1050, H = 600; // ۹×۵ سانتی‌متر در ۳۰۰dpi
 
-export default function VisitCardModal({ open, onClose, catalogName, slug, logoUrl, phone, description, catalogId, savedSpec, onSaved }: Props) {
+export default function VisitCardModal({ open, onClose, catalogName, slug, logoUrl, phone, description, catalogId, inquiryId, basePath = '', savedSpec, onSaved }: Props) {
     const [mounted, setMounted] = useState(false);
     const [busy, setBusy] = useState(false);
 
@@ -100,7 +104,7 @@ export default function VisitCardModal({ open, onClose, catalogName, slug, logoU
     }, []);
 
     const url = mounted && slug && typeof window !== 'undefined'
-        ? `${window.location.origin}/${slug}`
+        ? `${window.location.origin}${basePath}/${slug}`
         : '';
 
     // شروع با هر باز شدن — اگر کارت ذخیره‌شده دارد همان برمی‌گردد (زحمت کاربر گم نمی‌شود)
@@ -434,12 +438,15 @@ export default function VisitCardModal({ open, onClose, catalogName, slug, logoU
     };
 
     const saveSpec = async () => {
-        if (!catalogId || saving) return;
+        if ((!catalogId && !inquiryId) || saving) return;
         setSaving(true);
         try {
             const spec = await buildSpec();
             if (!spec) throw new Error('spec');
-            const res: any = await apiService.catalog.updateVisitCard(catalogId, spec);
+            // 📋 مقصد ذخیره — کاتالوگ فروش یا صفحه درخواست خرید (هر دو در metadata.visitCard)
+            const res: any = inquiryId
+                ? await apiService.inquiry.updateVisitCard(inquiryId, spec)
+                : await apiService.catalog.updateVisitCard(catalogId!, spec);
             const at = res?.visitCard?.updatedAt || new Date().toISOString();
             setSavedAt(at);
             onSaved?.();
@@ -638,9 +645,9 @@ export default function VisitCardModal({ open, onClose, catalogName, slug, logoU
                     </div>
 
                     <div className="grid grid-cols-2 gap-2">
-                        {/* 💾 ذخیره — مشخصات کارت روی کاتالوگ می‌ماند و در تب انتشار دیده می‌شود */}
-                        <button type="button" onClick={saveSpec} disabled={!catalogId || saving}
-                                title={catalogId ? 'ذخیرهٔ طرح روی کاتالوگ' : 'کاتالوگ شناسه ندارد'}
+                        {/* 💾 ذخیره — مشخصات کارت روی کاتالوگ/صفحهٔ خرید می‌ماند و در تب انتشار دیده می‌شود */}
+                        <button type="button" onClick={saveSpec} disabled={(!catalogId && !inquiryId) || saving}
+                                title={inquiryId ? 'ذخیرهٔ طرح روی صفحه درخواست خرید' : catalogId ? 'ذخیرهٔ طرح روی کاتالوگ' : 'شناسه ندارد'}
                                 className="h-10 rounded-lg border border-primary/40 bg-primary/5 dark:bg-primary/10 text-primary text-[11px] font-extrabold
                                     flex items-center justify-center gap-1.5 hover:bg-primary/10 active:scale-[0.98]
                                     disabled:opacity-60 transition-all">
