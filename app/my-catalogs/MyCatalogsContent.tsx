@@ -81,7 +81,7 @@ export default function MyCatalogsContent() {
         staleTime: 60_000,
     });
 
-    // ✅ شبکهٔ خرید↔فروش — دعوت‌های در انتظار پذیرش (بج قرمز تب «درخواست خریدها»)
+    // ✅ شبکهٔ خرید↔فروش — دعوت‌های در انتظار پذیرش (بج قرمز تب «اعلان نیازها»)
     const { data: oppsData } = useInquiryOpportunities();
     const pendingInvites = (oppsData?.invitations ?? []).length;
 
@@ -289,9 +289,9 @@ export default function MyCatalogsContent() {
     const canShare = !!(currentCatalog as any)?.slug;
 
     const goNewCatalog = () => router.push('/business/register');
-    // صفحه درخواست خرید جدید — فرم محصول دوم
+    // صفحه اعلان نیاز جدید — فرم محصول دوم
     const goNewInquiry = () => router.push('/inquiries/new');
-    // انتخاب صفحه درخواست خرید از سوییچر → پرش به مدیریت آن + ثبت «صفحه درخواست خرید کارنت» (پرسیست)
+    // انتخاب صفحه اعلان نیاز از سوییچر → پرش به مدیریت آن + ثبت «صفحه اعلان نیاز کارنت» (پرسیست)
     const selectInquiry = (id: string) => {
         dispatch(setCurrentInquiry(id));
         router.push(`/my-inquiries?catalog=${id}`);
@@ -351,7 +351,7 @@ export default function MyCatalogsContent() {
         : [
               { key: 'products' as Tab, label: 'محصولات', icon: Package, count: products.length },
               { key: 'team' as Tab, label: 'اعضا', icon: Users, alert: pendingTotal },
-              { key: 'leads' as Tab, label: 'درخواست خریدها', mobileLabel: 'خریدها', icon: Megaphone, alert: pendingInvites },
+              { key: 'leads' as Tab, label: 'اعلان نیازها', mobileLabel: 'خریدها', icon: Megaphone, alert: pendingInvites },
               { key: 'profile' as Tab, label: 'مشخصات', icon: IdCard },
               { key: 'stats' as Tab, label: 'آمار', icon: BarChart3 },
               { key: 'publish' as Tab, label: 'انتشار', icon: Globe, count: memberships.length > 0 ? memberships.length : undefined },
@@ -501,7 +501,7 @@ export default function MyCatalogsContent() {
                     <TeamTab catalogId={currentCatalog.id} />
                 )}
 
-                {/* ✅ تب درخواست خریدها — شبکهٔ خرید↔فروش از سمت تامین‌کننده */}
+                {/* ✅ تب اعلان نیازها — شبکهٔ خرید↔فروش از سمت تامین‌کننده */}
                 {tab === 'leads' && (
                     <LeadsTab />
                 )}

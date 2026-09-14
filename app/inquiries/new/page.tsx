@@ -1,5 +1,5 @@
 // app/inquiries/new/page.tsx
-// ساخت صفحه درخواست خرید — نسخهٔ ۳ (جریان پنل‌محور بر اساس ایدهٔ مالک):
+// ساخت صفحه اعلان نیاز — نسخهٔ ۳ (جریان پنل‌محور بر اساس ایدهٔ مالک):
 //   کسب‌وکار را انتخاب کن → کاتالوگ ساخته می‌شود → مستقیم به پنل مدیریت می‌روی؛
 //   اقلام بعداً قلم‌به‌قلم از پنل اضافه می‌شوند (مثل کاتالوگ فروش که اول کاتالوگ ساخته می‌شود).
 //   ذهن کاربر اولِ کار آمادهٔ واردکردن قلم نیست — پس هیچ قلمی اینجا خواسته نمی‌شود.
@@ -63,14 +63,14 @@ export default function NewInquiryPage() {
     }, [hydrated, isAuthenticated, router, bizParam]);
 
     useEffect(() => {
-        document.title = 'صفحه درخواست خرید جدید | دیمت';
+        document.title = 'صفحه اعلان نیاز جدید | دیمت';
     }, []);
 
-    // کسب‌وکاری که از قبل صفحه درخواست خرید باز دارد → مستقیم به پنلش (صفحه درخواست خریدِ هر کسب‌وکار یکی است)
+    // کسب‌وکاری که از قبل صفحه اعلان نیاز باز دارد → مستقیم به پنلش (صفحه اعلان نیازِ هر کسب‌وکار یکی است)
     const checkExisting = (b: any): boolean => {
         const existing = (myInquiries ?? []).find((w: any) => w.businessId === b.id && w.status !== 'archived');
         if (existing) {
-            toast.info('این کسب‌وکار از قبل صفحه درخواست خرید داره — رفتیم به پنلش');
+            toast.info('این کسب‌وکار از قبل صفحه اعلان نیاز داره — رفتیم به پنلش');
             dispatch(setCurrentInquiry(existing.id));
             router.replace(`/my-inquiries?catalog=${existing.id}`);
             return true;
@@ -93,15 +93,15 @@ export default function NewInquiryPage() {
         setSubmitting(true);
         try {
             const res = await create.mutateAsync({
-                title: `صفحه درخواست خرید ${biz.name || ''}`.trim().slice(0, 140),
+                title: `صفحه اعلان نیاز ${biz.name || ''}`.trim().slice(0, 140),
                 businessId: biz.id,
                 visibility,
             });
-            toast.success('صفحه درخواست خریدت ساخته شد — حالا قلم‌ها رو اضافه کن');
+            toast.success('صفحه اعلان نیازت ساخته شد — حالا قلم‌ها رو اضافه کن');
             dispatch(setCurrentInquiry(res.id));
             router.replace(`/my-inquiries?catalog=${res.id}&add=1`);
         } catch (e: any) {
-            toast.error(e?.response?.data?.message || 'ساختن صفحه درخواست خرید ناموفق بود');
+            toast.error(e?.response?.data?.message || 'ساختن صفحه اعلان نیاز ناموفق بود');
         } finally {
             setSubmitting(false);
         }
@@ -132,7 +132,7 @@ export default function NewInquiryPage() {
                 <motion.section {...fadeUp()} className="text-center">
                     <span className="inline-flex items-center gap-1.5 rounded-full bg-brand-amber-soft px-3 py-1 text-[11px] font-extrabold text-amber-700 dark:text-amber-400">
                         <ClipboardList className="size-3.5" />
-                        صفحه درخواست خرید جدید
+                        صفحه اعلان نیاز جدید
                     </span>
                     <h1 className="mt-3 text-[22px] font-black leading-9 sm:text-2xl">
                         برای کدام کسب‌وکار می‌سازی؟
@@ -177,7 +177,7 @@ export default function NewInquiryPage() {
                                 disabled={submitting}
                                 className="flex h-14 w-full items-center justify-center gap-2 rounded-2xl bg-brand-amber text-[15px] font-extrabold text-white shadow-xl shadow-brand-amber/30 transition-colors hover:bg-brand-amber-strong disabled:opacity-50">
                                 {submitting ? <Loader2 className="size-5 animate-spin" /> : <Building2 className="size-5" />}
-                                ساخت صفحه درخواست خرید
+                                ساخت صفحه اعلان نیاز
                             </motion.button>
                         </motion.div>
                     )}

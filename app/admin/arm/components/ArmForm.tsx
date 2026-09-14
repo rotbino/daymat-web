@@ -236,7 +236,7 @@ export function ArmForm({ initialData, onSubmit, isSubmitting = false, isEditMod
                                 onSave={handleAutoSave}
                                 isSaving={isSubmitting || isAutoSaving}
                                 moduleKey="buyLead"
-                                moduleName="تابلوی درخواست خرید"
+                                moduleName="تابلوی اعلان نیاز"
                                 moduleIcon={ShoppingCart}
                                 isAdmin={isSystemAdmin}
                             />

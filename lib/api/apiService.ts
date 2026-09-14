@@ -1377,7 +1377,7 @@ export const apiService = {
     },
 
     // ============================================================
-    // INQUIRY — صفحه درخواست خرید (استعلام قیمت)
+    // INQUIRY — صفحه اعلان نیاز (استعلام قیمت)
     // ============================================================
     inquiry: {
         /** دیوار عمومی صفحه‌های خرید باز */
@@ -1395,7 +1395,7 @@ export const apiService = {
         get: (idOrSlug: string): Promise<InquiryDetail> =>
             apiRequest(`/inquiry/${encodeURIComponent(idOrSlug)}`),
 
-        /** ساخت صفحه درخواست خرید */
+        /** ساخت صفحه اعلان نیاز */
         create: (data: CreateInquiryPayload): Promise<InquiryDetail> =>
             apiRequest('/inquiry', { method: 'POST', data }),
 
@@ -1410,7 +1410,7 @@ export const apiService = {
         mine: (): Promise<InquiryListItem[]> =>
             apiRequest('/inquiry/mine'),
 
-        // ─── مدیریت قلم‌به‌قلم (پنل صفحه درخواست خرید) ───
+        // ─── مدیریت قلم‌به‌قلم (پنل صفحه اعلان نیاز) ───
         /** افزودن یک قلم — هر بار یک کالا */
         addItem: (inquiryId: string, data: CreateInquiryItemPayload): Promise<InquiryItem> =>
             apiRequest(`/inquiry/${inquiryId}/items`, { method: 'POST', data }),
@@ -1439,12 +1439,12 @@ export const apiService = {
         myOffers: (): Promise<InquiryOffer[]> =>
             apiRequest('/inquiry/my-offers'),
 
-        // ─── اعضای صفحه درخواست خرید — تامین‌کننده‌های تاییدشده (شبکهٔ خرید↔فروش) ───
+        // ─── اعضای صفحه اعلان نیاز — تامین‌کننده‌های تاییدشده (شبکهٔ خرید↔فروش) ───
         /** 🪪 ذخیره/حذف مشخصات کارت ویزیت صفحهٔ خرید — قرینهٔ کاتالوگ فروش */
         updateVisitCard: (inquiryId: string, spec: Record<string, any> | null): Promise<any> =>
             apiRequest(`/inquiry/${inquiryId}/visit-card`, { method: 'PATCH', data: { spec } }),
 
-        /** فهرست تامین‌کننده‌های این صفحه درخواست خرید (مالک) */
+        /** فهرست تامین‌کننده‌های این صفحه اعلان نیاز (مالک) */
         getMembers: (inquiryId: string): Promise<any[]> =>
             apiRequest(`/inquiry/${inquiryId}/members`),
 

@@ -766,7 +766,7 @@ export const PERMISSION_LEVELS = {
 
 
 // ═══════════════════════════════════════════════════════════
-// INQUIRY — صفحه درخواست خرید (استعلام قیمت)
+// INQUIRY — صفحه اعلان نیاز (استعلام قیمت)
 // فلسفه: ساده به‌صورت پیش‌فرض، پیشرفته اختیاری (قطعهٔ صنعتی)
 // ═══════════════════════════════════════════════════════════
 
@@ -826,9 +826,9 @@ export interface InquiryBase {
     tags: string[];
     viewCount: number;
     offerCount: number;
-    /** ✅ امکان ارسال قیمت برای خریدهای غیر فوری (سایر کالاها) — تنظیمات صفحه درخواست خرید */
+    /** ✅ امکان ارسال قیمت برای خریدهای غیر فوری (سایر کالاها) — تنظیمات صفحه اعلان نیاز */
     allowNonUrgentOffers?: boolean;
-    /** ✅ واحدهای اختصاصی صفحه درخواست خرید — [{ unitId }] */
+    /** ✅ واحدهای اختصاصی صفحه اعلان نیاز — [{ unitId }] */
     units?: InquiryUnitPayload[] | null;
     createdAt: string;
     updatedAt: string;
@@ -910,7 +910,7 @@ export interface CreateInquiryPayload {
     paymentTerms?: string;
     tags?: string[];
     businessId?: string;
-    units?: InquiryUnitPayload[];      // ✅ واحدهای اختصاصی صفحه درخواست خرید (مثل کاتالوگ فروش)
+    units?: InquiryUnitPayload[];      // ✅ واحدهای اختصاصی صفحه اعلان نیاز (مثل کاتالوگ فروش)
     allowNonUrgentOffers?: boolean;    // ✅ امکان ارسال قیمت برای خریدهای غیر فوری
 }
 

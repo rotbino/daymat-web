@@ -46,7 +46,7 @@ const STEPS = [
     { id: 'categories', title: 'دسته‌بندی', icon: Settings, required: true },
     { id: 'locations', title: 'موقعیت‌ها', icon: MapPin, required: true },
     { id: 'priceTable', title: 'تابلو قیمت', icon: TrendingUp, required: false },
-    { id: 'buyLead', title: 'درخواست خرید', icon: ShoppingCart, required: false },
+    { id: 'buyLead', title: 'اعلان نیاز', icon: ShoppingCart, required: false },
     { id: 'access', title: 'عضویت', icon: Settings, required: false },
     { id: 'payment', title: 'پرداخت', icon: CreditCard, required: false },
     { id: 'economy', title: 'اقتصاد', icon: Store, required: false },
@@ -407,7 +407,7 @@ export function ArmCreateWizard() {
                         onSave={() => {}}
                         isSaving={false}
                         moduleKey="buyLead"
-                        moduleName="تابلوی درخواست خرید"
+                        moduleName="تابلوی اعلان نیاز"
                         moduleIcon={ShoppingCart}
                         isAdmin={true}
                     />

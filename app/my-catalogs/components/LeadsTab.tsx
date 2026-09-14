@@ -1,5 +1,5 @@
 // app/my-catalogs/components/LeadsTab.tsx
-// ✅ تب «درخواست خریدها» پنل کاتالوگ فروش — قلب شبکهٔ خرید↔فروش از سمت تامین‌کننده:
+// ✅ تب «اعلان نیازها» پنل کاتالوگ فروش — قلب شبکهٔ خرید↔فروش از سمت تامین‌کننده:
 //    ۱) دعوت‌های در انتظار — صفحه‌های خریدی که تو را تامین‌کننده دعوت کرده‌اند (پذیرش/رد)
 //    ۲) اعلام خریدهای فوریِ صفحه‌های خریدی که تامین‌کنندهٔ تاییدشده‌شان هستی
 //       روی هر قلم مستقیم قیمت می‌دهی (شیت مشترک پیشنهاد قیمت)
@@ -150,7 +150,7 @@ export default function LeadsTab() {
                         <Megaphone className="mx-auto size-9 text-stone-200 dark:text-gray-700" />
                         <p className="mt-2 text-[13px] font-black text-stone-500 dark:text-gray-400">هنوز اعلام خریدی برای تو نیست</p>
                         <p className="mx-auto mt-1 max-w-xs text-[11px] font-bold leading-5 text-stone-400 dark:text-gray-500">
-                            وقتی تامین‌کنندهٔ صفحه درخواست خرید کسی باشی، اعلام خریدهای فوریش اینجا می‌آید
+                            وقتی تامین‌کنندهٔ صفحه اعلان نیاز کسی باشی، اعلام خریدهای فوریش اینجا می‌آید
                         </p>
                     </div>
                 ) : (
@@ -224,7 +224,7 @@ export default function LeadsTab() {
                                                 ))}
                                                 <Link href={`/inquiries/${lead.inquiry.slug || lead.inquiry.id}`}
                                                     className="flex items-center justify-center gap-1 pt-1 text-[11px] font-extrabold text-amber-700 hover:underline dark:text-amber-400">
-                                                    مشاهدهٔ کل صفحه درخواست خرید
+                                                    مشاهدهٔ کل صفحه اعلان نیاز
                                                     <ArrowLeft className="size-3" />
                                                 </Link>
                                             </div>
