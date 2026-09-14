@@ -1925,3 +1925,13 @@ export const useInquiryOpportunities = () => {
         staleTime: 30 * 1000,
     });
 };
+
+/** 🪧 تابلوی اعلام‌های خرید بازار — قرینهٔ useVitrine */
+export const useInquiryArmBoard = (slug?: string) => {
+    return useQuery({
+        queryKey: ['inquiry-arm-board', slug],
+        queryFn: () => apiService.inquiry.getArmBoard(slug!),
+        enabled: !!slug,
+        staleTime: 30 * 1000,
+    });
+};

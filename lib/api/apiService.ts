@@ -1468,6 +1468,10 @@ export const apiService = {
         requestAccess: (inquiryId: string, data: { catalogId: string; note?: string }): Promise<any> =>
             apiRequest(`/inquiry/${inquiryId}/request-access`, { method: 'POST', data }),
 
+        /** 🪧 تابلوی اعلام‌های خرید بازار — اعلام‌های منتشرشدهٔ اعضا (قرینهٔ vitrine) */
+        getArmBoard: (slug: string, opts?: { search?: string; page?: number; limit?: number }): Promise<{ items: any[]; total: number; page: number; limit: number }> =>
+            apiRequest(`/inquiry/arm/${slug}`, { method: 'GET', params: opts }),
+
         /** تایید/رد/حذف عضو — نقش مجاز بسته به مسیر دعوت/درخواست */
         decideMember: (inquiryId: string, memberId: string, status: 'active' | 'declined' | 'removed'): Promise<any> =>
             apiRequest(`/inquiry/${inquiryId}/members/${memberId}`, { method: 'PATCH', data: { status } }),
