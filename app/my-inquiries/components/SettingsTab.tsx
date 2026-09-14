@@ -1,8 +1,8 @@
 // app/my-inquiries/components/SettingsTab.tsx
-// تب تنظیمات پنل صفحه درخواست قیمت — مشخصات، شرایط، دسترسی و قیمت‌گیری، وضعیت
+// تب تنظیمات پنل کاتالوگ قیمت — مشخصات، شرایط، دسترسی و قیمت‌گیری، وضعیت
 // شامل فیلد «امکان ارسال قیمت برای خریدهای غیر فوری» (ایدهٔ مالک)
 // ✅ نمایانی دوگانه: عمومی (هرکس با لینک) | خصوصی (فقط تامین‌کننده‌های تاییدشده)
-//    دیوار عمومی حذف شد (تصمیم مالک) — صفحه درخواست قیمت به بازارها عرضه می‌شود (گام بعد)
+//    دیوار عمومی حذف شد (تصمیم مالک) — کاتالوگ قیمت به بازارها عرضه می‌شود (گام بعد)
 //    مفهوم خصوصی به خود خریدار گفته می‌شود — یک خط زیر گزینه
 'use client';
 
@@ -100,7 +100,7 @@ export default function SettingsTab({ detail, onSave, onOpenUnits, onToggleStatu
             <motion.section initial={{ opacity: 0, y: 14 }} animate={{ opacity: 1, y: 0 }} className={card}>
                 <h2 className={cardTitle}>مشخصات</h2>
                 <div className="space-y-2.5">
-                    <input value={title} onChange={(e) => setTitle(e.target.value)} placeholder="عنوان صفحه درخواست قیمت" className={`${inp} w-full`} />
+                    <input value={title} onChange={(e) => setTitle(e.target.value)} placeholder="عنوان کاتالوگ قیمت" className={`${inp} w-full`} />
                     <textarea value={description} onChange={(e) => setDescription(e.target.value)} rows={2}
                         placeholder="توضیح کوتاه" className={`${inp} h-auto w-full py-2`} />
                     <input value={tagsRaw} onChange={(e) => setTagsRaw(e.target.value)} placeholder="برچسب‌ها — با ویرگول جدا کن" className={`${inp} w-full`} />
@@ -173,7 +173,7 @@ export default function SettingsTab({ detail, onSave, onOpenUnits, onToggleStatu
                             label="امکان ارسال قیمت برای خریدهای غیر فوری"
                             sub={allowNonUrgentOffers
                                 ? 'تامین‌کننده‌ها برای سایر کالاها هم قیمت می‌فرستند'
-                                : 'فقط روی اقلام با درخواست قیمت فعال قیمت می‌گیرید'}
+                                : 'فقط روی اقلام با کاتالوگ قیمت فعال قیمت می‌گیرید'}
                         />
                     </div>
 

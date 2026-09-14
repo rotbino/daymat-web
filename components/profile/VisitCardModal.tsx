@@ -39,7 +39,7 @@ interface Props {
     description?: string;
     /** شناسهٔ کاتالوگ — با بودنش دکمهٔ ذخیره فعال می‌شود */
     catalogId?: string;
-    /** 📋 شناسهٔ صفحه درخواست قیمت — ذخیره در metadata صفحهٔ خرید (قرینهٔ کاتالوگ) */
+    /** 📋 شناسهٔ کاتالوگ قیمت — ذخیره در metadata صفحهٔ خرید (قرینهٔ کاتالوگ) */
     inquiryId?: string;
     /** مسیر پایهٔ صفحهٔ عمومی روی QR/کارت — پیش‌فرض ریشه؛ صفحهٔ خرید: /inquiries */
     basePath?: string;
@@ -443,7 +443,7 @@ export default function VisitCardModal({ open, onClose, catalogName, slug, logoU
         try {
             const spec = await buildSpec();
             if (!spec) throw new Error('spec');
-            // 📋 مقصد ذخیره — کاتالوگ فروش یا صفحه درخواست قیمت (هر دو در metadata.visitCard)
+            // 📋 مقصد ذخیره — کاتالوگ فروش یا کاتالوگ قیمت (هر دو در metadata.visitCard)
             const res: any = inquiryId
                 ? await apiService.inquiry.updateVisitCard(inquiryId, spec)
                 : await apiService.catalog.updateVisitCard(catalogId!, spec);
@@ -647,7 +647,7 @@ export default function VisitCardModal({ open, onClose, catalogName, slug, logoU
                     <div className="grid grid-cols-2 gap-2">
                         {/* 💾 ذخیره — مشخصات کارت روی کاتالوگ/صفحهٔ خرید می‌ماند و در تب انتشار دیده می‌شود */}
                         <button type="button" onClick={saveSpec} disabled={(!catalogId && !inquiryId) || saving}
-                                title={inquiryId ? 'ذخیرهٔ طرح روی صفحه درخواست قیمت' : catalogId ? 'ذخیرهٔ طرح روی کاتالوگ' : 'شناسه ندارد'}
+                                title={inquiryId ? 'ذخیرهٔ طرح روی کاتالوگ قیمت' : catalogId ? 'ذخیرهٔ طرح روی کاتالوگ' : 'شناسه ندارد'}
                                 className="h-10 rounded-lg border border-primary/40 bg-primary/5 dark:bg-primary/10 text-primary text-[11px] font-extrabold
                                     flex items-center justify-center gap-1.5 hover:bg-primary/10 active:scale-[0.98]
                                     disabled:opacity-60 transition-all">

@@ -1,7 +1,7 @@
 // app/my-inquiries/components/AddItemSheet.tsx
 // شیت افزودن/ویرایش قلم خرید — هر بار یک کالا (فلسفهٔ مالک: فرم قلم‌به‌قلم، بدون توضیح اضافه؛
 // ساختار فرم خودش حرف می‌زند). کالا از مرجع (EntityPicker با امکان افزودن)، واحد از مرجع واحد،
-// و تاگل «درخواست قیمت» که قلم را بالای کاتالوگ عمومی می‌نشاند.
+// و تاگل «کاتالوگ قیمت» که قلم را بالای کاتالوگ عمومی می‌نشاند.
 'use client';
 
 import React, { useEffect, useMemo, useRef, useState } from 'react';
@@ -131,11 +131,11 @@ export default function AddItemSheet({ open, onClose, inquiryId, catalogUnits, e
         try {
             if (editItem) {
                 await apiService.inquiry.updateItem(inquiryId, editItem.id, payload);
-                toast.success(st.urgent && !editItem.urgent ? 'ذخیره شد — درخواست قیمت فعال شد' : 'تغییرات ذخیره شد');
+                toast.success(st.urgent && !editItem.urgent ? 'ذخیره شد — کاتالوگ قیمت فعال شد' : 'تغییرات ذخیره شد');
                 onClose();
             } else {
                 await apiService.inquiry.addItem(inquiryId, payload);
-                toast.success(st.urgent ? 'قلم ثبت شد و درخواست قیمتش فعال است' : 'قلم ثبت شد');
+                toast.success(st.urgent ? 'قلم ثبت شد و کاتالوگ قیمتش فعال است' : 'قلم ثبت شد');
                 if (thenAnother) {
                     // برای ثبت زنجیره‌ای: کالا و جزئیات پاک، واحد و وضعیت می‌ماند
                     setSt((s) => ({ ...freshState(), unitId: s.unitId, unitTitle: s.unitTitle }));
@@ -232,7 +232,7 @@ export default function AddItemSheet({ open, onClose, inquiryId, catalogUnits, e
                                 </select>
                             </div>
 
-                            {/* درخواست قیمت — تاگل سرنوشت‌ساز */}
+                            {/* کاتالوگ قیمت — تاگل سرنوشت‌ساز */}
                             <div className={`rounded-2xl border p-3.5 transition-colors ${
                                 st.urgent
                                     ? 'border-brand-amber/50 bg-brand-amber-soft/60 dark:bg-amber-500/10'
@@ -241,7 +241,7 @@ export default function AddItemSheet({ open, onClose, inquiryId, catalogUnits, e
                                 <SwitchRow
                                     checked={st.urgent}
                                     onChange={(v) => patch({ urgent: v })}
-                                    label="درخواست قیمت"
+                                    label="کاتالوگ قیمت"
                                     sub="تامین‌کننده‌ها می‌تونن قیمت بدن"
                                 />
                             </div>

@@ -1,7 +1,7 @@
 // app/my-inquiries/components/MembersTab.tsx
-// ✅ تب «تامین‌کنندگان» پنل صفحه درخواست قیمت — شبکهٔ خرید↔فروش:
-//    تامین‌کننده‌های تاییدشده این کاتالوگ، درخواست قیمتهای فوری را اول از همه می‌بینند
-//    و در تب «درخواست قیمت»ی پنل فروششان قیمت می‌دهند.
+// ✅ تب «تامین‌کنندگان» پنل کاتالوگ قیمت — شبکهٔ خرید↔فروش:
+//    تامین‌کننده‌های تاییدشده این کاتالوگ، کاتالوگ قیمتهای فوری را اول از همه می‌بینند
+//    و در تب «کاتالوگ قیمت»ی پنل فروششان قیمت می‌دهند.
 //    دو مسیر: خریدار دعوت می‌کند (buyer_add → تایید با تامین‌کننده)
 //             تامین‌کننده درخواست می‌دهد (supplier_request → تایید با خریدار)
 // فلسفهٔ متن: حداقلی — خودِ ساختار می‌گوید چه خبر است.
@@ -138,8 +138,8 @@ export default function MembersTab({ inquiryId, visibility }: Props) {
                     <p className="text-sm font-black text-stone-900 dark:text-gray-100">تامین‌کننده‌های تاییدشده</p>
                     <p className="mt-0.5 text-[11px] font-bold leading-5 text-stone-400 dark:text-gray-500">
                         {visibility === 'private'
-                            ? 'درخواست قیمتهایت فقط همین‌ها می‌بینند'
-                            : 'درخواست قیمتهای فوریت را اول از همه می‌بینند و قیمت می‌دهند'}
+                            ? 'کاتالوگ قیمتهایت فقط همین‌ها می‌بینند'
+                            : 'کاتالوگ قیمتهای فوریت را اول از همه می‌بینند و قیمت می‌دهند'}
                     </p>
                 </div>
                 <button
@@ -175,7 +175,7 @@ export default function MembersTab({ inquiryId, visibility }: Props) {
                                 <Handshake className="mx-auto size-8 text-stone-200 dark:text-gray-700" />
                                 <p className="mt-2 text-[13px] font-black text-stone-500 dark:text-gray-400">هنوز تامین‌کننده‌ای نداری</p>
                                 <p className="mx-auto mt-1 max-w-xs text-[11px] font-bold leading-5 text-stone-400 dark:text-gray-500">
-                                    تامین‌کننده‌هایت را اضافه کن تا درخواست قیمتهایت دستشان برسد
+                                    تامین‌کننده‌هایت را اضافه کن تا کاتالوگ قیمتهایت دستشان برسد
                                 </p>
                             </div>
                         ) : (
@@ -236,7 +236,7 @@ function AddSupplierModal({ inquiryId, existingIds, onClose, onDone }: {
             >
                 <p className="text-[15px] font-black text-stone-900 dark:text-gray-100">افزودن تامین‌کننده</p>
                 <p className="mt-0.5 text-[11px] font-bold text-stone-400 dark:text-gray-500">
-                    از کاتالوگ فروششان دعوت کن — درخواست قیمتهایت دستشان می‌رسد
+                    از کاتالوگ فروششان دعوت کن — کاتالوگ قیمتهایت دستشان می‌رسد
                 </p>
 
                 <div className="relative mt-3">

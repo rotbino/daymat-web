@@ -183,7 +183,7 @@ const moduleConfigs: Record<string, { title: string; icon: any; groups: RuleGrou
         ],
     },
     buyLead: {
-        title: 'تابلوی درخواست قیمت',
+        title: 'تابلوی کاتالوگ قیمت',
         icon: ShoppingCart,
         groups: [
             {

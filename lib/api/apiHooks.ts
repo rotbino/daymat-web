@@ -570,7 +570,7 @@ export const useManualPurchase = () => {
         mutationFn: (data: PurchaseCreditDto) => apiService.credit.manualPurchase(data),
         onSuccess: () => {
             queryClient.invalidateQueries({ queryKey: ['credit', 'balance'] });
-            toast.success('درخواست قیمت با موفقیت ثبت شد');
+            toast.success('کاتالوگ قیمت با موفقیت ثبت شد');
         },
         onError: (error: ApiError) => toast.error(error.message || 'خطا در ثبت درخواست'),
     });
@@ -1707,7 +1707,7 @@ export const useRemoveContact = () => {
 };
 
 // ═══════════════════════════════════════════════════════════
-// INQUIRY HOOKS — صفحه درخواست قیمت (استعلام قیمت)
+// INQUIRY HOOKS — کاتالوگ قیمت (استعلام قیمت)
 // ═══════════════════════════════════════════════════════════
 
 export interface InquiryListParams {
@@ -1724,7 +1724,7 @@ export const usePublicInquiries = (params: InquiryListParams = {}) => {
     });
 };
 
-/** جزئیات یک صفحه درخواست قیمت (مالک: به‌همراه پیشنهادها) */
+/** جزئیات یک کاتالوگ قیمت (مالک: به‌همراه پیشنهادها) */
 export const useInquiry = (idOrSlug?: string) => {
     return useQuery({
         queryKey: ['inquiry', 'detail', idOrSlug],
@@ -1811,9 +1811,9 @@ export const useUpdateOfferStatus = () => {
     });
 };
 
-// ─── قلم‌به‌قلم (پنل صفحه درخواست قیمت) ───
+// ─── قلم‌به‌قلم (پنل کاتالوگ قیمت) ───
 
-/** پیشنهادهای دریافتی یک صفحه درخواست قیمت (فقط مالک) — پنل */
+/** پیشنهادهای دریافتی یک کاتالوگ قیمت (فقط مالک) — پنل */
 export const useInquiryOffers = (inquiryId?: string) => {
     const { hasAccess } = useAuthState();
     return useQuery({
@@ -1824,7 +1824,7 @@ export const useInquiryOffers = (inquiryId?: string) => {
     });
 };
 
-/** افزودن یک قلم به صفحه درخواست قیمت */
+/** افزودن یک قلم به کاتالوگ قیمت */
 export const useAddInquiryItem = () => {
     const qc = useQueryClient();
     return useMutation({
@@ -1837,7 +1837,7 @@ export const useAddInquiryItem = () => {
     });
 };
 
-/** ویرایش یک قلم — شامل تاگل درخواست قیمت */
+/** ویرایش یک قلم — شامل تاگل کاتالوگ قیمت */
 export const useUpdateInquiryItem = () => {
     const qc = useQueryClient();
     return useMutation({
@@ -1863,9 +1863,9 @@ export const useRemoveInquiryItem = () => {
     });
 };
 
-// ─── اعضای صفحه درخواست قیمت — تامین‌کننده‌های تاییدشده (شبکهٔ خرید↔فروش) ───
+// ─── اعضای کاتالوگ قیمت — تامین‌کننده‌های تاییدشده (شبکهٔ خرید↔فروش) ───
 
-/** فهرست تامین‌کننده‌های یک صفحه درخواست قیمت (مالک) */
+/** فهرست تامین‌کننده‌های یک کاتالوگ قیمت (مالک) */
 export const useInquiryMembers = (inquiryId?: string) => {
     const { hasAccess } = useAuthState();
     return useQuery({
@@ -1915,7 +1915,7 @@ export const useDecideInquiryMember = () => {
     });
 };
 
-/** فرصت‌های فروش تامین‌کننده — دعوت‌ها + درخواست قیمتهای فوری (تب «درخواست قیمت» پنل فروش) */
+/** فرصت‌های فروش تامین‌کننده — دعوت‌ها + کاتالوگ قیمتهای فوری (تب «کاتالوگ قیمت» پنل فروش) */
 export const useInquiryOpportunities = () => {
     const { hasAccess } = useAuthState();
     return useQuery({

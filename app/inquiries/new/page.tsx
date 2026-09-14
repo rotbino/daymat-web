@@ -1,5 +1,5 @@
 // app/inquiries/new/page.tsx
-// ساخت صفحه درخواست قیمت — نسخهٔ ۳ (جریان پنل‌محور بر اساس ایدهٔ مالک):
+// ساخت کاتالوگ قیمت — نسخهٔ ۳ (جریان پنل‌محور بر اساس ایدهٔ مالک):
 //   کسب‌وکار را انتخاب کن → کاتالوگ ساخته می‌شود → مستقیم به پنل مدیریت می‌روی؛
 //   اقلام بعداً قلم‌به‌قلم از پنل اضافه می‌شوند (مثل کاتالوگ فروش که اول کاتالوگ ساخته می‌شود).
 //   ذهن کاربر اولِ کار آمادهٔ واردکردن قلم نیست — پس هیچ قلمی اینجا خواسته نمی‌شود.
@@ -67,14 +67,14 @@ export default function NewInquiryPage() {
     }, [hydrated, isAuthenticated, router, bizParam]);
 
     useEffect(() => {
-        document.title = 'صفحه درخواست قیمت جدید | دیمت';
+        document.title = 'کاتالوگ قیمت جدید | دیمت';
     }, []);
 
-    // کسب‌وکاری که از قبل صفحه درخواست قیمت باز دارد → مستقیم به پنلش (صفحه درخواست قیمتِ هر کسب‌وکار یکی است)
+    // کسب‌وکاری که از قبل کاتالوگ قیمت باز دارد → مستقیم به پنلش (کاتالوگ قیمتِ هر کسب‌وکار یکی است)
     const checkExisting = (b: any): boolean => {
         const existing = (myInquiries ?? []).find((w: any) => w.businessId === b.id && w.status !== 'archived');
         if (existing) {
-            toast.info('این کسب‌وکار از قبل صفحه درخواست قیمت داره — رفتیم به پنلش');
+            toast.info('این کسب‌وکار از قبل کاتالوگ قیمت داره — رفتیم به پنلش');
             dispatch(setCurrentInquiry(existing.id));
             router.replace(`/my-inquiries?catalog=${existing.id}`);
             return true;
@@ -106,12 +106,12 @@ export default function NewInquiryPage() {
         setSubmitting(true);
         try {
             const res = await create.mutateAsync({
-                title: `صفحه درخواست قیمت ${biz.name || ''}`.trim().slice(0, 140),
+                title: `کاتالوگ قیمت ${biz.name || ''}`.trim().slice(0, 140),
                 businessId: biz.id,
                 visibility,
                 slug: slug.trim(),
             });
-            toast.success('صفحه درخواست قیمتت ساخته شد — حالا قلم‌ها رو اضافه کن');
+            toast.success('کاتالوگ قیمتت ساخته شد — حالا قلم‌ها رو اضافه کن');
             dispatch(setCurrentInquiry(res.id));
             router.replace(`/my-inquiries?catalog=${res.id}&add=1`);
         } catch (e: any) {
@@ -119,7 +119,7 @@ export default function NewInquiryPage() {
             if (code === 'SLUG_TAKEN' || code === 'SLUG_RESERVED' || code === 'INVALID_SLUG') {
                 toast.error(e?.response?.data?.message || 'این آدرس در دسترس نیست — کمی عوضش کن');
             } else {
-                toast.error(e?.response?.data?.message || 'ساختن صفحه درخواست قیمت ناموفق بود');
+                toast.error(e?.response?.data?.message || 'ساختن کاتالوگ قیمت ناموفق بود');
             }
         } finally {
             setSubmitting(false);
@@ -151,7 +151,7 @@ export default function NewInquiryPage() {
                 <motion.section {...fadeUp()} className="text-center">
                     <span className="inline-flex items-center gap-1.5 rounded-full bg-brand-amber-soft px-3 py-1 text-[11px] font-extrabold text-amber-700 dark:text-amber-400">
                         <ClipboardList className="size-3.5" />
-                        صفحه درخواست قیمت جدید
+                        کاتالوگ قیمت جدید
                     </span>
                     <h1 className="mt-3 text-[22px] font-black leading-9 sm:text-2xl">
                         برای کدام کسب‌وکار می‌سازی؟
@@ -174,7 +174,7 @@ export default function NewInquiryPage() {
                             className="mt-5">
                             {/* نمایانی — مفهومش به خود خریدار گفته می‌شود (دو گزینه، یک خط) */}
                             <div className="mb-3 grid grid-cols-2 gap-2">
-                                {([['public', 'عمومی', 'درخواست قیمتهایت همه می‌بینند', Globe],
+                                {([['public', 'عمومی', 'کاتالوگ قیمتهایت همه می‌بینند', Globe],
                                    ['private', 'خصوصی', 'فقط تامین‌کننده‌های تاییدشده', Lock]] as const).map(([v, label, hint, Icon]) => (
                                     <button key={v} type="button" onClick={() => setVisibility(v)}
                                         className={`flex items-center gap-2 rounded-2xl border-2 p-3 text-right transition-all ${
@@ -211,7 +211,7 @@ export default function NewInquiryPage() {
                                 disabled={submitting}
                                 className="flex h-14 w-full items-center justify-center gap-2 rounded-2xl bg-brand-amber text-[15px] font-extrabold text-white shadow-xl shadow-brand-amber/30 transition-colors hover:bg-brand-amber-strong disabled:opacity-50">
                                 {submitting ? <Loader2 className="size-5 animate-spin" /> : <Building2 className="size-5" />}
-                                ساخت صفحه درخواست قیمت
+                                ساخت کاتالوگ قیمت
                             </motion.button>
                         </motion.div>
                     )}
@@ -221,7 +221,7 @@ export default function NewInquiryPage() {
                 <motion.div {...fadeUp(0.12)} className="mt-8 grid grid-cols-3 gap-2">
                     {[
                         { icon: ClipboardList, t: 'قلم به قلم اضافه کن' },
-                        { icon: Megaphone, t: 'درخواست قیمت بزن' },
+                        { icon: Megaphone, t: 'کاتالوگ قیمت بزن' },
                         { icon: Send, t: 'لینک رو بفرست' },
                     ].map(({ icon: Icon, t }, i) => (
                         <div key={i} className="flex flex-col items-center gap-1.5 rounded-2xl border border-stone-100 bg-white px-2 py-3.5 text-center dark:border-gray-800 dark:bg-gray-900">

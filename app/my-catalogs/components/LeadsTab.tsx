@@ -1,7 +1,7 @@
 // app/my-catalogs/components/LeadsTab.tsx
-// ✅ تب «درخواست قیمت» پنل کاتالوگ فروش — قلب شبکهٔ خرید↔فروش از سمت تامین‌کننده:
+// ✅ تب «کاتالوگ قیمت» پنل کاتالوگ فروش — قلب شبکهٔ خرید↔فروش از سمت تامین‌کننده:
 //    ۱) دعوت‌های در انتظار — صفحه‌های خریدی که تو را تامین‌کننده دعوت کرده‌اند (پذیرش/رد)
-//    ۲) درخواست قیمتهای فوریِ صفحه‌های خریدی که تامین‌کنندهٔ تاییدشده‌شان هستی
+//    ۲) کاتالوگ قیمتهای فوریِ صفحه‌های خریدی که تامین‌کنندهٔ تاییدشده‌شان هستی
 //       روی هر قلم مستقیم قیمت می‌دهی (شیت مشترک پیشنهاد قیمت)
 //    سرنخ فروش بدون جست‌وجو — خریدار خودش اعلام می‌کند، تو فقط قیمت می‌دهی.
 'use client';
@@ -87,7 +87,7 @@ export default function LeadsTab() {
                                     </p>
                                     <p className="truncate text-[10px] font-bold text-stone-400 dark:text-gray-500">
                                         «{inv.inquiry.title}»{inv.inquiry.city ? ` · ${inv.inquiry.city}` : ''}
-                                        {inv.inquiry.urgentCount > 0 ? ` · ${faNum(inv.inquiry.urgentCount)} درخواست قیمت فوری` : ''}
+                                        {inv.inquiry.urgentCount > 0 ? ` · ${faNum(inv.inquiry.urgentCount)} کاتالوگ قیمت فوری` : ''}
                                     </p>
                                 </div>
                                 {busyId === inv.memberId ? (
@@ -95,7 +95,7 @@ export default function LeadsTab() {
                                 ) : (
                                     <div className="flex shrink-0 items-center gap-1.5">
                                         <button
-                                            onClick={() => run(inv.memberId, () => apiService.inquiry.decideMember(inv.inquiry.id, inv.memberId, 'active'), 'عضو شدی — درخواست قیمتهاش الان توی همین تب می‌آید')}
+                                            onClick={() => run(inv.memberId, () => apiService.inquiry.decideMember(inv.inquiry.id, inv.memberId, 'active'), 'عضو شدی — کاتالوگ قیمتهاش الان توی همین تب می‌آید')}
                                             className="flex h-8 items-center gap-1 rounded-lg bg-emerald-600 px-2.5 text-[11px] font-bold text-white"
                                         >
                                             <Check className="size-3.5" /> پذیرش
@@ -133,12 +133,12 @@ export default function LeadsTab() {
                 </div>
             )}
 
-            {/* درخواست قیمتهای فوری — سرنخ‌های فروش */}
+            {/* کاتالوگ قیمتهای فوری — سرنخ‌های فروش */}
             <div>
                 <div className="mb-2 flex items-center justify-between px-1">
                     <p className="flex items-center gap-1.5 text-[13px] font-black text-stone-900 dark:text-gray-100">
                         <Megaphone className="size-4 text-brand-amber" />
-                        درخواست قیمتهای جاری
+                        کاتالوگ قیمتهای جاری
                     </p>
                     <span className="text-[10px] font-bold text-stone-400">
                         {leads.length > 0 ? `${faNum(leads.reduce((a, l) => a + (l.items?.length ?? 0), 0))} قلم از ${faNum(leads.length)} خریدار` : ''}
@@ -148,9 +148,9 @@ export default function LeadsTab() {
                 {leads.length === 0 ? (
                     <div className={cn(CARD_CLS, 'px-6 py-10 text-center')}>
                         <Megaphone className="mx-auto size-9 text-stone-200 dark:text-gray-700" />
-                        <p className="mt-2 text-[13px] font-black text-stone-500 dark:text-gray-400">هنوز درخواست قیمتی از طرف خریدارن تو اعلام نشده. از برگه اعضا درخواست همکاریهای بیشتری بفرست</p>
+                        <p className="mt-2 text-[13px] font-black text-stone-500 dark:text-gray-400">هنوز کاتالوگ قیمتی از طرف خریدارن تو اعلام نشده. از برگه اعضا درخواست همکاریهای بیشتری بفرست</p>
                         <p className="mx-auto mt-1 max-w-xs text-[11px] font-bold leading-5 text-stone-400 dark:text-gray-500">
-                            وقتی تامین‌کنندهٔ صفحه درخواست قیمت کسی باشی، درخواست قیمتهای فوریش اینجا می‌آید
+                            وقتی تامین‌کنندهٔ کاتالوگ قیمت کسی باشی، کاتالوگ قیمتهای فوریش اینجا می‌آید
                         </p>
                     </div>
                 ) : (
@@ -183,7 +183,7 @@ export default function LeadsTab() {
                                         <ChevronDown className={cn('size-4 shrink-0 text-stone-400 transition-transform', open && 'rotate-180')} />
                                     </button>
 
-                                    {/* اقلام درخواست قیمت */}
+                                    {/* اقلام کاتالوگ قیمت */}
                                     {open && (
                                         <motion.div initial={{ height: 0, opacity: 0 }} animate={{ height: 'auto', opacity: 1 }} className="overflow-hidden">
                                             <div className="space-y-2 border-t border-outline-variant/20 p-3 dark:border-gray-800">
@@ -224,7 +224,7 @@ export default function LeadsTab() {
                                                 ))}
                                                 <Link href={`/${lead.inquiry.slug || lead.inquiry.id}`}
                                                     className="flex items-center justify-center gap-1 pt-1 text-[11px] font-extrabold text-amber-700 hover:underline dark:text-amber-400">
-                                                    مشاهدهٔ کل صفحه درخواست قیمت
+                                                    مشاهدهٔ کل کاتالوگ قیمت
                                                     <ArrowLeft className="size-3" />
                                                 </Link>
                                             </div>
