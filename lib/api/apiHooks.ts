@@ -1707,7 +1707,7 @@ export const useRemoveContact = () => {
 };
 
 // ═══════════════════════════════════════════════════════════
-// INQUIRY HOOKS — صفحه خرید (استعلام قیمت)
+// INQUIRY HOOKS — صفحه درخواست خرید (استعلام قیمت)
 // ═══════════════════════════════════════════════════════════
 
 export interface InquiryListParams {
@@ -1724,7 +1724,7 @@ export const usePublicInquiries = (params: InquiryListParams = {}) => {
     });
 };
 
-/** جزئیات یک صفحه خرید (مالک: به‌همراه پیشنهادها) */
+/** جزئیات یک صفحه درخواست خرید (مالک: به‌همراه پیشنهادها) */
 export const useInquiry = (idOrSlug?: string) => {
     return useQuery({
         queryKey: ['inquiry', 'detail', idOrSlug],
@@ -1811,9 +1811,9 @@ export const useUpdateOfferStatus = () => {
     });
 };
 
-// ─── قلم‌به‌قلم (پنل صفحه خرید) ───
+// ─── قلم‌به‌قلم (پنل صفحه درخواست خرید) ───
 
-/** پیشنهادهای دریافتی یک صفحه خرید (فقط مالک) — پنل */
+/** پیشنهادهای دریافتی یک صفحه درخواست خرید (فقط مالک) — پنل */
 export const useInquiryOffers = (inquiryId?: string) => {
     const { hasAccess } = useAuthState();
     return useQuery({
@@ -1824,7 +1824,7 @@ export const useInquiryOffers = (inquiryId?: string) => {
     });
 };
 
-/** افزودن یک قلم به صفحه خرید */
+/** افزودن یک قلم به صفحه درخواست خرید */
 export const useAddInquiryItem = () => {
     const qc = useQueryClient();
     return useMutation({
@@ -1863,9 +1863,9 @@ export const useRemoveInquiryItem = () => {
     });
 };
 
-// ─── اعضای صفحه خرید — تامین‌کننده‌های تاییدشده (شبکهٔ خرید↔فروش) ───
+// ─── اعضای صفحه درخواست خرید — تامین‌کننده‌های تاییدشده (شبکهٔ خرید↔فروش) ───
 
-/** فهرست تامین‌کننده‌های یک صفحه خرید (مالک) */
+/** فهرست تامین‌کننده‌های یک صفحه درخواست خرید (مالک) */
 export const useInquiryMembers = (inquiryId?: string) => {
     const { hasAccess } = useAuthState();
     return useQuery({

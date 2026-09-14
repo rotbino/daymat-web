@@ -1,5 +1,5 @@
 // app/inquiries/[id]/page.tsx
-// صفحه خرید عمومی — همان چیزی که تامین‌کننده با لینک می‌بیند:
+// صفحه درخواست خرید عمومی — همان چیزی که تامین‌کننده با لینک می‌بیند:
 //   ۱) «اعلام خریدهای فعال» بالای صفحه — اقلامی که خریدار همین حالا قیمت می‌خواهد
 //   ۲) «سایر کالاهایی که معمولا می‌خرد» — قیمت‌گیری‌شان بسته به تنظیمات خریدار
 //      (امکان ارسال قیمت برای خریدهای غیر فوری)
@@ -47,7 +47,7 @@ export default function InquiryDetailPage({ params }: { params: Promise<{ id: st
     const [offerTarget, setOfferTarget] = useState<{ id?: string; name: string; quantity?: number | null; unit?: string | null } | null>(null);
 
     useEffect(() => {
-        if (inquiry?.title) document.title = `${inquiry.title} | صفحه خرید دیمت`;
+        if (inquiry?.title) document.title = `${inquiry.title} | صفحه درخواست خرید دیمت`;
     }, [inquiry?.title]);
 
     const isOwner = !!inquiry?.isOwner;
@@ -90,7 +90,7 @@ export default function InquiryDetailPage({ params }: { params: Promise<{ id: st
         const next = inquiry.status === 'open' ? 'closed' : 'open';
         try {
             await updateInquiry.mutateAsync({ id: inquiry.id, data: { status: next } });
-            toast.success(next === 'open' ? 'صفحه خرید باز شد' : 'صفحه خرید بسته شد');
+            toast.success(next === 'open' ? 'صفحه درخواست خرید باز شد' : 'صفحه درخواست خرید بسته شد');
             refetch();
         } catch (e: any) {
             toast.error(e?.response?.data?.message || 'تغییر وضعیت ناموفق بود');
@@ -98,7 +98,7 @@ export default function InquiryDetailPage({ params }: { params: Promise<{ id: st
     };
 
     const remove = async () => {
-        if (!inquiry || !window.confirm('صفحه خرید برای همیشه حذف شود؟')) return;
+        if (!inquiry || !window.confirm('صفحه درخواست خرید برای همیشه حذف شود؟')) return;
         try {
             await deleteInquiry.mutateAsync(inquiry.id);
             toast.success('حذف شد');
@@ -121,7 +121,7 @@ export default function InquiryDetailPage({ params }: { params: Promise<{ id: st
             <div className="grid min-h-screen place-items-center bg-[#FFFDF7] px-4 text-center dark:bg-gray-950">
                 <div>
                     <Package className="mx-auto size-14 text-stone-300 dark:text-gray-700" />
-                    <h1 className="mt-4 text-xl font-black">این صفحه خرید پیدا نشد</h1>
+                    <h1 className="mt-4 text-xl font-black">این صفحه درخواست خرید پیدا نشد</h1>
                     <p className="mt-2 text-sm text-stone-500">ممکن است حذف شده باشد یا لینک اشتباه باشد.</p>
                     <Link href="/" className="mt-5 inline-flex h-11 items-center gap-2 rounded-full bg-brand-amber px-6 text-sm font-extrabold text-white">
                         رفتن به دیمت
@@ -401,7 +401,7 @@ export default function InquiryDetailPage({ params }: { params: Promise<{ id: st
                         {(inquiry.offers?.length ?? 0) === 0 ? (
                             <div className="rounded-3xl border-2 border-dashed border-brand-amber-tint bg-white px-6 py-10 text-center dark:bg-gray-900">
                                 <p className="text-sm font-bold text-stone-500 dark:text-gray-400">هنوز پیشنهادی نیومده.</p>
-                                <p className="mt-1 text-xs text-stone-400 dark:text-gray-500">لینک صفحه خریدت رو برای تامین‌کننده‌ها بفرست.</p>
+                                <p className="mt-1 text-xs text-stone-400 dark:text-gray-500">لینک صفحه درخواست خریدت رو برای تامین‌کننده‌ها بفرست.</p>
                             </div>
                         ) : (
                             <div className="space-y-3">
@@ -512,7 +512,7 @@ function PrivateGate({ inquiry, onDone }: { inquiry: any; onDone: () => void }) 
                 <span className="mx-auto grid size-14 place-items-center rounded-2xl bg-brand-amber-soft dark:bg-amber-500/10">
                     <Lock className="size-6 text-amber-600 dark:text-amber-400" />
                 </span>
-                <h1 className="mt-4 text-lg font-black">صفحه خرید خصوصی</h1>
+                <h1 className="mt-4 text-lg font-black">صفحه درخواست خرید خصوصی</h1>
                 {inquiry.title && <p className="mt-1 text-sm font-bold text-stone-500 dark:text-gray-400">«{inquiry.title}»</p>}
                 <p className="mx-auto mt-3 max-w-xs text-[12px] font-bold leading-6 text-stone-500 dark:text-gray-400">
                     فقط تامین‌کننده‌های تاییدشده محتوایش را می‌بینند — با کاتالوگ فروشت درخواست بده

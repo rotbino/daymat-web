@@ -1,8 +1,8 @@
 // app/my-inquiries/components/InquiryIdentityBar.tsx
-// نوار هویت صفحه خرید — قرینهٔ CatalogIdentityBar (سوییچر دو-محصولی)
+// نوار هویت صفحه درخواست خرید — قرینهٔ CatalogIdentityBar (سوییچر دو-محصولی)
 // هر دو نوع کاتالوگ در منو با برچسب پرانتزی؛ انتخاب فروش → مدیریت کاتالوگ فروش
 // پایینِ سوییچر: «کاتالوگ جدید» → مدال دو-گزینه‌ای (خرید یا فروش؟) — قرینهٔ سوییچر فروش
-// پالت صفحه خرید: سنگی/کهربایی (هماهنگ با کارت‌های همین صفحه)
+// پالت صفحه درخواست خرید: سنگی/کهربایی (هماهنگ با کارت‌های همین صفحه)
 'use client';
 
 import React, { useState } from 'react';
@@ -44,8 +44,8 @@ export default function InquiryIdentityBar({ inquiries, catalogs, currentInquiry
                     </span>
                     <span className="mt-0.5 block text-[10px] font-bold text-stone-400 dark:text-gray-500">
                         {current
-                            ? (current.status === 'open' ? 'صفحه خرید کارنت — باز' : 'صفحه خرید کارنت — بسته')
-                            : (multi ? 'برای تغییر کاتالوگ لمس کن' : 'صفحه خرید شما')}
+                            ? (current.status === 'open' ? 'صفحه درخواست خرید کارنت — باز' : 'صفحه درخواست خرید کارنت — بسته')
+                            : (multi ? 'برای تغییر کاتالوگ لمس کن' : 'صفحه درخواست خرید شما')}
                     </span>
                 </span>
             </button>
@@ -76,7 +76,7 @@ export default function InquiryIdentityBar({ inquiries, catalogs, currentInquiry
                                         <span className={cn('truncate text-[13px] font-bold', active ? 'text-amber-700 dark:text-amber-400' : 'text-stone-800 dark:text-gray-200')}>
                                             {w.title}
                                         </span>
-                                        <span className="shrink-0 whitespace-nowrap text-[9px] font-bold text-amber-600/90 dark:text-amber-400/90">(صفحه خرید)</span>
+                                        <span className="shrink-0 whitespace-nowrap text-[9px] font-bold text-amber-600/90 dark:text-amber-400/90">(صفحه درخواست خرید)</span>
                                     </span>
                                     {w.status === 'closed' && (
                                         <span className="shrink-0 rounded-full bg-stone-100 px-1.5 py-0.5 text-[9px] font-bold text-stone-400 dark:bg-gray-800">بسته</span>

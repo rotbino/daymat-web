@@ -1,5 +1,5 @@
 // app/my-inquiries/components/PublishTab.tsx
-// تب انتشار پنل صفحه خرید — لینک + اشتراک‌گذاری (واتساپ/تلگرام/سیستمی) + وضعیت انتشار
+// تب انتشار پنل صفحه درخواست خرید — لینک + اشتراک‌گذاری (واتساپ/تلگرام/سیستمی) + وضعیت انتشار
 'use client';
 
 import React, { useState } from 'react';
@@ -16,7 +16,7 @@ export default function PublishTab({ slug, id, title, visibility }: {
 }) {
     const [copied, setCopied] = useState(false);
     const url = typeof window !== 'undefined' ? `${window.location.origin}/inquiries/${slug || id}` : `/inquiries/${slug || id}`;
-    const shareText = `صفحه خرید «${title}» — اگه تامین‌کننده‌ای، قیمت بده: ${url}`;
+    const shareText = `صفحه درخواست خرید «${title}» — اگه تامین‌کننده‌ای، قیمت بده: ${url}`;
 
     const copy = async () => {
         try {
@@ -30,7 +30,7 @@ export default function PublishTab({ slug, id, title, visibility }: {
     const nativeShare = async () => {
         try {
             if (navigator.share) {
-                await navigator.share({ title: `صفحه خرید — ${title}`, text: shareText, url });
+                await navigator.share({ title: `صفحه درخواست خرید — ${title}`, text: shareText, url });
             } else {
                 await copy();
             }
@@ -45,7 +45,7 @@ export default function PublishTab({ slug, id, title, visibility }: {
             <motion.section
                 initial={{ opacity: 0, y: 14 }} animate={{ opacity: 1, y: 0 }}
                 className="rounded-2xl border border-stone-100 bg-white p-4 dark:border-gray-800 dark:bg-gray-900">
-                <h2 className="mb-3 text-[12px] font-black text-stone-400 dark:text-gray-500">لینک صفحه خرید</h2>
+                <h2 className="mb-3 text-[12px] font-black text-stone-400 dark:text-gray-500">لینک صفحه درخواست خرید</h2>
                 <div className="flex items-center gap-2">
                     <div dir="ltr" className="flex h-11 min-w-0 flex-1 items-center overflow-hidden rounded-xl border border-stone-200 bg-stone-50 px-3 dark:border-gray-700 dark:bg-gray-950/60">
                         <Link2 className="me-2 size-4 shrink-0 text-brand-amber" />
@@ -68,7 +68,7 @@ export default function PublishTab({ slug, id, title, visibility }: {
                         <MessageCircle className="size-5" />
                         واتساپ
                     </a>
-                    <a href={`https://t.me/share/url?url=${encodeURIComponent(url)}&text=${encodeURIComponent(`صفحه خرید «${title}»`)}`} target="_blank" rel="noreferrer" className={`${btn} text-sky-500 hover:text-sky-600`}>
+                    <a href={`https://t.me/share/url?url=${encodeURIComponent(url)}&text=${encodeURIComponent(`صفحه درخواست خرید «${title}»`)}`} target="_blank" rel="noreferrer" className={`${btn} text-sky-500 hover:text-sky-600`}>
                         <Send className="size-5" />
                         تلگرام
                     </a>
@@ -92,10 +92,10 @@ export default function PublishTab({ slug, id, title, visibility }: {
                     <div className="min-w-0 flex-1">
                         <p className="text-xs font-extrabold text-stone-700 dark:text-gray-200">
                             {visibility === 'private'
-                                ? 'این صفحه خرید خصوصیه — فقط تامین‌کننده‌های تاییدشده می‌بینن'
+                                ? 'این صفحه درخواست خرید خصوصیه — فقط تامین‌کننده‌های تاییدشده می‌بینن'
                                 : visibility === 'unlisted'
-                                    ? 'این صفحه خرید فقط با لینک دیده می‌شه'
-                                    : 'این صفحه خرید عمومیه — هرکس لینک را داشته باشد می‌بیند'}
+                                    ? 'این صفحه درخواست خرید فقط با لینک دیده می‌شه'
+                                    : 'این صفحه درخواست خرید عمومیه — هرکس لینک را داشته باشد می‌بیند'}
                         </p>
                         <p className="mt-0.5 text-[11px] font-bold leading-5 text-stone-400 dark:text-gray-500">
                             {visibility === 'private'
@@ -107,7 +107,7 @@ export default function PublishTab({ slug, id, title, visibility }: {
                 <Link href={`/inquiries/${slug || id}`}
                     className="mt-3 flex h-10 items-center justify-center gap-2 rounded-xl border border-stone-200 text-xs font-extrabold text-stone-600 transition-colors hover:border-brand-amber hover:text-amber-700 dark:border-gray-700 dark:text-gray-300">
                     <Eye className="size-3.5" />
-                    دیدن صفحه خرید
+                    دیدن صفحه درخواست خرید
                 </Link>
             </motion.section>
         </div>

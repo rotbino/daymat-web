@@ -1,9 +1,9 @@
 // app/my-inquiries/page.tsx
-// پنل مدیریت صفحه خرید — قرینهٔ کنسول کاتالوگ فروش (/my-catalogs):
+// پنل مدیریت صفحه درخواست خرید — قرینهٔ کنسول کاتالوگ فروش (/my-catalogs):
 //   انتخاب کسب‌وکار در /inquiries/new انجام می‌شود و کاربر مستقیم به همین پنل می‌آید؛
 //   اقلام قلم‌به‌قلم از همین‌جا اضافه می‌شوند (هر بار یک کالا + تیک اعلام خرید).
 //   تب‌ها: اقلام | پیشنهادها | تامین‌کنندگان | تنظیمات | انتشار — سوییچر دو-محصولی بالای پنل.
-// ✅ تب «تامین‌کنندگان»: شبکهٔ خرید↔فروش — دعوت/تایید تامین‌کننده‌های صفحه خرید
+// ✅ تب «تامین‌کنندگان»: شبکهٔ خرید↔فروش — دعوت/تایید تامین‌کننده‌های صفحه درخواست خرید
 'use client';
 
 import React, { useEffect, useMemo, useState } from 'react';
@@ -37,7 +37,7 @@ export default function MyInquiriesPage() {
     const dispatch = useDispatch();
     const { isAuthenticated, _hydrated } = useSelector((s: RootState) => s.auth) as any;
     const hydrated = _hydrated !== false;
-    // «صفحه خرید کارنت» — پرسیست؛ با رفرش هم سرجاش می‌ماند
+    // «صفحه درخواست خرید کارنت» — پرسیست؛ با رفرش هم سرجاش می‌ماند
     const currentInquiryId = useSelector((s: RootState) => s.catalog.currentInquiryId);
 
     const [tab, setTab] = useState<string>('items');
@@ -89,7 +89,7 @@ export default function MyInquiriesPage() {
     }, []);
 
     useEffect(() => {
-        document.title = 'پنل صفحه خرید | دیمت';
+        document.title = 'پنل صفحه درخواست خرید | دیمت';
     }, []);
 
     useEffect(() => {
@@ -154,14 +154,14 @@ export default function MyInquiriesPage() {
         const next = currentRow.status === 'open' ? 'closed' : 'open';
         try {
             await updateInquiry.mutateAsync({ id: currentRow.id, data: { status: next } });
-            toast.success(next === 'open' ? 'صفحه خرید باز شد' : 'صفحه خرید بسته شد');
+            toast.success(next === 'open' ? 'صفحه درخواست خرید باز شد' : 'صفحه درخواست خرید بسته شد');
         } catch (e: any) {
             toast.error(e?.response?.data?.message || 'تغییر وضعیت ناموفق بود');
         }
     };
 
     const removeCatalog = async () => {
-        if (!currentRow || !window.confirm('این صفحه خرید برای همیشه حذف شود؟')) return;
+        if (!currentRow || !window.confirm('این صفحه درخواست خرید برای همیشه حذف شود؟')) return;
         try {
             await deleteInquiry.mutateAsync(currentRow.id);
             toast.success('حذف شد');
@@ -228,7 +228,7 @@ export default function MyInquiriesPage() {
                             <PackageSearch className="size-8" />
                         </span>
                         <div>
-                            <h3 className="text-lg font-black">هنوز صفحه خریدی نساختی</h3>
+                            <h3 className="text-lg font-black">هنوز صفحه درخواست خریدی نساختی</h3>
                             <p className="mt-1 text-sm text-stone-500 dark:text-gray-400">
                                 اول کسب‌وکار رو انتخاب کن — بقیه‌ش اینجاست.
                             </p>
@@ -236,7 +236,7 @@ export default function MyInquiriesPage() {
                         <a href="/inquiries/new"
                             className="flex h-11 items-center gap-2 rounded-full bg-brand-amber px-6 text-sm font-extrabold text-white shadow-lg shadow-brand-amber/30 transition-colors hover:bg-brand-amber-strong">
                             <Plus className="size-4" />
-                            ساخت صفحه خرید
+                            ساخت صفحه درخواست خرید
                         </a>
                     </div>
                 ) : (
@@ -318,7 +318,7 @@ export default function MyInquiriesPage() {
                             ) : (
                                 <div className="grid place-items-center rounded-3xl border border-stone-100 bg-white py-14 text-center dark:border-gray-800 dark:bg-gray-900">
                                     <ClipboardList className="size-10 text-stone-300 dark:text-gray-700" />
-                                    <p className="mt-3 text-sm font-bold text-stone-400">صفحه خرید پیدا نشد</p>
+                                    <p className="mt-3 text-sm font-bold text-stone-400">صفحه درخواست خرید پیدا نشد</p>
                                 </div>
                             )}
                         </div>
@@ -332,7 +332,7 @@ export default function MyInquiriesPage() {
                             editItem={editItem}
                         />
 
-                        {/* مدال واحدهای اختصاصی صفحه خرید */}
+                        {/* مدال واحدهای اختصاصی صفحه درخواست خرید */}
                         <UnitSettingsModal
                             isOpen={unitsOpen}
                             onClose={() => setUnitsOpen(false)}
@@ -344,7 +344,7 @@ export default function MyInquiriesPage() {
                                 return { units };
                             }}
                             onSaved={() => { /* کش با invalidate تازه می‌شود */ }}
-                            title="واحدهای صفحه خرید"
+                            title="واحدهای صفحه درخواست خرید"
                             showQtyFields={false}
                         />
                     </>

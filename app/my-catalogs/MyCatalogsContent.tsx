@@ -289,9 +289,9 @@ export default function MyCatalogsContent() {
     const canShare = !!(currentCatalog as any)?.slug;
 
     const goNewCatalog = () => router.push('/business/register');
-    // صفحه خرید جدید — فرم محصول دوم
+    // صفحه درخواست خرید جدید — فرم محصول دوم
     const goNewInquiry = () => router.push('/inquiries/new');
-    // انتخاب صفحه خرید از سوییچر → پرش به مدیریت آن + ثبت «صفحه خرید کارنت» (پرسیست)
+    // انتخاب صفحه درخواست خرید از سوییچر → پرش به مدیریت آن + ثبت «صفحه درخواست خرید کارنت» (پرسیست)
     const selectInquiry = (id: string) => {
         dispatch(setCurrentInquiry(id));
         router.push(`/my-inquiries?catalog=${id}`);

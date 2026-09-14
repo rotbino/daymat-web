@@ -1,5 +1,5 @@
 // app/my-inquiries/components/OffersTab.tsx
-// تب پیشنهادهای دریافتی پنل صفحه خرید — پذیرش/رد همین‌جا (قبلاً فقط صفحه عمومی بود)
+// تب پیشنهادهای دریافتی پنل صفحه درخواست خرید — پذیرش/رد همین‌جا (قبلاً فقط صفحه عمومی بود)
 'use client';
 
 import React from 'react';
@@ -41,7 +41,7 @@ export default function OffersTab({ detail, offers, loading, onDecide, onGoPubli
                     <div>
                         <h3 className="text-base font-black">هنوز پیشنهادی نیومده</h3>
                         <p className="mt-1 text-xs font-bold text-stone-400 dark:text-gray-500">
-                            لینک صفحه خریدت رو برای تامین‌کننده‌ها بفرست.
+                            لینک صفحه درخواست خریدت رو برای تامین‌کننده‌ها بفرست.
                         </p>
                     </div>
                     <button onClick={onGoPublish}
