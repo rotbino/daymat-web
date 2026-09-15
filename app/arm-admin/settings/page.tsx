@@ -11,6 +11,14 @@ import {
     Loader2,
     AlertCircle,
     RefreshCw,
+    Home,
+    Puzzle,
+    ShieldCheck,
+    FolderTree,
+    MapPin,
+    Coins,
+    CreditCard,
+    Tags,
 } from 'lucide-react';
 import { toast } from 'sonner';
 import { apiService } from '@/lib/api/apiService';
@@ -19,8 +27,7 @@ import { cn } from '@/lib/utils';
 
 import { GeneralSection } from '@/app/admin/arm/components/GeneralSection';
 import { PaymentSection } from '@/app/admin/arm/components/PaymentSection';
-import { ModuleSettingsSection } from '@/app/admin/arm/components/ModuleSettingsSection';
-import { BoardModulesSection } from '@/app/admin/arm/components/BoardModulesSection';
+import { MarketModulesSection } from '@/app/admin/arm/components/MarketModulesSection';
 import { AccessRulesSection } from '@/app/admin/arm/components/AccessRulesSection';
 import { EconomySection } from '@/app/admin/arm/components/EconomySection';
 import { FormLabelsSection } from '@/app/admin/arm/components/FormLabelsSection';
@@ -33,15 +40,16 @@ import { ArmCategoryManager } from "@/app/admin/arm/components/ArmCategoryManage
 
 type SettingsTab = 'general' | 'modules' | 'access' | 'payment' | 'labels' | 'economy' | 'permissions' | 'categories' | 'industries' | 'locations';
 
-const TABS: { id: SettingsTab; label: string; icon: string }[] = [
-    { id: 'general', label: 'عمومی', icon: '🏠' },
-    { id: 'payment', label: 'درگاه پرداخت', icon: '💳' },
-    { id: 'economy', label: 'اقتصاد', icon: '💰' },
-    { id: 'modules', label: 'ماژول‌ها', icon: '🧩' },
-    { id: 'access', label: 'عضویت', icon: '🔐' },
-    { id: 'categories', label: 'گروه‌ها', icon: '📂' },
-    { id: 'locations', label: 'موقعیت‌ها', icon: '📍' },
-    { id: 'labels', label: 'برچسب‌ها', icon: '🏷️' },
+// ✅ ترتیب منطقی تب‌ها: هویت بازار → ماژول‌ها → دسته‌بندی و موقعیت → عضویت → پول
+const TABS: { id: SettingsTab; label: string; icon: React.ComponentType<{ className?: string }> }[] = [
+    { id: 'general', label: 'عمومی', icon: Home },
+    { id: 'modules', label: 'ماژول‌ها', icon: Puzzle },
+    { id: 'categories', label: 'گروه‌ها', icon: FolderTree },
+    { id: 'locations', label: 'موقعیت‌ها', icon: MapPin },
+    { id: 'access', label: 'عضویت', icon: ShieldCheck },
+    { id: 'economy', label: 'اقتصاد', icon: Coins },
+    { id: 'payment', label: 'درگاه پرداخت', icon: CreditCard },
+    { id: 'labels', label: 'برچسب‌ها', icon: Tags },
 ];
 
 export default function ArmAdminSettings() {
@@ -232,7 +240,7 @@ export default function ArmAdminSettings() {
                                                     : 'text-on-surface-variant dark:text-gray-400 hover:text-on-surface dark:hover:text-gray-200',
                                             )}
                                         >
-                                            <span>{tab.icon}</span>
+                                            <tab.icon className="w-4 h-4" />
                                             <span className="text-[10px]">{tab.label}</span>
                                         </button>
                                     );
@@ -257,47 +265,11 @@ export default function ArmAdminSettings() {
                     )}
 
                     {activeTab === 'modules' && (
-                        <div className="space-y-6">
-                            {/* ✅ سوییچ دیوارهای بازار — تعیین اینکه این بازار کدام دیوارها را دارد */}
-                            <BoardModulesSection watch={watch} setValue={handleSetValue} />
-                            {/* ✅ چهار ماژول: دو دیوارِ قابل‌خاموش‌کردن + دو ماژول همیشه‌فعال با تنظیمات جدا */}
-                            <ModuleSettingsSection
-                                watch={watch}
-                                setValue={handleSetValue}
-                                onSave={() => {}}
-                                isSaving={saving}
-                                moduleKey="priceTable"
-                                moduleName="دیوار فروشندگان — تابلوی قیمت و آگهی‌ها"
-                                isAdmin={isSystemAdmin}
-                            />
-                            <ModuleSettingsSection
-                                watch={watch}
-                                setValue={handleSetValue}
-                                onSave={() => {}}
-                                isSaving={saving}
-                                moduleKey="buyLeadWall"
-                                moduleName="دیوار خریداران — نمایش تابلوهای خرید اعضا"
-                                isAdmin={isSystemAdmin}
-                            />
-                            <ModuleSettingsSection
-                                watch={watch}
-                                setValue={handleSetValue}
-                                onSave={() => {}}
-                                isSaving={saving}
-                                moduleKey="buyLeadBoard"
-                                moduleName="تابلوی خریدِ هر خریدار — درخواست همکاری"
-                                isAdmin={isSystemAdmin}
-                            />
-                            <ModuleSettingsSection
-                                watch={watch}
-                                setValue={handleSetValue}
-                                onSave={() => {}}
-                                isSaving={saving}
-                                moduleKey="catalog"
-                                moduleName="کاتالوگ فروشِ هر فروشنده — سقف‌ها و عضوگیری"
-                                isAdmin={isSystemAdmin}
-                            />
-                        </div>
+                        <MarketModulesSection
+                            watch={watch}
+                            setValue={handleSetValue}
+                            isAdmin={isSystemAdmin}
+                        />
                     )}
 
                     {activeTab === 'access' && (

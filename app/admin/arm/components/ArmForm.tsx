@@ -6,7 +6,7 @@ import { useSelector } from 'react-redux';
 import { RootState } from '@/lib/store/store';
 import { useForm, FormProvider } from 'react-hook-form';
 import { useSearchParams, useRouter } from 'next/navigation';
-import { Loader2, TrendingUp, ShoppingCart } from 'lucide-react';
+import { Loader2 } from 'lucide-react';
 
 import { GeneralSection } from './GeneralSection';
 import { PaymentSection } from './PaymentSection';
@@ -14,7 +14,7 @@ import { CategoryScopeSelector } from './CategoryScopeSelector';
 import { LocationSelector } from './LocationSelector';
 import { IndustrySelector } from './IndustrySelector';
 import { AccessRulesSection } from './AccessRulesSection';
-import { ModuleSettingsSection } from './ModuleSettingsSection';
+import { MarketModulesSection } from './MarketModulesSection';
 import { FormLabelsSection } from './FormLabelsSection';
 import { EconomySection } from './EconomySection';
 import { ArmPermissionSection } from './ArmPermissionSection';
@@ -219,37 +219,14 @@ export function ArmForm({ initialData, onSubmit, isSubmitting = false, isEditMod
                     )}
 
                     {activeTab === 'modules' && (
-                        <div className="space-y-6">
-                            <ModuleSettingsSection
-                                watch={watch}
-                                setValue={setValue}
-                                onSave={handleAutoSave}
-                                isSaving={isSubmitting || isAutoSaving}
-                                moduleKey="priceTable"
-                                moduleName="دیوار فروشندگان — تابلوی قیمت"
-                                moduleIcon={TrendingUp}
-                                isAdmin={isSystemAdmin}
-                            />
-                            <ModuleSettingsSection
-                                watch={watch}
-                                setValue={setValue}
-                                onSave={handleAutoSave}
-                                isSaving={isSubmitting || isAutoSaving}
-                                moduleKey="buyLeadWall"
-                                moduleName="دیوار خریداران"
-                                moduleIcon={ShoppingCart}
-                                isAdmin={isSystemAdmin}
-                            />
-                            <ModuleSettingsSection
-                                watch={watch}
-                                setValue={setValue}
-                                onSave={handleAutoSave}
-                                isSaving={isSubmitting || isAutoSaving}
-                                moduleKey="buyLeadBoard"
-                                moduleName="تابلوی خرید"
-                                isAdmin={isSystemAdmin}
-                            />
-                        </div>
+                        <MarketModulesSection
+                            watch={watch}
+                            setValue={setValue}
+                            onSave={handleAutoSave}
+                            isSaving={isSubmitting || isAutoSaving}
+                            isAdmin={isSystemAdmin}
+                            intro={false}
+                        />
                     )}
 
                     {activeTab === 'access' && (

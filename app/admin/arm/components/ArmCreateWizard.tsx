@@ -26,7 +26,7 @@ import {
 import { cn } from '@/lib/utils';
 import { GeneralSection } from './GeneralSection';
 import { LocationSelector } from './LocationSelector';
-import { ModuleSettingsSection } from './ModuleSettingsSection';
+import { MarketModulesSection } from './MarketModulesSection';
 import { AccessRulesSection } from './AccessRulesSection';
 import { PaymentSection } from './PaymentSection';
 import { EconomySection } from './EconomySection';
@@ -388,40 +388,25 @@ export function ArmCreateWizard() {
                 );
             case 'priceTable':
                 return (
-                    <ModuleSettingsSection
+                    <MarketModulesSection
                         watch={watch}
                         setValue={setValue}
-                        onSave={() => {}}
-                        isSaving={false}
-                        moduleKey="priceTable"
-                        moduleName="دیوار فروشندگان — تابلوی قیمت"
-                        moduleIcon={TrendingUp}
                         isAdmin={true}
+                        only={['priceTable']}
+                        intro={false}
+                        defaultOpen
                     />
                 );
             case 'buyLead':
                 return (
-                    <div className="space-y-6">
-                        <ModuleSettingsSection
-                            watch={watch}
-                            setValue={setValue}
-                            onSave={() => {}}
-                            isSaving={false}
-                            moduleKey="buyLeadWall"
-                            moduleName="دیوار خریداران — نمایش تابلوهای خرید اعضا"
-                            moduleIcon={ShoppingCart}
-                            isAdmin={true}
-                        />
-                        <ModuleSettingsSection
-                            watch={watch}
-                            setValue={setValue}
-                            onSave={() => {}}
-                            isSaving={false}
-                            moduleKey="buyLeadBoard"
-                            moduleName="تابلوی خریدِ هر خریدار — درخواست همکاری"
-                            isAdmin={true}
-                        />
-                    </div>
+                    <MarketModulesSection
+                        watch={watch}
+                        setValue={setValue}
+                        isAdmin={true}
+                        only={['buyLeadWall', 'buyLeadBoard']}
+                        intro={false}
+                        defaultOpen
+                    />
                 );
             case 'access':
                 return (
