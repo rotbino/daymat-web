@@ -63,7 +63,7 @@ export default function MembersTab({ inquiryId, visibility }: Props) {
                 key={m.id}
                 initial={{ opacity: 0, y: 8 }}
                 animate={{ opacity: 1, y: 0 }}
-                className={`flex items-center gap-3 rounded-xl p-2.5 ${mode === 'incoming' ? 'bg-brand-amber-soft/50 dark:bg-amber-500/5' : 'hover:bg-stone-50 dark:hover:bg-gray-800/50'}`}
+                className={`flex items-center gap-3 rounded-xl p-2.5 ${mode === 'incoming' ? 'bg-brand-contrast-soft/50 dark:bg-amber-500/5' : 'hover:bg-stone-50 dark:hover:bg-gray-800/50'}`}
             >
                 <span className="grid size-10 shrink-0 place-items-center overflow-hidden rounded-xl bg-stone-100 dark:bg-gray-800">
                     {cat.logoUrl
@@ -106,7 +106,7 @@ export default function MembersTab({ inquiryId, visibility }: Props) {
                             </Link>
                         )}
                         {mode === 'invited' && (
-                            <span className="flex items-center gap-1 rounded-full bg-brand-amber-soft px-2 py-0.5 text-[9px] font-black text-amber-700 dark:bg-amber-500/10 dark:text-amber-400">
+                            <span className="flex items-center gap-1 rounded-full bg-brand-contrast-soft px-2 py-0.5 text-[9px] font-black text-amber-700 dark:bg-amber-500/10 dark:text-amber-400">
                                 <Hourglass className="size-3" /> در انتظار پذیرش تامین‌کننده
                             </span>
                         )}
@@ -131,7 +131,7 @@ export default function MembersTab({ inquiryId, visibility }: Props) {
         <div className="space-y-3">
             {/* سربرگ — یک خط توضیح، همان‌قدر که لازم است */}
             <div className={`${card} flex items-center gap-3 p-4`}>
-                <span className="grid size-10 shrink-0 place-items-center rounded-xl bg-brand-amber-soft dark:bg-amber-500/15">
+                <span className="grid size-10 shrink-0 place-items-center rounded-xl bg-brand-contrast-soft dark:bg-amber-500/15">
                     <Handshake className="size-5 text-amber-600 dark:text-amber-400" />
                 </span>
                 <div className="min-w-0 flex-1">
@@ -144,7 +144,7 @@ export default function MembersTab({ inquiryId, visibility }: Props) {
                 </div>
                 <button
                     onClick={() => setAddOpen(true)}
-                    className="flex h-10 shrink-0 items-center gap-1.5 rounded-full bg-brand-amber px-4 text-[13px] font-extrabold text-white shadow-lg shadow-brand-amber/25 transition-colors hover:bg-brand-amber-strong"
+                    className="flex h-10 shrink-0 items-center gap-1.5 rounded-full bg-brand-contrast px-4 text-[13px] font-extrabold text-white shadow-lg shadow-brand-contrast/25 transition-colors hover:bg-brand-contrast-strong"
                 >
                     <UserPlus className="size-4" />
                     افزودن
@@ -246,7 +246,7 @@ function AddSupplierModal({ inquiryId, existingIds, onClose, onDone }: {
                         onChange={(e) => setQ(e.target.value)}
                         placeholder="جست‌وجوی کاتالوگ قیمت…"
                         autoFocus
-                        className="h-11 w-full rounded-xl border border-stone-100 bg-stone-50 pr-9 pl-3 text-sm font-bold outline-none focus:border-brand-amber dark:border-gray-800 dark:bg-gray-950/60 dark:text-gray-100"
+                        className="h-11 w-full rounded-xl border border-stone-100 bg-stone-50 pr-9 pl-3 text-sm font-bold outline-none focus:border-brand-contrast dark:border-gray-800 dark:bg-gray-950/60 dark:text-gray-100"
                     />
                 </div>
 
@@ -274,7 +274,7 @@ function AddSupplierModal({ inquiryId, existingIds, onClose, onDone }: {
                                 <button
                                     onClick={() => invite(c)}
                                     disabled={addMember.isPending}
-                                    className="shrink-0 rounded-full bg-brand-amber px-3.5 py-1.5 text-[11px] font-extrabold text-white transition-colors hover:bg-brand-amber-strong disabled:opacity-50"
+                                    className="shrink-0 rounded-full bg-brand-contrast px-3.5 py-1.5 text-[11px] font-extrabold text-white transition-colors hover:bg-brand-contrast-strong disabled:opacity-50"
                                 >
                                     دعوت
                                 </button>

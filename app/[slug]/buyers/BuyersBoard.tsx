@@ -86,7 +86,7 @@ export default function BuyersBoard({ slug }: { slug: string }) {
                 border-b border-amber-200/60 dark:border-amber-900/40">
                 <div className="max-w-5xl mx-auto px-4 py-6">
                     <div className="flex items-center gap-3">
-                        <div className="w-11 h-11 rounded-xl bg-brand-amber flex items-center justify-center flex-shrink-0
+                        <div className="w-11 h-11 rounded-xl bg-brand-contrast flex items-center justify-center flex-shrink-0
                             shadow-[0_4px_14px_-4px_rgba(245,158,11,0.5)]">
                             <ShoppingCart className="w-5.5 h-5.5 text-white" />
                         </div>
@@ -178,7 +178,7 @@ function InquiryCard({ inq }: { inq: any }) {
                         {inq.business?.name || inq.owner?.fullName || 'خریدار'}{inq.city ? ` · ${inq.city}` : ''}
                     </p>
                 </div>
-                <span className="shrink-0 rounded-full bg-brand-amber px-2 py-0.5 text-[9px] font-black text-white">
+                <span className="shrink-0 rounded-full bg-brand-contrast px-2 py-0.5 text-[9px] font-black text-white">
                     {(inq.items?.length ?? 0).toLocaleString('fa-IR')} قلم فوری
                 </span>
             </div>
@@ -186,7 +186,7 @@ function InquiryCard({ inq }: { inq: any }) {
                 <div className="mt-2 flex flex-wrap gap-1.5">
                     {inq.items.slice(0, 3).map((it: any) => (
                         <span key={it.id}
-                              className="rounded-full bg-brand-amber-soft px-2 py-0.5 text-[10px] font-bold text-amber-800 dark:text-amber-300">
+                              className="rounded-full bg-brand-contrast-soft px-2 py-0.5 text-[10px] font-bold text-amber-800 dark:text-amber-300">
                             {it.name}{it.quantity ? ` — ${Number(it.quantity).toLocaleString('fa-IR')} ${it.unit || ''}` : ''}
                         </span>
                     ))}

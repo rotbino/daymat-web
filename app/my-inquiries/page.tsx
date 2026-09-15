@@ -214,7 +214,7 @@ export default function MyInquiriesPage() {
     if (!hydrated || !isAuthenticated) {
         return (
             <div className="grid min-h-screen place-items-center bg-gradient-to-b from-surface to-surface-container-low/40 dark:from-gray-950 dark:to-gray-900/40">
-                <Loader2 className="size-8 animate-spin text-brand-amber" />
+                <Loader2 className="size-8 animate-spin text-brand-contrast" />
             </div>
         );
     }
@@ -229,8 +229,8 @@ export default function MyInquiriesPage() {
                         {[0, 1].map((i) => <div key={i} className="h-28 animate-pulse rounded-3xl bg-white/70 dark:bg-gray-900/70" />)}
                     </div>
                 ) : list.length === 0 ? (
-                    <div className="flex flex-col items-center gap-4 rounded-3xl border-2 border-dashed border-brand-amber-tint bg-white px-6 py-16 text-center dark:bg-gray-900">
-                        <span className="grid size-16 place-items-center rounded-full bg-brand-amber-soft text-amber-500">
+                    <div className="flex flex-col items-center gap-4 rounded-3xl border-2 border-dashed border-brand-contrast-tint bg-white px-6 py-16 text-center dark:bg-gray-900">
+                        <span className="grid size-16 place-items-center rounded-full bg-brand-contrast-soft text-amber-500">
                             <PackageSearch className="size-8" />
                         </span>
                         <div>
@@ -240,7 +240,7 @@ export default function MyInquiriesPage() {
                             </p>
                         </div>
                         <a href="/inquiries/new"
-                            className="flex h-11 items-center gap-2 rounded-full bg-brand-amber px-6 text-sm font-extrabold text-white shadow-lg shadow-brand-amber/30 transition-colors hover:bg-brand-amber-strong">
+                            className="flex h-11 items-center gap-2 rounded-full bg-brand-contrast px-6 text-sm font-extrabold text-white shadow-lg shadow-brand-contrast/30 transition-colors hover:bg-brand-contrast-strong">
                             <Plus className="size-4" />
                             ساخت بازوی خرید
                         </a>

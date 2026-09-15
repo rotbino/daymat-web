@@ -41,7 +41,7 @@ function AdFormShell() {
                     <p className="text-sm font-bold text-on-surface">کاتالوگ مقصد مشخص نیست</p>
                     <p className="text-xs text-on-surface-variant mt-2">از کاتالوگ موردنظرت دکمهٔ «افزودن محصول» را بزن.</p>
                     <button onClick={() => router.push('/my-catalogs')}
-                            className="mt-4 text-primary text-sm font-bold">رفتن به کاتالوگ‌های من</button>
+                            className="mt-4 text-primary text-sm font-bold">رفتن به بازوهای من</button>
                 </div>
             </div>
         );
@@ -60,7 +60,7 @@ function AdFormShell() {
                     <Package className="w-12 h-12 text-on-surface-variant/20 mx-auto mb-4" />
                     <p className="text-sm font-bold text-on-surface">کاتالوگ یافت نشد</p>
                     <button onClick={() => router.push('/my-catalogs')}
-                            className="mt-4 text-primary text-sm font-bold">رفتن به کاتالوگ‌های من</button>
+                            className="mt-4 text-primary text-sm font-bold">رفتن به بازوهای من</button>
                 </div>
             </div>
         );

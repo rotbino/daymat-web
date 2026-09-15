@@ -132,9 +132,9 @@ export function CatalogLinksCard({ catalogs, inquiries = [], businessId }: {
                         <motion.div
                             key={w.id}
                             {...rowIn(salesCount + i)}
-                            className="rounded-xl border border-brand-amber-tint bg-brand-amber-soft/40 dark:bg-amber-500/5 p-3 flex items-center gap-2.5"
+                            className="rounded-xl border border-brand-contrast-tint bg-brand-contrast-soft/40 dark:bg-amber-500/5 p-3 flex items-center gap-2.5"
                         >
-                            <span className="w-8 h-8 rounded-lg bg-brand-amber-soft dark:bg-amber-500/15 grid place-items-center flex-shrink-0">
+                            <span className="w-8 h-8 rounded-lg bg-brand-contrast-soft dark:bg-amber-500/15 grid place-items-center flex-shrink-0">
                                 <ClipboardList className="w-4 h-4 text-amber-600 dark:text-amber-400" />
                             </span>
                             <div className="flex-1 min-w-0">
@@ -188,7 +188,7 @@ export function CatalogLinksCard({ catalogs, inquiries = [], businessId }: {
                 </Link>
                 <Link
                     href={businessId ? `/inquiries/new?bizId=${businessId}` : '/inquiries/new'}
-                    className="h-9 rounded-lg border border-brand-amber/40 text-amber-700 dark:text-amber-400 text-[11px] font-extrabold flex items-center justify-center gap-1 hover:bg-brand-amber-soft active:scale-95 transition-all"
+                    className="h-9 rounded-lg border border-brand-contrast/40 text-amber-700 dark:text-amber-400 text-[11px] font-extrabold flex items-center justify-center gap-1 hover:bg-brand-contrast-soft active:scale-95 transition-all"
                 >
                     <Plus className="w-3.5 h-3.5" /> بازوی خرید
                 </Link>

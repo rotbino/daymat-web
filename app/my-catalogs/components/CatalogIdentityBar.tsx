@@ -183,8 +183,8 @@ export default function CatalogIdentityBar({ catalogs, inquiries = [], currentCa
                                     <button key={w.id} type="button" role="menuitem"
                                             onClick={() => { setOpen(false); onSelectInquiry?.(w.id); }}
                                             className="w-full flex items-center gap-2.5 h-11 px-3 rounded-lg text-right
-                                                hover:bg-brand-amber-soft/60 dark:hover:bg-amber-500/10 transition-colors">
-                                        <span className="w-7 h-7 rounded-md bg-brand-amber-soft dark:bg-amber-500/15
+                                                hover:bg-brand-contrast-soft/60 dark:hover:bg-amber-500/10 transition-colors">
+                                        <span className="w-7 h-7 rounded-md bg-brand-contrast-soft dark:bg-amber-500/15
                                                 grid place-items-center flex-shrink-0">
                                             <ClipboardList className="w-3.5 h-3.5 text-amber-600 dark:text-amber-400" />
                                         </span>
@@ -219,7 +219,7 @@ export default function CatalogIdentityBar({ catalogs, inquiries = [], currentCa
                                     <button type="button" role="menuitem"
                                             onClick={() => { setOpen(false); onNewInquiry(); }}
                                             className="w-full flex items-center gap-2.5 h-11 px-3 rounded-lg text-right text-[13px] font-extrabold
-                                                text-amber-700 hover:bg-brand-amber-soft/60 dark:text-amber-400 dark:hover:bg-amber-500/10 transition-colors">
+                                                text-amber-700 hover:bg-brand-contrast-soft/60 dark:text-amber-400 dark:hover:bg-amber-500/10 transition-colors">
                                         <Plus className="w-4 h-4" />
                                         ساخت بازوی خرید
                                     </button>

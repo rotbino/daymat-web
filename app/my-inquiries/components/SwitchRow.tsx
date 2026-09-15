@@ -27,7 +27,7 @@ export default function SwitchRow({ checked, onChange, label, sub, disabled }: {
                 {sub && <span className="mt-0.5 block text-[11px] font-bold text-stone-400 dark:text-gray-500">{sub}</span>}
             </span>
             <span className={cn('relative h-6 w-11 shrink-0 rounded-full transition-colors',
-                checked ? 'bg-brand-amber' : 'bg-stone-200 dark:bg-gray-700')}>
+                checked ? 'bg-brand-contrast' : 'bg-stone-200 dark:bg-gray-700')}>
                 <span className={cn('absolute top-0.5 size-5 rounded-full bg-white shadow transition-all duration-200',
                     checked ? 'start-[1.375rem]' : 'start-0.5')} />
             </span>

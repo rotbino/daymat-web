@@ -176,7 +176,7 @@ export default function AddItemSheet({ open, onClose, inquiryId, catalogUnits, e
                         {/* سرآیند */}
                         <div className="sticky top-0 z-10 flex items-center justify-between border-b border-stone-100 bg-white/95 px-5 py-3.5 backdrop-blur dark:border-gray-800 dark:bg-gray-900/95">
                             <h2 className="flex items-center gap-2 text-[15px] font-black text-stone-900 dark:text-gray-100">
-                                <Megaphone className="size-4 text-brand-amber" />
+                                <Megaphone className="size-4 text-brand-contrast" />
                                 {editItem ? 'ویرایش قلم' : 'قلم خرید جدید'}
                             </h2>
                             <button onClick={onClose} aria-label="بستن"
@@ -235,7 +235,7 @@ export default function AddItemSheet({ open, onClose, inquiryId, catalogUnits, e
                             {/* بازوی خرید — تاگل سرنوشت‌ساز */}
                             <div className={`rounded-2xl border p-3.5 transition-colors ${
                                 st.urgent
-                                    ? 'border-brand-amber/50 bg-brand-amber-soft/60 dark:bg-amber-500/10'
+                                    ? 'border-brand-contrast/50 bg-brand-contrast-soft/60 dark:bg-amber-500/10'
                                     : 'border-stone-200 bg-stone-50 dark:border-gray-700 dark:bg-gray-950/60'
                             }`}>
                                 <SwitchRow
@@ -319,7 +319,7 @@ export default function AddItemSheet({ open, onClose, inquiryId, catalogUnits, e
                                 <button
                                     onClick={() => save(false)}
                                     disabled={saving}
-                                    className="flex h-11 flex-1 items-center justify-center gap-2 rounded-xl bg-brand-amber text-sm font-extrabold text-white shadow-lg shadow-brand-amber/25 transition-colors hover:bg-brand-amber-strong disabled:opacity-50">
+                                    className="flex h-11 flex-1 items-center justify-center gap-2 rounded-xl bg-brand-contrast text-sm font-extrabold text-white shadow-lg shadow-brand-contrast/25 transition-colors hover:bg-brand-contrast-strong disabled:opacity-50">
                                     {saving ? <Loader2 className="size-4 animate-spin" /> : null}
                                     ذخیره تغییرات
                                 </button>
@@ -328,14 +328,14 @@ export default function AddItemSheet({ open, onClose, inquiryId, catalogUnits, e
                                     <button
                                         onClick={() => save(false)}
                                         disabled={saving}
-                                        className="flex h-11 flex-1 items-center justify-center gap-2 rounded-xl bg-brand-amber text-sm font-extrabold text-white shadow-lg shadow-brand-amber/25 transition-colors hover:bg-brand-amber-strong disabled:opacity-50">
+                                        className="flex h-11 flex-1 items-center justify-center gap-2 rounded-xl bg-brand-contrast text-sm font-extrabold text-white shadow-lg shadow-brand-contrast/25 transition-colors hover:bg-brand-contrast-strong disabled:opacity-50">
                                         {saving ? <Loader2 className="size-4 animate-spin" /> : null}
                                         ثبت قلم
                                     </button>
                                     <button
                                         onClick={() => save(true)}
                                         disabled={saving}
-                                        className="h-11 rounded-xl border border-stone-200 px-4 text-xs font-bold text-stone-600 transition-colors hover:border-brand-amber hover:text-amber-700 disabled:opacity-50 dark:border-gray-700 dark:text-gray-300">
+                                        className="h-11 rounded-xl border border-stone-200 px-4 text-xs font-bold text-stone-600 transition-colors hover:border-brand-contrast hover:text-amber-700 disabled:opacity-50 dark:border-gray-700 dark:text-gray-300">
                                         ثبت و بعدی
                                     </button>
                                 </>

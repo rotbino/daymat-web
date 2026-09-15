@@ -4,7 +4,7 @@ import axios, { AxiosRequestConfig, InternalAxiosRequestConfig } from 'axios';
 import { clearUserSession } from '../store/slices/authSlice';
 import { ApiError } from './apiTypes';
 import { getFriendlyErrorMessage } from './errorHandler';
-import { handleNetworkFailure, rememberApiBase } from './networkGuard';
+import { handleNetworkFailure, rememberApiBase, noteSessionOnline } from './networkGuard';
 import { ensureInternet, noteApiSuccess } from './connectivity';
 
 let _store: any = null;
@@ -134,6 +134,7 @@ export const apiRequest = async <T = any>(
         const fullUrl = getApiUrl(url);
         const response = await api({ url: fullUrl, ...options });
         noteApiSuccess(); // پاسخ موفق = اینترنت و قطعیت سرور سالم → کش آنلاین نو شود
+        noteSessionOnline(); // از این لحظه جلسه فعال است — دیگر هرگز ریدایرکت قطعی
         return response.data;
     } catch (err: any) {
         // ⏱ خطای سطح شبکه (بدون پاسخ HTTP): قطع اینترنت، تایم‌اوت، اتصال ردشده
@@ -180,6 +181,7 @@ export const apiFileRequest = async <T = any>(
             ...config,
         });
         noteApiSuccess();
+        noteSessionOnline(); // جلسه فعال — نوار قطعی (اگر باز بود) بسته شود
         return response.data;
     } catch (err: any) {
         // خطای سطح شبکه (بدون پاسخ HTTP) → پیام فارسی یکدست + هدایت به صفحه وضعیت

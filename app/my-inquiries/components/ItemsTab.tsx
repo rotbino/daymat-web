@@ -46,12 +46,12 @@ function ItemRow({ item, offerCount, variant, busy, onEdit, onToggleUrgent, onDe
             transition={{ type: 'spring', stiffness: 380, damping: 30 }}
             className={`rounded-2xl border-2 bg-white p-3.5 dark:bg-gray-900 ${
                 urgent
-                    ? 'border-brand-amber/40 bg-brand-amber-soft/30 dark:bg-amber-500/5'
+                    ? 'border-brand-contrast/40 bg-brand-contrast-soft/30 dark:bg-amber-500/5'
                     : 'border-stone-100 dark:border-gray-800'
             } ${busy ? 'opacity-60' : ''}`}>
             <div className="flex items-start gap-3">
                 <span className={`mt-0.5 grid size-8 shrink-0 place-items-center rounded-xl ${
-                    urgent ? 'bg-brand-amber text-white' : 'bg-stone-100 text-stone-400 dark:bg-gray-800'
+                    urgent ? 'bg-brand-contrast text-white' : 'bg-stone-100 text-stone-400 dark:bg-gray-800'
                 }`}>
                     {urgent ? <Megaphone className="size-4" /> : <PackageSearch className="size-4" />}
                 </span>
@@ -64,7 +64,7 @@ function ItemRow({ item, offerCount, variant, busy, onEdit, onToggleUrgent, onDe
                             </span>
                         )}
                         {(item.quantity || item.unit) && (
-                            <span className="rounded-full bg-brand-amber-soft px-2 py-0.5 text-amber-700 dark:text-amber-400">
+                            <span className="rounded-full bg-brand-contrast-soft px-2 py-0.5 text-amber-700 dark:text-amber-400">
                                 {item.quantity ? faNum(item.quantity) : ''} {item.unit}
                             </span>
                         )}
@@ -94,7 +94,7 @@ function ItemRow({ item, offerCount, variant, busy, onEdit, onToggleUrgent, onDe
                     </button>
                 ) : (
                     <button onClick={onToggleUrgent} disabled={busy}
-                        className="flex h-8 items-center gap-1.5 rounded-lg bg-brand-amber-soft px-2.5 text-[11px] font-extrabold text-amber-700 transition-colors hover:bg-brand-amber-tint disabled:opacity-50 dark:bg-amber-500/10 dark:text-amber-400">
+                        className="flex h-8 items-center gap-1.5 rounded-lg bg-brand-contrast-soft px-2.5 text-[11px] font-extrabold text-amber-700 transition-colors hover:bg-brand-contrast-tint disabled:opacity-50 dark:bg-amber-500/10 dark:text-amber-400">
                         {busy ? <Loader2 className="size-3.5 animate-spin" /> : <Megaphone className="size-3.5" />}
                         بازوی خرید
                     </button>
@@ -128,7 +128,7 @@ export default function ItemsTab({ detail, offers, loading, onAdd, onEdit, onTog
             <motion.button
                 whileTap={{ scale: 0.98 }}
                 onClick={onAdd}
-                className="flex h-12 w-full items-center justify-center gap-2 rounded-2xl border-2 border-dashed border-brand-amber/60 bg-brand-amber-soft/40 text-sm font-extrabold text-amber-700 transition-colors hover:bg-brand-amber-soft dark:bg-amber-500/10 dark:text-amber-400">
+                className="flex h-12 w-full items-center justify-center gap-2 rounded-2xl border-2 border-dashed border-brand-contrast/60 bg-brand-contrast-soft/40 text-sm font-extrabold text-amber-700 transition-colors hover:bg-brand-contrast-soft dark:bg-amber-500/10 dark:text-amber-400">
                 <Plus className="size-4" />
                 افزودن قلم خرید
             </motion.button>
@@ -140,8 +140,8 @@ export default function ItemsTab({ detail, offers, loading, onAdd, onEdit, onTog
             ) : items.length === 0 ? (
                 <motion.div
                     initial={{ opacity: 0, y: 16 }} animate={{ opacity: 1, y: 0 }}
-                    className="flex flex-col items-center gap-4 rounded-3xl border-2 border-dashed border-brand-amber-tint bg-white px-6 py-14 text-center dark:bg-gray-900">
-                    <span className="grid size-16 place-items-center rounded-full bg-brand-amber-soft text-amber-500">
+                    className="flex flex-col items-center gap-4 rounded-3xl border-2 border-dashed border-brand-contrast-tint bg-white px-6 py-14 text-center dark:bg-gray-900">
+                    <span className="grid size-16 place-items-center rounded-full bg-brand-contrast-soft text-amber-500">
                         <PackageSearch className="size-8" />
                     </span>
                     <div>
@@ -161,7 +161,7 @@ export default function ItemsTab({ detail, offers, loading, onAdd, onEdit, onTog
                             <h2 className="mb-2 flex items-center gap-2 px-1 text-[13px] font-black text-amber-700 dark:text-amber-400">
                                 <Megaphone className="size-4" />
                                 اقلام فعال
-                                <span className="rounded-full bg-brand-amber px-2 py-0.5 text-[9px] font-black text-white">
+                                <span className="rounded-full bg-brand-contrast px-2 py-0.5 text-[9px] font-black text-white">
                                     {faNum(urgentItems.length)}
                                 </span>
                             </h2>

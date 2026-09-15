@@ -13,7 +13,7 @@ import { faNum } from '@/app/inquiries/utils';
 
 const BASIS_OPTIONS = ['جمع کل', 'هر کیلو', 'هر عدد', 'هر کارتن', 'هر متر'];
 
-const fieldCls = 'h-11 w-full rounded-xl border border-stone-100 bg-stone-50 px-3 text-sm font-bold outline-none focus:border-brand-amber dark:border-gray-800 dark:bg-gray-950/60 dark:text-gray-100';
+const fieldCls = 'h-11 w-full rounded-xl border border-stone-100 bg-stone-50 px-3 text-sm font-bold outline-none focus:border-brand-contrast dark:border-gray-800 dark:bg-gray-950/60 dark:text-gray-100';
 const labelCls = 'mb-1 block text-[11px] font-extrabold text-stone-400';
 
 export default function OfferSheet({ inquiry, item, onClose }: {
@@ -74,7 +74,7 @@ export default function OfferSheet({ inquiry, item, onClose }: {
                             rounded-t-3xl sm:rounded-2xl bg-white dark:bg-gray-900 shadow-2xl">
                         <div className="sticky top-0 z-10 flex items-center justify-between border-b border-stone-100 bg-white/95 px-5 py-3.5 backdrop-blur dark:border-gray-800 dark:bg-gray-900/95">
                             <h2 className="flex items-center gap-2 text-[15px] font-black">
-                                <Store className="size-4 text-brand-amber" />
+                                <Store className="size-4 text-brand-contrast" />
                                 قیمتت رو بذار
                             </h2>
                             <button onClick={onClose} aria-label="بستن"
@@ -85,7 +85,7 @@ export default function OfferSheet({ inquiry, item, onClose }: {
 
                         <div className="px-5 py-4">
                             {/* زمینهٔ قلم */}
-                            <div className="rounded-2xl border border-brand-amber-tint bg-brand-amber-soft/50 px-4 py-3 dark:bg-amber-500/10">
+                            <div className="rounded-2xl border border-brand-contrast-tint bg-brand-contrast-soft/50 px-4 py-3 dark:bg-amber-500/10">
                                 <p className="text-sm font-extrabold text-amber-800 dark:text-amber-300">
                                     {item.id ? item.name : 'کل لیست خرید'}
                                 </p>
@@ -120,7 +120,7 @@ export default function OfferSheet({ inquiry, item, onClose }: {
                                     <label className={labelCls}>پیام به خریدار (اختیاری)</label>
                                     <textarea value={message} onChange={(e) => setMessage(e.target.value)} rows={2}
                                         placeholder="مثلاً: تحویل درب انبار، فاکتور رسمی داریم"
-                                        className="w-full rounded-xl border border-stone-100 bg-stone-50 px-3 py-2 text-sm outline-none focus:border-brand-amber dark:border-gray-800 dark:bg-gray-950/60 dark:text-gray-100" />
+                                        className="w-full rounded-xl border border-stone-100 bg-stone-50 px-3 py-2 text-sm outline-none focus:border-brand-contrast dark:border-gray-800 dark:bg-gray-950/60 dark:text-gray-100" />
                                 </div>
                                 <div>
                                     <label className={labelCls}>تلفن تماس (اختیاری)</label>
@@ -131,7 +131,7 @@ export default function OfferSheet({ inquiry, item, onClose }: {
                                     whileTap={{ scale: 0.97 }}
                                     disabled={sending}
                                     onClick={submit}
-                                    className="flex h-12 w-full items-center justify-center gap-2 rounded-full bg-brand-amber text-sm font-extrabold text-white shadow-lg shadow-brand-amber/30 transition-colors hover:bg-brand-amber-strong disabled:opacity-50">
+                                    className="flex h-12 w-full items-center justify-center gap-2 rounded-full bg-brand-contrast text-sm font-extrabold text-white shadow-lg shadow-brand-contrast/30 transition-colors hover:bg-brand-contrast-strong disabled:opacity-50">
                                     {sending ? <Loader2 className="size-4 animate-spin" /> : <Send className="size-4" />}
                                     ثبت پیشنهاد قیمت
                                 </motion.button>

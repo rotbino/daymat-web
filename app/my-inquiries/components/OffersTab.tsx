@@ -34,8 +34,8 @@ export default function OffersTab({ detail, offers, loading, onDecide, onGoPubli
                     {[0, 1].map((i) => <div key={i} className="h-32 animate-pulse rounded-2xl bg-white/70 dark:bg-gray-900/70" />)}
                 </div>
             ) : offers.length === 0 ? (
-                <div className="flex flex-col items-center gap-4 rounded-3xl border-2 border-dashed border-brand-amber-tint bg-white px-6 py-14 text-center dark:bg-gray-900">
-                    <span className="grid size-16 place-items-center rounded-full bg-brand-amber-soft text-amber-500">
+                <div className="flex flex-col items-center gap-4 rounded-3xl border-2 border-dashed border-brand-contrast-tint bg-white px-6 py-14 text-center dark:bg-gray-900">
+                    <span className="grid size-16 place-items-center rounded-full bg-brand-contrast-soft text-amber-500">
                         <MessageSquareText className="size-8" />
                     </span>
                     <div>
@@ -45,7 +45,7 @@ export default function OffersTab({ detail, offers, loading, onDecide, onGoPubli
                         </p>
                     </div>
                     <button onClick={onGoPublish}
-                        className="flex h-10 items-center gap-2 rounded-full bg-brand-amber px-5 text-xs font-extrabold text-white shadow-md shadow-brand-amber/25 transition-colors hover:bg-brand-amber-strong">
+                        className="flex h-10 items-center gap-2 rounded-full bg-brand-contrast px-5 text-xs font-extrabold text-white shadow-md shadow-brand-contrast/25 transition-colors hover:bg-brand-contrast-strong">
                         <Share2 className="size-3.5" />
                         اشتراک‌گذاری
                     </button>
@@ -71,7 +71,7 @@ export default function OffersTab({ detail, offers, loading, onDecide, onGoPubli
                                         {o.business?.logoUrl ? (
                                             <Image src={o.business.logoUrl} alt="" width={40} height={40} className="size-10 rounded-xl object-cover" unoptimized />
                                         ) : (
-                                            <span className="grid size-10 place-items-center rounded-xl bg-brand-amber-soft text-xs font-black text-amber-700 dark:text-amber-400">
+                                            <span className="grid size-10 place-items-center rounded-xl bg-brand-contrast-soft text-xs font-black text-amber-700 dark:text-amber-400">
                                                 {(o.business?.name || o.offerer?.fullName || 'ت').charAt(0)}
                                             </span>
                                         )}
@@ -81,14 +81,14 @@ export default function OffersTab({ detail, offers, loading, onDecide, onGoPubli
                                         </div>
                                     </div>
                                     <div className="text-end">
-                                        <p className="text-base font-black text-brand-amber">{faPrice(o.price)}</p>
+                                        <p className="text-base font-black text-brand-contrast">{faPrice(o.price)}</p>
                                         {o.priceBasis && <p className="text-[10px] font-bold text-stone-400">{o.priceBasis}</p>}
                                     </div>
                                 </div>
 
                                 <div className="mt-2 flex flex-wrap items-center gap-2 text-[11px] font-bold text-stone-400">
                                     {ctx && (
-                                        <span className="flex items-center gap-1 rounded-full bg-brand-amber-soft px-2 py-0.5 text-amber-700 dark:text-amber-400">
+                                        <span className="flex items-center gap-1 rounded-full bg-brand-contrast-soft px-2 py-0.5 text-amber-700 dark:text-amber-400">
                                             <Megaphone className="size-3" /> {ctx}
                                         </span>
                                     )}

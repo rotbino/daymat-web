@@ -173,7 +173,7 @@ export default function InquiryPublicClient({ idOrSlug }: { idOrSlug: string }) 
     if (isLoading) {
         return (
             <div className="grid min-h-screen place-items-center bg-white dark:bg-gray-950">
-                <Loader2 className="size-8 animate-spin text-brand-amber" />
+                <Loader2 className="size-8 animate-spin text-brand-contrast" />
             </div>
         );
     }
@@ -185,7 +185,7 @@ export default function InquiryPublicClient({ idOrSlug }: { idOrSlug: string }) 
                     <Package className="mx-auto size-14 text-stone-300 dark:text-gray-700" />
                     <h1 className="mt-4 text-xl font-black">این بازوی خرید پیدا نشد</h1>
                     <p className="mt-2 text-sm text-stone-500">ممکن است حذف شده باشد یا لینک اشتباه باشد.</p>
-                    <Link href="/" className="mt-5 inline-flex h-11 items-center gap-2 rounded-full bg-brand-amber px-6 text-sm font-extrabold text-white">
+                    <Link href="/" className="mt-5 inline-flex h-11 items-center gap-2 rounded-full bg-brand-contrast px-6 text-sm font-extrabold text-white">
                         رفتن به دیمت
                     </Link>
                 </div>
@@ -208,7 +208,7 @@ export default function InquiryPublicClient({ idOrSlug }: { idOrSlug: string }) 
                             {STATUS_FA[inquiry.status]}
                         </span>
                         <button onClick={copyLink} aria-label="کپی لینک"
-                            className="grid size-9 place-items-center rounded-full border border-stone-200 text-stone-500 transition-colors hover:border-brand-amber hover:text-amber-600 dark:border-gray-700">
+                            className="grid size-9 place-items-center rounded-full border border-stone-200 text-stone-500 transition-colors hover:border-brand-contrast hover:text-amber-600 dark:border-gray-700">
                             {copied ? <Check className="size-4 text-emerald-500" /> : <Share2 className="size-4" />}
                         </button>
                     </div>
@@ -219,7 +219,7 @@ export default function InquiryPublicClient({ idOrSlug }: { idOrSlug: string }) 
                 {/* کارت سرآیند */}
                 <motion.section {...fadeUp()} className={`p-5 sm:p-6 ${CARD} rounded-3xl`}>
                     <div className="flex items-start gap-3">
-                        <span className="grid size-12 shrink-0 place-items-center rounded-2xl bg-brand-amber-soft text-amber-600 dark:text-amber-400">
+                        <span className="grid size-12 shrink-0 place-items-center rounded-2xl bg-brand-contrast-soft text-amber-600 dark:text-amber-400">
                             <ClipboardList className="size-6" />
                         </span>
                         <div className="min-w-0 flex-1">
@@ -256,7 +256,7 @@ export default function InquiryPublicClient({ idOrSlug }: { idOrSlug: string }) 
                             </span>
                         )}
                         {inquiry.tags.map((t) => (
-                            <span key={t} className="rounded-full bg-brand-amber-soft px-3 py-1 text-[11px] font-bold text-amber-700 dark:text-amber-400">{t}</span>
+                            <span key={t} className="rounded-full bg-brand-contrast-soft px-3 py-1 text-[11px] font-bold text-amber-700 dark:text-amber-400">{t}</span>
                         ))}
                     </div>
 
@@ -271,8 +271,8 @@ export default function InquiryPublicClient({ idOrSlug }: { idOrSlug: string }) 
                                 </a>
                             )}
                             <button onClick={saveContact}
-                                className="flex h-10 items-center gap-1.5 rounded-full border border-stone-200 px-4 text-xs font-extrabold text-stone-700 transition-colors hover:border-brand-amber hover:text-amber-700 dark:border-gray-700 dark:text-gray-200">
-                                <UserPlus className="size-3.5 text-brand-amber" />
+                                className="flex h-10 items-center gap-1.5 rounded-full border border-stone-200 px-4 text-xs font-extrabold text-stone-700 transition-colors hover:border-brand-contrast hover:text-amber-700 dark:border-gray-700 dark:text-gray-200">
+                                <UserPlus className="size-3.5 text-brand-contrast" />
                                 ذخیره مخاطب
                             </button>
                         </div>
@@ -282,7 +282,7 @@ export default function InquiryPublicClient({ idOrSlug }: { idOrSlug: string }) 
                     {isOwner && (
                         <div className="mt-4 flex flex-wrap gap-2 border-t border-dashed border-stone-100 pt-4 dark:border-gray-800">
                             <Link href={`/my-inquiries?catalog=${inquiry.id}`}
-                                className="flex h-10 items-center gap-1.5 rounded-full bg-brand-amber px-4 text-xs font-extrabold text-white shadow-md shadow-brand-amber/25 transition-colors hover:bg-brand-amber-strong">
+                                className="flex h-10 items-center gap-1.5 rounded-full bg-brand-contrast px-4 text-xs font-extrabold text-white shadow-md shadow-brand-contrast/25 transition-colors hover:bg-brand-contrast-strong">
                                 <Settings className="size-3.5" />
                                 مدیریت در پنل
                             </Link>
@@ -297,7 +297,7 @@ export default function InquiryPublicClient({ idOrSlug }: { idOrSlug: string }) 
                 {/* ═══ بنر بازوی خرید خصوصی — لیست دیده می‌شود، قیمت فقط برای اعضا ═══ */}
                 {limited && (
                     <motion.div {...fadeUp(0.05)}
-                        className="mt-4 flex items-center gap-3 rounded-2xl border border-brand-amber/30 bg-brand-amber-soft/50 px-4 py-3.5 dark:border-amber-500/25 dark:bg-amber-500/5">
+                        className="mt-4 flex items-center gap-3 rounded-2xl border border-brand-contrast/30 bg-brand-contrast-soft/50 px-4 py-3.5 dark:border-amber-500/25 dark:bg-amber-500/5">
                         <span className="grid size-9 shrink-0 place-items-center rounded-xl bg-white shadow-sm dark:bg-gray-900">
                             <Lock className="size-4 text-amber-600 dark:text-amber-400" />
                         </span>
@@ -311,7 +311,7 @@ export default function InquiryPublicClient({ idOrSlug }: { idOrSlug: string }) 
                         </div>
                         {!requestedSelf && (
                             <button onClick={() => (isAuthenticated ? setPrivOpen(true) : router.push(`/login?redirect=${encodeURIComponent(`/${inquiry.slug || inquiry.id}`)}`))}
-                                className="shrink-0 rounded-full bg-brand-amber px-3.5 py-2 text-[11px] font-extrabold text-white shadow-sm transition-colors hover:bg-brand-amber-strong">
+                                className="shrink-0 rounded-full bg-brand-contrast px-3.5 py-2 text-[11px] font-extrabold text-white shadow-sm transition-colors hover:bg-brand-contrast-strong">
                                 {isAuthenticated ? 'درخواست همکاری' : 'ورود'}
                             </button>
                         )}
@@ -321,9 +321,9 @@ export default function InquiryPublicClient({ idOrSlug }: { idOrSlug: string }) 
                 {/* ═══ اقلام فعال — بالای صفحه ═══ */}
                 <section className="mt-6">
                     <h2 className="mb-3 flex items-center gap-2 text-sm font-black text-stone-700 dark:text-gray-300">
-                        <Megaphone className="size-4 text-brand-amber" />
+                        <Megaphone className="size-4 text-brand-contrast" />
                         اقلام فعال
-                        <span className="rounded-full bg-brand-amber px-2 py-0.5 text-[9px] font-black text-white">{faNum(urgentItems.length)}</span>
+                        <span className="rounded-full bg-brand-contrast px-2 py-0.5 text-[9px] font-black text-white">{faNum(urgentItems.length)}</span>
                     </h2>
 
                     {items.length === 0 ? (
@@ -350,12 +350,12 @@ export default function InquiryPublicClient({ idOrSlug }: { idOrSlug: string }) 
                                         <div className="min-w-0">
                                             <div className="flex items-center gap-1.5">
                                                 <h3 className="font-extrabold text-stone-800 dark:text-gray-200">{it.name}</h3>
-                                                <span className="shrink-0 rounded-full bg-brand-amber px-1.5 py-0.5 text-[8.5px] font-black text-white">فعال</span>
+                                                <span className="shrink-0 rounded-full bg-brand-contrast px-1.5 py-0.5 text-[8.5px] font-black text-white">فعال</span>
                                             </div>
                                             {it.brand && <p className="mt-0.5 text-xs font-bold text-stone-400 dark:text-gray-500">{it.brand}</p>}
                                         </div>
                                         {(it.quantity || it.unit) && (
-                                            <span className="shrink-0 rounded-full bg-brand-amber-soft px-3 py-1 text-xs font-extrabold text-amber-700 dark:text-amber-400">
+                                            <span className="shrink-0 rounded-full bg-brand-contrast-soft px-3 py-1 text-xs font-extrabold text-amber-700 dark:text-amber-400">
                                                 {faNum(it.quantity)} {it.unit}
                                             </span>
                                         )}
@@ -385,7 +385,7 @@ export default function InquiryPublicClient({ idOrSlug }: { idOrSlug: string }) 
                                             <motion.button
                                                 whileTap={{ scale: 0.96 }}
                                                 onClick={() => handleOffer({ id: it.id, name: it.name, quantity: it.quantity, unit: it.unit })}
-                                                className="flex h-9 items-center gap-1.5 rounded-full bg-brand-amber px-4 text-xs font-extrabold text-white shadow-md shadow-brand-amber/25 transition-colors hover:bg-brand-amber-strong">
+                                                className="flex h-9 items-center gap-1.5 rounded-full bg-brand-contrast px-4 text-xs font-extrabold text-white shadow-md shadow-brand-contrast/25 transition-colors hover:bg-brand-contrast-strong">
                                                 <Send className="size-3.5" />
                                                 پیشنهاد قیمت
                                             </motion.button>
@@ -455,7 +455,7 @@ export default function InquiryPublicClient({ idOrSlug }: { idOrSlug: string }) 
                                             <motion.button
                                                 whileTap={{ scale: 0.96 }}
                                                 onClick={() => handleOffer({ id: it.id, name: it.name, quantity: it.quantity, unit: it.unit })}
-                                                className="flex h-9 items-center gap-1.5 rounded-full border border-brand-amber/60 px-4 text-xs font-extrabold text-amber-700 transition-colors hover:bg-brand-amber-soft dark:text-amber-400">
+                                                className="flex h-9 items-center gap-1.5 rounded-full border border-brand-contrast/60 px-4 text-xs font-extrabold text-amber-700 transition-colors hover:bg-brand-contrast-soft dark:text-amber-400">
                                                 <Send className="size-3.5" />
                                                 پیشنهاد قیمت
                                             </motion.button>
@@ -492,7 +492,7 @@ export default function InquiryPublicClient({ idOrSlug }: { idOrSlug: string }) 
                             وارد شو و همین حالا قیمتت رو بذار — خریدار مستقیم باهات در تماسه.
                         </p>
                         <Link href={`/login?redirect=${encodeURIComponent(`/${inquiry.slug || inquiry.id}`)}`}
-                            className="mt-5 inline-flex h-11 items-center gap-2 rounded-full bg-brand-amber px-7 text-sm font-extrabold text-white shadow-lg shadow-brand-amber/30 hover:bg-brand-amber-strong">
+                            className="mt-5 inline-flex h-11 items-center gap-2 rounded-full bg-brand-contrast px-7 text-sm font-extrabold text-white shadow-lg shadow-brand-contrast/30 hover:bg-brand-contrast-strong">
                             ورود و ثبت پیشنهاد
                         </Link>
                     </motion.section>
@@ -502,7 +502,7 @@ export default function InquiryPublicClient({ idOrSlug }: { idOrSlug: string }) 
                 {isOwner && (
                     <section className="mt-8">
                         <h2 className="mb-3 flex items-center gap-2 text-sm font-black text-stone-500 dark:text-gray-400">
-                            <MessageSquareText className="size-4 text-brand-amber" />
+                            <MessageSquareText className="size-4 text-brand-contrast" />
                             پیشنهادهای دریافتی — {faNum(inquiry.offers?.length ?? 0)}
                         </h2>
                         {(inquiry.offers?.length ?? 0) === 0 ? (
@@ -527,7 +527,7 @@ export default function InquiryPublicClient({ idOrSlug }: { idOrSlug: string }) 
                                                     {o.business?.logoUrl ? (
                                                         <Image src={o.business.logoUrl} alt="" width={40} height={40} className="size-10 rounded-xl object-cover" unoptimized />
                                                     ) : (
-                                                        <span className="grid size-10 place-items-center rounded-xl bg-brand-amber-soft text-xs font-black text-amber-700 dark:text-amber-400">
+                                                        <span className="grid size-10 place-items-center rounded-xl bg-brand-contrast-soft text-xs font-black text-amber-700 dark:text-amber-400">
                                                             {(o.business?.name || o.offerer?.fullName || 'ت').charAt(0)}
                                                         </span>
                                                     )}
@@ -537,14 +537,14 @@ export default function InquiryPublicClient({ idOrSlug }: { idOrSlug: string }) 
                                                     </div>
                                                 </div>
                                                 <div className="text-end">
-                                                    <p className="text-base font-black text-brand-amber">{faPrice(o.price)}</p>
+                                                    <p className="text-base font-black text-brand-contrast">{faPrice(o.price)}</p>
                                                     {o.priceBasis && <p className="text-[10px] font-bold text-stone-400">{o.priceBasis}</p>}
                                                 </div>
                                             </div>
 
                                             <div className="mt-2 flex flex-wrap gap-2 text-[11px] font-bold text-stone-400">
                                                 {o.itemName && (
-                                                    <span className="rounded-full bg-brand-amber-soft px-2 py-0.5 text-amber-700 dark:text-amber-400">{o.itemName}</span>
+                                                    <span className="rounded-full bg-brand-contrast-soft px-2 py-0.5 text-amber-700 dark:text-amber-400">{o.itemName}</span>
                                                 )}
                                                 {o.deliveryDays != null && <span className="flex items-center gap-1"><Truck className="size-3" /> {faNum(o.deliveryDays)} روزه</span>}
                                                 {o.contactPhone && <span className="flex items-center gap-1" dir="ltr"><Phone className="size-3" /> {o.contactPhone}</span>}
@@ -590,7 +590,7 @@ export default function InquiryPublicClient({ idOrSlug }: { idOrSlug: string }) 
                             </p>
                         </div>
                         <motion.button whileTap={{ scale: 0.96 }} onClick={() => handleOffer({ name: 'کل لیست' })}
-                            className="flex h-11 shrink-0 items-center gap-1.5 rounded-full bg-brand-amber px-5 text-[13px] font-extrabold text-white shadow-lg shadow-brand-amber/30 transition-colors hover:bg-brand-amber-strong">
+                            className="flex h-11 shrink-0 items-center gap-1.5 rounded-full bg-brand-contrast px-5 text-[13px] font-extrabold text-white shadow-lg shadow-brand-contrast/30 transition-colors hover:bg-brand-contrast-strong">
                             <Send className="size-4" />
                             پیشنهاد قیمت
                         </motion.button>
@@ -643,7 +643,7 @@ function PrivateRequestModal({ inquiry, onClose, onRequested }: { inquiry: any; 
                     <X className="size-4" />
                 </button>
 
-                <span className="mx-auto grid size-14 place-items-center rounded-2xl bg-brand-amber-soft dark:bg-amber-500/10">
+                <span className="mx-auto grid size-14 place-items-center rounded-2xl bg-brand-contrast-soft dark:bg-amber-500/10">
                     <ShieldCheck className="size-6 text-amber-600 dark:text-amber-400" />
                 </span>
                 <h1 className="mt-4 text-lg font-black">بازوی خرید خصوصیه</h1>
@@ -691,7 +691,7 @@ function ModalBody({ inquiry, isAuthenticated, requestAccess, onRequested }: {
     if (!isAuthenticated) {
         return (
             <Link href={loginHref}
-                className="mt-5 inline-flex h-12 items-center gap-2 rounded-full bg-brand-amber px-8 text-sm font-extrabold text-white shadow-lg shadow-brand-amber/25 transition-colors hover:bg-brand-amber-strong">
+                className="mt-5 inline-flex h-12 items-center gap-2 rounded-full bg-brand-contrast px-8 text-sm font-extrabold text-white shadow-lg shadow-brand-contrast/25 transition-colors hover:bg-brand-contrast-strong">
                 <Handshake className="size-4" />
                 ورود و درخواست همکاری
             </Link>
@@ -705,7 +705,7 @@ function ModalBody({ inquiry, isAuthenticated, requestAccess, onRequested }: {
             <>
                 <p className="mt-5 text-[12px] font-bold text-stone-500 dark:text-gray-400">برای درخواست همکاری اول یک کاتالوگ قیمت بساز</p>
                 <Link href="/business/register"
-                    className="mt-3 inline-flex h-11 items-center gap-2 rounded-full bg-brand-amber px-6 text-sm font-extrabold text-white transition-colors hover:bg-brand-amber-strong">
+                    className="mt-3 inline-flex h-11 items-center gap-2 rounded-full bg-brand-contrast px-6 text-sm font-extrabold text-white transition-colors hover:bg-brand-contrast-strong">
                     ساخت کاتالوگ قیمت
                 </Link>
             </>
@@ -718,7 +718,7 @@ function ModalBody({ inquiry, isAuthenticated, requestAccess, onRequested }: {
                     <button key={c.id} type="button" onClick={() => setCatalogId(c.id)}
                         className={`flex w-full items-center gap-2 rounded-xl border-2 p-2.5 text-right transition-all ${
                             catalogId === c.id
-                                ? 'border-brand-amber bg-brand-amber-soft/50 dark:bg-amber-500/10'
+                                ? 'border-brand-contrast bg-brand-contrast-soft/50 dark:bg-amber-500/10'
                                 : 'border-stone-100 hover:border-stone-200 dark:border-gray-800'
                         }`}>
                         <span className="grid size-8 shrink-0 place-items-center overflow-hidden rounded-lg bg-stone-100 dark:bg-gray-800">
@@ -733,7 +733,7 @@ function ModalBody({ inquiry, isAuthenticated, requestAccess, onRequested }: {
                 ))}
             </div>
             <motion.button whileTap={{ scale: 0.97 }} disabled={!catalogId || requestAccess.isPending} onClick={send}
-                className="mt-4 flex h-12 w-full items-center justify-center gap-2 rounded-full bg-brand-amber text-sm font-extrabold text-white shadow-lg shadow-brand-amber/25 transition-colors hover:bg-brand-amber-strong disabled:opacity-50">
+                className="mt-4 flex h-12 w-full items-center justify-center gap-2 rounded-full bg-brand-contrast text-sm font-extrabold text-white shadow-lg shadow-brand-contrast/25 transition-colors hover:bg-brand-contrast-strong disabled:opacity-50">
                 {requestAccess.isPending ? <Loader2 className="size-4 animate-spin" /> : <Handshake className="size-4" />}
                 درخواست همکاری
             </motion.button>

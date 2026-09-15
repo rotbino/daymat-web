@@ -239,7 +239,7 @@ export default function TeamTab({ catalogId }: Props) {
                                 )}
                                 {/* ✅ بازوی خریدِ خریدار — شبکهٔ خرید↔فروش */}
                                 {(m.purchaseCatalogs?.length ?? 0) > 0 && (
-                                    <span className="inline-flex items-center gap-1 flex-shrink-0 rounded-full bg-brand-amber-soft px-2 py-0.5 text-[9px] font-black text-amber-700 dark:bg-amber-500/10 dark:text-amber-400">
+                                    <span className="inline-flex items-center gap-1 flex-shrink-0 rounded-full bg-brand-contrast-soft px-2 py-0.5 text-[9px] font-black text-amber-700 dark:bg-amber-500/10 dark:text-amber-400">
                                         <ClipboardList className="h-2.5 w-2.5" />
                                         {m.purchaseCatalogs[0].title}{m.purchaseCatalogs.length > 1 ? ` +${m.purchaseCatalogs.length - 1}` : ''}
                                     </span>

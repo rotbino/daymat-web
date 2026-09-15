@@ -46,15 +46,15 @@ export const STATUS_CHIP: Record<string, string> = {
     open: 'bg-emerald-50 text-emerald-700 dark:bg-emerald-500/10 dark:text-emerald-400',
     closed: 'bg-stone-100 text-stone-500 dark:bg-gray-800 dark:text-gray-400',
     archived: 'bg-stone-100 text-stone-400 dark:bg-gray-800/60 dark:text-gray-500',
-    pending: 'bg-brand-amber-soft text-amber-700 dark:text-amber-400',
+    pending: 'bg-brand-contrast-soft text-amber-700 dark:text-amber-400',
     accepted: 'bg-emerald-50 text-emerald-700 dark:bg-emerald-500/10 dark:text-emerald-400',
     rejected: 'bg-red-50 text-red-600 dark:bg-red-500/10 dark:text-red-400',
     withdrawn: 'bg-stone-100 text-stone-400 dark:bg-gray-800 dark:text-gray-500',
 };
 
 // ✅ کلاس واحد ورودی فرم‌های بازوی خرید — متن در هر دو تم خوانا
-export const inp = 'h-10 rounded-xl border border-stone-200 bg-white px-3 text-sm font-bold text-stone-900 outline-none transition-colors placeholder:font-medium placeholder:text-stone-400 focus:border-brand-amber dark:border-gray-700 dark:bg-gray-950 dark:text-gray-100 dark:placeholder:text-gray-500 dark:focus:border-brand-amber dark:focus:bg-gray-950';
-export const inpSm = 'h-9 rounded-xl border border-stone-200 bg-white px-3 text-xs font-bold text-stone-900 outline-none transition-colors placeholder:font-medium placeholder:text-stone-400 focus:border-brand-amber dark:border-gray-700 dark:bg-gray-950 dark:text-gray-100 dark:placeholder:text-gray-500 dark:focus:border-brand-amber dark:focus:bg-gray-950';
+export const inp = 'h-10 rounded-xl border border-stone-200 bg-white px-3 text-sm font-bold text-stone-900 outline-none transition-colors placeholder:font-medium placeholder:text-stone-400 focus:border-brand-contrast dark:border-gray-700 dark:bg-gray-950 dark:text-gray-100 dark:placeholder:text-gray-500 dark:focus:border-brand-contrast dark:focus:bg-gray-950';
+export const inpSm = 'h-9 rounded-xl border border-stone-200 bg-white px-3 text-xs font-bold text-stone-900 outline-none transition-colors placeholder:font-medium placeholder:text-stone-400 focus:border-brand-contrast dark:border-gray-700 dark:bg-gray-950 dark:text-gray-100 dark:placeholder:text-gray-500 dark:focus:border-brand-contrast dark:focus:bg-gray-950';
 
 // پیشنهادهای پرکاربرد واحد — اگر در مرجع واحد باشند اول لیست می‌آیند
 export const UNIT_SUGGESTIONS = ['کیلوگرم', 'کارتن', 'عدد', 'بسته', 'لیتر', 'متر', 'تان'];

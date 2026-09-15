@@ -147,7 +147,7 @@ export default function SettingsTab({ detail, onSave, onOpenUnits, onToggleStatu
                                 <button key={v} type="button" onClick={() => setVisibility(v)}
                                     className={`flex flex-col items-center gap-0.5 rounded-xl border-2 px-2 py-2.5 transition-all ${
                                         visibility === v
-                                            ? 'border-brand-amber bg-brand-amber-soft/60 dark:bg-amber-500/10'
+                                            ? 'border-brand-contrast bg-brand-contrast-soft/60 dark:bg-amber-500/10'
                                             : 'border-stone-100 hover:border-stone-200 dark:border-gray-800 dark:hover:border-gray-700'
                                     }`}>
                                     <Icon className={`size-4 ${visibility === v ? 'text-amber-600 dark:text-amber-400' : 'text-stone-300 dark:text-gray-600'}`} />
@@ -157,7 +157,7 @@ export default function SettingsTab({ detail, onSave, onOpenUnits, onToggleStatu
                             ))}
                         </div>
                         {visibility === 'private' && (
-                            <p className="mt-2 rounded-xl bg-brand-amber-soft/50 px-3 py-2 text-[10px] font-bold leading-4 text-amber-700 dark:bg-amber-500/5 dark:text-amber-400">
+                            <p className="mt-2 rounded-xl bg-brand-contrast-soft/50 px-3 py-2 text-[10px] font-bold leading-4 text-amber-700 dark:bg-amber-500/5 dark:text-amber-400">
                                 لیست برای همه دیده می‌شود و دکمهٔ قیمت فعال است — فقط اعضای تب «تامین‌کنندگان» می‌توانند قیمت بدهند؛ بقیه با لمس دکمه، درخواست همکاری می‌دهند
                             </p>
                         )}
@@ -177,9 +177,9 @@ export default function SettingsTab({ detail, onSave, onOpenUnits, onToggleStatu
 
                     {/* واحدهای من */}
                     <button onClick={onOpenUnits}
-                        className="flex h-11 w-full items-center justify-between rounded-xl border border-stone-200 px-3 text-[13px] font-extrabold text-stone-600 transition-colors hover:border-brand-amber hover:text-amber-700 dark:border-gray-700 dark:text-gray-300">
+                        className="flex h-11 w-full items-center justify-between rounded-xl border border-stone-200 px-3 text-[13px] font-extrabold text-stone-600 transition-colors hover:border-brand-contrast hover:text-amber-700 dark:border-gray-700 dark:text-gray-300">
                         <span className="flex items-center gap-2">
-                            <Boxes className="size-4 text-brand-amber" />
+                            <Boxes className="size-4 text-brand-contrast" />
                             واحدهای من
                         </span>
                         <span className="text-[10px] font-bold text-stone-400">{(detail.units as any[] | undefined)?.length ? `${(detail.units as any[]).length.toLocaleString('fa-IR')} واحد` : 'تعریف واحد'}</span>

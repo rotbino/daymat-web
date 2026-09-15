@@ -460,7 +460,7 @@ export default function RegisterCatalogPage() {
                      onClick={() => setStepHint(null)}>
                     <div onClick={(e) => e.stopPropagation()}
                          className="w-full max-w-md rounded-t-3xl sm:rounded-3xl bg-white dark:bg-gray-900 px-6 py-7 text-center shadow-2xl animate-in slide-in-from-bottom-4 duration-300">
-                        <span className="mx-auto grid size-14 place-items-center rounded-2xl bg-brand-amber-soft">
+                        <span className="mx-auto grid size-14 place-items-center rounded-2xl bg-brand-contrast-soft">
                             <ClipboardList className="size-7 text-amber-600 dark:text-amber-400" />
                         </span>
                         <h2 className="mt-4 text-lg font-black text-on-surface dark:text-gray-100">
@@ -473,7 +473,7 @@ export default function RegisterCatalogPage() {
                             (کاتالوگ قیمت هم هر وقت خواستی سر جاشه)
                         </p>
                         <Link href={`/inquiries/new?bizId=${stepHint.bizId}`}
-                              className="mt-5 flex h-12 w-full items-center justify-center gap-2 rounded-xl bg-brand-amber text-sm font-extrabold text-white shadow-lg shadow-brand-amber/30 transition-colors hover:bg-brand-amber-strong">
+                              className="mt-5 flex h-12 w-full items-center justify-center gap-2 rounded-xl bg-brand-contrast text-sm font-extrabold text-white shadow-lg shadow-brand-contrast/30 transition-colors hover:bg-brand-contrast-strong">
                             <ClipboardList className="size-4" />
                             بازوی خرید بساز
                         </Link>

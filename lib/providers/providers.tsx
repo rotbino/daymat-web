@@ -9,6 +9,7 @@ import { Toaster } from 'sonner';
 import { store, persistor } from '../store/store';
 import { AuthProvider } from './auth-provider';
 import { RouteTracker } from './RouteTracker';
+import { ConnectivityBanner } from './ConnectivityBanner';
 
 const queryClient = new QueryClient({
     defaultOptions: {
@@ -27,6 +28,7 @@ export function Providers({ children }: { children: React.ReactNode }) {
                     <AuthProvider>
                         <RouteTracker />
                         {children}
+                        <ConnectivityBanner />
                         <Toaster position="top-center" richColors />
                     </AuthProvider>
                     <ReactQueryDevtools initialIsOpen={false} />

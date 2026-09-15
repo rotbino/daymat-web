@@ -44,11 +44,11 @@ export default function PublishTab({ slug, id, title, visibility, onOpenShare, o
                 <h2 className="mb-3 text-[12px] font-black text-stone-400 dark:text-gray-500">لینک بازوی خرید</h2>
                 <div className="flex items-center gap-2">
                     <div dir="ltr" className="flex h-11 min-w-0 flex-1 items-center overflow-hidden rounded-xl border border-stone-200 bg-stone-50 px-3 dark:border-gray-700 dark:bg-gray-950/60">
-                        <Link2 className="me-2 size-4 shrink-0 text-brand-amber" />
+                        <Link2 className="me-2 size-4 shrink-0 text-brand-contrast" />
                         <span className="truncate text-xs font-bold text-stone-600 dark:text-gray-300">{url}</span>
                     </div>
                     <button onClick={copy} aria-label="کپی لینک"
-                        className="grid size-11 shrink-0 place-items-center rounded-xl bg-brand-amber text-white shadow-md shadow-brand-amber/25 transition-colors hover:bg-brand-amber-strong">
+                        className="grid size-11 shrink-0 place-items-center rounded-xl bg-brand-contrast text-white shadow-md shadow-brand-contrast/25 transition-colors hover:bg-brand-contrast-strong">
                         <Copy className="size-4" />
                     </button>
                 </div>
@@ -64,7 +64,7 @@ export default function PublishTab({ slug, id, title, visibility, onOpenShare, o
             <motion.section
                 initial={{ opacity: 0, y: 14 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.1 }}
                 className={`rounded-2xl border p-4 ${visibility === 'public'
-                    ? 'border-brand-amber-tint bg-brand-amber-soft/50 dark:bg-amber-500/5'
+                    ? 'border-brand-contrast-tint bg-brand-contrast-soft/50 dark:bg-amber-500/5'
                     : 'border-stone-100 bg-stone-50 dark:border-gray-800 dark:bg-gray-950/60'}`}>
                 <div className="flex items-start gap-2.5">
                     {visibility === 'public'
@@ -86,7 +86,7 @@ export default function PublishTab({ slug, id, title, visibility, onOpenShare, o
                     </div>
                 </div>
                 <Link href={`/${slug || id}`}
-                    className="mt-3 flex h-10 items-center justify-center gap-2 rounded-xl border border-stone-200 text-xs font-extrabold text-stone-600 transition-colors hover:border-brand-amber hover:text-amber-700 dark:border-gray-700 dark:text-gray-300">
+                    className="mt-3 flex h-10 items-center justify-center gap-2 rounded-xl border border-stone-200 text-xs font-extrabold text-stone-600 transition-colors hover:border-brand-contrast hover:text-amber-700 dark:border-gray-700 dark:text-gray-300">
                     <Eye className="size-3.5" />
                     دیدن بازوی خرید
                 </Link>
@@ -100,8 +100,8 @@ function ShareKitButton({ onOpen }: { onOpen: () => void }) {
     return (
         <motion.button type="button" onClick={onOpen}
             initial={{ opacity: 0, y: 14 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.05 }}
-            className="flex w-full items-center gap-3.5 rounded-2xl border border-brand-amber-tint bg-gradient-to-l from-brand-amber-soft/60 to-transparent p-4 text-right transition-colors hover:border-brand-amber dark:border-amber-500/20 dark:from-amber-500/10">
-            <span className="grid size-11 shrink-0 place-items-center rounded-2xl bg-brand-amber-soft dark:bg-amber-500/15">
+            className="flex w-full items-center gap-3.5 rounded-2xl border border-brand-contrast-tint bg-gradient-to-l from-brand-contrast-soft/60 to-transparent p-4 text-right transition-colors hover:border-brand-contrast dark:border-amber-500/20 dark:from-amber-500/10">
+            <span className="grid size-11 shrink-0 place-items-center rounded-2xl bg-brand-contrast-soft dark:bg-amber-500/15">
                 <Share2 className="size-5 text-amber-600 dark:text-amber-400" />
             </span>
             <span className="min-w-0 flex-1">
@@ -126,7 +126,7 @@ function VisitCardEntry({ savedCard, onOpen }: { savedCard?: any; onOpen: () => 
         return (
             <motion.button type="button" onClick={onOpen}
                 initial={{ opacity: 0, y: 14 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.08 }}
-                className={cn('flex w-full items-center gap-3.5 rounded-2xl border border-stone-100 bg-white p-3.5 text-right transition-colors hover:border-brand-amber dark:border-gray-800 dark:bg-gray-900')}>
+                className={cn('flex w-full items-center gap-3.5 rounded-2xl border border-stone-100 bg-white p-3.5 text-right transition-colors hover:border-brand-contrast dark:border-gray-800 dark:bg-gray-900')}>
                 <span className="h-[41px] w-[72px] shrink-0 overflow-hidden rounded-lg bg-white shadow-sm ring-1 ring-stone-200 dark:ring-gray-700">
                     {/* eslint-disable-next-line @next/next/no-img-element */}
                     <img src={cardPreview} alt="کارت ویزیت بازوی خرید" className="size-full object-cover" />
@@ -144,8 +144,8 @@ function VisitCardEntry({ savedCard, onOpen }: { savedCard?: any; onOpen: () => 
     return (
         <motion.button type="button" onClick={onOpen}
             initial={{ opacity: 0, y: 14 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.08 }}
-            className="flex w-full items-center gap-3.5 rounded-2xl border border-stone-100 bg-white p-4 text-right transition-colors hover:border-brand-amber dark:border-gray-800 dark:bg-gray-900">
-            <span className="grid size-11 shrink-0 place-items-center rounded-2xl bg-brand-amber-soft dark:bg-amber-500/15">
+            className="flex w-full items-center gap-3.5 rounded-2xl border border-stone-100 bg-white p-4 text-right transition-colors hover:border-brand-contrast dark:border-gray-800 dark:bg-gray-900">
+            <span className="grid size-11 shrink-0 place-items-center rounded-2xl bg-brand-contrast-soft dark:bg-amber-500/15">
                 <IdCard className="size-5 text-amber-600 dark:text-amber-400" />
             </span>
             <span className="min-w-0 flex-1">

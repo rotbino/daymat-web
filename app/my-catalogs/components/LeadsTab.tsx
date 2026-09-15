@@ -66,7 +66,7 @@ export default function LeadsTab() {
         <div className="space-y-3">
             {/* دعوت‌های در انتظار پذیرش تو */}
             {invitations.length > 0 && (
-                <div className={cn(CARD_CLS, 'border-brand-amber-tint p-4 dark:!border-amber-500/25')}>
+                <div className={cn(CARD_CLS, 'border-brand-contrast-tint p-4 dark:!border-amber-500/25')}>
                     <p className="mb-3 flex items-center gap-2 text-[13px] font-black text-amber-700 dark:text-amber-400">
                         <Handshake className="size-4" />
                         دعوت به تامین‌کنندگی — {invitations.length.toLocaleString('fa-IR')} مورد
@@ -74,8 +74,8 @@ export default function LeadsTab() {
                     <div className="space-y-2">
                         {invitations.map((inv) => (
                             <motion.div key={inv.memberId} initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }}
-                                className="flex items-center gap-3 rounded-xl bg-brand-amber-soft/60 p-3 dark:bg-amber-500/5">
-                                <span className="grid size-10 shrink-0 place-items-center overflow-hidden rounded-xl bg-white ring-1 ring-brand-amber-tint dark:bg-gray-900">
+                                className="flex items-center gap-3 rounded-xl bg-brand-contrast-soft/60 p-3 dark:bg-amber-500/5">
+                                <span className="grid size-10 shrink-0 place-items-center overflow-hidden rounded-xl bg-white ring-1 ring-brand-contrast-tint dark:bg-gray-900">
                                     {inv.buyer?.logoUrl
                                         ? // eslint-disable-next-line @next/next/no-img-element
                                           <img src={inv.buyer.logoUrl} alt="" className="size-full object-cover" />
@@ -137,7 +137,7 @@ export default function LeadsTab() {
             <div>
                 <div className="mb-2 flex items-center justify-between px-1">
                     <p className="flex items-center gap-1.5 text-[13px] font-black text-stone-900 dark:text-gray-100">
-                        <Megaphone className="size-4 text-brand-amber" />
+                        <Megaphone className="size-4 text-brand-contrast" />
                         درخواست‌های قیمت جاری
                     </p>
                     <span className="text-[10px] font-bold text-stone-400">
@@ -162,7 +162,7 @@ export default function LeadsTab() {
                                     {/* سربرگ خریدار */}
                                     <button type="button" onClick={() => setOpenLead(open ? null : lead.inquiry.id)}
                                         className="flex w-full items-center gap-3 p-3.5 text-right">
-                                        <span className="grid size-10 shrink-0 place-items-center overflow-hidden rounded-xl bg-brand-amber-soft dark:bg-amber-500/15">
+                                        <span className="grid size-10 shrink-0 place-items-center overflow-hidden rounded-xl bg-brand-contrast-soft dark:bg-amber-500/15">
                                             {lead.buyer?.logoUrl
                                                 ? // eslint-disable-next-line @next/next/no-img-element
                                                   <img src={lead.buyer.logoUrl} alt="" className="size-full object-cover" />
@@ -171,7 +171,7 @@ export default function LeadsTab() {
                                         <span className="min-w-0 flex-1">
                                             <span className="flex items-center gap-1.5">
                                                 <span className="truncate text-[13px] font-black text-stone-900 dark:text-gray-100">{lead.buyer?.name || 'خریدار'}</span>
-                                                <span className="shrink-0 rounded-full bg-brand-amber px-1.5 py-0.5 text-[8.5px] font-black text-white">
+                                                <span className="shrink-0 rounded-full bg-brand-contrast px-1.5 py-0.5 text-[8.5px] font-black text-white">
                                                     {faNum(lead.items.length)} قلم فوری
                                                 </span>
                                             </span>
@@ -203,7 +203,7 @@ export default function LeadsTab() {
                                                 )}
                                                 {lead.items.map((it: any) => (
                                                     <div key={it.id} className="flex items-center gap-2.5 rounded-xl bg-stone-50/80 p-2.5 dark:bg-gray-800/50">
-                                                        <span className="grid size-7 shrink-0 place-items-center rounded-lg bg-brand-amber text-[9px] font-black text-white">
+                                                        <span className="grid size-7 shrink-0 place-items-center rounded-lg bg-brand-contrast text-[9px] font-black text-white">
                                                             فوری
                                                         </span>
                                                         <div className="min-w-0 flex-1">
@@ -216,7 +216,7 @@ export default function LeadsTab() {
                                                         </div>
                                                         <button
                                                             onClick={() => setOfferTarget({ inquiry: lead.inquiry, item: it })}
-                                                            className="shrink-0 rounded-full bg-brand-amber px-3 py-1.5 text-[11px] font-extrabold text-white shadow-sm transition-colors hover:bg-brand-amber-strong"
+                                                            className="shrink-0 rounded-full bg-brand-contrast px-3 py-1.5 text-[11px] font-extrabold text-white shadow-sm transition-colors hover:bg-brand-contrast-strong"
                                                         >
                                                             قیمت بده
                                                         </button>

@@ -8,55 +8,26 @@
    متغیرهای CSS پایه
    ============================================================ */
 :root {
-  --primary: #8b0000;
-  --primary-container: #8b0000;
-  --primary-fixed: #ffdad4;
-  --primary-fixed-dim: #ffb4a8;
-  --on-primary: #ffffff;
-  --on-primary-container: #ff907f;
-  --secondary: #904d00;
-  --secondary-container: #fd8b00;
-  --on-secondary: #ffffff;
-  --on-secondary-container: #603100;
-  --surface: #f9f9fc;
-  --surface-bright: #f9f9fc;
-  --surface-dim: #dadadc;
-  --surface-container: #eeeef0;
-  --surface-container-low: #f3f3f6;
-  --surface-container-lowest: #ffffff;
-  --surface-container-high: #e8e8ea;
-  --surface-container-highest: #e2e2e5;
-  --outline: #8e706b;
-  --outline-variant: #e3beb8;
-  --background: #f9f9fc;
-  --on-background: #1a1c1e;
-  --on-surface: #1a1c1e;
-  --on-surface-variant: #5a403c;
-  --error: #ba1a1a;
-  --error-container: #ffdad6;
-  --on-error: #ffffff;
-  --on-error-container: #93000a;
-  --tertiary: #003420;
-  --tertiary-container: #004d31;
-  --on-tertiary: #ffffff;
-  --on-tertiary-container: #58c390;
-  --radius: 0.5rem;
-  --cell-size: 2rem;
-  --font-family: "number-font", "text-font", Vazirmatn, sans-serif;
-
   /* ══════════════════════════════════════════════════
-     هویت برند دیمت — از برندبوک (تنها نقطهٔ تغییر رنگ سایت)
-     قرمز لاکی + کهربایی — هر جا برند حرف اول را می‌زند از این توکن‌ها استفاده شود
+     هویت برند دیمت — سیستم رنگ سه‌نقشی (تنها نقطهٔ تغییر رنگ سایت)
+     • primary سبز: رنگ اصلی برند — دکمه‌ها، لینک‌ها، بازوی فروش (کاتالوگ قیمت)
+     • contrast آبی: متضاد سبز — بازوی خرید و هر تمایز دوقطبی
+     • accent زرد: فقط تاکید موضعی و دکمه‌های خاص — هرگز جایگزین دو رنگ دیگر
+     قاعده: در هر نما فقط یکی از این‌ها رنگ غالب باشد؛ بقیه فقط خط و نقطه.
      ══════════════════════════════════════════════════ */
-  --brand-red: #b42127;          /* قرمز لاکی لوگو */
-  --brand-red-strong: #931a1f;   /* حالت فشرده/هاور */
-  --brand-red-soft: #fdf1f1;     /* سطح ملایم روشن */
-  --brand-red-tint: #f7dede;     /* حاشیه و بوردر ملایم */
-  --brand-amber: #f5a800;        /* کهربایی لوگو */
-  --brand-amber-strong: #cf8e00; /* حالت فشرده/هاور */
-  --brand-amber-soft: #fff8e8;   /* سطح ملایم روشن */
-  --brand-amber-tint: #fdecc3;   /* حاشیه و بوردر ملایم */
-  --brand-ink: #201518;          /* مشکی گرم متن */
+  --brand-primary: #0f7b52;          /* سبز اصلی برند */
+  --brand-primary-strong: #0b6141;   /* حالت فشرده/هاور */
+  --brand-primary-soft: #ecf6f1;     /* سطح ملایم روشن */
+  --brand-primary-tint: #d2e7dc;     /* حاشیه و بوردر ملایم */
+  --brand-contrast: #1d5fd1;         /* آبی متضاد — بازوی خرید */
+  --brand-contrast-strong: #174fb0;  /* حالت فشرده/هاور */
+  --brand-contrast-soft: #eef4fe;    /* سطح ملایم روشن */
+  --brand-contrast-tint: #d3e2f9;    /* حاشیه و بوردر ملایم */
+  --brand-accent: #e9a70f;           /* زرد — فقط تاکید */
+  --brand-accent-strong: #c28600;    /* حالت فشرده/هاور */
+  --brand-accent-soft: #fff8e6;      /* سطح ملایم روشن */
+  --brand-accent-tint: #f9ecc6;      /* حاشیه و بوردر ملایم */
+  --brand-ink: #14201a;              /* مشکی سبزفام متن */
 
 
   /* ShadCN HSL متغیرها */
@@ -77,7 +48,7 @@
   --destructive-foreground: 210 40% 98%;
   --border: 214.3 31.8% 91.4%;
   --input: 214.3 31.8% 91.4%;
-  --ring: 221.2 83.2% 53.3%;
+  --ring: 158 65% 27%;
   --sidebar-background: 0 0% 98%;
   --sidebar-foreground: 240 5.3% 26.1%;
   --sidebar-primary: 240 5.9% 10%;
@@ -97,25 +68,29 @@
 .dark {
   /* ⚠️ توکن‌های M3 تم تاریک — هم‌ارز ThemeProvider (DARK_COLORS) تا اولین رندر/SSR هم خوانا باشد */
   /* برند دیمت — نسخهٔ تم تاریک (روشن‌تر برای کنتراست روی پس‌زمینهٔ تیره) */
-  --brand-red: #e8555b;
-  --brand-red-strong: #f26b70;
-  --brand-red-soft: #2b1315;
-  --brand-red-tint: #471c1f;
-  --brand-amber: #ffb224;
-  --brand-amber-strong: #ffc24d;
-  --brand-amber-soft: #291c06;
-  --brand-amber-tint: #3f2c0b;
-  --brand-ink: #f3ecef;
-  --primary: #ffb4a8;
-  --primary-container: #8b0000;
-  --primary-fixed: #ffdad4;
-  --primary-fixed-dim: #ffb4a8;
-  --on-primary: #550000;
-  --on-primary-container: #ffdad4;
-  --secondary: #ffb870;
-  --secondary-container: #6d3700;
-  --on-secondary: #482200;
-  --on-secondary-container: #ffddba;
+  --brand-primary: #55d69a;
+  --brand-primary-strong: #7ee2b5;
+  --brand-primary-soft: #0c231a;
+  --brand-primary-tint: #1d4a36;
+  --brand-contrast: #6fa4f7;
+  --brand-contrast-strong: #94bdfa;
+  --brand-contrast-soft: #0f1c30;
+  --brand-contrast-tint: #23406b;
+  --brand-accent: #ffcb47;
+  --brand-accent-strong: #ffd97a;
+  --brand-accent-soft: #2a1e06;
+  --brand-accent-tint: #44310c;
+  --brand-ink: #eef5f1;
+  --primary: #a8d9c0;
+  --primary-container: #0f7b52;
+  --primary-fixed: #d3e9dd;
+  --primary-fixed-dim: #a8d9c0;
+  --on-primary: #06281b;
+  --on-primary-container: #d3e9dd;
+  --secondary: #a9c8b8;
+  --secondary-container: #294737;
+  --on-secondary: #10231a;
+  --on-secondary-container: #c6e5d4;
   --surface: #131316;
   --surface-bright: #39393b;
   --surface-dim: #131316;
@@ -124,12 +99,12 @@
   --surface-container-lowest: #0e0e11;
   --surface-container-high: #29292c;
   --surface-container-highest: #343437;
-  --outline: #9f8c88;
-  --outline-variant: #53433f;
+  --outline: #8ea298;
+  --outline-variant: #3c4a44;
   --background: #131316;
   --on-background: #e3e2e6;
   --on-surface: #e3e2e6;
-  --on-surface-variant: #d8c2bd;
+  --on-surface-variant: #c0d2c8;
   --error: #ffb4ab;
   --error-container: #93000a;
   --on-error: #690005;
@@ -155,7 +130,7 @@
   --destructive-foreground: 210 40% 98%;
   --border: 217.2 32.6% 17.5%;
   --input: 217.2 32.6% 17.5%;
-  --ring: 224.3 76.3% 94.1%;
+  --ring: 158 50% 62%;
 }
 
 /* ============================================================
@@ -214,14 +189,18 @@
   --color-sidebar-ring: hsl(var(--sidebar-ring));
 
   /* ═══ رنگ‌های برند دیمت — از متغیرهای بالا (پشتیبانی خودکار تم تاریک) ═══ */
-  --color-brand-red: var(--brand-red);
-  --color-brand-red-strong: var(--brand-red-strong);
-  --color-brand-red-soft: var(--brand-red-soft);
-  --color-brand-red-tint: var(--brand-red-tint);
-  --color-brand-amber: var(--brand-amber);
-  --color-brand-amber-strong: var(--brand-amber-strong);
-  --color-brand-amber-soft: var(--brand-amber-soft);
-  --color-brand-amber-tint: var(--brand-amber-tint);
+  --color-brand-primary: var(--brand-primary);
+  --color-brand-primary-strong: var(--brand-primary-strong);
+  --color-brand-primary-soft: var(--brand-primary-soft);
+  --color-brand-primary-tint: var(--brand-primary-tint);
+  --color-brand-contrast: var(--brand-contrast);
+  --color-brand-contrast-strong: var(--brand-contrast-strong);
+  --color-brand-contrast-soft: var(--brand-contrast-soft);
+  --color-brand-contrast-tint: var(--brand-contrast-tint);
+  --color-brand-accent: var(--brand-accent);
+  --color-brand-accent-strong: var(--brand-accent-strong);
+  --color-brand-accent-soft: var(--brand-accent-soft);
+  --color-brand-accent-tint: var(--brand-accent-tint);
   --color-brand-ink: var(--brand-ink);
 
   --font-sans: var(--font-family, "number-font", "text-font", Vazirmatn, sans-serif);

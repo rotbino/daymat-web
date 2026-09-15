@@ -49,7 +49,7 @@ export interface NavItemDef {
 const NAV_ITEMS: NavItemDef[] = [
     { key: 'sellers', label: 'فروشندگان', icon: Tags, href: '/markets' },
     { key: 'buyers', label: 'خریداران', icon: ShoppingCart, href: '/markets' },
-    { key: 'catalogs', label: 'کاتالوگ من', icon: BookOpen, href: '/my-catalogs' },
+    { key: 'catalogs', label: 'بازوهای من', icon: BookOpen, href: '/my-catalogs' },
     { key: 'notifications', label: 'اعلان', icon: Bell, href: '/notifications' },
     { key: 'profile', label: 'پروفایل', icon: User, href: '/profile' },
 ];

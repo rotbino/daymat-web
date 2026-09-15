@@ -129,7 +129,7 @@ export default function NewInquiryPage() {
     if (!hydrated) {
         return (
             <div className="grid min-h-screen place-items-center bg-[#FFFDF7] dark:bg-gray-950">
-                <Loader2 className="size-8 animate-spin text-brand-amber" />
+                <Loader2 className="size-8 animate-spin text-brand-contrast" />
             </div>
         );
     }
@@ -137,7 +137,7 @@ export default function NewInquiryPage() {
     return (
         <div className="min-h-screen bg-[#FFFDF7] text-stone-900 dark:bg-gray-950 dark:text-gray-100">
             {/* هدر */}
-            <header className="sticky top-0 z-40 border-b border-brand-amber-tint/70 bg-[#FFFDF7]/85 backdrop-blur-md dark:border-gray-800 dark:bg-gray-950/85">
+            <header className="sticky top-0 z-40 border-b border-brand-contrast-tint/70 bg-[#FFFDF7]/85 backdrop-blur-md dark:border-gray-800 dark:bg-gray-950/85">
                 <div className="mx-auto flex h-14 max-w-lg items-center justify-between px-4">
                     <Link href="/my-inquiries" className="flex items-center gap-1.5 text-sm font-bold text-stone-500 transition-colors hover:text-stone-900 dark:text-gray-400 dark:hover:text-gray-100">
                         بازوهای خرید من
@@ -149,7 +149,7 @@ export default function NewInquiryPage() {
             <main className="mx-auto max-w-lg px-4 pb-32 pt-8">
                 {/* قهرمان — فقط یک جمله */}
                 <motion.section {...fadeUp()} className="text-center">
-                    <span className="inline-flex items-center gap-1.5 rounded-full bg-brand-amber-soft px-3 py-1 text-[11px] font-extrabold text-amber-700 dark:text-amber-400">
+                    <span className="inline-flex items-center gap-1.5 rounded-full bg-brand-contrast-soft px-3 py-1 text-[11px] font-extrabold text-amber-700 dark:text-amber-400">
                         <ClipboardList className="size-3.5" />
                         بازوی خرید جدید
                     </span>
@@ -179,7 +179,7 @@ export default function NewInquiryPage() {
                                     <button key={v} type="button" onClick={() => setVisibility(v)}
                                         className={`flex items-center gap-2 rounded-2xl border-2 p-3 text-right transition-all ${
                                             visibility === v
-                                                ? 'border-brand-amber bg-brand-amber-soft/60 dark:bg-amber-500/10'
+                                                ? 'border-brand-contrast bg-brand-contrast-soft/60 dark:bg-amber-500/10'
                                                 : 'border-stone-100 hover:border-stone-200 dark:border-gray-800 dark:hover:border-gray-700'
                                         }`}>
                                         <Icon className={`size-4 shrink-0 ${visibility === v ? 'text-amber-600 dark:text-amber-400' : 'text-stone-300 dark:text-gray-600'}`} />
@@ -209,7 +209,7 @@ export default function NewInquiryPage() {
                                 whileTap={{ scale: 0.97 }}
                                 onClick={submit}
                                 disabled={submitting}
-                                className="flex h-14 w-full items-center justify-center gap-2 rounded-2xl bg-brand-amber text-[15px] font-extrabold text-white shadow-xl shadow-brand-amber/30 transition-colors hover:bg-brand-amber-strong disabled:opacity-50">
+                                className="flex h-14 w-full items-center justify-center gap-2 rounded-2xl bg-brand-contrast text-[15px] font-extrabold text-white shadow-xl shadow-brand-contrast/30 transition-colors hover:bg-brand-contrast-strong disabled:opacity-50">
                                 {submitting ? <Loader2 className="size-5 animate-spin" /> : <Building2 className="size-5" />}
                                 ساخت بازوی خرید
                             </motion.button>
@@ -225,7 +225,7 @@ export default function NewInquiryPage() {
                         { icon: Send, t: 'لینک رو بفرست' },
                     ].map(({ icon: Icon, t }, i) => (
                         <div key={i} className="flex flex-col items-center gap-1.5 rounded-2xl border border-stone-100 bg-white px-2 py-3.5 text-center dark:border-gray-800 dark:bg-gray-900">
-                            <Icon className="size-4 text-brand-amber" />
+                            <Icon className="size-4 text-brand-contrast" />
                             <span className="text-[10px] font-bold leading-4 text-stone-500 dark:text-gray-400">{t}</span>
                         </div>
                     ))}

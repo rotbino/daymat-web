@@ -3,8 +3,12 @@
 // گارد خطاهای سطح شبکه — تصمیم‌گیری مقصد کاربر:
 //   • اینترنت واقعاً قطع → /offline.html (سرویس‌ورکر)
 //   • اینترنت هست ولی بک/دیتابیس در دسترس نیست → /server-unavailable
-// صفحه مقصد وقتی اتصال برقرار شد، خودش کاربر را به همین صفحه برمی‌گرداند
-// (آدرس فعلی در sessionStorage ذخیره می‌شود).
+//
+// ⚠️ قاعدهٔ فاز جلسه (روایت کاربر):
+//   ریدایرکت به صفحهٔ وضعیت فقط در «ورود به سایت / رفرش کامل صفحه» مجاز است.
+//   در طول جلسه (بعد از اولین پاسخ موفق API یا ۲۰ ثانیه از لود) هرگز ریدایرکت
+//   نمی‌کنیم؛ فقط رویداد issue منتشر می‌شود تا نوار پیام غیرمزاحم نمایش داده شود —
+//   چون قطعیِ یک‌ثانیه‌ای نباید فرم نیمه‌کارهٔ کاربر را به صفحهٔ دیگری ببرد.
 //
 // ⚠️ تشخیص «قطع اینترنت» با پروب فعال انجام می‌شود نه navigator.onLine؛
 // چون onLine وقتی وای‌فای به مودم وصل است ولی اینترنت واقعی قطع است،
@@ -16,6 +20,43 @@ import { checkInternet, getCachedConnectivity } from './connectivity';
 export const RETURN_URL_KEY = 'daymat:returnUrl';
 export const API_BASE_KEY = 'daymat:apiBase';
 const LAST_REDIRECT_KEY = 'daymat:lastNetRedirect';
+
+/* ───────────────────────── فاز جلسه — ورود vs میان‌جلسه ─────────────────── */
+
+// متغیر ماژول = با هر لود کامل صفحه (ورود/رفرش) ریست می‌شود → دقیقاً نقطهٔ ورود
+const BOOTED_AT = Date.now();
+const ENTRY_WINDOW_MS = 20_000; // تا ۲۰ ثانیهٔ اول اگر هنوز هیچ پاسخ موفقی نبود = ورود
+let anyApiSuccess = false;      // بعد از اولین پاسخ موفق، همیشه «میان‌جلسه»
+
+/** بعد از هر پاسخ موفق API صدا زده شود — از این لحظه دیگر هرگز ریدایرکت ممنوع */
+export const noteSessionOnline = () => {
+    anyApiSuccess = true;
+    emitIssue(null); // اگر نوار قطعی باز بود، همین‌جا بسته شود
+};
+
+const isEntryPhase = () => !anyApiSuccess && Date.now() - BOOTED_AT < ENTRY_WINDOW_MS;
+
+/* ───────────────────── رویداد وضعیت شبکه برای UI (نوار پیام) ────────────────── */
+
+export type NetworkIssueKind = 'offline' | 'server';
+type IssueListener = (kind: NetworkIssueKind | null) => void;
+
+const issueListeners = new Set<IssueListener>();
+let activeIssue: NetworkIssueKind | null = null;
+
+/** UI (ConnectivityBanner) مشترک می‌شود؛ تابع لغو اشتراک برمی‌گردد */
+export const onNetworkIssue = (fn: IssueListener): (() => void) => {
+    issueListeners.add(fn);
+    return () => issueListeners.delete(fn);
+};
+
+const emitIssue = (kind: NetworkIssueKind | null) => {
+    if (activeIssue === kind) return; // بدون فلوئد؛ فقط تغییر وضعیت
+    activeIssue = kind;
+    issueListeners.forEach((fn) => {
+        try { fn(kind); } catch { /* بی‌صدا */ }
+    });
+};
 
 /** ذخیرهٔ مسیر فعلی برای بازگشت بعد از رفع قطعی */
 export const storeReturnUrl = (url?: string) => {
@@ -63,15 +104,22 @@ export const rememberApiBase = (base: string) => {
 };
 
 /**
- * روی خطای سطح شبکه (بدون پاسخ HTTP) کاربر را به صفحه وضعیت می‌برد.
- * در برابر هدایت‌های تکراری/لوپ محافظت شده است.
+ * روی خطای سطح شبکه (بدون پاسخ HTTP) تصمیم می‌گیرد: ریدایرکت یا فقط پیام؟
  *
- * تشخیص مقصد:
- *   ۱) navigator.onLine = false → فوری صفحه آفلاین (سریع‌ترین مسیر)
- *   ۲) کش تازهٔ «offline» → فوری صفحه آفلاین
- *   ۳) در غیر این صورت پروب فعال اینترنت:
- *      پروب شکست خورد → قطع اینترنت واقعی است → صفحه آفلاین
- *      پروب موفق بود   → اینترنت هست؛ مشکل از بک/دیتابیس → صفحه سرور
+ *   فاز ورود (۲۰ ثانیهٔ اولِ لود کامل و هنوز هیچ پاسخ موفق API):
+ *     → ریدایرکت به صفحهٔ وضعیت (offline.html / server-unavailable)
+ *     کاربر هنوز محتوایی از دست نداده و صفحهٔ خالی را نمی‌بیند.
+ *
+ *   فاز میان‌جلسه (بعد از اولین موفقیت یا ۲۰ ثانیه):
+ *     → فقط رویداد issue منتشر می‌شود؛ نوار پیام ظاهر می‌شود و هیچ
+ *     ریدایرکتی اتفاق نمی‌افتد — فرم و کار نیمه‌کارهٔ کاربر حفظ می‌شود.
+ *     (نوار در ConnectivityBanner با ۴ ثانیه تأخیر ظاهر می‌شود تا
+ *     قطعی‌های یک‌ثانیه‌ای اصلاً به چشم نیایند.)
+ *
+ * تشخیص مقصد (offline vs server):
+ *   ۱) navigator.onLine = false → فوری آفلاین (سریع‌ترین مسیر)
+ *   ۲) کش تازهٔ «offline» → فوری آفلاین
+ *   ۳) پروب فعال: شکست → آفلاین | موفق → بک/دیتابیس قطع است
  */
 export const handleNetworkFailure = async () => {
     if (typeof window === 'undefined') return;
@@ -79,7 +127,7 @@ export const handleNetworkFailure = async () => {
     // از داخل خود صفحه وضعیت دوباره هدایت نکن (لوپ)
     if (window.location.pathname.startsWith('/server-unavailable')) return;
 
-    // چند درخواست موازی خراب → فقط اولین هدایت
+    // چند درخواست موازی خراب → فقط اولین تصمیم
     const now = Date.now();
     try {
         const last = Number(sessionStorage.getItem(LAST_REDIRECT_KEY) || 0);
@@ -89,27 +137,24 @@ export const handleNetworkFailure = async () => {
         /* بی‌صدا */
     }
 
-    storeReturnUrl();
-
-    // ۱) اینترفیز شبکه قطع است → بدون پروب، صفحه آفلاین
+    // مقصد را مشخص کن (بدون هدایت)
+    let dest: 'offline' | 'server';
     if (navigator.onLine === false) {
-        window.location.assign('/offline.html');
-        return;
-    }
-
-    // ۲) کش تازهٔ آفلاین (پروب لحظاتی قبل شکست خورده) → صفحه آفلاین
-    if (getCachedConnectivity() === 'offline') {
-        window.location.assign('/offline.html');
-        return;
-    }
-
-    // ۳) پروب فعال — تکلیف را روشن می‌کند (~۱۰۰-۴۰۰ms آنلاین / حداکثر ۳.۵s آفلاین)
-    const online = await checkInternet();
-    if (online) {
-        // اینترنت هست ولی بک/دیتابیس پاسخ نمی‌دهد → صفحه سرور در دسترس نیست
-        window.location.assign('/server-unavailable');
+        dest = 'offline';
+    } else if (getCachedConnectivity() === 'offline') {
+        dest = 'offline';
     } else {
-        // اینترنت واقعاً قطع است → صفحه آفلاین
-        window.location.assign('/offline.html');
+        const online = await checkInternet();
+        dest = online ? 'server' : 'offline';
     }
+
+    // ⚠️ فاز ورود فقط: ریدایرکت مجاز
+    if (isEntryPhase()) {
+        storeReturnUrl();
+        window.location.assign(dest === 'offline' ? '/offline.html' : '/server-unavailable');
+        return;
+    }
+
+    // فاز میان‌جلسه: فقط پیام — هیچ هدایتی
+    emitIssue(dest);
 };

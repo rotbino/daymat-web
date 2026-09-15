@@ -42,8 +42,8 @@ export default function InquiryIdentityBar({ inquiries, catalogs, currentInquiry
             <button type="button" onClick={() => { if (canOpen) setOpen((o) => !o); }} aria-expanded={open}
                     aria-label="تغییر کاتالوگ"
                     className={cn('flex min-w-0 flex-1 items-center gap-3 rounded-3xl border-2 border-stone-100 bg-white p-3 text-right shadow-sm transition-all dark:border-gray-800 dark:bg-gray-900',
-                        canOpen && 'hover:border-brand-amber-tint active:scale-[0.995]')}>
-                <span className="grid size-10 shrink-0 place-items-center rounded-2xl bg-brand-amber-soft dark:bg-amber-500/15">
+                        canOpen && 'hover:border-brand-contrast-tint active:scale-[0.995]')}>
+                <span className="grid size-10 shrink-0 place-items-center rounded-2xl bg-brand-contrast-soft dark:bg-amber-500/15">
                     <ClipboardList className="size-5 text-amber-600 dark:text-amber-400" />
                 </span>
                 <span className="min-w-0 flex-1">
@@ -63,7 +63,7 @@ export default function InquiryIdentityBar({ inquiries, catalogs, currentInquiry
 
             {/* اشتراک‌گذاری سریع — همان‌جا، بدون تب */}
             <button type="button" onClick={onShare} aria-label="اشتراک‌گذاری بازوی خرید" title="اشتراک‌گذاری"
-                    className="grid size-9 shrink-0 place-items-center rounded-xl bg-brand-amber-soft text-amber-700
+                    className="grid size-9 shrink-0 place-items-center rounded-xl bg-brand-contrast-soft text-amber-700
                         transition-all hover:bg-amber-500/25 active:scale-95 dark:bg-amber-500/15 dark:text-amber-400">
                 <Share2 className="size-4" />
             </button>
@@ -120,8 +120,8 @@ export default function InquiryIdentityBar({ inquiries, catalogs, currentInquiry
                                 <button key={w.id} type="button" role="menuitem"
                                         onClick={() => { setOpen(false); if (!active) onSelectInquiry(w.id); }}
                                         className={cn('w-full flex items-center gap-2.5 h-11 px-3 rounded-xl text-right transition-colors',
-                                            active ? 'bg-brand-amber-soft dark:bg-amber-500/10' : 'hover:bg-stone-50 dark:hover:bg-gray-800')}>
-                                    <span className="grid size-7 shrink-0 place-items-center rounded-lg bg-brand-amber-soft dark:bg-amber-500/15">
+                                            active ? 'bg-brand-contrast-soft dark:bg-amber-500/10' : 'hover:bg-stone-50 dark:hover:bg-gray-800')}>
+                                    <span className="grid size-7 shrink-0 place-items-center rounded-lg bg-brand-contrast-soft dark:bg-amber-500/15">
                                         <ClipboardList className="size-3.5 text-amber-600 dark:text-amber-400" />
                                     </span>
                                     <span className="flex min-w-0 flex-1 items-center gap-1">
@@ -164,7 +164,7 @@ export default function InquiryIdentityBar({ inquiries, catalogs, currentInquiry
                                 <div className="my-1 border-t border-stone-100 dark:border-gray-800" />
                                 {missingInquiry && (
                                     <button type="button" role="menuitem" onClick={() => { setOpen(false); onNew(); }}
-                                            className="flex h-11 w-full items-center gap-2.5 rounded-xl px-3 text-right text-[13px] font-extrabold text-amber-700 transition-colors hover:bg-brand-amber-soft dark:text-amber-400 dark:hover:bg-amber-500/10">
+                                            className="flex h-11 w-full items-center gap-2.5 rounded-xl px-3 text-right text-[13px] font-extrabold text-amber-700 transition-colors hover:bg-brand-contrast-soft dark:text-amber-400 dark:hover:bg-amber-500/10">
                                         <Plus className="size-4" />
                                         ساخت بازوی خرید
                                     </button>
