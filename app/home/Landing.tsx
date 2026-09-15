@@ -258,7 +258,7 @@ function HeroBox({
           {question}
         </h2>
 
-        <p className="mx-auto mt-2.5 max-w-md text-sm leading-7 text-stone-600 dark:text-gray-400">
+        <p className="mx-auto text-justify mt-2.5 max-w-md text-sm leading-7 text-stone-600 dark:text-gray-400">
           {body}
         </p>
       </motion.div>
@@ -628,7 +628,7 @@ export default function Landing() {
                 </span>
 
                   <h1 className="mt-5 pb-4 text-xl font-black leading-[1.5] tracking-tight text-stone-950 dark:text-white sm:text-xl md:text-[1.5rem] md:leading-[1.35]">
-                      وقتشه ارتباطت با مشتری‌ها و تأمین‌کننده‌هات رو حرفه‌ای‌تر کنی
+                     شبکه تامین کنندگان و خریدران خودت رو بساز.
                   </h1>
 
                  {/* <div className={"text-base text-justify"}>
@@ -645,8 +645,8 @@ export default function Landing() {
                       tone="primary"
                       icon={Store}
                       chip="بازوی فروش"
-                      question="چی می‌فروشی؟"
-                      body="کاتالوگ قیمتت را بساز و مشتری‌های واقعی محصولاتت را پیدا کن؛ هر مشتری که به کاتالوگت وصل بشه ، بخشی از شبکه فروشت میشه و همیشه کاتالوگ قیمتهای تو رو داره."
+                      question="چه محصول یا خدماتی می‌فروشی؟"
+                      body=" کاتالوگ هوشمند محصولات یا خدمات رو بساز. با ارسال لینک کاتالوگ،درخواست همکاری بده؛ هر مشتری که به کاتالوگت وصل بشه ، بخشی از شبکه فروشت میشه و همیشه کاتالوگ قیمتهای تو رو داره."
                       delay={0.1}
                   />
 
@@ -663,8 +663,8 @@ export default function Landing() {
                       tone="contrast"
                       icon={ClipboardList}
                       chip="بازوی خرید"
-                      question="چی می‌خری؟"
-                      body="فقط با ساخت بازوی خرید، لیست خرید معمول و فوری خودت رو بساز تا در پنل کاتالوگهای تامین کنندگان مرتبط دیده بشی و قیمتها و شرایط رقابتی بگیری."
+                      question="چه محصولات یا خدماتی می‌خری؟"
+                      body="بازوی لیست خریدت رو بساز و اقلام مورد نیاز به خرید رو وارد کن. لینک رو برای تأمین‌کننده‌هات بفرست. هر وقت نیاز داشتی، قیمت‌گیری بعضی اقلام رو فعال کن تا قیمت و شرایط رقابتی بگیری."
                       delay={0.15}
                   />
                 </div>
