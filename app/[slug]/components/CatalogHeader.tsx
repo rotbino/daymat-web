@@ -178,8 +178,8 @@ export default function CatalogHeader({
                     </button>
 
 
-                    {/* ═══ سوئیچر کاتالوگ‌های ذخیره شده - وسط ═══ */}
-                    {isAuthenticated && savedCatalogs.length > 0 && (
+                    {/* ═══ سوئیچر کاتالوگ‌های ذخیره شده — وسط؛ برای همه کاربران لاگین‌شده (مالک و بازدیدکننده — خواستهٔ مالک) ═══ */}
+                    {isAuthenticated && (
                         <div className="flex justify-center items-center mb-1" ref={dropdownRef}>
                             <button
                                 onClick={() => setShowSavedDropdown(!showSavedDropdown)}
@@ -201,7 +201,11 @@ export default function CatalogHeader({
                             {showSavedDropdown && (
                                 <div className="absolute top-full mt-1 w-72 bg-white dark:bg-gray-900 rounded-2xl border border-gray-200/70 dark:border-gray-700 shadow-xl overflow-hidden z-50">
                                     <div className="max-h-72 overflow-y-auto py-1">
-                                        {savedCatalogs.map((cat: any) => (
+                                        {savedCatalogs.length === 0 ? (
+                                            <p className="px-4 py-6 text-center text-[11px] font-bold leading-5 text-gray-400 dark:text-gray-500">
+                                                هنوز کاتالوگی ذخیره نکردی —<br />با آیکون نشانکِ بالای همین صفحه ذخیره کن
+                                            </p>
+                                        ) : savedCatalogs.map((cat: any) => (
                                             <button
                                                 key={cat.id}
                                                 onClick={() => {
