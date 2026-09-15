@@ -570,7 +570,7 @@ export const useManualPurchase = () => {
         mutationFn: (data: PurchaseCreditDto) => apiService.credit.manualPurchase(data),
         onSuccess: () => {
             queryClient.invalidateQueries({ queryKey: ['credit', 'balance'] });
-            toast.success('فهرست خرید با موفقیت ثبت شد');
+            toast.success('بازوی خرید با موفقیت ثبت شد');
         },
         onError: (error: ApiError) => toast.error(error.message || 'خطا در ثبت درخواست'),
     });
@@ -1707,14 +1707,14 @@ export const useRemoveContact = () => {
 };
 
 // ═══════════════════════════════════════════════════════════
-// INQUIRY HOOKS — فهرست خرید (استعلام قیمت)
+// INQUIRY HOOKS — بازوی خرید (استعلام قیمت)
 // ═══════════════════════════════════════════════════════════
 
 export interface InquiryListParams {
     q?: string; city?: string; tag?: string; page?: number; limit?: number;
 }
 
-/** دیوار عمومی اعلام‌های خرید — بدون نیاز به ورود */
+/** دیوار عمومی بازوهای خرید — بدون نیاز به ورود */
 export const usePublicInquiries = (params: InquiryListParams = {}) => {
     return useQuery({
         queryKey: ['inquiries', 'public', params],
@@ -1724,7 +1724,7 @@ export const usePublicInquiries = (params: InquiryListParams = {}) => {
     });
 };
 
-/** جزئیات یک فهرست خرید (مالک: به‌همراه پیشنهادها) */
+/** جزئیات یک بازوی خرید (مالک: به‌همراه پیشنهادها) */
 export const useInquiry = (idOrSlug?: string) => {
     return useQuery({
         queryKey: ['inquiry', 'detail', idOrSlug],
@@ -1733,7 +1733,7 @@ export const useInquiry = (idOrSlug?: string) => {
     });
 };
 
-/** اعلام‌های خرید من */
+/** بازوهای خرید من */
 export const useMyInquiries = () => {
     const { hasAccess } = useAuthState();
     return useQuery({
@@ -1811,9 +1811,9 @@ export const useUpdateOfferStatus = () => {
     });
 };
 
-// ─── قلم‌به‌قلم (پنل فهرست خرید) ───
+// ─── قلم‌به‌قلم (پنل بازوی خرید) ───
 
-/** پیشنهادهای دریافتی یک فهرست خرید (فقط مالک) — پنل */
+/** پیشنهادهای دریافتی یک بازوی خرید (فقط مالک) — پنل */
 export const useInquiryOffers = (inquiryId?: string) => {
     const { hasAccess } = useAuthState();
     return useQuery({
@@ -1824,7 +1824,7 @@ export const useInquiryOffers = (inquiryId?: string) => {
     });
 };
 
-/** افزودن یک قلم به فهرست خرید */
+/** افزودن یک قلم به بازوی خرید */
 export const useAddInquiryItem = () => {
     const qc = useQueryClient();
     return useMutation({
@@ -1837,7 +1837,7 @@ export const useAddInquiryItem = () => {
     });
 };
 
-/** ویرایش یک قلم — شامل تاگل فهرست خرید */
+/** ویرایش یک قلم — شامل تاگل بازوی خرید */
 export const useUpdateInquiryItem = () => {
     const qc = useQueryClient();
     return useMutation({
@@ -1863,9 +1863,9 @@ export const useRemoveInquiryItem = () => {
     });
 };
 
-// ─── اعضای فهرست خرید — تامین‌کننده‌های تاییدشده (شبکهٔ خرید↔فروش) ───
+// ─── اعضای بازوی خرید — تامین‌کننده‌های تاییدشده (شبکهٔ خرید↔فروش) ───
 
-/** فهرست تامین‌کننده‌های یک فهرست خرید (مالک) */
+/** فهرست تامین‌کننده‌های یک بازوی خرید (مالک) */
 export const useInquiryMembers = (inquiryId?: string) => {
     const { hasAccess } = useAuthState();
     return useQuery({
@@ -1888,7 +1888,7 @@ export const useAddInquiryMember = () => {
     });
 };
 
-/** درخواست عضویت تامین‌کننده با کاتالوگ فروشش (از گیت صفحه عمومی) */
+/** درخواست عضویت تامین‌کننده با کاتالوگ قیمتش (از گیت صفحه عمومی) */
 export const useRequestInquiryAccess = () => {
     const qc = useQueryClient();
     return useMutation({
@@ -1915,7 +1915,7 @@ export const useDecideInquiryMember = () => {
     });
 };
 
-/** فرصت‌های فروش تامین‌کننده — دعوت‌ها + اقلام فوری (تب «فهرست خرید» پنل فروش) */
+/** فرصت‌های فروش تامین‌کننده — دعوت‌ها + اقلام فوری (تب «بازوی خرید» پنل فروش) */
 export const useInquiryOpportunities = () => {
     const { hasAccess } = useAuthState();
     return useQuery({
@@ -1926,7 +1926,7 @@ export const useInquiryOpportunities = () => {
     });
 };
 
-/** 🪧 تابلوی اعلام‌های خرید بازار — قرینهٔ useVitrine */
+/** 🪧 تابلوی بازوهای خرید بازار — قرینهٔ useVitrine */
 export const useInquiryArmBoard = (slug?: string) => {
     return useQuery({
         queryKey: ['inquiry-arm-board', slug],

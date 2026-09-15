@@ -1,5 +1,5 @@
 // app/my-inquiries/components/ConsoleTabs.tsx
-// نوار تب‌های پنل فهرست خرید — قرینهٔ کنسول کاتالوگ فروش (Stripe/اینستاگرام استایل)
+// نوار تب‌های پنل بازوی خرید — قرینهٔ کنسول کاتالوگ قیمت (Stripe/اینستاگرام استایل)
 'use client';
 
 import React from 'react';
@@ -20,7 +20,7 @@ export default function InquiryConsoleTabs({ items, active, onChange }: {
 }) {
     return (
         <div className="pt-1 lg:pt-1.5">
-            <nav aria-label="بخش‌های فهرست خرید" className="flex items-stretch">
+            <nav aria-label="بخش‌های بازوی خرید" className="flex items-stretch">
                 {items.map(({ key, label, icon: Icon, count, alert }) => {
                     const isActive = active === key;
                     return (

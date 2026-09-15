@@ -4,9 +4,9 @@
 //   ۲) «سایر کالاهایی که معمولا می‌خرد» — قیمت‌گیری‌شان بسته به تنظیمات خریدار
 //   پیشنهاد قیمت قلم‌به‌قلم در شیت ثبت می‌شود؛ مالک: مدیریت در پنل.
 // ✅ طراحی ۱۴۰۴ (بازطراحی به خواست مالک):
-//   - بستر سفید + کارت‌های سایه‌دار مثل کاتالوگ فروش (پس‌زمینهٔ کهربایی حذف شد)
+//   - بستر سفید + کارت‌های سایه‌دار مثل کاتالوگ قیمت (پس‌زمینهٔ کهربایی حذف شد)
 //   - لیستِ لیستی حفظ شد؛ دکمهٔ قیمت برای «همه» فعال است
-//   - فهرست خرید خصوصی: دکمه فعال می‌ماند؛ لمسش → پیام «درخواست همکاری» + مدال عضویت
+//   - بازوی خرید خصوصی: دکمه فعال می‌ماند؛ لمسش → پیام «درخواست همکاری» + مدال عضویت
 //   - موبایل: CTA جمع‌وجور فوتر «پیشنهاد قیمت»؛ دسکتاپ: باکس «می‌تونی این لیست رو تامین کنی؟»
 //   - حذف از صفحهٔ مالک برداشته شد — کاتالوگ حذف نمی‌شود، فقط پذیرش قیمت متوقف/بسته می‌شود
 //   - تماس + ذخیرهٔ مخاطب (vCard) برای بازدیدکننده
@@ -41,7 +41,7 @@ const fadeUp = (delay = 0) => ({
     transition: { duration: 0.45, delay, ease: 'easeOut' as const },
 });
 
-// ✅ کارت سایه‌دار — هم‌خانوادهٔ کاتالوگ فروش؛ بستر سفید، سایهٔ نرم، بوردر خنثی
+// ✅ کارت سایه‌دار — هم‌خانوادهٔ کاتالوگ قیمت؛ بستر سفید، سایهٔ نرم، بوردر خنثی
 const CARD = 'border border-outline-variant/30 bg-white shadow-[0_2px_12px_-6px_rgba(15,23,42,0.14)] dark:border-gray-800 dark:bg-gray-900 dark:shadow-[0_2px_12px_-6px_rgba(0,0,0,0.6)]';
 
 export default function InquiryPublicClient({ idOrSlug }: { idOrSlug: string }) {
@@ -61,7 +61,7 @@ export default function InquiryPublicClient({ idOrSlug }: { idOrSlug: string }) 
     const [requestedSelf, setRequestedSelf] = useState(false);
 
     useEffect(() => {
-        if (inquiry?.title) document.title = `${inquiry.title} | فهرست خرید دیمت`;
+        if (inquiry?.title) document.title = `${inquiry.title} | بازوی خرید دیمت`;
     }, [inquiry?.title]);
 
     const isOwner = !!inquiry?.isOwner;
@@ -133,7 +133,7 @@ export default function InquiryPublicClient({ idOrSlug }: { idOrSlug: string }) 
             `FN:${name}`,
             bizPhone ? `TEL;TYPE=CELL:${bizPhone}` : null,
             inquiry.city ? `ADR;TYPE=WORK:;;${inquiry.city};;;;` : null,
-            `NOTE:فهرست خرید «${inquiry.title}» — دیمت`,
+            `NOTE:بازوی خرید «${inquiry.title}» — دیمت`,
             shareUrl ? `URL:${shareUrl}` : null,
             'END:VCARD',
         ].filter(Boolean).join('\n');
@@ -163,7 +163,7 @@ export default function InquiryPublicClient({ idOrSlug }: { idOrSlug: string }) 
         const next = inquiry.status === 'open' ? 'closed' : 'open';
         try {
             await updateInquiry.mutateAsync({ id: inquiry.id, data: { status: next } });
-            toast.success(next === 'open' ? 'فهرست خرید باز شد' : 'پذیرش قیمت متوقف شد');
+            toast.success(next === 'open' ? 'بازوی خرید باز شد' : 'پذیرش قیمت متوقف شد');
             refetch();
         } catch (e: any) {
             toast.error(e?.response?.data?.message || 'تغییر وضعیت ناموفق بود');
@@ -183,7 +183,7 @@ export default function InquiryPublicClient({ idOrSlug }: { idOrSlug: string }) 
             <div className="grid min-h-screen place-items-center bg-white px-4 text-center dark:bg-gray-950">
                 <div>
                     <Package className="mx-auto size-14 text-stone-300 dark:text-gray-700" />
-                    <h1 className="mt-4 text-xl font-black">این فهرست خرید پیدا نشد</h1>
+                    <h1 className="mt-4 text-xl font-black">این بازوی خرید پیدا نشد</h1>
                     <p className="mt-2 text-sm text-stone-500">ممکن است حذف شده باشد یا لینک اشتباه باشد.</p>
                     <Link href="/" className="mt-5 inline-flex h-11 items-center gap-2 rounded-full bg-brand-amber px-6 text-sm font-extrabold text-white">
                         رفتن به دیمت
@@ -294,7 +294,7 @@ export default function InquiryPublicClient({ idOrSlug }: { idOrSlug: string }) 
                     )}
                 </motion.section>
 
-                {/* ═══ بنر فهرست خرید خصوصی — لیست دیده می‌شود، قیمت فقط برای اعضا ═══ */}
+                {/* ═══ بنر بازوی خرید خصوصی — لیست دیده می‌شود، قیمت فقط برای اعضا ═══ */}
                 {limited && (
                     <motion.div {...fadeUp(0.05)}
                         className="mt-4 flex items-center gap-3 rounded-2xl border border-brand-amber/30 bg-brand-amber-soft/50 px-4 py-3.5 dark:border-amber-500/25 dark:bg-amber-500/5">
@@ -302,7 +302,7 @@ export default function InquiryPublicClient({ idOrSlug }: { idOrSlug: string }) 
                             <Lock className="size-4 text-amber-600 dark:text-amber-400" />
                         </span>
                         <div className="min-w-0 flex-1">
-                            <p className="text-[12px] font-black text-amber-800 dark:text-amber-300">این فهرست خرید خصوصیه</p>
+                            <p className="text-[12px] font-black text-amber-800 dark:text-amber-300">این بازوی خرید خصوصیه</p>
                             <p className="mt-0.5 text-[10.5px] font-bold leading-4 text-amber-700/80 dark:text-amber-400/80">
                                 {requestedSelf
                                     ? 'درخواست همکاری‌ات ثبت شد — به‌محض تایید خریدار، دکمهٔ قیمت برایت فعال می‌شود'
@@ -480,7 +480,7 @@ export default function InquiryPublicClient({ idOrSlug }: { idOrSlug: string }) 
                 {/* بسته/مهلت — بازدیدکننده */}
                 {!isOwner && (!isOpen || deadlineOver) && (
                     <p className="mt-6 rounded-2xl bg-stone-50 px-4 py-3 text-center text-sm text-stone-500 dark:bg-gray-950/60 dark:text-gray-400">
-                        پذیرش قیمت این فهرست خرید بسته شده است.
+                        پذیرش قیمت این بازوی خرید بسته شده است.
                     </p>
                 )}
 
@@ -508,7 +508,7 @@ export default function InquiryPublicClient({ idOrSlug }: { idOrSlug: string }) 
                         {(inquiry.offers?.length ?? 0) === 0 ? (
                             <div className={`${CARD} rounded-3xl px-6 py-10 text-center`}>
                                 <p className="text-sm font-bold text-stone-500 dark:text-gray-400">هنوز پیشنهادی نیومده.</p>
-                                <p className="mt-1 text-xs text-stone-400 dark:text-gray-500">لینک اعلام خریدت رو برای تامین‌کننده‌ها بفرست.</p>
+                                <p className="mt-1 text-xs text-stone-400 dark:text-gray-500">لینک بازوی خریدت رو برای تامین‌کننده‌ها بفرست.</p>
                             </div>
                         ) : (
                             <div className="space-y-3">
@@ -586,7 +586,7 @@ export default function InquiryPublicClient({ idOrSlug }: { idOrSlug: string }) 
                         <div className="min-w-0">
                             <p className="truncate text-[12px] font-black text-stone-800 dark:text-gray-200">می‌تونی این لیست رو تامین کنی؟</p>
                             <p className="truncate text-[10px] font-bold text-stone-400 dark:text-gray-500">
-                                {limited ? 'فهرست خرید خصوصیه — اول درخواست همکاری' : 'قیمت بده، خریدار باهات تماس می‌گیره'}
+                                {limited ? 'بازوی خرید خصوصیه — اول درخواست همکاری' : 'قیمت بده، خریدار باهات تماس می‌گیره'}
                             </p>
                         </div>
                         <motion.button whileTap={{ scale: 0.96 }} onClick={() => handleOffer({ name: 'کل لیست' })}
@@ -598,7 +598,7 @@ export default function InquiryPublicClient({ idOrSlug }: { idOrSlug: string }) 
                 </div>
             )}
 
-            {/* ═══ مدال درخواست همکاری — فهرست خرید خصوصی ═══ */}
+            {/* ═══ مدال درخواست همکاری — بازوی خرید خصوصی ═══ */}
             {privOpen && (
                 <PrivateRequestModal
                     inquiry={inquiry as any}
@@ -621,7 +621,7 @@ function dl_over(deadline?: string | null): boolean {
     } catch { return false; }
 }
 
-// ═══ مدال درخواست همکاری — با کاتالوگ فروشت به خریدار درخواست می‌دهی؛
+// ═══ مدال درخواست همکاری — با کاتالوگ قیمتت به خریدار درخواست می‌دهی؛
 //     بعد از تایید او، همیشه می‌توانی به درخواست‌های قیمتش پیشنهاد بدهی ═══
 function PrivateRequestModal({ inquiry, onClose, onRequested }: { inquiry: any; onClose: () => void; onRequested: () => void }) {
     const isAuthenticated = useSelector((s: RootState) => s.auth.isAuthenticated);
@@ -646,11 +646,11 @@ function PrivateRequestModal({ inquiry, onClose, onRequested }: { inquiry: any; 
                 <span className="mx-auto grid size-14 place-items-center rounded-2xl bg-brand-amber-soft dark:bg-amber-500/10">
                     <ShieldCheck className="size-6 text-amber-600 dark:text-amber-400" />
                 </span>
-                <h1 className="mt-4 text-lg font-black">فهرست خرید خصوصیه</h1>
+                <h1 className="mt-4 text-lg font-black">بازوی خرید خصوصیه</h1>
                 {inquiry.title && <p className="mt-1 text-sm font-bold text-stone-500 dark:text-gray-400">«{inquiry.title}»</p>}
                 <p className="mx-auto mt-3 max-w-xs text-[12px] font-bold leading-6 text-stone-500 dark:text-gray-400">
                     فقط تامین‌کننده‌های تاییدشدهٔ خریدار می‌توانند قیمت بدهند —
-                    با کاتالوگ فروشت بهش درخواست همکاری بده؛ وقتی پذیرفت، همیشه می‌توانی به درخواست‌های قیمتش پیشنهاد بدهی.
+                    با کاتالوگ قیمتت بهش درخواست همکاری بده؛ وقتی پذیرفت، همیشه می‌توانی به درخواست‌های قیمتش پیشنهاد بدهی.
                 </p>
                 <ModalBody inquiry={inquiry} isAuthenticated={isAuthenticated} requestAccess={requestAccess} onRequested={onRequested} />
             </motion.div>
@@ -665,7 +665,7 @@ function ModalBody({ inquiry, isAuthenticated, requestAccess, onRequested }: {
     requestAccess: { mutateAsync: (v: { inquiryId: string; catalogId: string }) => Promise<any>; isPending: boolean; isSuccess: boolean };
     onRequested: () => void;
 }) {
-    // کاتالوگ‌های فروش من — برای درخواست همکاری
+    // کاتالوگ‌های قیمت من — برای درخواست همکاری
     const { data: catalogsRaw, isLoading: catsLoading } = useQuery({
         queryKey: ['catalogs'],
         queryFn: () => apiService.catalog.getAll(),
@@ -703,10 +703,10 @@ function ModalBody({ inquiry, isAuthenticated, requestAccess, onRequested }: {
     if (myCatalogs.length === 0) {
         return (
             <>
-                <p className="mt-5 text-[12px] font-bold text-stone-500 dark:text-gray-400">برای درخواست همکاری اول یک کاتالوگ فروش بساز</p>
+                <p className="mt-5 text-[12px] font-bold text-stone-500 dark:text-gray-400">برای درخواست همکاری اول یک کاتالوگ قیمت بساز</p>
                 <Link href="/business/register"
                     className="mt-3 inline-flex h-11 items-center gap-2 rounded-full bg-brand-amber px-6 text-sm font-extrabold text-white transition-colors hover:bg-brand-amber-strong">
-                    ساخت کاتالوگ فروش
+                    ساخت کاتالوگ قیمت
                 </Link>
             </>
         );

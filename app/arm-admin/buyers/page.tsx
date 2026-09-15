@@ -45,7 +45,7 @@ function BuyersContent({ slug, armName }: { slug: string; armName: string }) {
     const [searchInput, setSearchInput] = useState('');
     const [showAddModal, setShowAddModal] = useState(false);
     const [confirmRemoveId, setConfirmRemoveId] = useState<string | null>(null);
-    // ✅ انتخابگر «فهرست خرید» — خریدارِ جاری برای مدیریت تابلوهای خریدش در این بازار
+    // ✅ انتخابگر «بازوی خرید» — خریدارِ جاری برای مدیریت تابلوهای خریدش در این بازار
     const [boardsMember, setBoardsMember] = useState<any>(null);
     const [filter, setFilter] = useState<FilterValue>({});
     const [sortBy, setSortBy] = useState('joinedAt');
@@ -280,14 +280,14 @@ function BuyersContent({ slug, armName }: { slug: string; armName: string }) {
                                                         </>
                                                     ) : (
                                                         <>
-                                                            {/* ✅ فهرست خرید — مدیریت تابلوهای خرید این خریدار در بازار */}
+                                                            {/* ✅ بازوی خرید — مدیریت تابلوهای خرید این خریدار در بازار */}
                                                             <button
                                                                 onClick={() => setBoardsMember(b)}
-                                                                title="فهرست خرید — انتشار درخواست‌های خریدش در دیوار خریداران"
+                                                                title="بازوی خرید — انتشار درخواست‌های خریدش در دیوار خریداران"
                                                                 className="h-8 px-2.5 rounded-lg text-amber-700 dark:text-amber-400 bg-amber-500/10
                                                                     hover:bg-amber-500/20 text-[10px] font-extrabold inline-flex items-center gap-1 transition-colors"
                                                             >
-                                                                <Megaphone className="w-3.5 h-3.5" /> فهرست خرید
+                                                                <Megaphone className="w-3.5 h-3.5" /> بازوی خرید
                                                             </button>
                                                             <button
                                                                 onClick={() => pauseMut.mutate({ membershipId: b.membershipId, paused: !isPaused })}
@@ -410,14 +410,14 @@ function BuyersContent({ slug, armName }: { slug: string; armName: string }) {
                                                 </>
                                             ) : (
                                                 <>
-                                                    {/* ✅ فهرست خرید — نسخهٔ موبایل */}
+                                                    {/* ✅ بازوی خرید — نسخهٔ موبایل */}
                                                     <button
                                                         onClick={() => setBoardsMember(b)}
-                                                        title="فهرست خرید — انتشار درخواست‌های خریدش در دیوار خریداران"
+                                                        title="بازوی خرید — انتشار درخواست‌های خریدش در دیوار خریداران"
                                                         className="h-8 px-2.5 rounded-lg text-amber-700 dark:text-amber-400 bg-amber-500/10
                                                             hover:bg-amber-500/20 text-[10px] font-extrabold inline-flex items-center gap-1 transition-colors"
                                                     >
-                                                        <Megaphone className="w-3.5 h-3.5" /> فهرست خرید
+                                                        <Megaphone className="w-3.5 h-3.5" /> بازوی خرید
                                                     </button>
                                                     <button
                                                         onClick={() => pauseMut.mutate({ membershipId: b.membershipId, paused: !isPaused })}
@@ -456,7 +456,7 @@ function BuyersContent({ slug, armName }: { slug: string; armName: string }) {
                 <AddBuyerModal slug={slug} onClose={() => setShowAddModal(false)} />
             )}
 
-            {/* ─── انتخابگر «فهرست خرید» — تابلوهای خریدِ این خریدار در بازار ─── */}
+            {/* ─── انتخابگر «بازوی خرید» — تابلوهای خریدِ این خریدار در بازار ─── */}
             {boardsMember && (
                 <MemberBoardsModal slug={slug} member={boardsMember} onClose={() => setBoardsMember(null)} />
             )}
@@ -464,7 +464,7 @@ function BuyersContent({ slug, armName }: { slug: string; armName: string }) {
     );
 }
 
-// ═══ انتخابگر «فهرست خرید» — هر خریدار می‌تواند چند فهرست خرید داشته باشد؛
+// ═══ انتخابگر «بازوی خرید» — هر خریدار می‌تواند چند بازوی خرید داشته باشد؛
 //     هر تابلو را جدا می‌شود روی دیوار خریداران منتشر یا حذف کرد (InquiryPublication) ═══
 function MemberBoardsModal({ slug, member, onClose }: { slug: string; member: any; onClose: () => void }) {
     const queryClient = useQueryClient();
@@ -483,8 +483,8 @@ function MemberBoardsModal({ slug, member, onClose }: { slug: string; member: an
             apiService.arm.toggleInquiryPublish(slug, inquiryId, published),
         onSuccess: (_d, v) => {
             toast.success(v.published
-                ? `فهرست خرید ${memberName} روی دیوار خریداران منتشر شد`
-                : `فهرست خرید ${memberName} از دیوار خریداران حذف شد`);
+                ? `بازوی خرید ${memberName} روی دیوار خریداران منتشر شد`
+                : `بازوی خرید ${memberName} از دیوار خریداران حذف شد`);
             queryClient.invalidateQueries({ queryKey: ['member-inquiries', slug, userId] });
             queryClient.invalidateQueries({ queryKey: ['inquiry-arm-board', slug] }); // تابلوی عمومی هم رفرش شود
         },
@@ -508,7 +508,7 @@ function MemberBoardsModal({ slug, member, onClose }: { slug: string; member: an
                         <div className="min-w-0">
                             <h3 className="text-sm font-extrabold text-on-surface">تابلوهای خرید {memberName}</h3>
                             <p className="text-[10px] text-on-surface-variant/70 mt-0.5">
-                                هر فهرست خرید را روشن کنی، درخواست‌هایش روی دیوار خریداران می‌نشیند
+                                هر بازوی خرید را روشن کنی، درخواست‌هایش روی دیوار خریداران می‌نشیند
                             </p>
                         </div>
                     </div>

@@ -766,7 +766,7 @@ export const PERMISSION_LEVELS = {
 
 
 // ═══════════════════════════════════════════════════════════
-// INQUIRY — فهرست خرید (استعلام قیمت)
+// INQUIRY — بازوی خرید (استعلام قیمت)
 // فلسفه: ساده به‌صورت پیش‌فرض، پیشرفته اختیاری (قطعهٔ صنعتی)
 // ═══════════════════════════════════════════════════════════
 
@@ -789,7 +789,7 @@ export interface InquiryItem {
     referenceUrl?: string | null;
     note?: string | null;
     order: number;
-    /** ✅ فهرست خرید فعال — بالای کاتالوگ عمومی در «درخواست‌های خرید جاری» */
+    /** ✅ بازوی خرید فعال — بالای کاتالوگ عمومی در «درخواست‌های خرید جاری» */
     urgent?: boolean | null;
     urgentAt?: string | null;
     createdAt: string;
@@ -806,7 +806,7 @@ export interface InquiryBusinessBrief {
     name: string;
     logoUrl?: string | null;
     city?: string | null;
-    /** ☎️ شمارهٔ تماس عمومی کسب‌وکار — برای دکمهٔ تماس صفحهٔ فهرست خرید */
+    /** ☎️ شمارهٔ تماس عمومی کسب‌وکار — برای دکمهٔ تماس صفحهٔ بازوی خرید */
     phone?: string | null;
 }
 
@@ -828,9 +828,9 @@ export interface InquiryBase {
     tags: string[];
     viewCount: number;
     offerCount: number;
-    /** ✅ امکان ارسال قیمت برای خریدهای غیر فوری (سایر کالاها) — تنظیمات فهرست خرید */
+    /** ✅ امکان ارسال قیمت برای خریدهای غیر فوری (سایر کالاها) — تنظیمات بازوی خرید */
     allowNonUrgentOffers?: boolean;
-    /** ✅ واحدهای اختصاصی فهرست خرید — [{ unitId }] */
+    /** ✅ واحدهای اختصاصی بازوی خرید — [{ unitId }] */
     units?: InquiryUnitPayload[] | null;
     createdAt: string;
     updatedAt: string;
@@ -838,7 +838,7 @@ export interface InquiryBase {
     business?: InquiryBusinessBrief | null;
 }
 
-/** ردیف دیوار عمومی و فهرست «اعلام‌های خرید من» */
+/** ردیف دیوار عمومی و فهرست «بازوهای خرید من» */
 export interface InquiryListItem extends InquiryBase {
     _count?: { items: number };
 }
@@ -894,7 +894,7 @@ export interface CreateInquiryItemPayload {
     imageUrl?: string | null;
     referenceUrl?: string | null;
     note?: string | null;
-    urgent?: boolean;                  // ✅ فهرست خرید فعال
+    urgent?: boolean;                  // ✅ بازوی خرید فعال
 }
 
 export interface CreateInquiryPayload {
@@ -912,7 +912,7 @@ export interface CreateInquiryPayload {
     paymentTerms?: string;
     tags?: string[];
     businessId?: string;
-    units?: InquiryUnitPayload[];      // ✅ واحدهای اختصاصی فهرست خرید (مثل کاتالوگ فروش)
+    units?: InquiryUnitPayload[];      // ✅ واحدهای اختصاصی بازوی خرید (مثل کاتالوگ قیمت)
     allowNonUrgentOffers?: boolean;    // ✅ امکان ارسال قیمت برای خریدهای غیر فوری
 }
 

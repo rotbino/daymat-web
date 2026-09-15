@@ -404,7 +404,7 @@ export default function BusinessSetupModal({ isOpen, onClose, business, onSaved,
                         {errors.position && <p className="text-error text-[11px]">{errors.position}</p>}
                         {!isEdit && (
                             <p className="text-[10px] text-on-surface-variant/60 leading-4">
-                                این نقشِ شرکتیِ توست — اینکه در کاتالوگ فروش چه نقشی داشته باشی، موقع ساخت کاتالوگ مشخص می‌شود.
+                                این نقشِ شرکتیِ توست — اینکه در کاتالوگ قیمت چه نقشی داشته باشی، موقع ساخت کاتالوگ مشخص می‌شود.
                             </p>
                         )}
                     </section>

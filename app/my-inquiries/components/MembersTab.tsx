@@ -1,7 +1,7 @@
 // app/my-inquiries/components/MembersTab.tsx
-// ✅ تب «تامین‌کنندگان» پنل فهرست خرید — شبکهٔ خرید↔فروش:
+// ✅ تب «تامین‌کنندگان» پنل بازوی خرید — شبکهٔ خرید↔فروش:
 //    تامین‌کننده‌های تاییدشده این کاتالوگ، اقلام فوری را اول از همه می‌بینند
-//    و در تب «فهرست خرید»ی پنل فروششان قیمت می‌دهند.
+//    و در تب «بازوی خرید»ی پنل فروششان قیمت می‌دهند.
 //    دو مسیر: خریدار دعوت می‌کند (buyer_add → تایید با تامین‌کننده)
 //             تامین‌کننده درخواست می‌دهد (supplier_request → تایید با خریدار)
 // فلسفهٔ متن: حداقلی — خودِ ساختار می‌گوید چه خبر است.
@@ -100,7 +100,7 @@ export default function MembersTab({ inquiryId, visibility }: Props) {
                 ) : (
                     <div className="flex shrink-0 items-center gap-1">
                         {mode === 'active' && cat.slug && (
-                            <Link href={`/${cat.slug}`} target="_blank" aria-label="کاتالوگ فروش"
+                            <Link href={`/${cat.slug}`} target="_blank" aria-label="کاتالوگ قیمت"
                                 className="grid size-8 place-items-center rounded-lg text-stone-400 transition-colors hover:bg-stone-100 hover:text-primary dark:hover:bg-gray-800">
                                 <ExternalLink className="size-4" />
                             </Link>
@@ -200,7 +200,7 @@ export default function MembersTab({ inquiryId, visibility }: Props) {
     );
 }
 
-/** مودال افزودن تامین‌کننده — جست‌وجوی کاتالوگ فروش */
+/** مودال افزودن تامین‌کننده — جست‌وجوی کاتالوگ قیمت */
 function AddSupplierModal({ inquiryId, existingIds, onClose, onDone }: {
     inquiryId: string;
     existingIds: Set<string>;
@@ -236,7 +236,7 @@ function AddSupplierModal({ inquiryId, existingIds, onClose, onDone }: {
             >
                 <p className="text-[15px] font-black text-stone-900 dark:text-gray-100">افزودن تامین‌کننده</p>
                 <p className="mt-0.5 text-[11px] font-bold text-stone-400 dark:text-gray-500">
-                    از کاتالوگ فروششان دعوت کن — اقلامت دستشان می‌رسد
+                    از کاتالوگ قیمتشان دعوت کن — اقلامت دستشان می‌رسد
                 </p>
 
                 <div className="relative mt-3">
@@ -244,7 +244,7 @@ function AddSupplierModal({ inquiryId, existingIds, onClose, onDone }: {
                     <input
                         value={q}
                         onChange={(e) => setQ(e.target.value)}
-                        placeholder="جست‌وجوی کاتالوگ فروش…"
+                        placeholder="جست‌وجوی کاتالوگ قیمت…"
                         autoFocus
                         className="h-11 w-full rounded-xl border border-stone-100 bg-stone-50 pr-9 pl-3 text-sm font-bold outline-none focus:border-brand-amber dark:border-gray-800 dark:bg-gray-950/60 dark:text-gray-100"
                     />

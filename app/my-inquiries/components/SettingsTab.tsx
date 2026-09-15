@@ -1,5 +1,5 @@
 // app/my-inquiries/components/SettingsTab.tsx
-// تب تنظیمات پنل فهرست خرید — مشخصات، شرایط، دسترسی و قیمت‌گیری، وضعیت
+// تب تنظیمات پنل بازوی خرید — مشخصات، شرایط، دسترسی و قیمت‌گیری، وضعیت
 // شامل فیلد «امکان ارسال قیمت برای خریدهای غیر فوری» (ایدهٔ مالک)
 // ✅ نمایانی دوگانه: عمومی (هرکس با لینک) | خصوصی (همه لیست را می‌بینند؛ فقط اعضا قیمت می‌دهند)
 // ✅ حذف برداشته شد (تصمیم مالک): کاتالوگ حذف نمی‌شود — فقط پذیرش قیمت متوقف/بسته می‌شود
@@ -35,7 +35,7 @@ export default function SettingsTab({ detail, onSave, onOpenUnits, onToggleStatu
     const [paymentTerms, setPaymentTerms] = useState('');
     const [visibility, setVisibility] = useState<'public' | 'private'>('public');
     const [allowNonUrgentOffers, setAllowNonUrgent] = useState(true);
-    // ✅ آدرس عمومی — قابل ویرایش مثل کاتالوگ فروش (لینک قدیمی /inquiries/{id} هم همچنان کار می‌کند)
+    // ✅ آدرس عمومی — قابل ویرایش مثل کاتالوگ قیمت (لینک قدیمی /inquiries/{id} هم همچنان کار می‌کند)
     const [slug, setSlug] = useState('');
     const [slugStatus, setSlugStatus] = useState<'taken' | 'reserved' | null>(null);
 
@@ -98,7 +98,7 @@ export default function SettingsTab({ detail, onSave, onOpenUnits, onToggleStatu
             <motion.section initial={{ opacity: 0, y: 14 }} animate={{ opacity: 1, y: 0 }} className={card}>
                 <h2 className={cardTitle}>مشخصات</h2>
                 <div className="space-y-2.5">
-                    <input value={title} onChange={(e) => setTitle(e.target.value)} placeholder="عنوان فهرست خرید" className={`${inp} w-full`} />
+                    <input value={title} onChange={(e) => setTitle(e.target.value)} placeholder="عنوان بازوی خرید" className={`${inp} w-full`} />
                     <textarea value={description} onChange={(e) => setDescription(e.target.value)} rows={2}
                         placeholder="توضیح کوتاه" className={`${inp} h-auto w-full py-2`} />
                     <input value={tagsRaw} onChange={(e) => setTagsRaw(e.target.value)} placeholder="برچسب‌ها — با ویرگول جدا کن" className={`${inp} w-full`} />
@@ -171,7 +171,7 @@ export default function SettingsTab({ detail, onSave, onOpenUnits, onToggleStatu
                             label="امکان ارسال قیمت برای خریدهای غیر فوری"
                             sub={allowNonUrgentOffers
                                 ? 'تامین‌کننده‌ها برای سایر کالاها هم قیمت می‌فرستند'
-                                : 'فقط روی اقلام با فهرست خرید فعال قیمت می‌گیرید'}
+                                : 'فقط روی اقلام با بازوی خرید فعال قیمت می‌گیرید'}
                         />
                     </div>
 
@@ -207,7 +207,7 @@ export default function SettingsTab({ detail, onSave, onOpenUnits, onToggleStatu
                     </button>
                 </div>
                 <p className="mt-2 text-[10px] font-bold leading-4 text-stone-400 dark:text-gray-500">
-                    فهرست خرید حذف‌شدنی نیست — با توقف پذیرش، پیشنهاد جدیدی نمی‌گیری و هر وقت خواستی دوباره بازش می‌کنی.
+                    بازوی خرید حذف‌شدنی نیست — با توقف پذیرش، پیشنهاد جدیدی نمی‌گیری و هر وقت خواستی دوباره بازش می‌کنی.
                 </p>
             </motion.section>
         </div>

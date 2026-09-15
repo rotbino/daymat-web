@@ -81,7 +81,7 @@ export default function MyCatalogsContent() {
         staleTime: 60_000,
     });
 
-    // ✅ شبکهٔ خرید↔فروش — دعوت‌های در انتظار پذیرش (بج قرمز تب «فهرست خرید»)
+    // ✅ شبکهٔ خرید↔فروش — دعوت‌های در انتظار پذیرش (بج قرمز تب «بازوی خرید»)
     const { data: oppsData } = useInquiryOpportunities();
     const pendingInvites = (oppsData?.invitations ?? []).length;
 
@@ -90,7 +90,7 @@ export default function MyCatalogsContent() {
     const { data: pendingApprovals } = useMyPendingApprovals();
     const pendingTotal = pendingSummary?.total || 0;
     const approvals: any[] = pendingApprovals?.items || [];
-    // ✅ اعلام‌های خرید من — در همان سوییچر کنار کاتالوگ‌های فروش (محصول دوم دیمت)
+    // ✅ بازوهای خرید من — در همان سوییچر کنار کاتالوگ‌های قیمت (محصول دوم دیمت)
     const { data: myInquiriesRaw } = useMyInquiries();
     const myInquiries: any[] = useMemo(() => myInquiriesRaw ?? [], [myInquiriesRaw]);
     const catalogs = useMemo(
@@ -289,9 +289,9 @@ export default function MyCatalogsContent() {
     const canShare = !!(currentCatalog as any)?.slug;
 
     const goNewCatalog = () => router.push('/business/register');
-    // فهرست خرید جدید — فرم محصول دوم
+    // بازوی خرید جدید — فرم محصول دوم
     const goNewInquiry = () => router.push('/inquiries/new');
-    // انتخاب فهرست خرید از سوییچر → پرش به مدیریت آن + ثبت «فهرست خرید کارنت» (پرسیست)
+    // انتخاب بازوی خرید از سوییچر → پرش به مدیریت آن + ثبت «بازوی خرید کارنت» (پرسیست)
     const selectInquiry = (id: string) => {
         dispatch(setCurrentInquiry(id));
         router.push(`/my-inquiries?catalog=${id}`);
@@ -501,7 +501,7 @@ export default function MyCatalogsContent() {
                     <TeamTab catalogId={currentCatalog.id} />
                 )}
 
-                {/* ✅ تب فهرست خرید — شبکهٔ خرید↔فروش از سمت تامین‌کننده */}
+                {/* ✅ تب بازوی خرید — شبکهٔ خرید↔فروش از سمت تامین‌کننده */}
                 {tab === 'leads' && (
                     <LeadsTab />
                 )}

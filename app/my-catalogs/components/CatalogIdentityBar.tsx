@@ -1,8 +1,8 @@
 // app/my-catalogs/components/CatalogIdentityBar.tsx
 // نوار هویت کاتالوگ — سوییچر سبک اینستاگرام (لوگو + نام + فلش پایین)
 // شیر + چشم (مشاهدهٔ کاتالوگ عمومی) + ⋯
-// ✅ سوییچر دو-محصولی: کاتالوگ‌های فروش و صفحه‌های فهرست خرید با برچسب پرانتزی
-//    کنار نام — انتخاب فهرست خرید به مدیریت آن پرش می‌کند (درخواست کاربر)
+// ✅ سوییچر دو-محصولی: کاتالوگ‌های قیمت و صفحه‌های بازوی خرید با برچسب پرانتزی
+//    کنار نام — انتخاب بازوی خرید به مدیریت آن پرش می‌کند (درخواست کاربر)
 // ✅ پایینِ سوییچر: لینک ساخت فقط برای نوعی که هنوز ندارد (ایدهٔ مالک:
 //    هر کاربر از هر نوع یکی — سیستم پر از کاتالوگ سرگردان نشود؛ دومی‌ها از زیر ⋯ یا پروفایل کسب‌وکار)
 // (کارت ویزیت به تب انتشار منتقل شد با نام «ساخت کارت ویزیت کاتالوگ» — بنا بر بازخورد کاربر)
@@ -17,7 +17,7 @@ import { cn } from '@/lib/utils';
 
 export default function CatalogIdentityBar({ catalogs, inquiries = [], currentCatalog, canShare, onSelect, onSelectInquiry, onShare, onPreview, onNewCatalog, onNewInquiry, onChangePassword }: {
     catalogs: any[];
-    /** اعلام‌های خرید من — در همان سوییچر کنار کاتالوگ‌های فروش (درخواست کاربر) */
+    /** بازوهای خرید من — در همان سوییچر کنار کاتالوگ‌های قیمت (درخواست کاربر) */
     inquiries?: any[];
     currentCatalog: any;
     canShare: boolean;
@@ -114,12 +114,12 @@ export default function CatalogIdentityBar({ catalogs, inquiries = [], currentCa
                             {/* 📍 ساخت کاتالوگ جدید — هر دو محصول از همین منو (دسترسی راحت) */}
                             <button type="button" onClick={() => { setMenuOpen(false); onNewCatalog(); }}
                                     className="w-full flex items-center gap-2.5 h-10 px-3 rounded-md text-[13px] text-on-surface hover:bg-surface-container-high dark:hover:bg-gray-800 transition-colors">
-                                <Plus className="w-4 h-4 text-primary" /> کاتالوگ فروش جدید
+                                <Plus className="w-4 h-4 text-primary" /> کاتالوگ قیمت جدید
                             </button>
                             {onNewInquiry && (
                                 <button type="button" onClick={() => { setMenuOpen(false); onNewInquiry(); }}
                                         className="w-full flex items-center gap-2.5 h-10 px-3 rounded-md text-[13px] text-on-surface hover:bg-surface-container-high dark:hover:bg-gray-800 transition-colors">
-                                    <ClipboardList className="w-4 h-4 text-amber-600 dark:text-amber-400" /> فهرست خرید جدید
+                                    <ClipboardList className="w-4 h-4 text-amber-600 dark:text-amber-400" /> بازوی خرید جدید
                                 </button>
                             )}
                             <button type="button" onClick={() => { setMenuOpen(false); onChangePassword(); }}
@@ -140,7 +140,7 @@ export default function CatalogIdentityBar({ catalogs, inquiries = [], currentCa
                             shadow-xl animate-in fade-in zoom-in-95 duration-150 max-h-[70vh] overflow-y-auto">
                         {catalogs.length > 0 && (
                             <p className="px-3 pt-1.5 pb-1 text-[10px] font-bold text-on-surface-variant/70">
-                                کاتالوگ‌های فروش
+                                کاتالوگ‌های قیمت
                             </p>
                         )}
                         {catalogs.map((c) => {
@@ -161,7 +161,7 @@ export default function CatalogIdentityBar({ catalogs, inquiries = [], currentCa
                                         <span className={cn('text-[13px] font-bold truncate', active ? 'text-primary' : 'text-on-surface')}>
                                             {c.name}
                                         </span>
-                                        <span className="text-[9px] font-bold text-primary/70 whitespace-nowrap flex-shrink-0">(کاتالوگ فروش)</span>
+                                        <span className="text-[9px] font-bold text-primary/70 whitespace-nowrap flex-shrink-0">(کاتالوگ قیمت)</span>
                                     </span>
                                     {c.isTeamEntry && (
                                         <span className="text-[9px] font-extrabold text-sky-700 dark:text-sky-300
@@ -177,7 +177,7 @@ export default function CatalogIdentityBar({ catalogs, inquiries = [], currentCa
                             <>
                                 <div className="my-1 border-t border-outline-variant/20 dark:border-gray-800" />
                                 <p className="px-3 pt-1 pb-1 text-[10px] font-bold text-on-surface-variant/70">
-                                    اعلام‌های خرید
+                                    بازوهای خرید
                                 </p>
                                 {inquiries.map((w) => (
                                     <button key={w.id} type="button" role="menuitem"
@@ -190,7 +190,7 @@ export default function CatalogIdentityBar({ catalogs, inquiries = [], currentCa
                                         </span>
                                         <span className="min-w-0 flex-1 flex items-center gap-1">
                                             <span className="text-[13px] font-bold text-on-surface truncate">{w.title}</span>
-                                            <span className="text-[9px] font-bold text-amber-600/90 dark:text-amber-400/90 whitespace-nowrap flex-shrink-0">(فهرست خرید)</span>
+                                            <span className="text-[9px] font-bold text-amber-600/90 dark:text-amber-400/90 whitespace-nowrap flex-shrink-0">(بازوی خرید)</span>
                                         </span>
                                         {w.status === 'closed' && (
                                             <span className="text-[9px] font-bold text-stone-400 bg-stone-100 dark:bg-gray-800
@@ -212,7 +212,7 @@ export default function CatalogIdentityBar({ catalogs, inquiries = [], currentCa
                                             className="w-full flex items-center gap-2.5 h-11 px-3 rounded-lg text-right text-[13px] font-extrabold
                                                 text-primary hover:bg-surface-container-high dark:hover:bg-gray-800 transition-colors">
                                         <Plus className="w-4 h-4" />
-                                        ساخت کاتالوگ فروش
+                                        ساخت کاتالوگ قیمت
                                     </button>
                                 )}
                                 {missingInquiry && onNewInquiry && (
@@ -221,7 +221,7 @@ export default function CatalogIdentityBar({ catalogs, inquiries = [], currentCa
                                             className="w-full flex items-center gap-2.5 h-11 px-3 rounded-lg text-right text-[13px] font-extrabold
                                                 text-amber-700 hover:bg-brand-amber-soft/60 dark:text-amber-400 dark:hover:bg-amber-500/10 transition-colors">
                                         <Plus className="w-4 h-4" />
-                                        ساخت فهرست خرید
+                                        ساخت بازوی خرید
                                     </button>
                                 )}
                             </>

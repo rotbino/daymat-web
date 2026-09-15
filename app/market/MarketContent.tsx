@@ -1,6 +1,6 @@
 // app/market/MarketContent.tsx
 // ✅ صفحهٔ فروشندگان — تابلوی قیمت (هومِ دیمت: ‎/{slug})
-//    تابلوی خریداران (اعلام‌های خرید) صفحهٔ مستقل دارد: ‎/{slug}/buyers
+//    تابلوی خریداران (بازوهای خرید) صفحهٔ مستقل دارد: ‎/{slug}/buyers
 'use client';
 import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { useRouter, usePathname, useSearchParams } from 'next/navigation';
@@ -104,7 +104,7 @@ export default function MarketContent({ search: searchProp }: { search?: string 
         }
     }, [searchParams, currentSlug, router]);
 
-    // ✅ تابلوی قیمت خاموش و فهرست خرید روشن → این صفحه جایی ندارد؛ برو خریداران
+    // ✅ تابلوی قیمت خاموش و بازوی خرید روشن → این صفحه جایی ندارد؛ برو خریداران
     useEffect(() => {
         if (!sellersOn && buyersOn && currentSlug && !armLoading) {
             router.replace(`/${currentSlug}/buyers`);

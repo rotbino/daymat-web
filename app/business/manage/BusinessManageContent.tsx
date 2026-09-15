@@ -95,7 +95,7 @@ export default function BusinessManageContent() {
     // ── جهش‌ها ──
     const setActivitiesMutation = useSetBusinessActivities();
 
-    // ✅ اعلام‌های خرید — برای نمایش کنار کاتالوگ‌های فروش این کسب‌وکار (محصول دوم)
+    // ✅ بازوهای خرید — برای نمایش کنار کاتالوگ‌های قیمت این کسب‌وکار (محصول دوم)
     const { data: myInqData } = useMyInquiries();
 
     // ── مودال‌ها و پرش ──
@@ -156,7 +156,7 @@ export default function BusinessManageContent() {
         return { percent, items: checks.map(({ key, label, ok }) => ({ key, label, ok })) };
     }, [detail]);
 
-    // ✅ اعلام‌های خریدِ همین کسب‌وکار — ⚠️ قواعد هوک‌ها: این useMemo باید «قبل از» returnهای شرطی باشد
+    // ✅ بازوهای خریدِ همین کسب‌وکار — ⚠️ قواعد هوک‌ها: این useMemo باید «قبل از» returnهای شرطی باشد
     // (قبلاً بعد از آن‌ها بود → خطای ترتیب هوک‌ها هنگام لود)
     const businessInquiries = useMemo(() => {
         // ⚠️ useMyInquiries آرایه را مستقیم برمی‌گرداند (نه {items}) — قبلاً myInqData?.items می‌گرفتیم → همیشه خالی
@@ -164,7 +164,7 @@ export default function BusinessManageContent() {
         const bizId = detail?.id || currentId;
         if (!bizId) return [] as any[];
         const attached = items.filter((w: any) => w.businessId === bizId);
-        // فال‌بک برای اعلام‌های خریدِ قدیمی بدون businessId (ساخته‌شده قبل از قابلیت اتصال):
+        // فال‌بک برای بازوهای خریدِ قدیمی بدون businessId (ساخته‌شده قبل از قابلیت اتصال):
         // اگر کاربر فقط همین یک کسب‌وکار قابل‌مدیریت دارد، این‌ها هم اینجا نمایش داده می‌شوند تا گم نشوند
         const orphans = items.filter((w: any) => !w.businessId);
         if (orphans.length > 0 && businesses.length === 1 && businesses[0].id === bizId) {

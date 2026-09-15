@@ -1,9 +1,9 @@
 // app/my-inquiries/page.tsx
-// پنل مدیریت فهرست خرید — قرینهٔ کنسول کاتالوگ فروش (/my-catalogs):
+// پنل مدیریت بازوی خرید — قرینهٔ کنسول کاتالوگ قیمت (/my-catalogs):
 //   انتخاب کسب‌وکار در /inquiries/new انجام می‌شود و کاربر مستقیم به همین پنل می‌آید؛
-//   اقلام قلم‌به‌قلم از همین‌جا اضافه می‌شوند (هر بار یک کالا + تیک فهرست خرید).
+//   اقلام قلم‌به‌قلم از همین‌جا اضافه می‌شوند (هر بار یک کالا + تیک بازوی خرید).
 //   تب‌ها: اقلام | پیشنهادها | تامین‌کنندگان | تنظیمات | انتشار — سوییچر دو-محصولی بالای پنل.
-// ✅ تب «تامین‌کنندگان»: شبکهٔ خرید↔فروش — دعوت/تایید تامین‌کننده‌های فهرست خرید
+// ✅ تب «تامین‌کنندگان»: شبکهٔ خرید↔فروش — دعوت/تایید تامین‌کننده‌های بازوی خرید
 'use client';
 
 import React, { useEffect, useMemo, useState } from 'react';
@@ -41,7 +41,7 @@ export default function MyInquiriesPage() {
     const queryClient = useQueryClient();
     const { isAuthenticated, _hydrated } = useSelector((s: RootState) => s.auth) as any;
     const hydrated = _hydrated !== false;
-    // «فهرست خرید کارنت» — پرسیست؛ با رفرش هم سرجاش می‌ماند
+    // «بازوی خرید کارنت» — پرسیست؛ با رفرش هم سرجاش می‌ماند
     const currentInquiryId = useSelector((s: RootState) => s.catalog.currentInquiryId);
 
     const [tab, setTab] = useState<string>('items');
@@ -96,7 +96,7 @@ export default function MyInquiriesPage() {
     }, []);
 
     useEffect(() => {
-        document.title = 'فهرست خرید من | دیمت';
+        document.title = 'بازوی خرید من | دیمت';
     }, []);
 
     useEffect(() => {
@@ -120,7 +120,7 @@ export default function MyInquiriesPage() {
                 itemId: item.id,
                 data: { urgent: !item.urgent },
             });
-            toast.success(item.urgent ? 'فهرست خرید این قلم تمام شد' : 'فهرست خرید فعال شد — تامین‌کننده‌ها قیمت می‌دن');
+            toast.success(item.urgent ? 'بازوی خرید این قلم تمام شد' : 'بازوی خرید فعال شد — تامین‌کننده‌ها قیمت می‌دن');
         } catch (e: any) {
             toast.error(e?.response?.data?.message || 'تغییر وضعیت ناموفق بود');
         } finally {
@@ -160,7 +160,7 @@ export default function MyInquiriesPage() {
         const next = currentRow.status === 'open' ? 'closed' : 'open';
         try {
             await updateInquiry.mutateAsync({ id: currentRow.id, data: { status: next } });
-            toast.success(next === 'open' ? 'فهرست خرید باز شد' : 'فهرست خرید بسته شد');
+            toast.success(next === 'open' ? 'بازوی خرید باز شد' : 'بازوی خرید بسته شد');
         } catch (e: any) {
             toast.error(e?.response?.data?.message || 'تغییر وضعیت ناموفق بود');
         }
@@ -171,7 +171,7 @@ export default function MyInquiriesPage() {
         await updateInquiry.mutateAsync({ id: currentInquiryId, data }).then(() => refetchDetail());
     };
 
-    // سوییچر دو-محصولی — کاتالوگ‌های فروش با کش مشترک کنسول فروش
+    // سوییچر دو-محصولی — کاتالوگ‌های قیمت با کش مشترک کنسول فروش
     const { data: catalogsRaw } = useQuery({
         queryKey: ['catalogs'],
         queryFn: () => apiService.catalog.getAll(),
@@ -192,7 +192,7 @@ export default function MyInquiriesPage() {
         const key = detail?.slug || detail?.id || currentInquiryId;
         if (key) router.push(`/${key}`);
     };
-    // 💾 بعد از ذخیرهٔ کارت ویزیت — لیست اعلام‌های خرید تازه شود (metadata.visitCard)
+    // 💾 بعد از ذخیرهٔ کارت ویزیت — لیست بازوهای خرید تازه شود (metadata.visitCard)
     const refreshInquiries = () => {
         queryClient.invalidateQueries({ queryKey: ['inquiries'] });
         queryClient.invalidateQueries({ queryKey: ['inquiry'] });
@@ -234,7 +234,7 @@ export default function MyInquiriesPage() {
                             <PackageSearch className="size-8" />
                         </span>
                         <div>
-                            <h3 className="text-lg font-black">هنوز اعلام خریدی نساختی</h3>
+                            <h3 className="text-lg font-black">هنوز بازوی خریدی نساختی</h3>
                             <p className="mt-1 text-sm text-stone-500 dark:text-gray-400">
                                 اول کسب‌وکار رو انتخاب کن — بقیه‌ش اینجاست.
                             </p>
@@ -242,7 +242,7 @@ export default function MyInquiriesPage() {
                         <a href="/inquiries/new"
                             className="flex h-11 items-center gap-2 rounded-full bg-brand-amber px-6 text-sm font-extrabold text-white shadow-lg shadow-brand-amber/30 transition-colors hover:bg-brand-amber-strong">
                             <Plus className="size-4" />
-                            ساخت فهرست خرید
+                            ساخت بازوی خرید
                         </a>
                     </div>
                 ) : (
@@ -328,7 +328,7 @@ export default function MyInquiriesPage() {
                             ) : (
                                 <div className="grid place-items-center rounded-3xl border border-stone-100 bg-white py-14 text-center dark:border-gray-800 dark:bg-gray-900">
                                     <ClipboardList className="size-10 text-stone-300 dark:text-gray-700" />
-                                    <p className="mt-3 text-sm font-bold text-stone-400">فهرست خرید پیدا نشد</p>
+                                    <p className="mt-3 text-sm font-bold text-stone-400">بازوی خرید پیدا نشد</p>
                                 </div>
                             )}
                         </div>
@@ -342,7 +342,7 @@ export default function MyInquiriesPage() {
                             editItem={editItem}
                         />
 
-                        {/* مدال واحدهای اختصاصی فهرست خرید */}
+                        {/* مدال واحدهای اختصاصی بازوی خرید */}
                         <UnitSettingsModal
                             isOpen={unitsOpen}
                             onClose={() => setUnitsOpen(false)}
@@ -354,11 +354,11 @@ export default function MyInquiriesPage() {
                                 return { units };
                             }}
                             onSaved={() => { /* کش با invalidate تازه می‌شود */ }}
-                            title="واحدهای فهرست خرید"
+                            title="واحدهای بازوی خرید"
                             showQtyFields={false}
                         />
 
-                        {/* ✅ کیت اشتراک‌گذاری فهرست خرید — مخاطبان تلفن + واتساپ/تلگرام + QR چاپی */}
+                        {/* ✅ کیت اشتراک‌گذاری بازوی خرید — مخاطبان تلفن + واتساپ/تلگرام + QR چاپی */}
                         {detail && (
                             <ShareKitModal
                                 open={shareOpen}
@@ -370,7 +370,7 @@ export default function MyInquiriesPage() {
                             />
                         )}
 
-                        {/* 🪪 استودیوی کارت ویزیت فهرست خرید — برای تامین‌کننده‌ها؛ ذخیره در metadata */}
+                        {/* 🪪 استودیوی کارت ویزیت بازوی خرید — برای تامین‌کننده‌ها؛ ذخیره در metadata */}
                         {detail && (
                             <VisitCardModal
                                 open={cardOpen}

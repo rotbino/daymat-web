@@ -1,6 +1,6 @@
 // app/[slug]/buyers/page.tsx
-// ✅ صفحهٔ مستقل «خریداران» — تابلوی اعلام‌های خرید بازار (قرینهٔ فروشندگان: ‎/{slug})
-//    فقط بازار؛ کاتالوگ و اعلام خریدِ تکی در این مسیر معنا ندارند → 404
+// ✅ صفحهٔ مستقل «خریداران» — تابلوی بازوهای خرید بازار (قرینهٔ فروشندگان: ‎/{slug})
+//    فقط بازار؛ کاتالوگ و بازوی خریدِ تکی در این مسیر معنا ندارند → 404
 //    لگسی ‎/{slug}?board=inquiry از سمت MarketContent به اینجا ریدایرکت می‌شود.
 
 import React, { Suspense } from 'react';
@@ -34,7 +34,7 @@ export default async function BuyersPage({ params }: Props) {
     const slug = decodeURIComponent(rawSlug).replace(/\/+$/, '').trim();
     if (!slug) notFound();
 
-    // ✅ فقط بازار — اگر این slug کاتالوگ یا فهرست خرید بود، مسیر اشتباه است
+    // ✅ فقط بازار — اگر این slug کاتالوگ یا بازوی خرید بود، مسیر اشتباه است
     const arm = await apiService.arm.fetchArmData(slug).catch(() => null);
     if (!arm) notFound();
 

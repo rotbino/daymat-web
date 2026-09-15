@@ -35,11 +35,11 @@ interface Props {
     catalogId: string;
     initialUnits: { unitId: string; containsQty?: number; qtyIsFixed?: boolean }[];
     onSaved: (units: { unitId: string; containsQty?: number; qtyIsFixed?: boolean }[]) => void;
-    /** ✅ عمومی‌شده: ذخیره‌ساز سفارشی (مثلاً فهرست خرید → PATCH استعلام) — پیش‌فرض: کانفیگ کاتالوگ فروش */
+    /** ✅ عمومی‌شده: ذخیره‌ساز سفارشی (مثلاً بازوی خرید → PATCH استعلام) — پیش‌فرض: کانفیگ کاتالوگ قیمت */
     saveFn?: (units: { unitId: string; containsQty?: number; qtyIsFixed?: boolean }[]) => Promise<any>;
     /** ✅ عنوان مدال — پیش‌فرض: واحدهای اختصاصی کاتالوگ */
     title?: string;
-    /** ✅ نمایش فیلدهای بسته‌بندی (تعداد داخلش / ثابت) — فهرست خرید اینها را ندارد */
+    /** ✅ نمایش فیلدهای بسته‌بندی (تعداد داخلش / ثابت) — بازوی خرید اینها را ندارد */
     showQtyFields?: boolean;
 }
 

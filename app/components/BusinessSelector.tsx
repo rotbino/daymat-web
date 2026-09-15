@@ -26,7 +26,7 @@ interface Props {
     onChange: (biz: any | null) => void;  // انتخاب / پاک کردن
     error?: string;
     disabled?: boolean;
-    /** ✅ برچسب سفارشی — پیش‌فرض: متن کاتالوگ فروش */
+    /** ✅ برچسب سفارشی — پیش‌فرض: متن کاتالوگ قیمت */
     label?: string;
     /** ✅ فقط وقتی کسب‌وکار «جدید» واقعاً ثبت شد (نه انتخاب از مشابه‌ها) — برای پیشنهاد گام بعدی */
     onBusinessCreated?: (biz: any) => void;

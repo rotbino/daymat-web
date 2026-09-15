@@ -12,7 +12,7 @@ import { fmt, Tab } from '../constants';
 export interface ConsoleTabItem {
     key: Tab;
     label: string;
-    /** برچسب کوتاه‌تر موبایل — وقتی برچسب اصلی جا نمی‌شود (مثل «فهرست خرید» → «خریدها») */
+    /** برچسب کوتاه‌تر موبایل — وقتی برچسب اصلی جا نمی‌شود (مثل «بازوی خرید» → «خریدها») */
     mobileLabel?: string;
     icon: any;
     count?: number;

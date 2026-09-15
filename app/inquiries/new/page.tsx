@@ -1,7 +1,7 @@
 // app/inquiries/new/page.tsx
-// ساخت فهرست خرید — نسخهٔ ۳ (جریان پنل‌محور بر اساس ایدهٔ مالک):
+// ساخت بازوی خرید — نسخهٔ ۳ (جریان پنل‌محور بر اساس ایدهٔ مالک):
 //   کسب‌وکار را انتخاب کن → کاتالوگ ساخته می‌شود → مستقیم به پنل مدیریت می‌روی؛
-//   اقلام بعداً قلم‌به‌قلم از پنل اضافه می‌شوند (مثل کاتالوگ فروش که اول کاتالوگ ساخته می‌شود).
+//   اقلام بعداً قلم‌به‌قلم از پنل اضافه می‌شوند (مثل کاتالوگ قیمت که اول کاتالوگ ساخته می‌شود).
 //   ذهن کاربر اولِ کار آمادهٔ واردکردن قلم نیست — پس هیچ قلمی اینجا خواسته نمی‌شود.
 'use client';
 
@@ -34,7 +34,7 @@ export default function NewInquiryPage() {
 
     const [biz, setBiz] = useState<any | null>(null);
     const [visibility, setVisibility] = useState<'public' | 'private'>('public');
-    // ✅ آدرس عمومی صفحه — مثل کاتالوگ فروش کاربر خودش انتخاب می‌کند (daymat.ir/supey)
+    // ✅ آدرس عمومی صفحه — مثل کاتالوگ قیمت کاربر خودش انتخاب می‌کند (daymat.ir/supey)
     const [slug, setSlug] = useState('');
     const [slugStatus, setSlugStatus] = useState<'taken' | 'reserved' | null>(null);
     const [submitting, setSubmitting] = useState(false);
@@ -67,14 +67,14 @@ export default function NewInquiryPage() {
     }, [hydrated, isAuthenticated, router, bizParam]);
 
     useEffect(() => {
-        document.title = 'فهرست خرید جدید | دیمت';
+        document.title = 'بازوی خرید جدید | دیمت';
     }, []);
 
-    // کسب‌وکاری که از قبل فهرست خرید باز دارد → مستقیم به پنلش (اعلام خریدِ هر کسب‌وکار یکی است)
+    // کسب‌وکاری که از قبل بازوی خرید باز دارد → مستقیم به پنلش (بازوی خریدِ هر کسب‌وکار یکی است)
     const checkExisting = (b: any): boolean => {
         const existing = (myInquiries ?? []).find((w: any) => w.businessId === b.id && w.status !== 'archived');
         if (existing) {
-            toast.info('این کسب‌وکار از قبل فهرست خرید داره — رفتیم به پنلش');
+            toast.info('این کسب‌وکار از قبل بازوی خرید داره — رفتیم به پنلش');
             dispatch(setCurrentInquiry(existing.id));
             router.replace(`/my-inquiries?catalog=${existing.id}`);
             return true;
@@ -106,12 +106,12 @@ export default function NewInquiryPage() {
         setSubmitting(true);
         try {
             const res = await create.mutateAsync({
-                title: `فهرست خرید ${biz.name || ''}`.trim().slice(0, 140),
+                title: `بازوی خرید ${biz.name || ''}`.trim().slice(0, 140),
                 businessId: biz.id,
                 visibility,
                 slug: slug.trim(),
             });
-            toast.success('اعلام خریدت ساخته شد — حالا قلم‌ها رو اضافه کن');
+            toast.success('بازوی خریدت ساخته شد — حالا قلم‌ها رو اضافه کن');
             dispatch(setCurrentInquiry(res.id));
             router.replace(`/my-inquiries?catalog=${res.id}&add=1`);
         } catch (e: any) {
@@ -119,7 +119,7 @@ export default function NewInquiryPage() {
             if (code === 'SLUG_TAKEN' || code === 'SLUG_RESERVED' || code === 'INVALID_SLUG') {
                 toast.error(e?.response?.data?.message || 'این آدرس در دسترس نیست — کمی عوضش کن');
             } else {
-                toast.error(e?.response?.data?.message || 'ساختن فهرست خرید ناموفق بود');
+                toast.error(e?.response?.data?.message || 'ساختن بازوی خرید ناموفق بود');
             }
         } finally {
             setSubmitting(false);
@@ -140,7 +140,7 @@ export default function NewInquiryPage() {
             <header className="sticky top-0 z-40 border-b border-brand-amber-tint/70 bg-[#FFFDF7]/85 backdrop-blur-md dark:border-gray-800 dark:bg-gray-950/85">
                 <div className="mx-auto flex h-14 max-w-lg items-center justify-between px-4">
                     <Link href="/my-inquiries" className="flex items-center gap-1.5 text-sm font-bold text-stone-500 transition-colors hover:text-stone-900 dark:text-gray-400 dark:hover:text-gray-100">
-                        اعلام‌های خرید من
+                        بازوهای خرید من
                     </Link>
                     <Image src="/logo.png" alt="دیمت" width={30} height={30} className="size-[30px]" unoptimized />
                 </div>
@@ -151,7 +151,7 @@ export default function NewInquiryPage() {
                 <motion.section {...fadeUp()} className="text-center">
                     <span className="inline-flex items-center gap-1.5 rounded-full bg-brand-amber-soft px-3 py-1 text-[11px] font-extrabold text-amber-700 dark:text-amber-400">
                         <ClipboardList className="size-3.5" />
-                        فهرست خرید جدید
+                        بازوی خرید جدید
                     </span>
                     <h1 className="mt-3 text-[22px] font-black leading-9 sm:text-2xl">
                         برای کدام کسب‌وکار می‌سازی؟
@@ -174,7 +174,7 @@ export default function NewInquiryPage() {
                             className="mt-5">
                             {/* نمایانی — مفهومش به خود خریدار گفته می‌شود (دو گزینه، یک خط) */}
                             <div className="mb-3 grid grid-cols-2 gap-2">
-                                {([['public', 'عمومی', 'اعلام خریدت همه می‌بینند', Globe],
+                                {([['public', 'عمومی', 'بازوی خریدت همه می‌بینند', Globe],
                                    ['private', 'خصوصی', 'فقط تامین‌کننده‌های تاییدشده', Lock]] as const).map(([v, label, hint, Icon]) => (
                                     <button key={v} type="button" onClick={() => setVisibility(v)}
                                         className={`flex items-center gap-2 rounded-2xl border-2 p-3 text-right transition-all ${
@@ -190,7 +190,7 @@ export default function NewInquiryPage() {
                                     </button>
                                 ))}
                             </div>
-                            {/* 📍 آدرس عمومی صفحه — کاربر خودش انتخاب می‌کند (مثل کاتالوگ فروش) */}
+                            {/* 📍 آدرس عمومی صفحه — کاربر خودش انتخاب می‌کند (مثل کاتالوگ قیمت) */}
                             <div className="mb-3 rounded-2xl border border-stone-100 bg-white p-3 dark:border-gray-800 dark:bg-gray-900">
                                 <div className="mb-2 flex items-center gap-1.5">
                                     <Link2 className="size-3.5 text-amber-600 dark:text-amber-400" />
@@ -211,7 +211,7 @@ export default function NewInquiryPage() {
                                 disabled={submitting}
                                 className="flex h-14 w-full items-center justify-center gap-2 rounded-2xl bg-brand-amber text-[15px] font-extrabold text-white shadow-xl shadow-brand-amber/30 transition-colors hover:bg-brand-amber-strong disabled:opacity-50">
                                 {submitting ? <Loader2 className="size-5 animate-spin" /> : <Building2 className="size-5" />}
-                                ساخت فهرست خرید
+                                ساخت بازوی خرید
                             </motion.button>
                         </motion.div>
                     )}
@@ -221,7 +221,7 @@ export default function NewInquiryPage() {
                 <motion.div {...fadeUp(0.12)} className="mt-8 grid grid-cols-3 gap-2">
                     {[
                         { icon: ClipboardList, t: 'قلم به قلم اضافه کن' },
-                        { icon: Megaphone, t: 'فهرست خرید بزن' },
+                        { icon: Megaphone, t: 'بازوی خرید بزن' },
                         { icon: Send, t: 'لینک رو بفرست' },
                     ].map(({ icon: Icon, t }, i) => (
                         <div key={i} className="flex flex-col items-center gap-1.5 rounded-2xl border border-stone-100 bg-white px-2 py-3.5 text-center dark:border-gray-800 dark:bg-gray-900">

@@ -39,9 +39,9 @@ interface Props {
     description?: string;
     /** شناسهٔ کاتالوگ — با بودنش دکمهٔ ذخیره فعال می‌شود */
     catalogId?: string;
-    /** 📋 شناسهٔ فهرست خرید — ذخیره در metadata فهرست خرید (قرینهٔ کاتالوگ) */
+    /** 📋 شناسهٔ بازوی خرید — ذخیره در metadata بازوی خرید (قرینهٔ کاتالوگ) */
     inquiryId?: string;
-    /** مسیر پایهٔ صفحهٔ عمومی روی QR/کارت — پیش‌فرض ریشه؛ فهرست خرید: /inquiries */
+    /** مسیر پایهٔ صفحهٔ عمومی روی QR/کارت — پیش‌فرض ریشه؛ بازوی خرید: /inquiries */
     basePath?: string;
     /** کارت ذخیره‌شدهٔ قبلی (metadata.visitCard) — با باز شدن، کارت کاربر برمی‌گردد */
     savedSpec?: any;
@@ -443,7 +443,7 @@ export default function VisitCardModal({ open, onClose, catalogName, slug, logoU
         try {
             const spec = await buildSpec();
             if (!spec) throw new Error('spec');
-            // 📋 مقصد ذخیره — کاتالوگ فروش یا فهرست خرید (هر دو در metadata.visitCard)
+            // 📋 مقصد ذخیره — کاتالوگ قیمت یا بازوی خرید (هر دو در metadata.visitCard)
             const res: any = inquiryId
                 ? await apiService.inquiry.updateVisitCard(inquiryId, spec)
                 : await apiService.catalog.updateVisitCard(catalogId!, spec);
@@ -645,9 +645,9 @@ export default function VisitCardModal({ open, onClose, catalogName, slug, logoU
                     </div>
 
                     <div className="grid grid-cols-2 gap-2">
-                        {/* 💾 ذخیره — مشخصات کارت روی کاتالوگ/فهرست خرید می‌ماند و در تب انتشار دیده می‌شود */}
+                        {/* 💾 ذخیره — مشخصات کارت روی کاتالوگ/بازوی خرید می‌ماند و در تب انتشار دیده می‌شود */}
                         <button type="button" onClick={saveSpec} disabled={(!catalogId && !inquiryId) || saving}
-                                title={inquiryId ? 'ذخیرهٔ طرح روی فهرست خرید' : catalogId ? 'ذخیرهٔ طرح روی کاتالوگ' : 'شناسه ندارد'}
+                                title={inquiryId ? 'ذخیرهٔ طرح روی بازوی خرید' : catalogId ? 'ذخیرهٔ طرح روی کاتالوگ' : 'شناسه ندارد'}
                                 className="h-10 rounded-lg border border-primary/40 bg-primary/5 dark:bg-primary/10 text-primary text-[11px] font-extrabold
                                     flex items-center justify-center gap-1.5 hover:bg-primary/10 active:scale-[0.98]
                                     disabled:opacity-60 transition-all">

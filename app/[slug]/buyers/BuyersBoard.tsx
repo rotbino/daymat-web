@@ -25,7 +25,7 @@ export default function BuyersBoard({ slug }: { slug: string }) {
     const searchParams = useSearchParams();
     const q = (searchParams.get('search') || '').trim();
 
-    // ✅ ماژول‌های بازار — فهرست خرید خاموش → حالت غیرفعال (بدون درخواست API)
+    // ✅ ماژول‌های بازار — بازوی خرید خاموش → حالت غیرفعال (بدون درخواست API)
     const buyersOn = boardEnabled(currentArm, 'inquiry');
     const sellersOn = boardEnabled(currentArm, 'price');
 
@@ -103,7 +103,7 @@ export default function BuyersBoard({ slug }: { slug: string }) {
             </header>
 
             <main className="max-w-5xl mx-auto px-4 py-5">
-                {/* ✅ فهرست خرید خاموش — مدیر از ماژول‌ها روشن کند */}
+                {/* ✅ بازوی خرید خاموش — مدیر از ماژول‌ها روشن کند */}
                 {!buyersOn ? (
                     <div className="text-center py-16">
                         <div className="w-16 h-16 rounded-2xl bg-surface-container-high dark:bg-gray-800 grid place-items-center mx-auto mb-4">
@@ -123,7 +123,7 @@ export default function BuyersBoard({ slug }: { slug: string }) {
                 {/* نوار وضعیت — تعداد + فیلتر جاری */}
                 <div className="flex items-center justify-between gap-3 mb-3.5 px-1">
                     <p className="text-[11px] font-bold text-stone-500 dark:text-gray-400">
-                        {isPending ? 'در حال بارگذاری…' : `${filtered.length.toLocaleString('fa-IR')} فهرست خرید`}
+                        {isPending ? 'در حال بارگذاری…' : `${filtered.length.toLocaleString('fa-IR')} بازوی خرید`}
                         {q && !isPending && ` برای «${q}»`}
                     </p>
                 </div>
@@ -139,12 +139,12 @@ export default function BuyersBoard({ slug }: { slug: string }) {
                         </div>
                         {q ? (
                             <>
-                                <p className="text-sm font-bold text-on-surface dark:text-gray-200">اعلام خریدی با «{q}» پیدا نشد</p>
+                                <p className="text-sm font-bold text-on-surface dark:text-gray-200">بازوی خریدی با «{q}» پیدا نشد</p>
                                 <p className="mt-1 text-[11px] text-on-surface-variant/70">عبارت دیگری را امتحان کن.</p>
                             </>
                         ) : (
                             <>
-                                <p className="text-sm font-bold text-on-surface-variant dark:text-gray-400">هنوز اعلام خریدی روی این تابلو نیست</p>
+                                <p className="text-sm font-bold text-on-surface-variant dark:text-gray-400">هنوز بازوی خریدی روی این تابلو نیست</p>
                                 <p className="mt-1 text-[11px] font-bold text-stone-400 dark:text-gray-500">سوپرمارکت‌ها و خریدارانِ عضو، لیست خریدشان را اینجا منتشر می‌کنند</p>
                             </>
                         )}
@@ -163,7 +163,7 @@ export default function BuyersBoard({ slug }: { slug: string }) {
     );
 }
 
-/** کارت فهرست خرید — سفیدِ سایه‌دار با تاکید کهربایی (متمایز از کارت قیمت) */
+/** کارت بازوی خرید — سفیدِ سایه‌دار با تاکید کهربایی (متمایز از کارت قیمت) */
 function InquiryCard({ inq }: { inq: any }) {
     return (
         <Link href={`/${inq.slug || inq.id}`}

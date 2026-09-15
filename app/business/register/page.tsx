@@ -112,8 +112,8 @@ export default function RegisterCatalogPage() {
     const submittingRef = React.useRef(false);
 
     // ─── ✅ پیشنهاد گام بعدی — بعد از ثبتِ «جدید»ِ کسب‌وکار، بر اساس نوع فعالیت (firstCatalog) ───
-    // فقط برای خریدبذَرها (firstCatalog=false: خرده‌فروش، رستوران، آرایشگر…) کارت پیشنهاد فهرست خرید نشان داده می‌شود؛
-    // برای جنس‌بذَرها همین فرم کاتالوگ فروش خودش مسیر پیشنهادی است — هیچ کاردی لازم نیست. پیشنهاد است، نه اجبار.
+    // فقط برای خریدبذَرها (firstCatalog=false: خرده‌فروش، رستوران، آرایشگر…) کارت پیشنهاد بازوی خرید نشان داده می‌شود؛
+    // برای جنس‌بذَرها همین فرم کاتالوگ قیمت خودش مسیر پیشنهادی است — هیچ کاردی لازم نیست. پیشنهاد است، نه اجبار.
     const [stepHint, setStepHint] = useState<{ bizId: string; bizName: string; roleLabel: string } | null>(null);
     const handleBusinessCreated = (biz: any) => {
         if (biz?.id && getFirstCatalog(biz.businessRole) === false) {
@@ -454,7 +454,7 @@ export default function RegisterCatalogPage() {
             </main>
 
             {/* ═══ کارت گام بعدی — فقط بعد از ثبتِ جدیدِ کسب‌وکارِ خریدبذَر (firstCatalog=false) ═══
-                پیشنهاد دلیل‌دار با درِ باز: دکمهٔ بزرگ فهرست خرید + لینک کمرنگِ ادامهٔ کاتالوگ فروش */}
+                پیشنهاد دلیل‌دار با درِ باز: دکمهٔ بزرگ بازوی خرید + لینک کمرنگِ ادامهٔ کاتالوگ قیمت */}
             {stepHint && (
                 <div className="fixed inset-0 z-[100] flex items-end sm:items-center sm:justify-center bg-black/50 animate-in fade-in duration-200 sm:p-4"
                      onClick={() => setStepHint(null)}>
@@ -468,18 +468,18 @@ export default function RegisterCatalogPage() {
                         </h2>
                         <p className="mt-3 text-[13px] leading-7 text-on-surface-variant">
                             چون گفتی <span className="font-black">{stepHint.roleLabel}</span>، پیشنهاد می‌کنیم اول{' '}
-                            <span className="font-black text-amber-600 dark:text-amber-400">فهرست خرید</span> بسازی —
+                            <span className="font-black text-amber-600 dark:text-amber-400">بازوی خرید</span> بسازی —
                             لیست خریدت رو می‌نویسی، تامین‌کننده‌ها قیمت می‌دن و تو بهترین رو انتخاب می‌کنی.
-                            (کاتالوگ فروش هم هر وقت خواستی سر جاشه)
+                            (کاتالوگ قیمت هم هر وقت خواستی سر جاشه)
                         </p>
                         <Link href={`/inquiries/new?bizId=${stepHint.bizId}`}
                               className="mt-5 flex h-12 w-full items-center justify-center gap-2 rounded-xl bg-brand-amber text-sm font-extrabold text-white shadow-lg shadow-brand-amber/30 transition-colors hover:bg-brand-amber-strong">
                             <ClipboardList className="size-4" />
-                            فهرست خرید بساز
+                            بازوی خرید بساز
                         </Link>
                         <button type="button" onClick={() => setStepHint(null)}
                                 className="mt-3 text-[12px] font-bold text-on-surface-variant/70 transition-colors hover:text-on-surface">
-                            نه، همین‌جا کاتالوگ فروش می‌سازم
+                            نه، همین‌جا کاتالوگ قیمت می‌سازم
                         </button>
                     </div>
                 </div>

@@ -142,7 +142,7 @@ function SellersContent({ slug, armName }: { slug: string; armName: string }) {
                     <p className="text-xs text-on-surface-variant mt-1.5 max-w-sm mx-auto leading-6">
                         {hasActiveFilters
                             ? 'فیلترها را عوض کن یا پاک کن'
-                            : 'کاتالوگ‌های فروشنده را از دکمه «افزودن فروشنده» اضافه کن'}
+                            : 'کاتالوگ‌های قیمتنده را از دکمه «افزودن فروشنده» اضافه کن'}
                     </p>
                 </div>
             ) : (

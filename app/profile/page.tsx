@@ -44,7 +44,7 @@ export default function ProfilePage() {
     const { data: myBizData, isLoading: myBizLoading } = useMyBusinesses();
     const myBusinesses: any[] = (myBizData?.items ?? []).filter((b: any) => b.canEdit);
 
-    // اعلام‌های خرید هر کسب‌وکار — شمارش کنار کاتالوگ‌های فروش (محصول دوم)
+    // بازوهای خرید هر کسب‌وکار — شمارش کنار کاتالوگ‌های قیمت (محصول دوم)
     const { data: myInqData } = useMyInquiries();
     const inquiryCountByBiz = useMemo(() => {
         // ⚠️ useMyInquiries آرایه را مستقیم برمی‌گرداند (نه {items}) — قبلاً myInqData?.items می‌گرفتیم → همیشه صفر
@@ -53,8 +53,8 @@ export default function ProfilePage() {
         items.forEach((w: any) => {
             if (w.businessId) map[w.businessId] = (map[w.businessId] || 0) + 1;
         });
-        // فال‌بک برای اعلام‌های خریدِ قدیمی بدون businessId — اگر کاربر فقط یک کسب‌وکار قابل‌مدیریت دارد،
-        // شمارش‌شان به همان کسب‌وکار اضافه می‌شود تا پروفایل، فهرست خرید را نشان دهد
+        // فال‌بک برای بازوهای خریدِ قدیمی بدون businessId — اگر کاربر فقط یک کسب‌وکار قابل‌مدیریت دارد،
+        // شمارش‌شان به همان کسب‌وکار اضافه می‌شود تا پروفایل، بازوی خرید را نشان دهد
         const orphanCount = items.filter((w: any) => !w.businessId).length;
         if (orphanCount > 0 && myBusinesses.length === 1) {
             const onlyId = myBusinesses[0].id;
@@ -202,10 +202,10 @@ export default function ProfilePage() {
                                             {[
                                                 b.city || b.province,
                                                 (b._count?.catalogs ?? 0) > 0
-                                                    ? `${(b._count?.catalogs ?? 0).toLocaleString('fa-IR')} کاتالوگ فروش`
+                                                    ? `${(b._count?.catalogs ?? 0).toLocaleString('fa-IR')} کاتالوگ قیمت`
                                                     : null,
                                                 (inquiryCountByBiz[b.id] ?? 0) > 0
-                                                    ? `${(inquiryCountByBiz[b.id] ?? 0).toLocaleString('fa-IR')} فهرست خرید`
+                                                    ? `${(inquiryCountByBiz[b.id] ?? 0).toLocaleString('fa-IR')} بازوی خرید`
                                                     : null,
                                             ]
                                                 .filter(Boolean)

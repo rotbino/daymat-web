@@ -588,7 +588,7 @@ export const apiService = {
         getMemberInquiries: (slug: string, userId: string): Promise<any> =>
             apiRequest(`/arm/${slug}/members/${userId}/inquiries`),
 
-        // ✅ انتشار/توقف «فهرست خرید» خریدار روی دیوار خریداران بازار (مالک دفتر یا مدیر بازار)
+        // ✅ انتشار/توقف «بازوی خرید» خریدار روی دیوار خریداران بازار (مالک دفتر یا مدیر بازار)
         toggleInquiryPublish: (slug: string, inquiryId: string, published: boolean): Promise<any> =>
             apiRequest(`/arm/${slug}/inquiry-publish`, { method: 'PATCH', data: { inquiryId, published } }),
 
@@ -1385,10 +1385,10 @@ export const apiService = {
     },
 
     // ============================================================
-    // INQUIRY — فهرست خرید (استعلام قیمت)
+    // INQUIRY — بازوی خرید (استعلام قیمت)
     // ============================================================
     inquiry: {
-        /** دیوار عمومی اعلام‌های خرید باز */
+        /** دیوار عمومی بازوهای خرید باز */
         publicList: (params: { q?: string; city?: string; tag?: string; page?: number; limit?: number } = {}): Promise<InquiryListResponse> => {
             const sp = new URLSearchParams();
             Object.entries(params).forEach(([k, v]) => {
@@ -1411,7 +1411,7 @@ export const apiService = {
         checkSlug: (slug: string, excludeId?: string): Promise<{ available: boolean; reason?: string; slug?: string }> =>
             apiRequest(`/inquiry/check-slug?slug=${encodeURIComponent(slug)}${excludeId ? `&excludeId=${excludeId}` : ''}`),
 
-        /** ساخت فهرست خرید */
+        /** ساخت بازوی خرید */
         create: (data: CreateInquiryPayload): Promise<InquiryDetail> =>
             apiRequest('/inquiry', { method: 'POST', data }),
 
@@ -1422,16 +1422,16 @@ export const apiService = {
         remove: (id: string): Promise<{ message: string }> =>
             apiRequest(`/inquiry/${id}`, { method: 'DELETE' }),
 
-        /** اعلام‌های خرید من */
+        /** بازوهای خرید من */
         mine: (): Promise<InquiryListItem[]> =>
             apiRequest('/inquiry/mine'),
 
-        // ─── مدیریت قلم‌به‌قلم (پنل فهرست خرید) ───
+        // ─── مدیریت قلم‌به‌قلم (پنل بازوی خرید) ───
         /** افزودن یک قلم — هر بار یک کالا */
         addItem: (inquiryId: string, data: CreateInquiryItemPayload): Promise<InquiryItem> =>
             apiRequest(`/inquiry/${inquiryId}/items`, { method: 'POST', data }),
 
-        /** ویرایش یک قلم (شامل تاگل فهرست خرید urgent) */
+        /** ویرایش یک قلم (شامل تاگل بازوی خرید urgent) */
         updateItem: (inquiryId: string, itemId: string, data: Partial<CreateInquiryItemPayload>): Promise<InquiryItem> =>
             apiRequest(`/inquiry/${inquiryId}/items/${itemId}`, { method: 'PATCH', data }),
 
@@ -1455,16 +1455,16 @@ export const apiService = {
         myOffers: (): Promise<InquiryOffer[]> =>
             apiRequest('/inquiry/my-offers'),
 
-        // ─── اعضای فهرست خرید — تامین‌کننده‌های تاییدشده (شبکهٔ خرید↔فروش) ───
-        /** 🪪 ذخیره/حذف مشخصات کارت ویزیت فهرست خرید — قرینهٔ کاتالوگ فروش */
+        // ─── اعضای بازوی خرید — تامین‌کننده‌های تاییدشده (شبکهٔ خرید↔فروش) ───
+        /** 🪪 ذخیره/حذف مشخصات کارت ویزیت بازوی خرید — قرینهٔ کاتالوگ قیمت */
         updateVisitCard: (inquiryId: string, spec: Record<string, any> | null): Promise<any> =>
             apiRequest(`/inquiry/${inquiryId}/visit-card`, { method: 'PATCH', data: { spec } }),
 
-        /** فهرست تامین‌کننده‌های این فهرست خرید (مالک) */
+        /** فهرست تامین‌کننده‌های این بازوی خرید (مالک) */
         getMembers: (inquiryId: string): Promise<any[]> =>
             apiRequest(`/inquiry/${inquiryId}/members`),
 
-        /** جست‌وجوی کاتالوگ فروش برای دعوت تامین‌کننده (مالک) */
+        /** جست‌وجوی کاتالوگ قیمت برای دعوت تامین‌کننده (مالک) */
         supplierCandidates: (inquiryId: string, q?: string): Promise<{ items: any[] }> =>
             apiRequest(`/inquiry/${inquiryId}/supplier-candidates${q?.trim() ? `?q=${encodeURIComponent(q.trim())}` : ''}`),
 
@@ -1472,11 +1472,11 @@ export const apiService = {
         addMember: (inquiryId: string, data: { catalogId: string; note?: string }): Promise<any> =>
             apiRequest(`/inquiry/${inquiryId}/members`, { method: 'POST', data }),
 
-        /** درخواست عضویت تامین‌کننده با کاتالوگ فروشش — تایید با خریدار */
+        /** درخواست عضویت تامین‌کننده با کاتالوگ قیمتش — تایید با خریدار */
         requestAccess: (inquiryId: string, data: { catalogId: string; note?: string }): Promise<any> =>
             apiRequest(`/inquiry/${inquiryId}/request-access`, { method: 'POST', data }),
 
-        /** 🪧 تابلوی اعلام‌های خرید بازار — اعلام‌های منتشرشدهٔ اعضا (قرینهٔ vitrine) */
+        /** 🪧 تابلوی بازوهای خرید بازار — اعلام‌های منتشرشدهٔ اعضا (قرینهٔ vitrine) */
         getArmBoard: (slug: string, opts?: { search?: string; page?: number; limit?: number }): Promise<{ items: any[]; total: number; page: number; limit: number }> =>
             apiRequest(`/inquiry/arm/${slug}`, { method: 'GET', params: opts }),
 
@@ -1488,7 +1488,7 @@ export const apiService = {
         removeMember: (inquiryId: string, memberId: string): Promise<any> =>
             apiRequest(`/inquiry/${inquiryId}/members/${memberId}`, { method: 'DELETE' }),
 
-        /** فرصت‌های فروش تامین‌کننده — دعوت‌ها + اقلام فوریِ اعلام‌های خریدِ عضوش */
+        /** فرصت‌های فروش تامین‌کننده — دعوت‌ها + اقلام فوریِ بازوهای خریدِ عضوش */
         opportunities: (): Promise<{ catalogs: any[]; invitations: any[]; requests: any[]; leads: any[] }> =>
             apiRequest('/inquiry/opportunities'),
     },

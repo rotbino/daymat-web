@@ -20,7 +20,7 @@ export const BOARD_ITEMS: { key: BoardKey; label: string; icon: any; board: Boar
 /**
  * آدرس دو تابلوی بازار:
  *   فروشندگان (تابلوی قیمت) → ‎/{slug}  — همان «هوم»؛ ریشهٔ تابلو
- *   خریداران (اعلام‌های خرید) → ‎/{slug}/buyers — صفحهٔ مستقل
+ *   خریداران (بازوهای خرید) → ‎/{slug}/buyers — صفحهٔ مستقل
  * بدون بازارِ جاری → لیست بازارها (فال‌بک امن)
  */
 export const boardHref = (slug: string | null | undefined, board: BoardTab) =>
