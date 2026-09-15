@@ -334,11 +334,11 @@ export default function LoginPage() {
                                 {errors.lastName && <p className="text-error text-sm mt-1">{errors.lastName}</p>}
                             </div>
 
-                            <div className="rounded-xl bg-surface-container-low border border-outline-variant/60 px-4 py-3">
+                           {/* <div className="rounded-xl bg-surface-container-low border border-outline-variant/60 px-4 py-3">
                                 <p className="text-xs text-on-surface-variant leading-5">
                                     🔑 برای شروع، رمز موقت <b dir="ltr">123456</b> ساخته می‌شود — بعد از ورود از پروفایل عوضش کن.
                                 </p>
-                            </div>
+                            </div>*/}
 
                             <button
                                 type="submit"
