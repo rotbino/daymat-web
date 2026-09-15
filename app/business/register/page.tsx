@@ -2,14 +2,15 @@
 'use client';
 
 import React, { useEffect, useMemo, useRef, useState } from 'react';
+import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { useSelector, useDispatch } from 'react-redux';
 import { toast } from 'sonner';
 import {
-    LibraryBig, Building2, Loader2, ArrowRight, AlertTriangle, Globe, Lock, BadgeCheck,
+    LibraryBig, Building2, Loader2, ArrowRight, AlertTriangle, Globe, Lock, BadgeCheck, ClipboardList,
 } from 'lucide-react';
 import { useCreateCatalog, useBusinessSearch, useCataloges, useMyBusinesses, useMyBusinessMembership } from '@/lib/api/apiHooks';
-import { USER_POSITIONS } from '@/lib/api/data-types';
+import { USER_POSITIONS, getFirstCatalog, getBusinessRoleLabel } from '@/lib/api/data-types';
 import { RootState } from '@/lib/store/store';
 import { setCurrentCatalog } from '@/lib/store/slices/catalogSlice';
 import { clearStoredRef, readStoredRef } from '@/app/components/RefCapture';
@@ -109,6 +110,20 @@ export default function RegisterCatalogPage() {
     const createCatalogMutation = useCreateCatalog();
     // ✅ گارد سینکرون دابل‌سابمیت — دو کلیک/Enter در یک تیک، قبل از رندرِ مجددِ دکمه، دو درخواست نمی‌زند
     const submittingRef = React.useRef(false);
+
+    // ─── ✅ پیشنهاد گام بعدی — بعد از ثبتِ «جدید»ِ کسب‌وکار، بر اساس نوع فعالیت (firstCatalog) ───
+    // فقط برای خریدبذَرها (firstCatalog=false: خرده‌فروش، رستوران، آرایشگر…) کارت پیشنهاد فهرست خرید نشان داده می‌شود؛
+    // برای جنس‌بذَرها همین فرم کاتالوگ فروش خودش مسیر پیشنهادی است — هیچ کاردی لازم نیست. پیشنهاد است، نه اجبار.
+    const [stepHint, setStepHint] = useState<{ bizId: string; bizName: string; roleLabel: string } | null>(null);
+    const handleBusinessCreated = (biz: any) => {
+        if (biz?.id && getFirstCatalog(biz.businessRole) === false) {
+            setStepHint({
+                bizId: biz.id,
+                bizName: biz.name || 'کسب‌وکار شما',
+                roleLabel: getBusinessRoleLabel(biz.businessRole) || 'کسب‌وکار',
+            });
+        }
+    };
 
     // ─── تغییر کسب‌وکار: نام پیشنهادی تازه می‌شود ───
     useEffect(() => {
@@ -245,7 +260,7 @@ export default function RegisterCatalogPage() {
                         </div>
                     ) : (
                         <>
-                            <BusinessSelector value={selectedBiz} onChange={handleBizChange} error={errors.biz} />
+                            <BusinessSelector value={selectedBiz} onChange={handleBizChange} error={errors.biz} onBusinessCreated={handleBusinessCreated} />
                             {deepLinkMiss && (
                                 <p className="mt-2 text-[11px] text-amber-600 dark:text-amber-400 flex items-center gap-1.5 px-1">
                                     <AlertTriangle className="w-3.5 h-3.5 flex-shrink-0" />
@@ -437,6 +452,38 @@ export default function RegisterCatalogPage() {
                 </form>
                 )}
             </main>
+
+            {/* ═══ کارت گام بعدی — فقط بعد از ثبتِ جدیدِ کسب‌وکارِ خریدبذَر (firstCatalog=false) ═══
+                پیشنهاد دلیل‌دار با درِ باز: دکمهٔ بزرگ فهرست خرید + لینک کمرنگِ ادامهٔ کاتالوگ فروش */}
+            {stepHint && (
+                <div className="fixed inset-0 z-[100] flex items-end sm:items-center sm:justify-center bg-black/50 animate-in fade-in duration-200 sm:p-4"
+                     onClick={() => setStepHint(null)}>
+                    <div onClick={(e) => e.stopPropagation()}
+                         className="w-full max-w-md rounded-t-3xl sm:rounded-3xl bg-white dark:bg-gray-900 px-6 py-7 text-center shadow-2xl animate-in slide-in-from-bottom-4 duration-300">
+                        <span className="mx-auto grid size-14 place-items-center rounded-2xl bg-brand-amber-soft">
+                            <ClipboardList className="size-7 text-amber-600 dark:text-amber-400" />
+                        </span>
+                        <h2 className="mt-4 text-lg font-black text-on-surface dark:text-gray-100">
+                            «{shortName(stepHint.bizName, 22)}» ثبت شد 🎉
+                        </h2>
+                        <p className="mt-3 text-[13px] leading-7 text-on-surface-variant">
+                            چون گفتی <span className="font-black">{stepHint.roleLabel}</span>، پیشنهاد می‌کنیم اول{' '}
+                            <span className="font-black text-amber-600 dark:text-amber-400">فهرست خرید</span> بسازی —
+                            لیست خریدت رو می‌نویسی، تامین‌کننده‌ها قیمت می‌دن و تو بهترین رو انتخاب می‌کنی.
+                            (کاتالوگ فروش هم هر وقت خواستی سر جاشه)
+                        </p>
+                        <Link href={`/inquiries/new?bizId=${stepHint.bizId}`}
+                              className="mt-5 flex h-12 w-full items-center justify-center gap-2 rounded-xl bg-brand-amber text-sm font-extrabold text-white shadow-lg shadow-brand-amber/30 transition-colors hover:bg-brand-amber-strong">
+                            <ClipboardList className="size-4" />
+                            فهرست خرید بساز
+                        </Link>
+                        <button type="button" onClick={() => setStepHint(null)}
+                                className="mt-3 text-[12px] font-bold text-on-surface-variant/70 transition-colors hover:text-on-surface">
+                            نه، همین‌جا کاتالوگ فروش می‌سازم
+                        </button>
+                    </div>
+                </div>
+            )}
         </div>
     );
 }

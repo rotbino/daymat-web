@@ -11,32 +11,33 @@ import { useQuery } from '@tanstack/react-query';
 import { apiService } from '@/lib/api/apiService';
 import {
   Apple,
-  ArrowDown,
-  Eye,
   ArrowLeft,
   BellRing,
   CheckCircle2,
   ClipboardList,
+  Eye,
   Handshake,
   Link2,
   Megaphone,
   Milk,
   Package,
   Plus,
+  Rocket,
+  Scissors,
   ShoppingBasket,
   Store,
   Truck,
+  UtensilsCrossed,
+  Users,
 } from 'lucide-react';
 
 /**
- * لندینگ دیمت — دو محصول جدا با دو لینک جدا:
- *   قرمز لاکی برند = کاتالوگ فروش (نمایش و تبلیغ)  |  کهربایی برند = فهرست خرید (استعلام و خرید)
- * لینک هر محصول زنجیرهٔ خودش را دارد:
- *   مهمان → /login?redirect=X (انتخاب کاربر حفظ می‌شود)  |  لاگین → مستقیم X
- *   X برای کاتالوگ فروش = فرم ساخت (/business/register)
- *   X برای فهرست خرید = فرم ساخت (/inquiries/new)
- * نکتهٔ مهم: لینک کاتالوگ فروش فقط به دست خریدارها می‌رسد و
- * لینک فهرست خرید فقط به دست تامین‌کننده‌ها — هرگز قاطی نمی‌شوند.
+ * لندینگ دیمت — یک درِ ورودی: «شروع کن»
+ *   مهمان → /login?redirect=/business/register  |  لاگین → مستقیم /business/register
+ *   بعد از ثبت کسب‌وکار، بر اساس نوع فعالیت (firstCatalog در data-types) پیشنهاد می‌دهیم
+ *   اول کاتالوگ فروش بسازد یا فهرست خرید — «پیشنهاد» است نه اجبار؛ هر دو ابزار همیشه باز.
+ * دو کارت محصول با مزایا (زبان ساده برای همهٔ بازار) + بخش همکار خرید/همکار فروش
+ * (مکانیزه‌کردن تجارت با کانتکت‌ها) + مثال‌های واقعی بازار.
  */
 
 /* ------------------------------ motion helper ----------------------------- */
@@ -272,9 +273,70 @@ function ProductCard({
   );
 }
 
+/* ------------------------------ example card ------------------------------ */
+
+/** کارت مثال بازار — «شروع با کدام» + «بعداً» — هم‌رنگِ محصولِ شروع */
+function ExampleCard({
+  icon: Icon,
+  title,
+  tone,
+  startChip,
+  nextChip,
+  startText,
+  secondChip,
+  secondText,
+}: {
+  icon: React.ElementType;
+  title: string;
+  tone: Tone;
+  startChip: string;
+  nextChip: string;
+  startText: string;
+  secondChip: string;
+  secondText: string;
+}) {
+  const startCls = tone === 'red'
+    ? 'rounded-full bg-brand-red-soft px-3 py-1 text-xs font-black text-brand-red'
+    : 'rounded-full bg-brand-amber-soft px-3 py-1 text-xs font-black text-amber-800 dark:text-amber-300';
+  const nextCls = tone === 'red'
+    ? 'rounded-full border-2 border-dashed border-brand-amber-tint px-3 py-1 text-xs font-bold text-amber-700 dark:text-amber-300'
+    : 'rounded-full border-2 border-dashed border-brand-red-tint px-3 py-1 text-xs font-bold text-brand-red';
+  const secondCls = tone === 'red'
+    ? 'rounded-full bg-brand-amber-soft px-3 py-1 text-xs font-black text-amber-800 dark:text-amber-300'
+    : 'rounded-full bg-brand-red-soft px-3 py-1 text-xs font-black text-brand-red';
+  return (
+    <motion.div
+      {...fadeUp()}
+      className="rounded-3xl border-2 border-stone-200 bg-white p-6 shadow-sm dark:border-gray-800 dark:bg-gray-900 sm:p-8">
+      <div className="flex items-center gap-3">
+        <span className="grid size-11 place-items-center rounded-2xl bg-stone-900 text-white dark:bg-gray-100 dark:text-gray-900">
+          <Icon className="size-5" />
+        </span>
+        <h3 className="text-xl font-black">{title}</h3>
+      </div>
+      <div className="mt-6 space-y-5">
+        <div>
+          <div className="flex flex-wrap items-center gap-2">
+            <span className={startCls}>{startChip}</span>
+            <ArrowLeft aria-hidden className="size-4 text-stone-400 dark:text-gray-600" />
+            <span className={nextCls}>{nextChip}</span>
+          </div>
+          <p className="mt-2 text-sm leading-7 text-stone-600 dark:text-gray-400">{startText}</p>
+        </div>
+        <div>
+          <div className="flex flex-wrap items-center gap-2">
+            <span className={secondCls}>{secondChip}</span>
+          </div>
+          <p className="mt-2 text-sm leading-7 text-stone-600 dark:text-gray-400">{secondText}</p>
+        </div>
+      </div>
+    </motion.div>
+  );
+}
+
 /* ------------------------------ live از روت ------------------------------- */
 
-/** سکشن زندهٔ روت: کاتالوگ‌های فروش نمونه + اعلام‌های خرید باز — دو جدول جدا، دو محصول جدا */
+/** سکشن زندهٔ روت: کاتالوگ‌های فروش نمونه + CTA ساخت فهرست خرید — دو ستون جدا، دو محصول جدا */
 function LiveFromDaymat({ purchaseHref }: { purchaseHref: string }) {
   const { data: featured } = useQuery({
     queryKey: ['landing', 'featured-catalogs'],
@@ -357,11 +419,12 @@ function LiveFromDaymat({ purchaseHref }: { purchaseHref: string }) {
 export default function Landing() {
   const { isAuthenticated } = useSelector((s: RootState) => s.auth);
 
-  // ✅ زنجیرهٔ انتخاب ابزار: مهمان → login با redirect (انتخاب حفظ می‌شود) | لاگین → مستقیم
+  // ✅ یک درِ ورودی: مهمان → login با redirect (انتخاب حفظ می‌شود) | لاگین → مستقیم
   const toolHref = (path: string) =>
     isAuthenticated ? path : `/login?redirect=${encodeURIComponent(path)}`;
-  const catalogHref = toolHref('/business/register'); // کاتالوگ فروش — فرم ساخت
-  const purchaseHref = toolHref('/inquiries/new');    // فهرست خرید — فرم ساخت (محصول مستقل)
+  const startHref = toolHref('/business/register');  // ثبت کسب‌وکار → پیشنهاد اولین ابزار (firstCatalog)
+  const catalogHref = toolHref('/business/register'); // کاتالوگ فروش — فرم ساخت (کارت محصول)
+  const purchaseHref = toolHref('/inquiries/new');    // فهرست خرید — فرم ساخت (کارت محصول)
 
   return (
     <div className="min-h-screen bg-[#FFFDF7] text-stone-900 dark:bg-gray-950 dark:text-gray-100">
@@ -418,24 +481,25 @@ export default function Landing() {
               <motion.p
                 {...fadeUp(0.2)}
                 className="mx-auto mt-5 max-w-2xl text-base leading-8 text-stone-600 dark:text-gray-400 sm:text-lg">
-                پس دو تا محصول ساده ساخته‌ایم: «کاتالوگ فروش» برای نمایش و تبلیغ چیزی که می‌فروشی،
-                و «فهرست خرید» برای استعلام قیمت چیزی که می‌خری. هر کدام یک لینک جداست؛
-                با چند کلیک بساز و فقط لینکِ همان را بین همان آدم‌ها پخش کن.
+                دو تا ابزار ساده داریم: «کاتالوگ فروش» تا چیزی که می‌فروشی رو نشون بدی و خریدار پیدا کنی،
+                و «فهرست خرید» تا چیزی که می‌خری رو بنویسی و از تامین‌کننده‌ها قیمت بگیری.
+                هر کدوم یه لینک ساده می‌ده که فقط دست همون آدم‌ها می‌رسه.
               </motion.p>
 
-              <motion.div {...fadeUp(0.3)} className="mt-8 flex flex-wrap items-center justify-center gap-3">
+              {/* یک درِ ورودی — بعد از ثبت کسب‌وکار، پیشنهادِ اولین ابزار بر اساس نوع فعالیت */}
+              <motion.div {...fadeUp(0.3)} className="mt-9 flex flex-col items-center gap-3">
                 <a
-                  href="#catalog"
-                  className="inline-flex h-12 items-center gap-2 rounded-full bg-brand-red px-7 text-base font-extrabold text-white shadow-lg shadow-brand-red/25 transition-colors hover:bg-brand-red-strong">
-                  می‌خوام بفروشم
-                  <ArrowDown className="size-4" />
+                  href={startHref}
+                  className="inline-flex h-14 items-center gap-2.5 rounded-full bg-stone-900 px-10 text-lg font-extrabold text-white shadow-xl shadow-stone-900/20 transition-colors hover:bg-stone-700
+                  dark:bg-gray-100 dark:text-gray-900 dark:shadow-black/40 dark:hover:bg-white">
+                  <Rocket className="size-5" />
+                  شروع کن
+                  <ArrowLeft className="size-4" />
                 </a>
-                <a
-                  href="#inquiry"
-                  className="inline-flex h-12 items-center gap-2 rounded-full bg-brand-amber px-7 text-base font-extrabold text-white shadow-lg shadow-brand-amber/30 transition-colors hover:bg-brand-amber-strong">
-                  می‌خوام بخرم
-                  <ArrowDown className="size-4" />
-                </a>
+                <p className="max-w-md text-center text-xs font-bold leading-6 text-stone-500 dark:text-gray-400">
+                  هر دو ابزار مال توئه — بعد از ثبت کسب‌وکارت، خودمون می‌گیم از کدوم به‌دردت می‌خوره؛
+                  هر وقت خواستی اون یکی رو هم می‌سازی.
+                </p>
               </motion.div>
 
               {/* دو محصول مستقل — بدون خط اتصال؛ هر کدام یک لینک جدا دارند */}
@@ -483,23 +547,23 @@ export default function Landing() {
                 icon={Store}
                 chip="نمایش و تبلیغ کالا و خدمات"
                 title="ساخت کاتالوگ فروش"
-                desc="چیزهایی که می‌فروشی رو قشنگ نشون بده، قیمت رو کنارشون بذار و لینک کاتالوگ فروشت رو بده دست خریدارها."
+                desc="جنست رو قشنگ نشون بده، قیمت بذار کنارش و لینکش رو بده دست خریدارها — سفارش‌ها خودشون میان."
                 illustration={<MiniCatalog />}
                 steps={[
                   {
-                    title: 'کاتالوگت رو بساز',
-                    desc: 'عکس، اسم و قیمت کالاها یا خدماتت رو اضافه کن؛ به سادگی ساختن یک پست اینستاگرامی.',
+                    title: 'یه بار می‌سازی، همیشه آنلاینه',
+                    desc: 'عکس، اسم و قیمت کالاها یا خدماتت رو اضافه کن؛ به سادگی ساختن یک پست اینستاگرامی. دیگه لازم نیست برای هر مشتری عکس و قیمت جدا بفرستی.',
                   },
                   {
-                    title: 'لینکش رو پخش کن',
-                    desc: 'کاتالوگ می‌شه یک لینک ساده؛ بذارش تو استوری، بفرستش تو واتساپ و تلگرام، هر جا که خریدار هست.',
+                    title: 'قیمت‌ها همیشه روزه',
+                    desc: 'قیمتی که توی کاتالوگ عوض می‌کنی، همون لحظه برای همه خریدارها عوض می‌شه — نه عکس قدیمی، نه قیمت مال سال پیش.',
                   },
                   {
-                    title: 'سفارش بگیر',
-                    desc: 'خریدارها هر وقت لازم داشتن، قیمت‌ها رو می‌بینن و مستقیم با خودت در تماسن.',
+                    title: 'خریدارها همکار فروشت می‌شن',
+                    desc: 'مغازه‌دارها و پخش‌کننده‌ها کاتالوگت رو نگه می‌دارن و بهت وصل می‌شن؛ هر کالای جدیدی بذاری، دست همون‌ها می‌رسه.',
                   },
                 ]}
-                audience={['فروشگاه‌ها', 'شرکت‌های پخش', 'تولیدی‌ها', 'خدمات']}
+                audience={['تولیدی‌ها', 'شرکت‌های پخش', 'عمده‌فروش‌ها', 'خدمات']}
                 cta="کاتالوگ فروش بساز"
                 href={catalogHref}
               />
@@ -510,55 +574,87 @@ export default function Landing() {
                 icon={ClipboardList}
                 chip="استعلام قیمت خرید"
                 title="ساخت فهرست خرید"
-                desc="لیست چیزهایی که می‌خری رو بنویس، لینک اعلام خریدت رو بده تامین‌کننده‌ها؛ اون‌ها قیمت بدن، تو بهترین رو انتخاب کن."
+                desc="لیست چیزهایی که می‌خری رو بنویس و لینکش رو بده تامین‌کننده‌ها؛ اون‌ها قیمت بدن، تو بهترین رو انتخاب کن."
                 illustration={<MiniWall />}
                 steps={[
                   {
-                    title: 'لیست خریدت رو بنویس',
-                    desc: 'بنویس چی می‌خوای، چندتا و با چه شرایطی؛ از لیست هفتگی سوپرمارکت تا قطعهٔ صنعتی با مشخصات فنی.',
+                    title: 'دیگه ده‌جا زنگ نمی‌زنی',
+                    desc: 'یه بار لیستت رو می‌نویسی و همه با هم قیمت می‌دن؛ قیمت‌ها سر یه صفحه کنار هم‌ان — از لیست هفتگی سوپرمارکت تا قطعهٔ صنعتی.',
                   },
                   {
-                    title: 'لینکش رو بده تامین‌کننده‌ها',
-                    desc: 'فقط همین لینک فهرست خرید پخش می‌شه؛ کاتالوگ فروشت اصلاً درگیر این ماجرا نیست.',
+                    title: 'بهترین قیمت دست خودته',
+                    desc: 'پیشنهاد قیمت‌ها و شرایط رو کنار هم می‌بینی و از هر کی به‌صرفه‌تر بود معامله می‌کنی.',
                   },
                   {
-                    title: 'بهترین قیمت رو انتخاب کن',
-                    desc: 'پیشنهاد قیمت‌ها و شرایط رو کنار هم ببین و با هر کی به‌صرفه‌تر بود معامله کن.',
+                    title: 'تامین‌کننده‌ها همکار خریدت می‌شن',
+                    desc: 'هر کی قیمت داد و کارش خوب بود، تو لیستت می‌مونه؛ بار بعد به‌جای گشتن دنبال فروشنده، مستقیم به همون‌ها اعلام می‌کنی.',
                   },
                 ]}
-                audience={['سوپرمارکت‌ها', 'کارخانه‌ها', 'پروژه‌ها', 'خدمات']}
+                audience={['سوپرمارکت‌ها', 'رستوران‌ها', 'آرایشگاه‌ها', 'فروشگاه‌ها']}
                 cta="فهرست خرید بساز"
                 href={purchaseHref}
               />
             </div>
           </section>
 
-          {/* ----------------------- network: خرید ↔ فروش ----------------------- */}
+          {/* ---------------- مکانیزه کردن تجارت: همکار خرید/همکار فروش ---------------- */}
           <section aria-label="شبکهٔ خرید و فروش" className="mx-auto max-w-6xl px-4 py-14 sm:px-6">
             <motion.div {...fadeUp()} className="mx-auto max-w-2xl text-center">
-              <span className="text-sm font-black text-stone-400 dark:text-gray-500">فقط یه کاتالوگ ساده نیست</span>
+              <span className="text-sm font-black text-stone-400 dark:text-gray-500">فقط یه صفحهٔ ساده نیست</span>
               <h2 className="mt-2 text-3xl font-black leading-snug sm:text-4xl">
-                کاتالوگ‌ها به هم{' '}
-                <span className="text-brand-red">وصل</span> می‌شن
+                تجارتت رو <span className="text-brand-red">مکانیزه</span> کن
               </h2>
               <p className="mt-4 leading-8 text-stone-600 dark:text-gray-400">
-                خریدار تامین‌کننده‌هاش را از روی کاتالوگ فروششان به اعلام خریدش اضافه می‌کند؛
-                هر وقت چیزی فوری لازم داشت، اعلام خریدش مستقیم دست همان‌ها می‌رسد.
+                هر کس با کاتالوگ‌هات کار کنه، توی دفتر دیمت ثبت می‌شه — کم‌کم شبکهٔ همکاریت
+                همیشه آماده می‌شه؛ بی‌کاغذ، بی‌دفترچه، بی‌ده‌ها تماس تکراری.
               </p>
             </motion.div>
 
-            <div className="mx-auto mt-10 max-w-4xl space-y-3">
+            {/* دو همکار — فروش و خرید */}
+            <div className="mx-auto mt-10 grid max-w-4xl gap-4 sm:grid-cols-2">
+              <motion.div
+                {...fadeUp(0.1)}
+                className="rounded-3xl border-2 border-brand-red-tint bg-brand-red-soft/40 p-6 dark:bg-red-500/5">
+                <div className="flex items-center gap-3">
+                  <span className="grid size-11 shrink-0 place-items-center rounded-xl bg-brand-red text-white">
+                    <Users className="size-5" />
+                  </span>
+                  <h3 className="text-lg font-black text-brand-red">همکار فروش پیدا کن</h3>
+                </div>
+                <p className="mt-4 text-sm font-bold leading-7 text-stone-600 dark:text-gray-300">
+                  مغازه‌دارها و خریدارها از روی کاتالوگ فروشت بهت وصل می‌شن؛ هر کدوم رو تایید کنی،
+                  همکار فروشت می‌شن — هر وقت کالای جدید یا قیمتی داشتی، مستقیم دستشون می‌رسی.
+                </p>
+              </motion.div>
+
+              <motion.div
+                {...fadeUp(0.2)}
+                className="rounded-3xl border-2 border-brand-amber-tint bg-brand-amber-soft/50 p-6 dark:bg-amber-500/5">
+                <div className="flex items-center gap-3">
+                  <span className="grid size-11 shrink-0 place-items-center rounded-xl bg-brand-amber text-white">
+                    <Handshake className="size-5" />
+                  </span>
+                  <h3 className="text-lg font-black text-amber-700 dark:text-amber-300">همکار خرید پیدا کن</h3>
+                </div>
+                <p className="mt-4 text-sm font-bold leading-7 text-stone-600 dark:text-gray-300">
+                  تامین‌کننده‌هایی که به فهرست خریدت قیمت دادن و تاییدشون کردی، همکار خریدت می‌شن؛
+                  بار بعد به‌جای گشتن و پرس‌وجو، مستقیم به همون‌ها اعلام می‌کنی.
+                </p>
+              </motion.div>
+            </div>
+
+            <div className="mx-auto mt-8 max-w-4xl space-y-3">
               {[
                 {
                   icon: Megaphone,
                   tone: 'amber' as const,
-                  title: 'خریدار اعلام می‌کند',
-                  desc: 'قلم را می‌نویسی، تیک «فهرست خرید» را می‌زنی — بالای کاتالوگت می‌نشیند.',
+                  title: 'خریدار لیستش رو اعلام می‌کنه',
+                  desc: 'قلم‌های خرید رو می‌نویسی و اعلام می‌کنی — فهرست خریدت آمادهٔ دیدن تامین‌کننده‌هاست.',
                 },
                 {
                   icon: BellRing,
                   tone: 'red' as const,
-                  title: 'تامین‌کنندهٔ تاییدشده فوری می‌فهمد',
+                  title: 'تامین‌کنندهٔ تاییدشده فوری می‌فهمه',
                   desc: 'فهرست خرید در تب «فهرست خرید»ی پنل فروشش می‌آید و اعلان می‌گیرد.',
                 },
                 {
@@ -601,94 +697,54 @@ export default function Landing() {
               <h2 className="text-3xl font-black sm:text-4xl">از کجا شروع کنی؟</h2>
               <p className="mt-4 leading-8 text-stone-600 dark:text-gray-400">
                 از همون‌جا شروع کن که به دردت می‌خوره؛ اون یکی هم هر وقت لازم شد، سر جاشه.
+                بعد از ثبت کسب‌وکارت هم دیمت بر اساس نوع کارت پیشنهادش رو می‌گه — انتخاب آخر با خودته.
               </p>
             </motion.div>
 
             <div className="mt-10 grid gap-6 md:grid-cols-2">
-              {/* شرکت پخش */}
-              <motion.div
-                {...fadeUp(0.1)}
-                className="rounded-3xl border-2 border-stone-200 bg-white p-6 shadow-sm dark:border-gray-800 dark:bg-gray-900 sm:p-8">
-                <div className="flex items-center gap-3">
-                  <span
-                    className="grid size-11 place-items-center rounded-2xl bg-stone-900 text-white dark:bg-gray-100 dark:text-gray-900">
-                    <Truck className="size-5" />
-                  </span>
-                  <h3 className="text-xl font-black">شرکت پخش</h3>
-                </div>
-                <div className="mt-6 space-y-5">
-                  <div>
-                    <div className="flex flex-wrap items-center gap-2">
-                      <span
-                        className="rounded-full bg-brand-red-soft px-3 py-1 text-xs font-black text-brand-red">
-                        شروع با کاتالوگ فروش
-                      </span>
-                      <ArrowLeft aria-hidden className="size-4 text-stone-400 dark:text-gray-600" />
-                      <span
-                        className="rounded-full border-2 border-dashed border-brand-amber-tint px-3 py-1 text-xs font-bold text-amber-700
-                        dark:text-amber-300">
-                        بعداً: فهرست خرید
-                      </span>
-                    </div>
-                    <p className="mt-2 text-sm leading-7 text-stone-600 dark:text-gray-400">
-                      کالاهاش رو قشنگ نشون می‌ده و لینک کاتالوگ فروشش رو می‌فرسته برای مغازه‌دارها — فقط همین لینک.
-                    </p>
-                  </div>
-                  <div>
-                    <div className="flex flex-wrap items-center gap-2">
-                      <span
-                        className="rounded-full bg-brand-amber-soft px-3 py-1 text-xs font-black text-amber-800 dark:text-amber-300">
-                        برای خرید عمده
-                      </span>
-                    </div>
-                    <p className="mt-2 text-sm leading-7 text-stone-600 dark:text-gray-400">
-                      هر وقت خواست جنس عمده بخره، یه فهرست خرید جدا می‌سازه و فقط لینک همون رو می‌ده دست کارخونه‌ها.
-                    </p>
-                  </div>
-                </div>
-              </motion.div>
+              <ExampleCard
+                icon={Truck}
+                title="شرکت پخش"
+                tone="red"
+                startChip="شروع با کاتالوگ فروش"
+                nextChip="بعداً: فهرست خرید"
+                startText="کالاهاش رو قشنگ نشون می‌ده و لینک کاتالوگ فروشش رو می‌فرسته برای مغازه‌دارها — فقط همین لینک."
+                secondChip="برای خرید عمده"
+                secondText="هر وقت خواست جنس عمده بخره، یه فهرست خرید جدا می‌سازه و فقط لینک همون رو می‌ده دست کارخونه‌ها."
+              />
 
-              {/* سوپرمارکت */}
-              <motion.div
-                {...fadeUp(0.2)}
-                className="rounded-3xl border-2 border-stone-200 bg-white p-6 shadow-sm dark:border-gray-800 dark:bg-gray-900 sm:p-8">
-                <div className="flex items-center gap-3">
-                  <span
-                    className="grid size-11 place-items-center rounded-2xl bg-stone-900 text-white dark:bg-gray-100 dark:text-gray-900">
-                    <ShoppingBasket className="size-5" />
-                  </span>
-                  <h3 className="text-xl font-black">سوپرمارکت</h3>
-                </div>
-                <div className="mt-6 space-y-5">
-                  <div>
-                    <div className="flex flex-wrap items-center gap-2">
-                      <span
-                        className="rounded-full bg-brand-amber-soft px-3 py-1 text-xs font-black text-amber-800 dark:text-amber-300">
-                        شروع با فهرست خرید
-                      </span>
-                      <ArrowLeft aria-hidden className="size-4 text-stone-400 dark:text-gray-600" />
-                      <span
-                        className="rounded-full border-2 border-dashed border-brand-red-tint px-3 py-1 text-xs font-bold text-brand-red">
-                        بعداً: کاتالوگ فروش
-                      </span>
-                    </div>
-                    <p className="mt-2 text-sm leading-7 text-stone-600 dark:text-gray-400">
-                      برای جنس‌های عمده‌ش لیست خرید می‌سازه، لینکش رو به کارخونه‌ها می‌ده و از همه قیمت می‌گیره.
-                    </p>
-                  </div>
-                  <div>
-                    <div className="flex flex-wrap items-center gap-2">
-                      <span
-                        className="rounded-full bg-brand-red-soft px-3 py-1 text-xs font-black text-brand-red">
-                        برای نمایش کالا
-                      </span>
-                    </div>
-                    <p className="mt-2 text-sm leading-7 text-stone-600 dark:text-gray-400">
-                      هر وقت خواست، کاتالوگ فروش جدا می‌سازه و کالاهاش رو برای مشتری‌های محله نشون می‌ده.
-                    </p>
-                  </div>
-                </div>
-              </motion.div>
+              <ExampleCard
+                icon={ShoppingBasket}
+                title="سوپرمارکت"
+                tone="amber"
+                startChip="شروع با فهرست خرید"
+                nextChip="بعداً: کاتالوگ فروش"
+                startText="برای جنس‌های عمده‌ش لیست خرید می‌سازه، لینکش رو به کارخونه‌ها می‌ده و از همه قیمت می‌گیره."
+                secondChip="برای نمایش کالا"
+                secondText="هر وقت خواست، کاتالوگ فروش جدا می‌سازه و کالاهاش رو برای مشتری‌های محله نشون می‌ده."
+              />
+
+              <ExampleCard
+                icon={Scissors}
+                title="آرایشگاه"
+                tone="amber"
+                startChip="شروع با فهرست خرید"
+                nextChip="بعداً: کاتالوگ فروش"
+                startText="رنگ، شامپو و مواد مصرفیش رو عمده می‌خواد؛ لیستش رو می‌فرسته برای پخش‌کننده‌ها و از همه قیمت می‌گیره."
+                secondChip="برای معرفی خدمات"
+                secondText="خدماتش (کوتاهی، رنگ، پاک‌کاری) رو با قیمت توی کاتالوگ فروشش نشون می‌ده تا مشتری راحت پیدا کنه."
+              />
+
+              <ExampleCard
+                icon={UtensilsCrossed}
+                title="رستوران"
+                tone="amber"
+                startChip="شروع با فهرست خرید"
+                nextChip="بعداً: کاتالوگ فروش"
+                startText="برنج، روغن، مرغ و سبزی رو هفتگی عمده می‌خواد؛ لیست می‌فرسته برای عمده‌فروش‌ها و بهترین قیمت رو برمی‌داره."
+                secondChip="برای معرفی منو"
+                secondText="منوش رو توی کاتالوگ فروشش می‌ذاره تا برای مهمونی و تالار، راحت پیداش کنن."
+              />
             </div>
 
             {/* punchline */}
@@ -715,27 +771,23 @@ export default function Landing() {
               <div aria-hidden className="absolute -right-16 -top-16 size-48 rounded-full bg-brand-red-soft blur-2xl" />
               <div aria-hidden className="absolute -bottom-16 -left-16 size-48 rounded-full bg-brand-amber-soft blur-2xl" />
               <div className="relative">
-                <h2 className="text-3xl font-black sm:text-4xl">همین حالا اولین کاتالوگت رو بساز</h2>
+                <h2 className="text-3xl font-black sm:text-4xl">همین حالا شروع کن</h2>
                 <p className="mx-auto mt-4 max-w-xl leading-8 text-stone-600 dark:text-gray-400">
-                  چند دقیقه وقت بذار، محصولت رو بساز و فقط لینکش رو پخش کن؛
+                  با شماره موبایلت وارد شو، کسب‌وکارت رو ثبت کن و اولین ابزارت رو چند دقیقه‌ای بساز؛
                   ساده مثل ساختن یک پست.
                 </p>
                 <div className="mt-8 flex flex-wrap items-center justify-center gap-3">
                   <Link
-                    href={catalogHref}
-                    className="inline-flex h-12 items-center gap-2 rounded-full bg-brand-red px-7 text-base font-extrabold text-white shadow-lg shadow-brand-red/25 transition-colors hover:bg-brand-red-strong">
-                    <Store className="size-4" />
-                    ساخت کاتالوگ فروش
-                  </Link>
-                  <Link
-                    href={purchaseHref}
-                    className="inline-flex h-12 items-center gap-2 rounded-full bg-brand-amber px-7 text-base font-extrabold text-white shadow-lg shadow-brand-amber/30 transition-colors hover:bg-brand-amber-strong">
-                    <ClipboardList className="size-4" />
-                    ساخت فهرست خرید
+                    href={startHref}
+                    className="inline-flex h-14 items-center gap-2.5 rounded-full bg-stone-900 px-10 text-lg font-extrabold text-white shadow-xl shadow-stone-900/20 transition-colors hover:bg-stone-700
+                    dark:bg-gray-100 dark:text-gray-900 dark:shadow-black/40 dark:hover:bg-white">
+                    <Rocket className="size-5" />
+                    شروع کن
+                    <ArrowLeft className="size-4" />
                   </Link>
                 </div>
                 <p className="mt-5 text-xs font-medium text-stone-400 dark:text-gray-500">
-                  بدون آموزش — هر وقت دومی رو خواستی، اونم می‌سازی.
+                  هر دو ابزار مال توئه — اول یکی، هر وقت خواستی اون یکی.
                 </p>
               </div>
             </motion.div>

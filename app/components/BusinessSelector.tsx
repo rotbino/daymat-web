@@ -28,13 +28,15 @@ interface Props {
     disabled?: boolean;
     /** ✅ برچسب سفارشی — پیش‌فرض: متن کاتالوگ فروش */
     label?: string;
+    /** ✅ فقط وقتی کسب‌وکار «جدید» واقعاً ثبت شد (نه انتخاب از مشابه‌ها) — برای پیشنهاد گام بعدی */
+    onBusinessCreated?: (biz: any) => void;
 }
 
 function shortName(n: string, max = 20) {
     return (n || '').length > max ? n.slice(0, max) + '…' : n;
 }
 
-export default function BusinessSelector({ value, onChange, error, disabled, label }: Props) {
+export default function BusinessSelector({ value, onChange, error, disabled, label, onBusinessCreated }: Props) {
     const [open, setOpen] = useState(false);
 
     const pick = (b: any) => { onChange(b); setOpen(false); };
@@ -96,7 +98,7 @@ export default function BusinessSelector({ value, onChange, error, disabled, lab
                 </p>
             )}
 
-            {open && <BusinessPickerModal onPick={pick} onClose={() => setOpen(false)} />}
+            {open && <BusinessPickerModal onPick={pick} onClose={() => setOpen(false)} onBusinessCreated={onBusinessCreated} />}
         </div>
     );
 }
@@ -105,7 +107,12 @@ export default function BusinessSelector({ value, onChange, error, disabled, lab
    مودال بزرگ انتخاب/ثبت — جستجوی سبک نوار فیلتر دیوار
    z-index: 90 (زیر BusinessSetupModal با 95)
    ═══════════════════════════════════════════════════════════ */
-function BusinessPickerModal({ onPick, onClose }: { onPick: (b: any) => void; onClose: () => void }) {
+function BusinessPickerModal({ onPick, onClose, onBusinessCreated }: {
+    onPick: (b: any) => void;
+    onClose: () => void;
+    /** ✅ فقط وقتی کسب‌وکار «جدید» واقعاً ثبت شد — برای پیشنهاد گام بعدی (firstCatalog) */
+    onBusinessCreated?: (biz: any) => void;
+}) {
     const [q, setQ] = useState('');
     const [debouncedQ, setDebouncedQ] = useState('');
     const [provinceCode, setProvinceCode] = useState('');
@@ -308,6 +315,7 @@ function BusinessPickerModal({ onPick, onClose }: { onPick: (b: any) => void; on
                     searchQ.refetch();
                     myBizQ.refetch();
                 }}
+                onBusinessCreated={onBusinessCreated}
             />
         </div>,
         document.body,

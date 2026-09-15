@@ -31,61 +31,65 @@ export const CATALOG_ROLES = [
 // ✅ فیلد role فیلد اصلی است — توی کارت‌ها و نمایش‌ها این رو نشون می‌دیم
 // ✅ sector بیشتر برای فیلتر و دسته‌بندی استفاده می‌شه
 //
+// ✅ firstCatalog — بعد از ثبت کسب‌وکار، پیشنهادِ «اولین ابزار»:
+//     true  → اول کاتالوگ فروش بساز (جنسبَذَرها: تولیدی، پخش، عمده‌فروش، خدمات‌دهنده)
+//     false → اول فهرست خرید بساز (خریدبذَرها: خرده‌فروش، رستوران، آرایشگر و مشابه‌ها)
+//   ⚠️ فقط «پیشنهاد» است نه اجبار — هر دو ابزار همیشه در دسترس‌اند (کارت گام بعدی در /business/register)
 export const BUSINESS_TYPE = [
 
     {
         id: "distribution",
         label: "توزیع، پخش و واسطه‌گری",
         children: [
-            { id: "wholesaler", label: "عمده‌فروش" },
-            { id: "distributor", label: "نماینده رسمی پخش" },
-            { id: "distributor2", label: "پخش محلی (غیر نمایندگی)" },
-            { id: "broker", label: "واسطه و دلال" },
-            { id: "logistics", label: "لجستیک و حمل‌ونقل بار" },
-            { id: "warehouse", label: "انبارداری" },
+            { id: "wholesaler", label: "عمده‌فروش", firstCatalog: true },
+            { id: "distributor", label: "نماینده رسمی پخش", firstCatalog: true },
+            { id: "distributor2", label: "پخش محلی (غیر نمایندگی)", firstCatalog: true },
+            { id: "broker", label: "واسطه و دلال", firstCatalog: true },
+            { id: "logistics", label: "لجستیک و حمل‌ونقل بار", firstCatalog: true },
+            { id: "warehouse", label: "انبارداری", firstCatalog: true },
         ],
     },
     {
         id: "retail",
         label: "خرده‌فروشی و فروش مستقیم",
         children: [
-            { id: "store", label: "فروشگاه فیزیکی" },
-            { id: "ecommerce", label: "فروشگاه اینترنتی" },
-            { id: "chain_store", label: "فروشگاه زنجیره‌ای" },
-            { id: "direct_sales", label: "فروش مستقیم" },
+            { id: "store", label: "فروشگاه فیزیکی", firstCatalog: false },
+            { id: "ecommerce", label: "فروشگاه اینترنتی", firstCatalog: false },
+            { id: "chain_store", label: "فروشگاه زنجیره‌ای", firstCatalog: false },
+            { id: "direct_sales", label: "فروش مستقیم", firstCatalog: false },
         ],
     },
     {
         id: "service",
         label: "خدمات",
         children: [
-            { id: "consulting", label: "مشاوره" },
-            { id: "contracting", label: "پیمانکاری" },
-            { id: "maintenance", label: "تعمیرات و نگهداری" },
-            { id: "digital", label: "خدمات دیجیتال" },
-            { id: "training", label: "آموزش" },
-            { id: "other_services", label: "سایر خدمات" },
+            { id: "consulting", label: "مشاوره", firstCatalog: true },
+            { id: "contracting", label: "پیمانکاری", firstCatalog: true },
+            { id: "maintenance", label: "تعمیرات و نگهداری", firstCatalog: true },
+            { id: "digital", label: "خدمات دیجیتال", firstCatalog: true },
+            { id: "training", label: "آموزش", firstCatalog: true },
+            { id: "other_services", label: "سایر خدمات", firstCatalog: false },
         ],
     },
     {
         id: "manufacturing",
         label: "تولید و صنعت",
         children: [
-            { id: "raw_material", label: "تولیدکننده مواد اولیه" },
-            { id: "parts", label: "تولیدکننده قطعات/اجزا" },
-            { id: "final_product", label: "تولیدکننده محصول نهایی" },
-            { id: "packaging", label: "بسته‌بندی و تکمیل محصول" },
+            { id: "raw_material", label: "تولیدکننده مواد اولیه", firstCatalog: true },
+            { id: "parts", label: "تولیدکننده قطعات/اجزا", firstCatalog: true },
+            { id: "final_product", label: "تولیدکننده محصول نهایی", firstCatalog: true },
+            { id: "packaging", label: "بسته‌بندی و تکمیل محصول", firstCatalog: true },
         ],
     },
     {
         id: "trade",
         label: "بازرگانی و تجارت",
         children: [
-            { id: "importer", label: "واردکننده" },
-            { id: "exporter", label: "صادرکننده" },
-            { id: "importer_exporter", label: "واردات و صادرات" },
-            { id: "trading_house", label: "خانه بازرگانی" },
-            { id: "agent", label: "نمایندگی فروش" },
+            { id: "importer", label: "واردکننده", firstCatalog: true },
+            { id: "exporter", label: "صادرکننده", firstCatalog: true },
+            { id: "importer_exporter", label: "واردات و صادرات", firstCatalog: true },
+            { id: "trading_house", label: "خانه بازرگانی", firstCatalog: true },
+            { id: "agent", label: "نمایندگی فروش", firstCatalog: true },
         ],
     },
 ] as const;
@@ -113,6 +117,17 @@ export function getBusinessSector(roleId: string | undefined | null): string {
         }
     }
     return '';
+}
+
+// ✅ helper: پیشنهادِ اولین ابزار برای یک role —
+// true → اول کاتالوگ فروش | false → اول فهرست خرید | undefined → role نامشخص/قدیمی (بدون پیشنهاد)
+export function getFirstCatalog(roleId: string | undefined | null): boolean | undefined {
+    if (!roleId) return undefined;
+    for (const sector of BUSINESS_TYPE) {
+        const found = sector.children.find((c: any) => c.id === roleId);
+        if (found) return (found as any).firstCatalog as boolean | undefined;
+    }
+    return undefined;
 }
 
 // ✅ helper: پیدا کردن sector label

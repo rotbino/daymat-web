@@ -40,9 +40,11 @@ interface Props {
     onClose: () => void;
     business?: BusinessEntityLite | null;
     onSaved?: (biz: any) => void;
+    /** ✅ فقط وقتی کسب‌وکار «جدید» واقعاً ثبت شد (نه انتخاب از مشابه‌ها) — برای پیشنهاد گام بعدی (firstCatalog) */
+    onBusinessCreated?: (biz: any) => void;
 }
 
-export default function BusinessSetupModal({ isOpen, onClose, business, onSaved }: Props) {
+export default function BusinessSetupModal({ isOpen, onClose, business, onSaved, onBusinessCreated }: Props) {
     const isEdit = !!business?.id;
     const createMut = useCreateBusinessEntity();
     const updateMut = useUpdateBusinessEntity();
@@ -206,12 +208,9 @@ export default function BusinessSetupModal({ isOpen, onClose, business, onSaved 
                 toast.info('کسب‌وکارهای مشابه پیدا شد — اول بررسی کن');
                 return;
             }
-            toast.success(
-                isEdit
-                    ? 'کسب‌وکار شما بروزرسانی شد'
-                    : 'کسب‌وکار ثبت شد ✅ — همین حالا برایش کاتالوگ بساز',
-                { duration: 6000 },
-            );
+            toast.success(isEdit ? 'کسب‌وکار شما بروزرسانی شد' : 'کسب‌وکار ثبت شد ✅', { duration: 6000 });
+            // ✅ فقط ثبتِ جدیدِ واقعی — پیشنهاد گام بعدی بر اساس نوع فعالیت (firstCatalog) جایی دیگه گرفته می‌شه
+            if (!isEdit) onBusinessCreated?.(res);
             onSaved?.(res);
             onClose();
         } catch (e: any) {
