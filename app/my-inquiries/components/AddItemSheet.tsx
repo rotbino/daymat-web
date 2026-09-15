@@ -1,26 +1,39 @@
 // app/my-inquiries/components/AddItemSheet.tsx
 // شیت افزودن/ویرایش قلم خرید — هر بار یک کالا (فلسفهٔ مالک: فرم قلم‌به‌قلم، بدون توضیح اضافه؛
 // ساختار فرم خودش حرف می‌زند). کالا از مرجع (EntityPicker با امکان افزودن)، واحد از مرجع واحد،
-// و تاگل «بازوی خرید» که قلم را بالای کاتالوگ عمومی می‌نشاند.
+// و تاگل قیمت‌گیری که قلم را بالای کاتالوگ عمومی می‌نشاند.
+// ✅ ⚖️ قانون دیمت: هر فیلد الزامیِ خالی، علاوه بر CSS، الرتِ toast فیلدبه‌فیلد می‌گیرد
+// ✅ واحد: سلکتور سرچ‌دار (Autocomplete) + واحدهای من با تیکِ افزودن + واحدهای ترکیبی (کارتن ۲۴ عددی)
+// ✅ مهلت ارسال قیمت: ورودی عددی به ساعت (حداکثر ۲۴۰) — گروهی، روی خود بازو ذخیره می‌شود
+// ✅ گارد تکراری: هر کالا فقط یک‌بار در لیست (خواستهٔ مالک)
 'use client';
 
 import React, { useEffect, useMemo, useRef, useState } from 'react';
 import { createPortal } from 'react-dom';
-import { useQuery } from '@tanstack/react-query';
+import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { motion, AnimatePresence } from 'framer-motion';
 import { apiService } from '@/lib/api/apiService';
 import { toast } from 'sonner';
 import ProductReferencePicker, { ProductValue } from '@/app/components/ProductReferencePicker';
+import Autocomplete from '@/app/components/Autocomplete';
 import SwitchRow from './SwitchRow';
-import { inp, inpSm, UNIT_SUGGESTIONS } from '../../inquiries/utils';
-import { X, ChevronDown, Plus, Loader2, Megaphone, Trash2 } from 'lucide-react';
+import { inp, inpSm, UNIT_SUGGESTIONS, faNum } from '../../inquiries/utils';
+import { toastFormErrors } from '@/lib/formAlerts';
+import { cn } from '@/lib/utils';
+import { X, ChevronDown, Plus, Loader2, Megaphone, Trash2, Clock } from 'lucide-react';
 import type { CreateInquiryItemPayload, InquiryItem } from '@/lib/api/apiTypes';
 
 interface Props {
     open: boolean;
     onClose: () => void;
     inquiryId: string;
-    catalogUnits: { unitId: string }[];
+    catalogUnits: { unitId: string; title?: string }[];
+    /** ✅ اقلام موجود — گارد تکراری (هر کالا فقط یک‌بار در لیست) */
+    existingItems?: { id: string; name: string }[];
+    /** ✅ مهلت گروهی فعلی (ISO) — برای پیش‌فرض ساعت‌ها و نمایش باقی‌مانده */
+    currentDeadline?: string | null;
+    /** ✅ اولین قلم کاربر — تاکید تامین‌کننده‌یابی (خواستهٔ مالک) */
+    isFirstItem?: boolean;
     /** در حالت ویرایش، قلمِ موجود */
     editItem?: InquiryItem | null;
 }
@@ -42,7 +55,31 @@ const freshState = (): SheetState => ({
     brand: '', note: '', referenceUrl: '', specs: [],
 });
 
-export default function AddItemSheet({ open, onClose, inquiryId, catalogUnits, editItem }: Props) {
+// ✅ واحدهای تعداددار — انتخاب که شد، تعداد هم پرسیده می‌شود («کارتن ۲۴ عددی»)
+const COUNTABLE_UNITS = ['کارتن', 'بسته', 'شانه', 'بند', 'جین', 'پالت', 'بوبین', 'رول'];
+const MAX_DEADLINE_HOURS = 240; // ۱۰ روز — سقف مهلت (خواستهٔ مالک)
+
+const baseUnitTitle = (t: string) => (t || '').replace(/\s*[0-9۰-۹]+\s*عددی\s*$/, '').trim();
+const parseCountFromTitle = (t: string): string => {
+    const m = (t || '').match(/([0-9۰-۹]+)\s*عددی/);
+    if (!m) return '';
+    const latin = m[1].replace(/[۰-۹]/g, (d) => String('۰۱۲۳۴۵۶۷۸۹'.indexOf(d)));
+    return latin;
+};
+const normalizeItemName = (s?: string | null) =>
+    (s ?? '').replace(/ي/g, 'ی').replace(/ك/g, 'ک').replace(/\s+/g, ' ').trim().toLowerCase();
+/** عدد فارسی/لاتین → لاتین */
+const parseLatinInt = (s: string): number =>
+    parseInt((s || '').replace(/[۰-۹]/g, (d) => String('۰۱۲۳۴۵۶۷۸۹'.indexOf(d))).replace(/[^\d]/g, ''), 10) || 0;
+const remainingHours = (iso?: string | null): number | null => {
+    if (!iso) return null;
+    const ms = new Date(iso).getTime() - Date.now();
+    if (!isFinite(ms) || ms <= 0) return null;
+    return Math.max(1, Math.ceil(ms / 3600e3));
+};
+
+export default function AddItemSheet({ open, onClose, inquiryId, catalogUnits, existingItems, currentDeadline, isFirstItem, editItem }: Props) {
+    const qc = useQueryClient();
     // مرجع واحد (کش مشترک با کاتالوگ قیمت)
     const { data: allUnits = [] } = useQuery({
         queryKey: ['units-all'],
@@ -52,6 +89,10 @@ export default function AddItemSheet({ open, onClose, inquiryId, catalogUnits, e
     });
 
     const [st, setSt] = useState<SheetState>(freshState());
+    const [unitCount, setUnitCount] = useState('');       // ✅ تعداد در واحد تعداددار («۲۴»)
+    const [favUnit, setFavUnit] = useState(true);         // ✅ تیک افزودن به واحدهای من
+    const [deadlineHours, setDeadlineHours] = useState(''); // ✅ مهلت ارسال قیمت (ساعت)
+    const [errors, setErrors] = useState<Record<string, string>>({});
     const [advOpen, setAdvOpen] = useState(false);
     const [saving, setSaving] = useState(false);
     const [mounted, setMounted] = useState(false);
@@ -74,27 +115,50 @@ export default function AddItemSheet({ open, onClose, inquiryId, catalogUnits, e
                 referenceUrl: editItem.referenceUrl || '',
                 specs: Array.isArray(editItem.specs) ? editItem.specs.map((s) => ({ ...s })) : [],
             });
+            setUnitCount(parseCountFromTitle(editItem.unit || ''));
             setAdvOpen(!!(editItem.brand || editItem.note || editItem.referenceUrl || (editItem.specs?.length ?? 0) > 0));
+            setErrors({});
         } else {
             setSt(freshState());
+            setUnitCount('');
             setAdvOpen(false);
+            setErrors({});
         }
+        setDeadlineHours('');
+        setFavUnit(true);
     }, [open, editItem]);
 
     useEffect(() => setMounted(true), []);
 
-    // گزینه‌های سلکت واحد: واحدهای من + پرکاربرد + بقیهٔ مرجع
+    // ✅ مهلت گروهی فعال — ساعت باقی‌مانده (برای پیش‌فرض و جلوگیری از ریستِ دورِ جاری)
+    const activeRemaining = remainingHours(currentDeadline);
+    const showDeadlineInput = st.urgent && !(editItem?.urgent) && !activeRemaining;
+
+    // گزینه‌های سلکت واحد: واحدهای من (با عنوان ترکیبی) + پرکاربرد + بقیهٔ مرجع
     const unitOptions = useMemo(() => {
         const list = allUnits as any[];
-        const mineIds = new Set(catalogUnits.map((u) => u.unitId));
-        const mine = list.filter((u) => mineIds.has(u.id));
+        const refById = new Map<string, any>(list.map((u) => [u.id, u]));
+        // ✅ واحدهای من — با پشتیبانی عنوان ترکیبی («کارتن ۲۴ عددی»)
+        const mine: any[] = [];
+        for (const u of (catalogUnits as any[]) || []) {
+            const ref = refById.get(u.unitId);
+            const title = u.title || ref?.title || '';
+            if (!title && !ref) continue;
+            mine.push({ id: u.unitId, title, refTitle: ref?.title || title, custom: !!u.title });
+        }
+        const mineBaseIds = new Set(mine.map((u) => u.id));
         const sug = UNIT_SUGGESTIONS
             .map((t) => list.find((u) => u.title === t))
-            .filter((u): u is any => !!u && !mineIds.has(u.id));
+            .filter((u): u is any => !!u && !mineBaseIds.has(u.id));
         const sugIds = new Set(sug.map((u) => u.id));
-        const rest = list.filter((u) => !mineIds.has(u.id) && !sugIds.has(u.id));
+        const rest = list.filter((u) => !mineBaseIds.has(u.id) && !sugIds.has(u.id));
         return { mine, sug, rest };
     }, [allUnits, catalogUnits]);
+
+    const orderedUnits = useMemo(
+        () => [...unitOptions.mine, ...unitOptions.sug, ...unitOptions.rest],
+        [unitOptions],
+    );
 
     const findUnit = (id: string): any => (allUnits as any[]).find((u) => u.id === id) || null;
 
@@ -102,19 +166,44 @@ export default function AddItemSheet({ open, onClose, inquiryId, catalogUnits, e
 
     const pickProduct = (p: ProductValue | null) => {
         patch({ product: p, brand: p?.brandTitle || '' });
+        setErrors((e) => ({ ...e, product: '', brand: '' }));
+    };
+
+    const pickUnit = (v: { id: string | null; title: string }) => {
+        const ref = v.id ? findUnit(v.id) : null;
+        const title = v.title || ref?.title || '';
+        patch({ unitId: v.id || '', unitTitle: title });
+        setUnitCount(parseCountFromTitle(title));
+        setErrors((e) => ({ ...e, unit: '' }));
+    };
+
+    // ⚖️ قانون دیمت: خطای CSSِ روی فیلد کافی نیست — الرتِ واضحِ toast هم با ذکرِ خودِ فیلد بده
+    const validate = (): Record<string, string> | null => {
+        const e: Record<string, string> = {};
+        if (!st.product || !st.product.title.trim()) e.product = 'کالا انتخاب نشده';
+        else if (existingItems?.some((i) => i.id !== editItem?.id && normalizeItemName(i.name) === normalizeItemName(st.product!.title))) {
+            e.product = 'این کالا قبلا در لیست هست — ویرایشش کن';
+        }
+        if (!st.brand.trim()) e.brand = 'برند انتخاب نشده';
+        const h = parseLatinInt(deadlineHours);
+        if (showDeadlineInput && (!h || h < 1 || h > MAX_DEADLINE_HOURS)) {
+            e.deadline = `مهلت ارسال قیمت را به ساعت وارد کن — عددی بین ۱ تا ${faNum(MAX_DEADLINE_HOURS)}`;
+        }
+        setErrors(e);
+        return Object.keys(e).length ? e : null;
     };
 
     const buildPayload = (): CreateInquiryItemPayload | null => {
-        if (!st.product || !st.product.title.trim()) {
-            toast.error('اول کالا رو انتخاب کن');
-            return null;
-        }
         const qty = st.quantity.trim() ? Number(st.quantity.replace(/[^\d.]/g, '')) : undefined;
+        const base = baseUnitTitle(st.unitTitle);
+        const cnt = parseInt(unitCount.replace(/[^\d]/g, ''), 10);
+        const isCountable = !!base && COUNTABLE_UNITS.includes(base);
+        const finalUnit = isCountable && cnt > 0 ? `${base} ${faNum(cnt)} عددی` : st.unitTitle.trim();
         return {
-            name: st.product.title.trim(),
-            referenceItemId: st.product.id || undefined,
+            name: st.product?.title.trim() || '',
+            referenceItemId: st.product?.id || undefined,
             unitId: st.unitId || undefined,
-            unit: st.unitTitle || findUnit(st.unitId)?.title || undefined,
+            unit: finalUnit || findUnit(st.unitId)?.title || undefined,
             quantity: qty && qty > 0 ? qty : undefined,
             brand: st.brand.trim() || undefined,
             note: st.note.trim() || undefined,
@@ -124,28 +213,83 @@ export default function AddItemSheet({ open, onClose, inquiryId, catalogUnits, e
         };
     };
 
+    /** ✅ واحدهای من + مهلت گروهی — در همان فراخوان update کنار هم ذخیره می‌شوند */
+    const syncInquirySide = async (): Promise<void> => {
+        const patchData: Record<string, any> = {};
+        // واحدهای من — تیک افزودن (خواستهٔ مالک: واحدهای استفاده‌شده دم دست بمانند)
+        if (favUnit && st.unitId) {
+            const base = baseUnitTitle(st.unitTitle);
+            const cnt = parseInt(unitCount.replace(/[^\d]/g, ''), 10);
+            const isCountable = !!base && COUNTABLE_UNITS.includes(base);
+            const desiredTitle = isCountable && cnt > 0 ? `${base} ${faNum(cnt)} عددی` : undefined;
+            const cur = (catalogUnits as any[]) || [];
+            const already = cur.some((u) => u.unitId === st.unitId && (u.title || undefined) === desiredTitle);
+            if (!already) {
+                patchData.units = [...cur, { unitId: st.unitId, ...(desiredTitle ? { title: desiredTitle } : {}) }];
+            }
+        }
+        // مهلت گروهی — فقط وقتی قیمت‌گیری تازه روشن می‌شود و مهلت فعالی وجود ندارد (دورِ قیمت‌گیری جاری را به‌هم نزنیم)
+        if (st.urgent && !(editItem?.urgent) && !activeRemaining) {
+            const h = parseLatinInt(deadlineHours);
+            if (h >= 1 && h <= MAX_DEADLINE_HOURS) {
+                patchData.deadline = new Date(Date.now() + h * 3600e3).toISOString();
+            }
+        }
+        if (Object.keys(patchData).length === 0) return;
+        await apiService.inquiry.update(inquiryId, patchData);
+        qc.invalidateQueries({ queryKey: ['inquiry', 'detail', inquiryId] });
+    };
+
     const save = async (thenAnother: boolean) => {
+        const validationErrors = validate();
+        if (validationErrors) {
+            toastFormErrors(validationErrors); // ⚖️ الرت واضح کنار خطای CSS فیلدها
+            return;
+        }
         const payload = buildPayload();
         if (!payload) return;
         setSaving(true);
         try {
             if (editItem) {
                 await apiService.inquiry.updateItem(inquiryId, editItem.id, payload);
-                toast.success(st.urgent && !editItem.urgent ? 'ذخیره شد — بازوی خرید فعال شد' : 'تغییرات ذخیره شد');
+                await syncInquirySide().catch(() => {});
+                qc.invalidateQueries({ queryKey: ['inquiry', 'detail', inquiryId] });
+                qc.invalidateQueries({ queryKey: ['inquiries'] });
+                toast.success('تغییرات ذخیره شد');
                 onClose();
             } else {
                 await apiService.inquiry.addItem(inquiryId, payload);
-                toast.success(st.urgent ? 'قلم ثبت شد و بازوی خریدش فعال است' : 'قلم ثبت شد');
+                await syncInquirySide().catch(() => {});
+                // ✅ نمایش فوری در لیست — بدون رفرش دستی (خواستهٔ مالک)
+                qc.invalidateQueries({ queryKey: ['inquiry', 'detail', inquiryId] });
+                qc.invalidateQueries({ queryKey: ['inquiries'] });
+                if (isFirstItem) {
+                    toast.success('اولین قلمت ثبت شد 🎉', {
+                        description: 'برای اینکه تامین‌کننده‌ها اقلامت را ببینند، از تب «تامین‌کنندگان» به تامین‌کننده‌های مناسب کالایت در شهرت درخواست همکاری بده.',
+                        duration: 9000,
+                    });
+                } else if (st.urgent) {
+                    toast.success('قلم ثبت شد و قیمت‌گیری‌اش فعال است');
+                } else {
+                    toast.success('قلم ثبت شد');
+                }
                 if (thenAnother) {
-                    // برای ثبت زنجیره‌ای: کالا و جزئیات پاک، واحد و وضعیت می‌ماند
-                    setSt((s) => ({ ...freshState(), unitId: s.unitId, unitTitle: s.unitTitle }));
+                    // برای ثبت زنجیره‌ای: کالا و جزئیات پاک، واحد/تعداد و وضعیت می‌ماند
+                    setSt((s) => ({ ...freshState(), unitId: s.unitId, unitTitle: s.unitTitle, urgent: s.urgent }));
                     setAdvOpen(false);
+                    setErrors({});
                 } else {
                     onClose();
                 }
             }
         } catch (e: any) {
-            toast.error(e?.response?.data?.message || 'ثبت قلم ناموفق بود');
+            const code = e?.response?.data?.errorCode;
+            if (code === 'DUPLICATE_ITEM') {
+                toast.error(e?.response?.data?.message || 'این کالا قبلا در لیست هست');
+                setErrors((p) => ({ ...p, product: 'این کالا قبلا در لیست هست — ویرایشش کن' }));
+            } else {
+                toast.error(e?.response?.data?.message || 'ثبت قلم ناموفق بود');
+            }
         } finally {
             setSaving(false);
         }
@@ -158,6 +302,9 @@ export default function AddItemSheet({ open, onClose, inquiryId, catalogUnits, e
     };
 
     if (!mounted) return null;
+
+    const unitBase = baseUnitTitle(st.unitTitle);
+    const isCountable = !!unitBase && COUNTABLE_UNITS.includes(unitBase);
 
     return createPortal(
         <AnimatePresence>
@@ -191,9 +338,10 @@ export default function AddItemSheet({ open, onClose, inquiryId, catalogUnits, e
                                 value={st.product}
                                 onChange={pickProduct}
                                 placeholder="کالا"
+                                error={errors.product}
                             />
 
-                            {/* مقدار + واحد — تا جایی که جا می‌شود یک خط */}
+                            {/* مقدار + واحد — سلکتور سرچ‌دار (خواستهٔ مالک: دراپ‌داون ساده بی‌سرچ نباشد) */}
                             <div className="grid grid-cols-2 gap-2">
                                 <input
                                     value={st.quantity}
@@ -202,37 +350,66 @@ export default function AddItemSheet({ open, onClose, inquiryId, catalogUnits, e
                                     placeholder="مقدار"
                                     className={`${inp} w-full text-center`}
                                 />
-                                <select
-                                    value={st.unitId}
-                                    onChange={(e) => {
-                                        const u = findUnit(e.target.value);
-                                        patch({ unitId: e.target.value, unitTitle: u?.title || '' });
+                                <Autocomplete
+                                    value={{ id: st.unitId || null, title: st.unitTitle }}
+                                    onChange={pickUnit}
+                                    fetchFn={async (q) => {
+                                        const t = (q || '').trim();
+                                        return orderedUnits
+                                            .filter((u: any) => !t || (u.title || '').includes(t))
+                                            .slice(0, 40);
                                     }}
-                                    className={`${inp} w-full cursor-pointer dark:[color-scheme:dark] [&>option]:bg-white [&>option]:text-stone-900 dark:[&>option]:bg-gray-950 dark:[&>option]:text-gray-100`}>
-                                    <option value="">واحد</option>
-                                    {unitOptions.mine.length > 0 && (
-                                        <optgroup label="واحدهای من">
-                                            {unitOptions.mine.map((u: any) => (
-                                                <option key={u.id} value={u.id}>{u.title}</option>
-                                            ))}
-                                        </optgroup>
+                                    queryKey="units-autocomplete"
+                                    placeholder="واحد — جستجو کن"
+                                    allowCreate={false}
+                                    minChars={0}
+                                    className="h-10!"
+                                    renderOption={(u: any) => (
+                                        <span className="flex w-full items-center justify-between gap-2">
+                                            <span className="truncate">{u.title}</span>
+                                            {u.custom && (
+                                                <span className="shrink-0 rounded-full bg-brand-contrast-soft px-1.5 py-0.5 text-[8.5px] font-black text-amber-700 dark:bg-amber-500/10 dark:text-amber-400">
+                                                    واحدهای من
+                                                </span>
+                                            )}
+                                        </span>
                                     )}
-                                    {unitOptions.sug.length > 0 && (
-                                        <optgroup label="پرکاربرد">
-                                            {unitOptions.sug.map((u: any) => (
-                                                <option key={u.id} value={u.id}>{u.title}</option>
-                                            ))}
-                                        </optgroup>
-                                    )}
-                                    <optgroup label="سایر واحدهای مرجع">
-                                        {unitOptions.rest.map((u: any) => (
-                                            <option key={u.id} value={u.id}>{u.title}</option>
-                                        ))}
-                                    </optgroup>
-                                </select>
+                                />
                             </div>
 
-                            {/* بازوی خرید — تاگل سرنوشت‌ساز */}
+                            {/* ✅ تعداد در واحد تعداددار — «کارتن ۲۴ عددی» (خواستهٔ مالک) */}
+                            {isCountable && (
+                                <div className="flex items-center gap-2 rounded-xl border border-stone-100 bg-stone-50 p-2.5 dark:border-gray-800 dark:bg-gray-950/60">
+                                    <Clock className="size-4 shrink-0 text-amber-600 dark:text-amber-400" />
+                                    <span className="shrink-0 text-[11px] font-bold text-stone-500 dark:text-gray-400">
+                                        تعداد در هر {unitBase}:
+                                    </span>
+                                    <input
+                                        value={unitCount}
+                                        onChange={(e) => setUnitCount(e.target.value.replace(/[^\d۰-۹]/g, ''))}
+                                        inputMode="numeric"
+                                        placeholder="۲۴"
+                                        className="h-8 w-20 rounded-lg border border-stone-200 bg-white px-2 text-center text-xs font-black text-stone-900 outline-none transition-colors focus:border-brand-contrast dark:border-gray-700 dark:bg-gray-950 dark:text-gray-100"
+                                    />
+                                    <span className="text-[10px] font-bold text-stone-400 dark:text-gray-500">عدد — با ذخیره، «{unitBase} {unitCount ? `${faNum(parseInt(unitCount.replace(/[^\d۰-۹]/g, ''), 10) || 0)} عددی` : '۲۴ عددی'}» می‌شود</span>
+                                </div>
+                            )}
+
+                            {/* ✅ تیک افزودن به واحدهای من — دفعات بعد سرِ دست (خواستهٔ مالک) */}
+                            {st.unitId && (
+                                <button type="button" onClick={() => setFavUnit((v) => !v)}
+                                    className="flex w-full items-center gap-2 rounded-xl px-1 py-1 text-right">
+                                    <span className={cn('grid size-5 place-items-center rounded-md border-2 transition-colors',
+                                        favUnit ? 'border-brand-contrast bg-brand-contrast text-white' : 'border-stone-300 dark:border-gray-600')}>
+                                        {favUnit && <span className="text-[10px] font-black leading-none">✓</span>}
+                                    </span>
+                                    <span className="text-[11px] font-bold text-stone-500 dark:text-gray-400">
+                                        افزودن به واحدهای بازوی خرید — دفعه‌های بعد سرِ دستت باشد
+                                    </span>
+                                </button>
+                            )}
+
+                            {/* قیمت‌گیری — سؤالِ روشن (جای «بازوی خرید»ی بی‌معنی بعد از ریپلیس) */}
                             <div className={`rounded-2xl border p-3.5 transition-colors ${
                                 st.urgent
                                     ? 'border-brand-contrast/50 bg-brand-contrast-soft/60 dark:bg-amber-500/10'
@@ -240,10 +417,43 @@ export default function AddItemSheet({ open, onClose, inquiryId, catalogUnits, e
                             }`}>
                                 <SwitchRow
                                     checked={st.urgent}
-                                    onChange={(v) => patch({ urgent: v })}
-                                    label="بازوی خرید"
-                                    sub="تامین‌کننده‌ها می‌تونن قیمت بدن"
+                                    onChange={(v) => {
+                                        patch({ urgent: v });
+                                        if (v && !editItem?.urgent && !deadlineHours) {
+                                            setDeadlineHours(String(activeRemaining || 24));
+                                        }
+                                        if (!v) setErrors((e) => ({ ...e, deadline: '' }));
+                                    }}
+                                    label="همین الان از تامین‌کننده‌ها قیمت بگیرم؟"
+                                    sub="با فعال کردن، تامین‌کننده‌های عضو بازوی شما درخواست قیمت شما رو خواهند دید و قیمت می‌دهند."
                                 />
+
+                                {/* ✅ مهلت ارسال قیمت — عددی به ساعت، حداکثر ۲۴۰ (خواستهٔ مالک) */}
+                                {showDeadlineInput && (
+                                    <div className="mt-2.5 rounded-xl border border-stone-100 bg-white/70 p-2.5 dark:border-gray-800 dark:bg-gray-950/60">
+                                        <label className="mb-1 block text-[10px] font-bold text-stone-400">
+                                            مهلت ارسال قیمت — به ساعت (حداکثر {faNum(MAX_DEADLINE_HOURS)} ساعت)
+                                        </label>
+                                        <input
+                                            value={deadlineHours}
+                                            onChange={(e) => { setDeadlineHours(e.target.value.replace(/[^\d۰-۹]/g, '')); setErrors((p) => ({ ...p, deadline: '' })); }}
+                                            inputMode="numeric"
+                                            placeholder="مثلا ۲۴"
+                                            className={cn(inpSm, 'w-full text-center', errors.deadline && 'border-red-400')}
+                                        />
+                                        <p className="mt-1 text-[9.5px] font-bold leading-4 text-stone-400 dark:text-gray-500">
+                                            تامین‌کننده‌ها تا این فرصت می‌توانند قیمت ثبت کنند — در پنل‌شان ساعت باقی‌مانده دیده می‌شود.
+                                        </p>
+                                        {errors.deadline && <p className="mt-1 text-[10px] font-bold text-red-500">{errors.deadline}</p>}
+                                    </div>
+                                )}
+                                {st.urgent && editItem?.urgent && (
+                                    <p className="mt-2 text-[10px] font-bold text-stone-400 dark:text-gray-500">
+                                        {activeRemaining
+                                            ? `مهلت گروهی فعلی: ${faNum(activeRemaining)} ساعت دیگر — از تب اقلام قابل تغییر است`
+                                            : 'مهلت گروهی فعلی ندارد — از تب اقلام تنظیم کن'}
+                                    </p>
+                                )}
                             </div>
 
                             {/* ویژگی‌ها (اختیاری) */}
@@ -254,6 +464,9 @@ export default function AddItemSheet({ open, onClose, inquiryId, catalogUnits, e
                                     ویژگی‌ها (اختیاری)
                                     <ChevronDown className={`size-4 transition-transform ${advOpen ? 'rotate-180' : ''}`} />
                                 </button>
+                                <p className="px-1 pb-1 text-[10px] font-bold leading-4 text-stone-400 dark:text-gray-500">
+                                    اگر کالای سفارشی یا سفارش شما ویژگی‌های خاصی دارد مشخص کنید — مثل رنگ، تاریخ انقضا.
+                                </p>
                                 <AnimatePresence initial={false}>
                                     {advOpen && (
                                         <motion.div
@@ -265,10 +478,11 @@ export default function AddItemSheet({ open, onClose, inquiryId, catalogUnits, e
                                             <div className="space-y-2.5 pt-2">
                                                 <input
                                                     value={st.brand}
-                                                    onChange={(e) => patch({ brand: e.target.value })}
+                                                    onChange={(e) => { patch({ brand: e.target.value }); setErrors((p) => ({ ...p, brand: '' })); }}
                                                     placeholder="برند"
-                                                    className={`${inpSm} w-full`}
+                                                    className={cn(inpSm, 'w-full', errors.brand && 'border-red-400')}
                                                 />
+                                                {errors.brand && <p className="px-1 text-[10px] font-bold text-red-500">{errors.brand}</p>}
                                                 <input
                                                     value={st.referenceUrl}
                                                     onChange={(e) => patch({ referenceUrl: e.target.value })}

@@ -20,6 +20,7 @@ import {
 } from '@/lib/api/apiHooks';
 import { toast } from 'sonner';
 import NavTabs from '@/app/home/nav/NavTabs';
+import { faNum } from '../inquiries/utils';
 import InquiryIdentityBar from './components/InquiryIdentityBar';
 import InquiryConsoleTabs from './components/ConsoleTabs';
 import ItemsTab from './components/ItemsTab';
@@ -32,7 +33,7 @@ import UnitSettingsModal from '@/app/ad/components/UnitSettingsModal';
 import ShareKitModal from '@/components/profile/ShareKitModal';
 import VisitCardModal from '@/components/profile/VisitCardModal';
 import { useQueryClient } from '@tanstack/react-query';
-import { ClipboardList, Package, MessageSquareText, Settings, Globe, Plus, Loader2, PackageSearch, Handshake } from 'lucide-react';
+import { ClipboardList, Package, MessageSquareText, Settings, Globe, Plus, Loader2, PackageSearch, Handshake, Megaphone } from 'lucide-react';
 import type { InquiryItem } from '@/lib/api/apiTypes';
 
 export default function MyInquiriesPage() {
@@ -48,6 +49,8 @@ export default function MyInquiriesPage() {
     const [sheetOpen, setSheetOpen] = useState(false);
     const [editItem, setEditItem] = useState<InquiryItem | null>(null);
     const [busyItemId, setBusyItemId] = useState<string | null>(null);
+    // ✅ شروع قیمت‌گیری — اول مهلتِ ساعت‌دار پرسیده می‌شود (خواستهٔ مالک)
+    const [pricingStartItem, setPricingStartItem] = useState<InquiryItem | null>(null);
     const [busyOfferId, setBusyOfferId] = useState<string | null>(null);
     const [unitsOpen, setUnitsOpen] = useState(false);
     // ✅ کیت اشتراک‌گذاری + استودیوی کارت ویزیت — دم دست از هدر و تب انتشار (خواستهٔ کاربر)
@@ -111,20 +114,64 @@ export default function MyInquiriesPage() {
     const removeItem = useRemoveInquiryItem();
     const updateOfferStatus = useUpdateOfferStatus();
 
+    // ✅ توقف/شروع قیمت‌گیری — نام‌های درست (جای «پایان اعلام» و ریپلیسِ «بازوی خرید»)
     const toggleUrgent = async (item: InquiryItem) => {
         if (!currentInquiryId) return;
+        if (!item.urgent) {
+            // شروع قیمت‌گیری — اول مهلت ارسال قیمت (به ساعت)
+            setPricingStartItem(item);
+            return;
+        }
         setBusyItemId(item.id);
         try {
             await updateItem.mutateAsync({
                 inquiryId: currentInquiryId,
                 itemId: item.id,
-                data: { urgent: !item.urgent },
+                data: { urgent: false },
             });
-            toast.success(item.urgent ? 'بازوی خرید این قلم تمام شد' : 'بازوی خرید فعال شد — تامین‌کننده‌ها قیمت می‌دن');
+            toast.success('قیمت‌گیری این قلم متوقف شد');
         } catch (e: any) {
             toast.error(e?.response?.data?.message || 'تغییر وضعیت ناموفق بود');
         } finally {
             setBusyItemId(null);
+        }
+    };
+
+    /** ✅ تایید شروع قیمت‌گیری — مهلت گروهی = اکنون + ساعت‌های واردشده */
+    const confirmStartPricing = async (hours: number) => {
+        const item = pricingStartItem;
+        if (!item || !currentInquiryId) return;
+        setPricingStartItem(null);
+        setBusyItemId(item.id);
+        try {
+            await updateInquiry.mutateAsync({
+                id: currentInquiryId,
+                data: { deadline: new Date(Date.now() + hours * 3600e3).toISOString() },
+            });
+            await updateItem.mutateAsync({
+                inquiryId: currentInquiryId,
+                itemId: item.id,
+                data: { urgent: true },
+            });
+            toast.success(`قیمت‌گیری شروع شد — تامین‌کننده‌ها ${faNum(hours)} ساعت فرصت دارند`);
+        } catch (e: any) {
+            toast.error(e?.response?.data?.message || 'شروع قیمت‌گیری ناموفق بود');
+        } finally {
+            setBusyItemId(null);
+        }
+    };
+
+    /** ✅ ثبت/تغییر مهلت گروهی از بالای لیست قیمت‌گیری */
+    const setGroupDeadline = async (hours: number) => {
+        if (!currentInquiryId) return;
+        try {
+            await updateInquiry.mutateAsync({
+                id: currentInquiryId,
+                data: { deadline: new Date(Date.now() + hours * 3600e3).toISOString() },
+            });
+            toast.success(`فرصت ارسال قیمت: ${faNum(hours)} ساعت دیگر`);
+        } catch (e: any) {
+            toast.error(e?.response?.data?.message || 'ثبت مهلت ناموفق بود');
         }
     };
 
@@ -203,6 +250,8 @@ export default function MyInquiriesPage() {
     // ✅ درخواست‌های عضویتِ در انتظار تایید — بج قرمز تب تامین‌کنندگان (سرویس اعضا)
     const { data: membersData = [] } = useInquiryMembers(isOwner ? currentInquiryId ?? undefined : undefined);
     const pendingMembers = (membersData as any[]).filter((m) => m.status === 'pending' && m.via === 'supplier_request').length;
+    // ✅ تامین‌کننده‌های فعال — برای راهنمای شروع (خواستهٔ مالک: حداقل ۵)
+    const supplierCount = (membersData as any[]).filter((m) => m.status === 'active').length;
     const tabItems = [
         { key: 'items', label: 'اقلام', icon: Package, count: detail?.items?.length },
         { key: 'offers', label: 'پیشنهادها', icon: MessageSquareText, alert: pendingOffers },
@@ -286,6 +335,11 @@ export default function MyInquiriesPage() {
                                             onToggleUrgent={toggleUrgent}
                                             onDelete={deleteItem}
                                             onGoOffers={() => setTab('offers')}
+                                            deadline={(detail as any)?.deadline ?? null}
+                                            onSetDeadline={setGroupDeadline}
+                                            deadlineBusy={updateInquiry.isPending}
+                                            supplierCount={supplierCount}
+                                            onGoMembers={() => setTab('members')}
                                         />
                                     )}
                                     {tab === 'offers' && (
@@ -339,7 +393,19 @@ export default function MyInquiriesPage() {
                             onClose={() => setSheetOpen(false)}
                             inquiryId={currentInquiryId || ''}
                             catalogUnits={(detail?.units as any[] | undefined) ?? []}
+                            existingItems={(detail?.items ?? []).map((i) => ({ id: i.id, name: i.name }))}
+                            currentDeadline={(detail as any)?.deadline ?? null}
+                            isFirstItem={(detail?.items?.length ?? 0) === 0}
                             editItem={editItem}
+                        />
+
+                        {/* ✅ مودال شروع قیمت‌گیری — ورود مهلت به ساعت (خواستهٔ مالک) */}
+                        <StartPricingModal
+                            item={pricingStartItem}
+                            currentDeadline={(detail as any)?.deadline ?? null}
+                            busy={updateInquiry.isPending || updateItem.isPending}
+                            onCancel={() => setPricingStartItem(null)}
+                            onConfirm={confirmStartPricing}
                         />
 
                         {/* مدال واحدهای اختصاصی بازوی خرید */}
@@ -387,6 +453,83 @@ export default function MyInquiriesPage() {
                     </>
                 )}
             </main>
+        </div>
+    );
+}
+
+/* ═══════════════════════════════════════════════════════════════
+   ✅ مودال شروع قیمت‌گیری — مهلت ارسال قیمت به ساعت (عددی، حداکثر ۲۴۰)
+   اگر قبلا مهلت فعالی ثبت شده، همان به‌عنوان پیش‌فرض می‌آید و قابل ویرایش است.
+   ═══════════════════════════════════════════════════════════════ */
+const MAX_DEADLINE_HOURS = 240;
+
+function StartPricingModal({ item, currentDeadline, busy, onCancel, onConfirm }: {
+    item: InquiryItem | null;
+    currentDeadline?: string | null;
+    busy: boolean;
+    onCancel: () => void;
+    onConfirm: (hours: number) => void;
+}) {
+    const [hours, setHours] = useState('');
+    const [error, setError] = useState('');
+
+    // با باز شدن مودال: مهلت فعالِ فعلی (یا ۲۴) پیش‌فرض است
+    useEffect(() => {
+        if (item) {
+            const rem = currentDeadline ? new Date(currentDeadline).getTime() - Date.now() : 0;
+            setHours(String(rem > 0 ? Math.max(1, Math.ceil(rem / 3600e3)) : 24));
+            setError('');
+        }
+    }, [item, currentDeadline]);
+
+    if (!item) return null;
+
+    const submit = () => {
+        const h = parseInt((hours || '').replace(/[۰-۹]/g, (d) => String('۰۱۲۳۴۵۶۷۸۹'.indexOf(d))).replace(/[^\d]/g, ''), 10);
+        if (!h || h < 1 || h > MAX_DEADLINE_HOURS) {
+            setError(`عددی بین ۱ تا ${faNum(MAX_DEADLINE_HOURS)} وارد کن`);
+            return;
+        }
+        onConfirm(h);
+    };
+
+    return (
+        <div className="fixed inset-0 z-[90] flex items-end sm:items-center justify-center bg-black/50 animate-in fade-in duration-200 sm:p-4"
+             onClick={busy ? undefined : onCancel}>
+            <div onClick={(e) => e.stopPropagation()}
+                 className="w-full sm:max-w-sm rounded-t-3xl sm:rounded-2xl bg-white dark:bg-gray-900 p-5 shadow-2xl
+                     animate-in slide-in-from-bottom-4 sm:zoom-in-95 duration-200">
+                <h3 className="flex items-center gap-2 text-[15px] font-black text-stone-900 dark:text-gray-100">
+                    <Megaphone className="size-4 text-brand-contrast" />
+                    شروع قیمت‌گیری برای «{item.name}»
+                </h3>
+                <p className="mt-1.5 text-[11px] font-bold leading-5 text-stone-400 dark:text-gray-500">
+                    تامین‌کننده‌های عضو بازوی تو تا این فرصت می‌توانند قیمت بدهند — بعد از تمام‌شدن، قیمت‌گیری خودکار متوقف می‌شود.
+                </p>
+                <label className="mt-3.5 mb-1 block text-[11px] font-bold text-stone-500 dark:text-gray-400">
+                    مهلت ارسال قیمت — به ساعت (حداکثر {faNum(MAX_DEADLINE_HOURS)})
+                </label>
+                <input
+                    value={hours}
+                    onChange={(e) => { setHours(e.target.value.replace(/[^\d۰-۹]/g, '')); setError(''); }}
+                    onKeyDown={(e) => e.key === 'Enter' && submit()}
+                    inputMode="numeric"
+                    autoFocus
+                    placeholder="مثلا ۲۴"
+                    className={`h-11 w-full rounded-xl border bg-white px-3 text-center text-sm font-black outline-none transition-colors dark:bg-gray-950 dark:text-gray-100 ${error ? 'border-red-400' : 'border-stone-200 focus:border-brand-contrast dark:border-gray-700'}`}
+                />
+                {error && <p className="mt-1 text-[10.5px] font-bold text-red-500">{error}</p>}
+                <div className="mt-4 flex gap-2">
+                    <button onClick={submit} disabled={busy}
+                        className="flex h-11 flex-1 items-center justify-center gap-2 rounded-xl bg-brand-contrast text-sm font-extrabold text-white shadow-lg shadow-brand-contrast/25 transition-colors hover:bg-brand-contrast-strong disabled:opacity-50">
+                        شروع قیمت‌گیری
+                    </button>
+                    <button onClick={onCancel} disabled={busy}
+                        className="h-11 rounded-xl border border-stone-200 px-4 text-xs font-bold text-stone-500 transition-colors hover:border-stone-400 disabled:opacity-50 dark:border-gray-700">
+                        بی‌خیال
+                    </button>
+                </div>
+            </div>
         </div>
     );
 }

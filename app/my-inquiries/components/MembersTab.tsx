@@ -144,10 +144,10 @@ export default function MembersTab({ inquiryId, visibility }: Props) {
                 </div>
                 <button
                     onClick={() => setAddOpen(true)}
-                    className="flex h-10 shrink-0 items-center gap-1.5 rounded-full bg-brand-contrast px-4 text-[13px] font-extrabold text-white shadow-lg shadow-brand-contrast/25 transition-colors hover:bg-brand-contrast-strong"
+                    className="flex h-10 shrink-0 items-center gap-1.5 rounded-full bg-brand-contrast px-4 text-[12px] font-extrabold text-white shadow-lg shadow-brand-contrast/25 transition-colors hover:bg-brand-contrast-strong"
                 >
                     <UserPlus className="size-4" />
-                    افزودن
+                    درخواست ارتباط با تامین‌کننده
                 </button>
             </div>
 
@@ -174,8 +174,14 @@ export default function MembersTab({ inquiryId, visibility }: Props) {
                             <div className="px-4 py-8 text-center">
                                 <Handshake className="mx-auto size-8 text-stone-200 dark:text-gray-700" />
                                 <p className="mt-2 text-[13px] font-black text-stone-500 dark:text-gray-400">هنوز تامین‌کننده‌ای نداری</p>
-                                <p className="mx-auto mt-1 max-w-xs text-[11px] font-bold leading-5 text-stone-400 dark:text-gray-500">
-                                    تامین‌کننده‌هایت را اضافه کن تا اقلامت دستشان برسد
+                                {/* ✅ راهنمای تامین‌کننده‌یابی — خواستهٔ مالک: دو مسیر روشن */}
+                                <p className="mx-auto mt-1.5 max-w-sm text-[11px] font-bold leading-5 text-stone-400 dark:text-gray-500">
+                                    با دکمهٔ بالا به تامین‌کننده‌های مناسب کالایت در شهر خودت درخواست ارتباط بده؛
+                                    یا لینک بازوی خریدت را برای تامین‌کننده‌ها و بازاریاب‌هایی که می‌شناسی بفرست —
+                                    اگر عضو دیمت باشند درخواست می‌دهند و اگر نباشند با لینک می‌آیند.
+                                </p>
+                                <p className="mx-auto mt-1.5 max-w-xs text-[10px] font-bold leading-4 text-amber-600/80 dark:text-amber-400/70">
+                                    تا حداقل ۵ تامین‌کننده به این لیست اضافه نشود، یادآوری آن در اعلان‌هایت می‌ماند.
                                 </p>
                             </div>
                         ) : (
@@ -221,7 +227,7 @@ function AddSupplierModal({ inquiryId, existingIds, onClose, onDone }: {
     const invite = async (c: any) => {
         try {
             await addMember.mutateAsync({ inquiryId, catalogId: c.id });
-            toast.success(`دعوت برای «${c.name}» فرستاده شد`);
+            toast.success(`درخواست ارتباط برای «${c.name}» فرستاده شد`);
             setInvited((s) => new Set(s).add(c.id));
         } catch (e: any) {
             toast.error(e?.response?.data?.message || 'ارسال دعوت ناموفق بود');
@@ -234,9 +240,9 @@ function AddSupplierModal({ inquiryId, existingIds, onClose, onDone }: {
                 className="max-h-[85dvh] w-full overflow-y-auto rounded-t-3xl bg-white p-5 shadow-2xl sm:max-w-md sm:rounded-2xl dark:bg-gray-900"
                 onClick={(e) => e.stopPropagation()}
             >
-                <p className="text-[15px] font-black text-stone-900 dark:text-gray-100">افزودن تامین‌کننده</p>
+                <p className="text-[15px] font-black text-stone-900 dark:text-gray-100">درخواست ارتباط با تامین‌کننده</p>
                 <p className="mt-0.5 text-[11px] font-bold text-stone-400 dark:text-gray-500">
-                    از کاتالوگ قیمتشان دعوت کن — اقلامت دستشان می‌رسد
+                    با کاتالوگ قیمتشان درخواست ارتباط بفرست — بعد از تاییدشان، اقلامت را می‌بینند و قیمت می‌دهند
                 </p>
 
                 <div className="relative mt-3">

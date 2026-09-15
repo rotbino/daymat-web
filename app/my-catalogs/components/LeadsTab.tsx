@@ -10,7 +10,7 @@ import React, { useState } from 'react';
 import { motion } from 'framer-motion';
 import { useQueryClient } from '@tanstack/react-query';
 import {
-    Megaphone, Check, X, Loader2, MapPin, Truck, Wallet,
+    Megaphone, Check, X, Loader2, MapPin, Truck, Wallet, Clock,
     ChevronDown, Handshake, ArrowLeft,
 } from 'lucide-react';
 import Link from 'next/link';
@@ -18,7 +18,7 @@ import { apiService } from '@/lib/api/apiService';
 import { useInquiryOpportunities, useDecideInquiryMember } from '@/lib/api/apiHooks';
 import { toast } from 'sonner';
 import { cn } from '@/lib/utils';
-import { faNum } from '@/app/inquiries/utils';
+import { faNum, faDigits } from '@/app/inquiries/utils';
 import OfferSheet from '@/app/components/OfferSheet';
 
 const CARD_CLS = 'rounded-2xl border border-outline-variant/30 bg-white dark:border-gray-800 dark:bg-gray-900';
@@ -182,6 +182,32 @@ export default function LeadsTab() {
                                         </span>
                                         <ChevronDown className={cn('size-4 shrink-0 text-stone-400 transition-transform', open && 'rotate-180')} />
                                     </button>
+
+                                    {/* ✅ فرصت ارسال قیمت — ساعت باقی‌مانده (خواستهٔ مالک: «فرصت ارسال قیمت 23:30 ساعت دیگر») */}
+                                    {(() => {
+                                        const dl = lead.inquiry.deadline ? new Date(lead.inquiry.deadline).getTime() : 0;
+                                        if (!dl) return null;
+                                        const ms = dl - Date.now();
+                                        if (ms <= 0) {
+                                            return (
+                                                <div className="border-t border-outline-variant/20 px-3.5 py-2 dark:border-gray-800">
+                                                    <span className="text-[10px] font-extrabold text-stone-400 dark:text-gray-500">مهلت ارسال قیمت این بازو تمام شده</span>
+                                                </div>
+                                            );
+                                        }
+                                        const totalMin = Math.max(1, Math.ceil(ms / 60e3));
+                                        const h = Math.floor(totalMin / 60);
+                                        const m = totalMin % 60;
+                                        const label = h > 0 ? `${faDigits(h)}:${faDigits(String(m).padStart(2, '0'))}` : `${faDigits(m)} دقیقه`;
+                                        return (
+                                            <div className="border-t border-outline-variant/20 px-3.5 py-2 dark:border-gray-800">
+                                                <span className="flex items-center gap-1.5 text-[10.5px] font-extrabold text-amber-700 dark:text-amber-400">
+                                                    <Clock className="size-3.5" />
+                                                    فرصت ارسال قیمت {label} ساعت دیگر
+                                                </span>
+                                            </div>
+                                        );
+                                    })()}
 
                                     {/* اقلام بازوی خرید */}
                                     {open && (

@@ -2,6 +2,10 @@
 export const faNum = (n: number | null | undefined): string =>
     (n ?? 0).toLocaleString('fa-IR');
 
+/** تبدیل ارقام لاتینِ هر رشته/عدد به فارسی — برای شکل‌های ترکیبی مثل «۲۳:۳۰» */
+export const faDigits = (s: string | number): string =>
+    String(s ?? '').replace(/[0-9]/g, (d) => '۰۱۲۳۴۵۶۷۸۹'[Number(d)]);
+
 export const faPrice = (n: number | null | undefined, currency?: string | null): string =>
     `${faNum(n)} ${currency === 'IRR' ? 'ریال' : 'تومان'}`;
 

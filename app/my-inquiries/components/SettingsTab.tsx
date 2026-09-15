@@ -11,6 +11,7 @@ import { toast } from 'sonner';
 import { Save, Boxes, Ban, RotateCcw, Loader2, Globe, ShieldCheck, Link2 } from 'lucide-react';
 import SwitchRow from './SwitchRow';
 import SlugEditor from '@/app/my-catalogs/SlugEditor';
+import { IranLocationSelector } from '@/app/components/IranLocationSelector';
 import { inp } from '../../inquiries/utils';
 import type { InquiryDetail } from '@/lib/api/apiTypes';
 
@@ -29,8 +30,11 @@ export default function SettingsTab({ detail, onSave, onOpenUnits, onToggleStatu
     const [title, setTitle] = useState('');
     const [description, setDescription] = useState('');
     const [tagsRaw, setTagsRaw] = useState('');
-    const [city, setCity] = useState('');
-    const [deadline, setDeadline] = useState('');
+    // ✅ استان/شهر — برای فیلتر و تابلوی خریدهای بازار (خواستهٔ مالک)
+    const [provinceCode, setProvinceCode] = useState('');
+    const [provinceLabel, setProvinceLabel] = useState('');
+    const [cityCode, setCityCode] = useState('');
+    const [cityLabel, setCityLabel] = useState('');
     const [deliveryNote, setDeliveryNote] = useState('');
     const [paymentTerms, setPaymentTerms] = useState('');
     const [visibility, setVisibility] = useState<'public' | 'private'>('public');
@@ -45,8 +49,11 @@ export default function SettingsTab({ detail, onSave, onOpenUnits, onToggleStatu
         setTitle(detail.title || '');
         setDescription(detail.description || '');
         setTagsRaw((detail.tags || []).join('، '));
-        setCity(detail.city || '');
-        setDeadline(detail.deadline ? new Date(detail.deadline).toISOString().slice(0, 16) : '');
+        setProvinceCode(detail.provinceCode || '');
+        setProvinceLabel(detail.province || '');
+        setCityCode(detail.cityCode || '');
+        setCityLabel(detail.city || '');
+        // ✅ مهلت از تنظیمات حذف شد — مهلت گروهی در تب اقلام، بالای لیست قیمت‌گیری است (خواستهٔ مالک)
         setDeliveryNote(detail.deliveryNote || '');
         setPaymentTerms(detail.paymentTerms || '');
         setVisibility(detail.visibility === 'private' ? 'private' : 'public');
@@ -73,8 +80,10 @@ export default function SettingsTab({ detail, onSave, onOpenUnits, onToggleStatu
                 title: title.trim(),
                 description: description.trim() || undefined,
                 tags: tagsRaw.split(/[,،]/).map((t) => t.trim()).filter(Boolean).slice(0, 10),
-                city: city.trim() || undefined,
-                deadline: deadline ? new Date(deadline).toISOString() : undefined,
+                province: provinceLabel.trim() || undefined,
+                provinceCode: provinceCode || undefined,
+                city: cityLabel.trim() || undefined,
+                cityCode: cityCode || undefined,
                 deliveryNote: deliveryNote.trim() || undefined,
                 paymentTerms: paymentTerms.trim() || undefined,
                 visibility,
@@ -102,7 +111,13 @@ export default function SettingsTab({ detail, onSave, onOpenUnits, onToggleStatu
                     <textarea value={description} onChange={(e) => setDescription(e.target.value)} rows={2}
                         placeholder="توضیح کوتاه" className={`${inp} h-auto w-full py-2`} />
                     <input value={tagsRaw} onChange={(e) => setTagsRaw(e.target.value)} placeholder="برچسب‌ها — با ویرگول جدا کن" className={`${inp} w-full`} />
-                    <input value={city} onChange={(e) => setCity(e.target.value)} placeholder="شهر" className={`${inp} w-full`} />
+                    {/* ✅ استان و شهر — برای فیلتر و تابلوی خریدهای بازار (خواستهٔ مالک) */}
+                    <IranLocationSelector
+                        provinceCode={provinceCode}
+                        cityCode={cityCode}
+                        onProvinceChange={(code, label) => { setProvinceCode(code); setProvinceLabel(label); }}
+                        onCityChange={(code, label) => { setCityCode(code); setCityLabel(label); }}
+                    />
                     {/* 📍 آدرس عمومی — لینک کوتاه ریشه‌ای daymat.ir/{آدرس} */}
                     <div className="rounded-2xl border border-stone-100 bg-stone-50 p-3 dark:border-gray-800 dark:bg-gray-950/60">
                         <div className="mb-2 flex items-center gap-1.5">
@@ -123,15 +138,15 @@ export default function SettingsTab({ detail, onSave, onOpenUnits, onToggleStatu
 
             {/* شرایط خرید */}
             <motion.section initial={{ opacity: 0, y: 14 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.05 }} className={card}>
-                <h2 className={cardTitle}>شرایط خرید</h2>
+                <h2 className={cardTitle}>محل و شرایط پرداخت</h2>
                 <div className="space-y-2.5">
-                    <div>
-                        <label className="mb-1 block text-[10px] font-bold text-stone-400">مهلت پاسخ</label>
-                        <input type="datetime-local" value={deadline} onChange={(e) => setDeadline(e.target.value)}
-                            className={`${inp} w-full dark:[color-scheme:dark]`} />
-                    </div>
-                    <input value={deliveryNote} onChange={(e) => setDeliveryNote(e.target.value)} placeholder="محل/شرایط تحویل" className={`${inp} w-full`} />
-                    <input value={paymentTerms} onChange={(e) => setPaymentTerms(e.target.value)} placeholder="شرایط پرداخت" className={`${inp} w-full`} />
+                    {/* ✅ textarea — متن آزادِ شرایط (خواستهٔ مالک)؛ مهلت هم از اینجا حذف شد (تب اقلام) */}
+                    <textarea value={deliveryNote} onChange={(e) => setDeliveryNote(e.target.value)} rows={2}
+                        placeholder="محل و شرایط تحویل — مثلا: تحویل در انبار شهرک صنعتی، شنبه تا چهارشنبه ساعات اداری"
+                        className={`${inp} h-auto w-full py-2`} />
+                    <textarea value={paymentTerms} onChange={(e) => setPaymentTerms(e.target.value)} rows={2}
+                        placeholder="شرایط پرداخت — مثلا: نیمه‌نقد نیمه‌چک ۲ ماهه"
+                        className={`${inp} h-auto w-full py-2`} />
                 </div>
             </motion.section>
 

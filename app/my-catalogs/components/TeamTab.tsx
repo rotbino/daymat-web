@@ -369,7 +369,8 @@ export default function TeamTab({ catalogId }: Props) {
                         className="flex items-center gap-1.5 px-3 py-2 rounded-xl bg-primary text-white text-sm font-bold hover:opacity-90 transition"
                     >
                         <UserPlus className="w-4 h-4" />
-                        <span className="hidden sm:inline">درخواست ارتباط</span>
+                        <span className="hidden sm:inline">درخواست ارتباط با خریدار</span>
+                        <span className="sm:hidden">درخواست ارتباط</span>
                     </button>
                 )}
             </div>
@@ -491,7 +492,7 @@ export default function TeamTab({ catalogId }: Props) {
                 </p>
                 {buyerRows.map((m: any) => <React.Fragment key={m.id}>{rowFor(m)}</React.Fragment>)}
                 {buyerRows.length === 0 && (
-                    <p className="py-6 text-center text-sm text-gray-400">هنوز خریداری ثبت نشده — از «درخواست ارتباط» ثبت کن</p>
+                    <p className="py-6 text-center text-sm text-gray-400">هنوز خریداری ثبت نشده — از «درخواست ارتباط با خریدار» شروع کن</p>
                 )}
             </div>
 

@@ -841,6 +841,8 @@ export interface InquiryBase {
 /** ردیف دیوار عمومی و فهرست «بازوهای خرید من» */
 export interface InquiryListItem extends InquiryBase {
     _count?: { items: number };
+    /** ✅ تامین‌کننده‌های فعال — برای یادآوری ماندگار «حداقل ۵ تامین‌کننده» */
+    activeSuppliers?: number;
 }
 
 export interface InquiryListResponse {
@@ -881,6 +883,8 @@ export interface InquiryOffer {
 // ─── payload ها ───
 export interface InquiryUnitPayload {
     unitId: string;
+    /** ✅ عنوان سفارشی ترکیبی — مثل «کارتن ۲۴ عددی» (همان واحدِ مرجع با تعداد متفاوت) */
+    title?: string;
 }
 
 export interface CreateInquiryItemPayload {

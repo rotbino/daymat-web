@@ -11,6 +11,7 @@ import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { useSelector } from 'react-redux';
 import { RootState } from '@/lib/store/store';
 import { apiService } from '@/lib/api/apiService';
+import { useMyInquiries } from '@/lib/api/apiHooks';
 import { AlertTriangle, AlertCircle, Info, ArrowLeft, BellCheck, Handshake, Check, X, UserRoundPlus } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { toast } from 'sonner';
@@ -41,6 +42,12 @@ export default function NotificationsPage() {
         setNudgeDismissed(true);
         try { localStorage.setItem('dm-profile-nudge-dismissed', '1'); } catch { /* سکوت */ }
     };
+
+    // ═══ ✅ یادآوری ماندگار تامین‌کننده‌یابی — تا حداقل ۵ تامین‌کننده برای بازوها نیاید باقی می‌ماند (خواستهٔ مالک) ═══
+    const { data: myArms } = useMyInquiries();
+    const armsNeedingSuppliers = ((myArms ?? []) as any[]).filter((a) => (a.activeSuppliers ?? 0) < 5);
+    const showSupplierNudge = isAuthenticated && armsNeedingSuppliers.length > 0;
+    const nudgeArm = armsNeedingSuppliers[0];
 
     // ✅ اعلان‌های واقعی — چرخهٔ عضویت/ارتباط تجاری
     const { data: realData, isLoading: realLoading } = useQuery({
@@ -98,6 +105,30 @@ export default function NotificationsPage() {
             </header>
 
             <main className="max-w-3xl mx-auto px-4 space-y-2.5">
+                {/* ─── ✅ یادآوری ماندگار تامین‌کننده — تا ۵ تامین‌کننده پاک نمی‌شود (بدون دکمهٔ رد) ─── */}
+                {showSupplierNudge && nudgeArm && (
+                    <div className="rounded-xl border border-brand-contrast/40 bg-brand-contrast-soft/50 dark:bg-amber-500/10 p-3.5 flex items-start gap-3 text-right">
+                        <span className="w-8 h-8 rounded-xl bg-brand-contrast/15 text-amber-600 dark:text-amber-400 grid place-items-center flex-shrink-0">
+                            <Handshake className="w-4 h-4" />
+                        </span>
+                        <Link href="/my-inquiries?tab=members" className="flex items-start gap-2 flex-1 min-w-0 group">
+                            <span className="flex-1 min-w-0">
+                                <span className="block text-xs font-extrabold text-on-surface leading-6">
+                                    تامین‌کننده‌های بازوی خرید «{nudgeArm.title}» را بیشتر کن
+                                </span>
+                                <span className="block text-[10px] text-on-surface-variant leading-5">
+                                    تا وقتی حداقل ۵ تامین‌کننده به لیست تامین‌کنندگان بازوی خریدت اضافه نشود، این اعلان باقی می‌ماند.
+                                    از تب «تامین‌کنندگان» به تامین‌کننده‌های مناسب کالایت در شهر خودت درخواست ارتباط بده،
+                                    یا لینکت را برای تامین‌کننده‌ها و بازاریاب‌هایی که می‌شناسی بفرست.
+                                </span>
+                                <span className="mt-1 block text-[10px] font-bold text-brand-contrast group-hover:underline">
+                                    رفتن به تامین‌کنندگان
+                                </span>
+                            </span>
+                        </Link>
+                    </div>
+                )}
+
                 {/* ─── یادآوری تکمیل پروفایل — تصویر پروفایل و نام ─── */}
                 {showProfileNudge && (
                     <div className="rounded-xl border border-primary/30 bg-primary/5 dark:bg-primary/10 p-3.5 flex items-start gap-3 text-right">
