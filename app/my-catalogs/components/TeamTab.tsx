@@ -21,6 +21,8 @@ import ConnectionRequestModal from './ConnectionRequestModal';
 
 interface Props {
     catalogId: string;
+    /** اسلاگ کاتالوگ — لینک دعوت در ماژول مخاطبین مودال درخواست ارتباط */
+    slug?: string | null;
 }
 
 const faDate = (d?: string | null) =>
@@ -89,7 +91,7 @@ function Avatar({ url, name, size = 40 }: { url?: string | null; name?: string |
     );
 }
 
-export default function TeamTab({ catalogId }: Props) {
+export default function TeamTab({ catalogId, slug }: Props) {
     const router = useRouter();
     const queryClient = useQueryClient();
     const { data, isLoading, refetch } = useQuery({
@@ -600,6 +602,7 @@ export default function TeamTab({ catalogId }: Props) {
                 catalogId={catalogId}
                 canAssign={canManage}
                 sellers={sellers}
+                slug={slug}
             />
 
             {/* ─── مودال تغییر مسئولِ مشتری ─── */}

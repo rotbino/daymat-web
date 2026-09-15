@@ -498,7 +498,7 @@ export default function MyCatalogsContent() {
 
                 {/* تب اعضا — مالک/مدیر/عضوِ فروش (بازار پخش) */}
                 {tab === 'team' && (
-                    <TeamTab catalogId={currentCatalog.id} />
+                    <TeamTab catalogId={currentCatalog.id} slug={(currentCatalog as any)?.slug} />
                 )}
 
                 {/* ✅ تب بازوی خرید — شبکهٔ خرید↔فروش از سمت تامین‌کننده */}

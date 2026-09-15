@@ -356,6 +356,7 @@ export default function MyInquiriesPage() {
                                         <MembersTab
                                             inquiryId={detail.id}
                                             visibility={detail.visibility || 'public'}
+                                            slug={detail.slug}
                                         />
                                     )}
                                     {tab === 'settings' && (

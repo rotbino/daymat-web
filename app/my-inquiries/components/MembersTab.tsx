@@ -19,17 +19,20 @@ import {
 import { toast } from 'sonner';
 import { apiService } from '@/lib/api/apiService';
 import { useInquiryMembers, useAddInquiryMember, useDecideInquiryMember } from '@/lib/api/apiHooks';
+import PhoneContactsPanel from '@/components/share/PhoneContactsPanel';
 
 interface Props {
     inquiryId: string;
     visibility: string;
+    /** اسلاگ بازو — برای لینک اشتراک در ماژول مخاطبین */
+    slug?: string | null;
 }
 
 const card = 'rounded-2xl border border-stone-100 bg-white dark:border-gray-800 dark:bg-gray-900';
 const faDate = (d?: string | null) =>
     d ? new Date(d).toLocaleDateString('fa-IR', { month: 'long', day: 'numeric' }) : '';
 
-export default function MembersTab({ inquiryId, visibility }: Props) {
+export default function MembersTab({ inquiryId, visibility, slug }: Props) {
     const { data: members = [], isLoading } = useInquiryMembers(inquiryId);
     const addMember = useAddInquiryMember();
     const decide = useDecideInquiryMember();
@@ -144,7 +147,7 @@ export default function MembersTab({ inquiryId, visibility }: Props) {
                 </div>
                 <button
                     onClick={() => setAddOpen(true)}
-                    className="flex h-10 shrink-0 items-center gap-1.5 rounded-full bg-brand-contrast px-4 text-[12px] font-extrabold text-white shadow-lg shadow-brand-contrast/25 transition-colors hover:bg-brand-contrast-strong"
+                    className="flex h-10 shrink-0 items-center gap-1.5 rounded-full bg-primary px-4 text-[12px] font-extrabold text-on-primary shadow-lg shadow-primary/25 transition-colors hover:bg-primary/90"
                 >
                     <UserPlus className="size-4" />
                     درخواست ارتباط با تامین‌کننده
@@ -195,20 +198,17 @@ export default function MembersTab({ inquiryId, visibility }: Props) {
             )}
 
             {addOpen && (
-                <AddSupplierModal
-                    inquiryId={inquiryId}
-                    existingIds={new Set(list.map((m) => m.catalogId))}
-                    onClose={() => setAddOpen(false)}
-                    onDone={() => setAddOpen(false)}
-                />
+                <AddSupplierModal inquiryId={inquiryId} slug={slug} existingIds={new Set(list.map((m) => m.catalogId))} onClose={() => setAddOpen(false)} onDone={() => { setAddOpen(false); }} />
             )}
         </div>
     );
 }
 
-/** مودال افزودن تامین‌کننده — جست‌وجوی کاتالوگ قیمت */
-function AddSupplierModal({ inquiryId, existingIds, onClose, onDone }: {
+/** مودال افزودن تامین‌کننده — جست‌وجوی کاتالوگ قیمت + ماژول مخاطبین تلفن */
+function AddSupplierModal({ inquiryId, slug, existingIds, onClose, onDone }: {
     inquiryId: string;
+    /** اسلاگ بازو — لینک دعوت غیراعضا */
+    slug?: string | null;
     existingIds: Set<string>;
     onClose: () => void;
     onDone: () => void;
@@ -216,6 +216,9 @@ function AddSupplierModal({ inquiryId, existingIds, onClose, onDone }: {
     const [q, setQ] = useState('');
     const [invited, setInvited] = useState<Set<string>>(new Set());
     const addMember = useAddInquiryMember();
+
+    // لینک عمومی بازو — همان آدرسی که از برگهٔ انتشار می‌رود
+    const publicUrl = typeof window !== 'undefined' ? `${window.location.origin}/${slug || inquiryId}` : '';
 
     const { data, isFetching } = useQuery({
         queryKey: ['inquiry-supplier-candidates', inquiryId, q],
@@ -280,13 +283,44 @@ function AddSupplierModal({ inquiryId, existingIds, onClose, onDone }: {
                                 <button
                                     onClick={() => invite(c)}
                                     disabled={addMember.isPending}
-                                    className="shrink-0 rounded-full bg-brand-contrast px-3.5 py-1.5 text-[11px] font-extrabold text-white transition-colors hover:bg-brand-contrast-strong disabled:opacity-50"
+                                    className="shrink-0 rounded-full bg-primary px-3.5 py-1.5 text-[11px] font-extrabold text-on-primary transition-colors hover:bg-primary/90 disabled:opacity-50"
                                 >
                                     دعوت
                                 </button>
                             )}
                         </div>
                     ))}
+                </div>
+
+                {/* 📱 ماژول مخاطبین تلفن — موتور تامین‌کننده‌یابی:
+                     عضوهای دیمت → «ارسال» و درخواست به کاتالوگشان می‌رود
+                     غیراعضا → «دعوت به دیمت» — لینک بازو با پیام‌رسان یا پیامک می‌رود */}
+                <div className="mt-4 border-t border-stone-100 pt-4 dark:border-gray-800">
+                    <PhoneContactsPanel
+                        title="یا از مخاطبین تلفنت انتخاب کن"
+                        membersTitle="اعضای دیمت — درخواست به کاتالوگشان می‌رود"
+                        inviteTitle="دعوت به دیمت — لینک بازو را می‌گیرند"
+                        memberSend={{
+                            label: 'ارسال',
+                            doneLabel: 'درخواست رفت',
+                            reason: (c) => {
+                                const cat = c.matchedUser?.catalog;
+                                if (!cat) return 'کاتالوگ قیمتی ندارد — با دعوت، لینک بازو را بفرست';
+                                if (existingIds.has(cat.id)) return 'قبلاً دعوت شده';
+                                return null;
+                            },
+                            onSend: async (c) => {
+                                const cat = c.matchedUser!.catalog!;
+                                await addMember.mutateAsync({ inquiryId, catalogId: cat.id });
+                                toast.success(`درخواست ارتباط برای «${c.name || c.matchedUser?.fullName || cat.name}» فرستاده شد`);
+                            },
+                        }}
+                        invite={{
+                            label: 'دعوت به دیمت',
+                            getText: () => 'سلام! لطفاً برای قیمت‌دادن به کالاهای بازوی خرید من، از این لینک دیمت دیدن کن:',
+                            getUrl: () => publicUrl || undefined,
+                        }}
+                    />
                 </div>
 
                 <button

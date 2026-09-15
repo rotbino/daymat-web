@@ -20,8 +20,9 @@ import { cn } from '@/lib/utils';
 import {
     X, Loader2, Search, Store, BookOpen, User, ExternalLink,
     ShoppingBasket, Truck, Wrench, Handshake, Wallet, SlidersHorizontal,
-    ChevronDown, Sparkles,
+    ChevronDown, Sparkles, Smartphone,
 } from 'lucide-react';
+import PhoneContactsPanel from '@/components/share/PhoneContactsPanel';
 
 interface Props {
     open: boolean;
@@ -29,14 +30,17 @@ interface Props {
     catalogId: string;
     canAssign: boolean; // مالک/مدیر — می‌تواند مسئول فروش را هم انتخاب کند
     sellers: any[]; // اعضای فروش فعال (برای انتساب خریدار)
+    /** اسلاگ کاتالوگ — لینک دعوت در تب مخاطبین */
+    slug?: string | null;
 }
 
-type Scope = 'businesses' | 'catalogs' | 'people';
+type Scope = 'businesses' | 'catalogs' | 'people' | 'contacts';
 
 const SCOPES: { key: Scope; label: string; icon: React.ElementType; hint: string }[] = [
     { key: 'businesses', label: 'کسب‌وکارها', icon: Store, hint: 'کسب‌وکارها را به‌عنوان خریدار ثبت کن تا تماس‌شان به شما برسد' },
     { key: 'catalogs', label: 'کاتالوگ‌ها', icon: BookOpen, hint: 'درخواست تامین‌کنندگی یا تامین خدمات بفرست' },
     { key: 'people', label: 'افراد', icon: User, hint: 'فروشندگان و بازاریابان دیمت را به فروش کاتالوگ دعوت کن' },
+    { key: 'contacts', label: 'مخاطبین', icon: Smartphone, hint: 'از دفترچهٔ تلفنت: عضوهای دیمت درخواست می‌گیرند، غیراعضا با لینک کاتالوگ دعوت می‌شوند' },
 ];
 
 // برچسب فارسی زمینه‌های فعالیت (سطح ۲ درخت) — برای نمایش روی کارت‌ها
@@ -51,7 +55,7 @@ const SALES_TYPE_LABEL: Record<string, string> = {
 
 const TAG_CLS = 'px-1.5 py-0.5 rounded-md text-[9px] font-bold bg-primary/10 text-primary whitespace-nowrap';
 
-export default function ConnectionRequestModal({ open, onClose, catalogId, canAssign, sellers }: Props) {
+export default function ConnectionRequestModal({ open, onClose, catalogId, canAssign, sellers, slug }: Props) {
     const [scope, setScope] = useState<Scope>('businesses');
     const [q, setQ] = useState('');
     const [debounced, setDebounced] = useState('');
@@ -140,7 +144,7 @@ export default function ConnectionRequestModal({ open, onClose, catalogId, canAs
 
     // ─── کشفِ مخاطب: با عبارت = جستجو، بدون عبارت = پیشنهادِ مرتبط‌ترین‌ها ───
     useEffect(() => {
-        if (!open) return;
+        if (!open || scope === 'contacts') return; // تب مخاطبین — دفترچهٔ خودش را دارد
         let alive = true;
         (async () => {
             setSearching(true);
@@ -246,8 +250,8 @@ export default function ConnectionRequestModal({ open, onClose, catalogId, canAs
                     </button>
                 </div>
 
-                {/* فیلتر دیواری — سه مسیر */}
-                <div className="grid grid-cols-3 gap-2 mb-3">
+                {/* فیلتر دیواری — چهار مسیر */}
+                <div className="grid grid-cols-4 gap-2 mb-3">
                     {SCOPES.map(({ key, label, icon: Icon }) => (
                         <button
                             key={key}
@@ -299,7 +303,7 @@ export default function ConnectionRequestModal({ open, onClose, catalogId, canAs
                 )}
 
                 {/* انتساب مسئول فروش — فقط مالک/مدیر با بیش از یک فروشنده */}
-                {scope === 'businesses' && canAssign && sellers.length > 1 && (
+                {(scope === 'businesses' || scope === 'contacts') && canAssign && sellers.length > 1 && (
                     <div className="mb-3">
                         <label className="text-xs text-gray-500 dark:text-gray-400 mb-1 block">مسئول فروش این خریدار</label>
                         <select
@@ -335,7 +339,44 @@ export default function ConnectionRequestModal({ open, onClose, catalogId, canAs
                     </div>
                 )}
 
+                {/* 📱 تب مخاطبین — دفترچهٔ تلفن: اعضا درخواست می‌گیرند، غیراعضا دعوت */}
+                {scope === 'contacts' && (
+                    <PhoneContactsPanel
+                        title="دفترچهٔ مخاطبین تلفن تو"
+                        membersTitle="اعضای دیمت — درخواست بازوی خرید به کسب‌وکارشان می‌رود"
+                        inviteTitle="دعوت به دیمت — لینک کاتالوگ را می‌گیرند"
+                        memberSend={{
+                            label: 'ارسال',
+                            doneLabel: 'درخواست رفت',
+                            reason: (c) => (c.matchedUser?.business ? null : 'کسب‌وکاری ثبت نکرده — با دعوت، لینک کاتالوگ را بفرست'),
+                            onSend: async (c) => {
+                                const biz = c.matchedUser!.business!;
+                                try {
+                                    const res = await apiService.catalog.team.addCustomer(catalogId, {
+                                        businessId: biz.id,
+                                        ...(assignTo ? { sellerUserId: assignTo } : {}),
+                                    });
+                                    toast.success((res?.message || 'بازوی خرید ارسال شد — در انتظار تایید صاحب کسب‌وکار') + quotaSuffix(res?.quota));
+                                    refreshQuota();
+                                } catch (e: any) {
+                                    if (e?.response?.data?.errorCode === 'INSUFFICIENT_CREDIT') {
+                                        refreshQuota();
+                                        throw new Error(e?.response?.data?.message || 'موجودی اعتبار کافی نیست');
+                                    }
+                                    throw e;
+                                }
+                            },
+                        }}
+                        invite={{
+                            label: 'دعوت به دیمت',
+                            getText: () => 'سلام! کاتالوگ قیمتی ما در دیمت را ببین:',
+                            getUrl: () => (slug ? `${window.location.origin}/${slug}` : undefined),
+                        }}
+                    />
+                )}
+
                 {/* جستجو */}
+                {scope !== 'contacts' && (
                 <div className="relative mb-2">
                     <Search className="absolute right-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
                     <input
@@ -350,8 +391,10 @@ export default function ConnectionRequestModal({ open, onClose, catalogId, canAs
                     />
                     {searching && <Loader2 className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 animate-spin text-gray-400" />}
                 </div>
+                )}
 
                 {/* فیلتر مخاطبان — استان / شهر / صنف / زمینهٔ فعالیت / نوعِ فروش */}
+                {scope !== 'contacts' && (
                 <div className="mb-3 rounded-xl border border-outline-variant/30 dark:border-gray-800 overflow-hidden">
                     <div className="flex items-center gap-2 px-3 py-2.5">
                         <button
@@ -432,6 +475,7 @@ export default function ConnectionRequestModal({ open, onClose, catalogId, canAs
                         </div>
                     )}
                 </div>
+                )}
 
                 {/* سربرگ پیشنهادها — وقتی جستجویی در کار نیست */}
                 {suggested && results.length > 0 && (
@@ -445,6 +489,7 @@ export default function ConnectionRequestModal({ open, onClose, catalogId, canAs
                 )}
 
                 {/* نتایج */}
+                {scope !== 'contacts' && (
                 <div className="space-y-2">
                     {results.map((item: any) => {
                         const isBiz = scope === 'businesses';
@@ -527,6 +572,7 @@ export default function ConnectionRequestModal({ open, onClose, catalogId, canAs
                         </p>
                     )}
                 </div>
+                )}
             </div>
         </div>
     );
