@@ -172,7 +172,9 @@ export default function ArmAdminLayout({ children }: { children: React.ReactNode
 
     if (!isAuthorized) return null;
 
-    const armName = currentArm?.name || currentSlug || 'بازار';
+    // ✅ نام بازار: اولویت با currentArm؛ اگر خالی بود از لیست بازارهای کاربر؛ نهایتاً اسلاگ
+    const currentArmMeta = userArms?.find((a: any) => a.slug === currentSlug);
+    const armName = currentArm?.name || currentArmMeta?.name || currentSlug || 'بازار';
 
     const SidebarContent = ({ onNavigate }: { onNavigate?: () => void }) => (
         <div className="flex flex-col h-full">
@@ -328,14 +330,26 @@ export default function ArmAdminLayout({ children }: { children: React.ReactNode
             >
                 {/* هدر دسکتاپ */}
                 <header className="hidden lg:flex items-center justify-between h-16 px-6 bg-white dark:bg-gray-900 border-b border-outline-variant/20 dark:border-gray-800 sticky top-0 z-30 flex-shrink-0">
-                    <div>
-                        <h1 className="text-base font-bold text-on-surface dark:text-gray-100">
-                            {(() => {
-                                const item = menuItems.find((m) => isActive(m.href, m.exact));
-                                return item?.label || 'پنل مدیریت';
-                            })()}
-                        </h1>
-                        <p className="text-[11px] text-on-surface-variant/60 dark:text-gray-500">{armName}</p>
+                    <div className="flex items-center gap-3 min-w-0">
+                        <div className="min-w-0">
+                            <h1 className="text-base font-bold text-on-surface dark:text-gray-100">
+                                {(() => {
+                                    const item = menuItems.find((m) => isActive(m.href, m.exact));
+                                    return item?.label || 'پنل مدیریت';
+                                })()}
+                            </h1>
+                            <p className="text-[11px] text-on-surface-variant/60 dark:text-gray-500">پنل مدیریت بازار در دیمت</p>
+                        </div>
+                        {/* ✅ بازارِ در حال مدیریت — همیشه جلوی چشم در هدر */}
+                        <span
+                            className="inline-flex items-center gap-2 rounded-full bg-primary/5 border border-primary/20 dark:border-primary/30 px-3 py-1.5 max-w-[280px]"
+                            title={armName}
+                        >
+                            <Store className="w-3.5 h-3.5 text-primary flex-shrink-0" />
+                            <span className="text-xs font-extrabold text-primary dark:text-primary-400 truncate">
+                                {armName}
+                            </span>
+                        </span>
                     </div>
                     <ThemeToggle />
                 </header>
@@ -343,6 +357,14 @@ export default function ArmAdminLayout({ children }: { children: React.ReactNode
                 {/* هدر موبایل: منوی افقی */}
                 <div className="lg:hidden sticky top-0 z-30 flex-shrink-0">
                     <div className="bg-white dark:bg-gray-900 border-b border-outline-variant/20 dark:border-gray-800 shadow-sm">
+                        {/* ✅ نام بازارِ در حال مدیریت — خط باریک بالای منو */}
+                        <div className="flex items-center justify-center gap-1.5 px-3 pt-2">
+                            <Store className="w-3 h-3 text-primary flex-shrink-0" />
+                            <span className="text-[10px] font-extrabold text-on-surface dark:text-gray-200 truncate max-w-[60%]">
+                                {armName}
+                            </span>
+                            <span className="text-[9px] text-on-surface-variant/60 flex-shrink-0">· پنل مدیریت</span>
+                        </div>
                         <div className="flex items-center gap-1 px-3 py-2 overflow-x-auto scrollbar-hide">
                             {visibleMenuItems.map((item) => {
                                 const active = isActive(item.href, item.exact);
