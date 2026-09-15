@@ -484,10 +484,10 @@ export default function RegisterCatalogPage() {
                             «{shortName(stepHint.bizName, 22)}» ثبت شد 🎉
                         </h2>
                         <p className="mt-3 text-[13px] leading-7 text-on-surface-variant">
-                            چون گفتی <span className="font-black">{stepHint.roleLabel}</span>، پیشنهاد می‌کنیم اول{' '}
+                            چون گفتی <span className="font-black">{stepHint.roleLabel}</span>، و بیشتر خرید عمده داری تا فروش عمده می‌کنیم اول{' '}
                             <span className="font-black text-amber-600 dark:text-amber-400">بازوی خرید</span> بسازی —
                             لیست خریدت رو می‌نویسی، تامین‌کننده‌ها قیمت می‌دن و تو بهترین رو انتخاب می‌کنی.
-                            (کاتالوگ قیمت هم هر وقت خواستی سر جاشه)
+                            (کاتالوگ قیمت هم هر وقت خواستی می تونی از پنل خودت بسازی)
                         </p>
                         <Link href={`/inquiries/new?bizId=${stepHint.bizId}`}
                               className="mt-5 flex h-12 w-full items-center justify-center gap-2 rounded-xl bg-brand-contrast text-sm font-extrabold text-white shadow-lg shadow-brand-contrast/30 transition-colors hover:bg-brand-contrast-strong">
