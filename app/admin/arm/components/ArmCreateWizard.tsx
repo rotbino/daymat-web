@@ -35,6 +35,7 @@ import { FormLabelsSection } from './FormLabelsSection';
 import { ArmPermissionSection } from './ArmPermissionSection';
 import { IntroSection } from './IntroSection';
 import { apiService } from '@/lib/api/apiService';
+import { toastFormErrors } from '@/lib/formAlerts';
 import { useIndustriesTree, useCategoriesFlat, useIndustriesLeaves } from '@/lib/api/apiHooks';
 import {ArmCategoryManager} from "@/app/admin/arm/components/ArmCategoryManager";
 
@@ -177,20 +178,22 @@ export function ArmCreateWizard() {
         [searchParams, router, slug]
     );
 
-    // ─── اعتبارسنجی مرحله فعلی ───
+    // ─── اعتبارسنجی مرحله فعلی — ⚖️ قانون دیمت: الرتِ واضحِ فیلدبه‌فیلد، نه پیامِ توده‌ای ───
     const validateStep = (stepId: string): boolean => {
         const data = watch();
         switch (stepId) {
             case 'basics': {
-                const name = data.name?.trim();
-                const slugVal = data.slug?.trim();
-                const sloganVal = data.slogan?.trim();
-                if (!name || !slugVal || !sloganVal) {
-                    toast.error('نام، شناسه و شعار بازار را وارد کنید');
+                const e: Record<string, string> = {};
+                if (!data.name?.trim()) e.name = 'نام بازار وارد نشده';
+                if (!data.slug?.trim()) e.slug = 'شناسهٔ بازار (لینک اختصاصی) وارد نشده';
+                if (!data.slogan?.trim()) e.slogan = 'شعار بازار وارد نشده';
+                if (Object.keys(e).length > 0) {
+                    trigger(['name', 'slug', 'slogan']); // ⚖️ هایلایتِ CSSِ فیلدهای گم‌شده کنار الرت
+                    toastFormErrors(e);
                     return false;
                 }
-                if (!/^[a-z0-9-]+$/.test(slugVal)) {
-                    toast.error('شناسه فقط حروف کوچک انگلیسی، اعداد و خط تیره باشد');
+                if (!/^[a-z0-9-]+$/.test(data.slug!.trim())) {
+                    toast.error('شناسهٔ بازار فقط حروف کوچک انگلیسی، اعداد و خط تیره است');
                     return false;
                 }
                 return true;
@@ -198,7 +201,7 @@ export function ArmCreateWizard() {
             case 'categories': {
                 const tree = data.categoryTree || [];
                 if (tree.length === 0) {
-                    toast.error('حداقل یک گروه کالا انتخاب کنید');
+                    toast.error('گروه کالا انتخاب نشده — حداقل یک گروه لازم است');
                     return false;
                 }
                 return true;
@@ -206,7 +209,7 @@ export function ArmCreateWizard() {
             case 'locations': {
                 const locs = data.config?.locationSelections || [];
                 if (locs.length === 0) {
-                    toast.error('حداقل یک موقعیت جغرافیایی انتخاب کنید');
+                    toast.error('موقعیت جغرافیایی انتخاب نشده — حداقل یک موقعیت لازم است');
                     return false;
                 }
                 return true;
@@ -215,7 +218,7 @@ export function ArmCreateWizard() {
                 const supplierIds = data.config?.supplierIndustryIds || [];
                 const buyerIds = data.config?.buyerIndustryIds || [];
                 if (supplierIds.length === 0 && buyerIds.length === 0) {
-                    toast.error('حداقل یک صنف تأمین‌کننده یا خریدار انتخاب کنید');
+                    toast.error('صنف تأمین‌کننده یا خریدار انتخاب نشده — حداقل یک صنف لازم است');
                     return false;
                 }
                 return true;

@@ -10,6 +10,7 @@ import { cn } from '@/lib/utils';
 import { useCreateBusinessEntity, useUpdateBusinessEntity, useUploadFile } from '@/lib/api/apiHooks';
 import { apiService } from '@/lib/api/apiService';
 import { getLegacyTypeFromRole, USER_POSITIONS } from '@/lib/api/data-types';
+import { toastFormErrors } from '@/lib/formAlerts';
 import { IranLocationSelector } from '@/app/components/IranLocationSelector';
 import IndustryAutocomplete from '@/app/components/IndustryAutocomplete';
 import BusinessTypeSelector from '@/app/components/BusinessTypeSelector';
@@ -141,21 +142,26 @@ export default function BusinessSetupModal({ isOpen, onClose, business, onSaved,
         setPendingLogoFile(null);
     };
 
-    const validate = () => {
+    // ⚖️ قانون دیمت: خطای CSSِ روی فیلد کافی نیست — الرتِ واضحِ toast هم با ذکرِ خودِ فیلد بده
+    const validate = (): Record<string, string> | null => {
         const e: Record<string, string> = {};
-        if (!name.trim()) e.name = 'نام کسب‌وکار الزامی است';
-        if (!industry?.title?.trim()) e.industryName = 'صنف الزامی است';
-        if (!businessSector) e.bizType = 'دسته‌بندی کسب‌وکار را انتخاب کن';
-        else if (!businessRole) e.bizType = 'نوع فعالیت را انتخاب کن';
-        if (!provinceCode) e.location = 'انتخاب موقعیت الزامی است';
-        if (!positionRole) e.position = 'نقشت را در این کسب‌وکار انتخاب کن';
+        if (!name.trim()) e.name = 'نام کسب‌وکار وارد نشده';
+        if (!industry?.title?.trim()) e.industryName = 'صنف انتخاب نشده';
+        if (!businessSector) e.bizType = 'دسته‌بندی کسب‌وکار انتخاب نشده';
+        else if (!businessRole) e.bizType = 'نوع فعالیت انتخاب نشده';
+        if (!provinceCode) e.location = 'استان و شهر انتخاب نشده';
+        if (!positionRole) e.position = 'نقش شما در کسب‌وکار انتخاب نشده';
         else if (positionRole === POSITION_OTHER_VALUE && !positionOther.trim()) e.position = 'نقشت در شرکت را بنویس';
         setErrors(e);
-        return Object.keys(e).length === 0;
+        return Object.keys(e).length ? e : null;
     };
 
     const handleSave = async () => {
-        if (!validate()) return;
+        const validationErrors = validate();
+        if (validationErrors) {
+            toastFormErrors(validationErrors); // ⚖️ الرت واضح کنار خطای CSS فیلدها
+            return;
+        }
         try {
             // ۰) گارد تکراری‌ثبتی (فقط ساخت اول) — مشابه‌ها را بگیر و نشان بده
             if (!isEdit && !dupCandidates) {

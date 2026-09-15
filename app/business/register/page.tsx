@@ -16,6 +16,7 @@ import { setCurrentCatalog } from '@/lib/store/slices/catalogSlice';
 import { clearStoredRef, readStoredRef } from '@/app/components/RefCapture';
 import BusinessSelector from '@/app/components/BusinessSelector';
 import SlugPicker from '@/app/business/register/SlugPicker';
+import { toastFormErrors } from '@/lib/formAlerts';
 import { cn } from '@/lib/utils';
 
 /* ─── فارسی ← لاتین (حذف شد) — لینک کاتالوگ را کاربر خودش پر می‌کند ─── */
@@ -142,24 +143,35 @@ export default function RegisterCatalogPage() {
         return !!nm && myCatalogs.some((c: any) => (c.name || '').trim() === nm && c.status === 'active');
     }, [myCatalogs, catalogName]);
 
-    const validate = () => {
+    // ⚖️ قانون دیمت: خطای CSSِ روی فیلد کافی نیست — الرتِ واضحِ toast هم با ذکرِ خودِ فیلد بده
+    const validate = (): Record<string, string> | null => {
         const e: Record<string, string> = {};
-        if (!bizId) e.biz = 'ابتدا کسب‌وکار را جستجو و انتخاب کن (یا جدید ثبت کن)';
-        if (!positionRole) e.position = 'نقشت را در این کسب‌وکار انتخاب کن';
+        if (!bizId) e.biz = 'کسب‌وکار انتخاب نشده';
+        if (!positionRole) e.position = 'نقش شما در کسب‌وکار انتخاب نشده';
         else if (positionRole === POSITION_OTHER_VALUE && !positionOther.trim()) e.position = 'نقشت در شرکت را بنویس';
-        if (!catalogName.trim()) e.name = 'نام کاتالوگ را وارد کن';
-        if (!slug || slug.length < 3) e.slug = 'لینک کاتالوگ را وارد کن (حداقل ۳ حرف انگلیسی)';
-        else if (errors.slug === 'taken' || errors.slug === 'reserved') e.slug = errors.slug;
+        if (!catalogName.trim()) e.name = 'نام کاتالوگ وارد نشده';
+        if (!slug || slug.length < 3) e.slug = 'لینک اختصاصی کاتالوگ وارد نشده (حداقل ۳ حرف انگلیسی)';
+        else if (errors.slug === 'taken' || errors.slug === 'reserved') e.slug = errors.slug === 'reserved' ? 'این لینک قابل انتخاب نیست' : 'این لینک آزاد نیست — کمی عوضش کن';
         setErrors(e);
-        return Object.keys(e).length === 0;
+        return Object.keys(e).length ? e : null;
     };
 
     const handleSubmit = async (ev: React.FormEvent) => {
         ev.preventDefault();
         if (submittingRef.current) return; // ✅ ضد دابل‌کال — وسطِ یک submitِ درجریان هستیم
-        if (catalogNameDup) return;
-        if (!validate()) return;
-        if (!selectedBiz) return;
+        if (catalogNameDup) {
+            toast.error('یه کاتالوگ با همین نام داری — برای تشخیص راحت‌تر کمی عوضش کن');
+            return;
+        }
+        const validationErrors = validate();
+        if (validationErrors) {
+            toastFormErrors(validationErrors); // ⚖️ الرت واضح کنار خطای CSS فیلدها
+            return;
+        }
+        if (!selectedBiz) {
+            toast.error('کسب‌وکار انتخاب نشده — اول کسب‌وکار را انتخاب کن');
+            return;
+        }
 
         submittingRef.current = true;
         try {
@@ -234,7 +246,9 @@ export default function RegisterCatalogPage() {
     };
 
     const busy = createCatalogMutation.isPending;
-    const submitDisabled = busy || !slug || !!errors.slug || catalogNameDup || !catalogName.trim() || !effectivePosition;
+    // ⚖️ دکمهٔ ثبت با فیلدهای خالی غیرفعال نمی‌شود — کلیک رویش الرتِ واضحِ فیلدهای گم‌شده می‌دهد
+    // (دکمهٔ disabled یعنی سکوتِ مطلق — کاربر نمی‌فهمد چرا پیش نمی‌رود)
+    const submitDisabled = busy;
 
     return (
         <div className="min-h-screen flex flex-col bg-surface dark:bg-gray-950">
@@ -371,9 +385,12 @@ export default function RegisterCatalogPage() {
                             }}
                             disabled={busy}
                         />
-                        {errors.slug === 'taken' && (
+                        {errors.slug && (
                             <p className="text-[10px] text-error flex items-center gap-1.5 px-1">
-                                <AlertTriangle className="w-3 h-3" /> این لینک آزاد نیست — کمی عوضش کن
+                                <AlertTriangle className="w-3 h-3" />
+                                {errors.slug === 'taken' ? 'این لینک آزاد نیست — کمی عوضش کن'
+                                    : errors.slug === 'reserved' ? 'این لینک قابل انتخاب نیست'
+                                    : errors.slug}
                             </p>
                         )}
                     </section>

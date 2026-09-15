@@ -9,6 +9,7 @@ import { RootState } from '@/lib/store/store';
 import { apiService } from '@/lib/api/apiService';
 import { useUploadFile, useUpdateCatalog, useUpdateBusinessEntity } from '@/lib/api/apiHooks';
 import { toast } from 'sonner';
+import { toastFormErrors } from '@/lib/formAlerts';
 import {
     AlertTriangle, BookOpen, Building2, Camera, Check, Globe, Info, Layers,
     Loader2, Lock, MapPin, Pencil, Phone, Settings2, X,
@@ -143,7 +144,16 @@ export default function CatalogEditModal({ isOpen, onClose, catalog, salesTypeLo
             if (!check.available) e.slug = check.reason === 'reserved' ? 'reserved' : 'taken';
         }
         setErrors(e);
-        if (Object.keys(e).length > 0) return;
+        if (Object.keys(e).length > 0) {
+            // ⚖️ قانون دیمت: الرتِ واضح کنار خطای CSS فیلدها — سکوت ممنوع
+            toastFormErrors({
+                name: e.name ? 'نام کاتالوگ وارد نشده' : '',
+                slug: e.slug === 'taken' ? 'این لینک آزاد نیست — کمی عوضش کن'
+                    : e.slug === 'reserved' ? 'این لینک قابل انتخاب نیست'
+                    : e.slug || '',
+            });
+            return;
+        }
 
         setSaving(true);
         try {
