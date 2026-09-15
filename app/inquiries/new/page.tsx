@@ -26,6 +26,10 @@ const fadeUp = (delay = 0) => ({
     transition: { duration: 0.45, delay, ease: 'easeOut' as const },
 });
 
+function shortName(n: string, max = 24) {
+    return (n || '').length > max ? n.slice(0, max) + '…' : n;
+}
+
 export default function NewInquiryPage() {
     const router = useRouter();
     const dispatch = useDispatch();
@@ -154,13 +158,16 @@ export default function NewInquiryPage() {
                         بازوی خرید جدید
                     </span>
                     <h1 className="mt-3 text-[22px] font-black leading-9 sm:text-2xl">
-                        برای کدام کسب‌وکار می‌سازی؟
+                        {/* ✅ تا انتخاب نشده سؤال؛ بعد از انتخاب جملهٔ معنی‌دار — خواستهٔ مالک */}
+                        {biz ? `ساخت بازوی خرید برای «${shortName(biz.name || '', 24)}»` : 'برای کدام کسب‌وکار می‌سازی؟'}
                     </h1>
                 </motion.section>
 
                 {/* کسب‌وکار — تنها آیتم صفحه تا وقتی انتخاب نشده */}
                 <motion.div {...fadeUp(0.06)} ref={bizRef} className="mt-6">
-                    <BusinessSelector value={biz} onChange={onBizChange} />
+                    {/* ✅ برچسب این صفحه «بازوی خرید» است نه کاتالوگ — بعد از انتخاب هم هیچی (تیتر بالای صفحه خودش می‌گوید) */}
+                    <BusinessSelector value={biz} onChange={onBizChange}
+                                      label="ثبت یا انتخاب کسب و کاری که می خوای براش بازوی خرید بسازی" />
                 </motion.div>
 
                 {/* ساخت — بعد از انتخاب کسب‌وکار ظاهر می‌شود */}

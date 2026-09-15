@@ -26,8 +26,10 @@ interface Props {
     onChange: (biz: any | null) => void;  // انتخاب / پاک کردن
     error?: string;
     disabled?: boolean;
-    /** ✅ برچسب سفارشی — پیش‌فرض: متن کاتالوگ قیمت */
+    /** ✅ برچسب وقتی هنوز کسب‌وکاری انتخاب نشده — پیش‌فرض: متن کاتالوگ قیمت */
     label?: string;
+    /** ✅ برچسب وقتی کسب‌وکار انتخاب شد — مثلا «ساخت کاتالوگ برای «فلان»»؛ اگر ندهی هیچی نشان داده نمی‌شود */
+    selectedLabel?: string;
     /** ✅ فقط وقتی کسب‌وکار «جدید» واقعاً ثبت شد (نه انتخاب از مشابه‌ها) — برای پیشنهاد گام بعدی */
     onBusinessCreated?: (biz: any) => void;
 }
@@ -36,8 +38,13 @@ function shortName(n: string, max = 20) {
     return (n || '').length > max ? n.slice(0, max) + '…' : n;
 }
 
-export default function BusinessSelector({ value, onChange, error, disabled, label, onBusinessCreated }: Props) {
+export default function BusinessSelector({ value, onChange, error, disabled, label, selectedLabel, onBusinessCreated }: Props) {
     const [open, setOpen] = useState(false);
+
+    // ✅ برچسب زمینه‌آگاه: تا انتخاب نشده سؤالِ «کدام کسب‌وکار؟»، بعد از انتخاب یا «ساختِ … برای …» یا هیچی
+    const heading = value
+        ? (selectedLabel || '')
+        : (label || 'ثبت یا انتخاب کسب و کاری که می خوای براش کاتالوگ بسازی');
 
     const pick = (b: any) => { onChange(b); setOpen(false); };
     const clear = (e: React.MouseEvent) => {
@@ -47,7 +54,7 @@ export default function BusinessSelector({ value, onChange, error, disabled, lab
 
     return (
         <div className="space-y-1.5">
-            <p className="text-[12px] font-bold text-on-surface pb-1">{label || 'ثبت یا انتخاب کسب و کاری که می خوای براش کاتالوگ بسازی'}</p>
+            {heading && <p className="text-[12px] font-bold text-on-surface pb-1">{heading}</p>}
 
             {value ? (
                 /* ── انتخاب‌شده — شکلیِ سلکت با لوگو و نام ── */

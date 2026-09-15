@@ -274,7 +274,8 @@ export default function RegisterCatalogPage() {
                         </div>
                     ) : (
                         <>
-                            <BusinessSelector value={selectedBiz} onChange={handleBizChange} error={errors.biz} onBusinessCreated={handleBusinessCreated} />
+                            <BusinessSelector value={selectedBiz} onChange={handleBizChange} error={errors.biz} onBusinessCreated={handleBusinessCreated}
+                                              selectedLabel={selectedBiz ? `ساخت کاتالوگ برای «${shortName(selectedBiz.name || '', 24)}»` : undefined} />
                             {deepLinkMiss && (
                                 <p className="mt-2 text-[11px] text-amber-600 dark:text-amber-400 flex items-center gap-1.5 px-1">
                                     <AlertTriangle className="w-3.5 h-3.5 flex-shrink-0" />
