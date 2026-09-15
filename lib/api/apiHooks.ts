@@ -1935,3 +1935,45 @@ export const useInquiryArmBoard = (slug?: string) => {
         staleTime: 30 * 1000,
     });
 };
+
+// ============================================================
+// 💾 SAVED INQUIRIES — بازوهای خرید ذخیره‌شده (سوییچر هدر صفحهٔ عمومی)
+//    قرینهٔ useSavedCatalogs؛ تامین‌کننده بین بازوهای خریدارها سوییچ می‌کند
+// ============================================================
+export const useSavedInquiries = () => {
+    const { hasAccess } = useAuthState();
+
+    return useQuery({
+        queryKey: ['saved-inquiries'],
+        queryFn: () => apiService.inquiry.getSavedList(),
+        enabled: hasAccess,
+        staleTime: 5 * 60 * 1000,
+        refetchOnMount: true,
+        refetchOnWindowFocus: false,
+    });
+};
+
+/** وضعیت ذخیرهٔ من روی یک بازوی خرید */
+export const useInquirySavedStatus = (id?: string) => {
+    const { hasAccess } = useAuthState();
+
+    return useQuery({
+        queryKey: ['inquiry-saved-status', id],
+        queryFn: () => apiService.inquiry.savedStatus(id!),
+        enabled: !!id && hasAccess,
+        staleTime: 60 * 1000,
+        refetchOnWindowFocus: false,
+    });
+};
+
+/** ذخیره / حذف از ذخیره‌ها — لیست سوییچر هم باطل می‌شود */
+export const useInquirySaveToggle = () => {
+    const qc = useQueryClient();
+    return useMutation({
+        mutationFn: ({ id, save }: { id: string; save: boolean }) =>
+            save ? apiService.inquiry.save(id) : apiService.inquiry.unsave(id),
+        onSuccess: () => {
+            qc.invalidateQueries({ queryKey: ['saved-inquiries'] });
+        },
+    });
+};

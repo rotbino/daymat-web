@@ -50,7 +50,7 @@ export const STATUS_CHIP: Record<string, string> = {
     open: 'bg-emerald-50 text-emerald-700 dark:bg-emerald-500/10 dark:text-emerald-400',
     closed: 'bg-stone-100 text-stone-500 dark:bg-gray-800 dark:text-gray-400',
     archived: 'bg-stone-100 text-stone-400 dark:bg-gray-800/60 dark:text-gray-500',
-    pending: 'bg-brand-contrast-soft text-amber-700 dark:text-amber-400',
+    pending: 'bg-brand-accent-soft text-amber-700 dark:bg-amber-500/10 dark:text-amber-400',
     accepted: 'bg-emerald-50 text-emerald-700 dark:bg-emerald-500/10 dark:text-emerald-400',
     rejected: 'bg-red-50 text-red-600 dark:bg-red-500/10 dark:text-red-400',
     withdrawn: 'bg-stone-100 text-stone-400 dark:bg-gray-800 dark:text-gray-500',

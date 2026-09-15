@@ -1491,6 +1491,23 @@ export const apiService = {
         /** فرصت‌های فروش تامین‌کننده — دعوت‌ها + اقلام فوریِ بازوهای خریدِ عضوش */
         opportunities: (): Promise<{ catalogs: any[]; invitations: any[]; requests: any[]; leads: any[] }> =>
             apiRequest('/inquiry/opportunities'),
+
+        // ─── 💾 بازوهای خرید ذخیره‌شده — سوییچر هدر صفحهٔ عمومی (قرینهٔ کاتالوگ) ───
+        /** لیست بازوهای خرید ذخیره‌شدهٔ من */
+        getSavedList: (): Promise<any[]> =>
+            apiRequest('/inquiry/saved/list'),
+
+        /** ذخیرهٔ بازوی خرید */
+        save: (id: string): Promise<{ success: boolean; isSaved: boolean }> =>
+            apiRequest(`/inquiry/${id}/save`, { method: 'POST' }),
+
+        /** حذف از ذخیره‌ها */
+        unsave: (id: string): Promise<{ success: boolean; isSaved: boolean }> =>
+            apiRequest(`/inquiry/${id}/save`, { method: 'DELETE' }),
+
+        /** وضعیت ذخیرهٔ من روی این بازو */
+        savedStatus: (id: string): Promise<{ isSaved: boolean }> =>
+            apiRequest(`/inquiry/${id}/saved-status`),
     },
 
 };

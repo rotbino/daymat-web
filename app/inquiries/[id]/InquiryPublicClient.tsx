@@ -13,7 +13,7 @@
 // ✅ مشترک دو مسیر: /{slug} (ریشهٔ سایت — اسلاگ دلخواه) و /inquiries/{id} (لینک‌های قدیمی)
 'use client';
 
-import React, { useEffect, useMemo, useState } from 'react';
+import React, { useEffect, useMemo, useRef, useState } from 'react';
 import Link from 'next/link';
 import Image from 'next/image';
 import { motion, AnimatePresence } from 'framer-motion';
@@ -21,15 +21,16 @@ import { createPortal } from 'react-dom';
 import { useRouter } from 'next/navigation';
 import { useSelector } from 'react-redux';
 import { RootState } from '@/lib/store/store';
-import { useInquiry, useAddOffer, useUpdateOfferStatus, useUpdateInquiry, useRequestInquiryAccess } from '@/lib/api/apiHooks';
+import { useInquiry, useAddOffer, useUpdateOfferStatus, useUpdateInquiry, useRequestInquiryAccess, useSavedInquiries, useInquirySavedStatus, useInquirySaveToggle } from '@/lib/api/apiHooks';
 import { apiService } from '@/lib/api/apiService';
 import { useQuery } from '@tanstack/react-query';
 import { toast } from 'sonner';
 import {
-    ClipboardList, MapPin, Clock, User, Share2, Check, Loader2,
-    Send, Package, Store, Eye, Ban, RotateCcw, MessageSquareText,
+    ClipboardList, Clock, User, Share2, Check, Loader2,
+    Send, Package, Ban, MessageSquareText, Store,
     Truck, Wallet, ExternalLink, Phone, Megaphone, PackageSearch, X, Settings,
-    Lock, Handshake, PhoneCall, UserPlus, ShieldCheck,
+    Lock, Handshake, PhoneCall, UserPlus,
+    Bookmark, ChevronDown, ArrowRight, Pause, Play,
 } from 'lucide-react';
 import { faNum, faPrice, faTimeAgo, faDeadlineLeft, STATUS_FA, STATUS_CHIP } from '../utils';
 import OfferSheet from '@/app/components/OfferSheet';
@@ -60,11 +61,72 @@ export default function InquiryPublicClient({ idOrSlug }: { idOrSlug: string }) 
     // بعد از ثبت درخواست همکاری — بنر حالت «در انتظار تایید» می‌شود
     const [requestedSelf, setRequestedSelf] = useState(false);
 
+    // 💾 سوییچر بازوهای خرید ذخیره‌شده + نشانک این بازو (قرینهٔ کاتالوگ)
+    const [savedOpen, setSavedOpen] = useState(false);
+    const savedDropdownRef = useRef<HTMLDivElement>(null);
+    const { data: savedInquiries = [] } = useSavedInquiries();
+    const saveToggle = useInquirySaveToggle();
+    const { data: savedStatusData } = useInquirySavedStatus(inquiry?.id);
+    const [savedOpt, setSavedOpt] = useState<boolean | null>(null);
+    const isSaved = savedOpt ?? savedStatusData?.isSaved ?? false;
+
+    useEffect(() => {
+        if (!savedOpen) return;
+        const handleClickOutside = (e: MouseEvent) => {
+            if (savedDropdownRef.current && !savedDropdownRef.current.contains(e.target as Node)) {
+                setSavedOpen(false);
+            }
+        };
+        document.addEventListener('mousedown', handleClickOutside);
+        return () => document.removeEventListener('mousedown', handleClickOutside);
+    }, [savedOpen]);
+
+    const handleSaveToggle = () => {
+        if (!inquiry) return;
+        if (!isAuthenticated) {
+            router.push(`/login?redirect=${encodeURIComponent(`/${inquiry.slug || inquiry.id}`)}`);
+            return;
+        }
+        const next = !isSaved;
+        setSavedOpt(next); // خوش‌بینانه — حس فوری
+        saveToggle.mutate(
+            { id: inquiry.id, save: next },
+            {
+                onError: () => {
+                    setSavedOpt(!next);
+                    toast.error(next ? 'ذخیره نشد — دوباره تلاش کن' : 'حذف از ذخیره‌ها ناموفق بود');
+                },
+                onSuccess: () => toast.success(next ? 'در سوییچر «بازوهای ذخیره‌شده» دیده می‌شود' : 'از ذخیره‌ها حذف شد'),
+            },
+        );
+    };
+
+    const handleBack = () => {
+        if (typeof window !== 'undefined' && window.history.length > 1) router.back();
+        else router.push('/');
+    };
+
+    const scrollToOffers = () => document.getElementById('offers')?.scrollIntoView({ behavior: 'smooth', block: 'start' });
+
+    // ✅ شمارش پیشنهاد هر قلم (مالک) — پیشنهادِ کلِ لیست itemId ندارد
+    const offersByItem = useMemo(() => {
+        const m = new Map<string, number>();
+        (inquiry?.offers ?? []).forEach((o: any) => {
+            if (o.itemId) m.set(o.itemId, (m.get(o.itemId) ?? 0) + 1);
+        });
+        return m;
+    }, [inquiry?.offers]);
+    const wholeListOffers = useMemo(() => (inquiry?.offers ?? []).filter((o: any) => !o.itemId).length, [inquiry?.offers]);
+
     useEffect(() => {
         if (inquiry?.title) document.title = `${inquiry.title} | بازوی خرید دیمت`;
     }, [inquiry?.title]);
 
     const isOwner = !!inquiry?.isOwner;
+    // ✅ وضعیت رابطهٔ من با این بازو — برای دکمهٔ «ارسال درخواست تامین» سه‌حالته (بک می‌فرستد)
+    const accessState = ((inquiry as any)?.accessState ?? 'none') as 'owner' | 'member' | 'pending' | 'none';
+    const suppliersCount = (inquiry as any)?.suppliersCount ?? 0;
+    const savesCount = (inquiry as any)?.savesCount ?? 0;
     const limited = !!(inquiry as any)?.limited; // خصوصی + بازدیدکننده غیرعضو
     const items = inquiry?.items ?? [];
     const urgentItems = useMemo(() => items.filter((it: any) => it.urgent), [items]);
@@ -173,7 +235,7 @@ export default function InquiryPublicClient({ idOrSlug }: { idOrSlug: string }) 
     if (isLoading) {
         return (
             <div className="grid min-h-screen place-items-center bg-white dark:bg-gray-950">
-                <Loader2 className="size-8 animate-spin text-brand-contrast" />
+                <Loader2 className="size-8 animate-spin text-primary" />
             </div>
         );
     }
@@ -185,7 +247,7 @@ export default function InquiryPublicClient({ idOrSlug }: { idOrSlug: string }) 
                     <Package className="mx-auto size-14 text-stone-300 dark:text-gray-700" />
                     <h1 className="mt-4 text-xl font-black">این بازوی خرید پیدا نشد</h1>
                     <p className="mt-2 text-sm text-stone-500">ممکن است حذف شده باشد یا لینک اشتباه باشد.</p>
-                    <Link href="/" className="mt-5 inline-flex h-11 items-center gap-2 rounded-full bg-brand-contrast px-6 text-sm font-extrabold text-white">
+                    <Link href="/" className="mt-5 inline-flex h-11 items-center gap-2 rounded-full bg-primary px-6 text-sm font-extrabold text-on-primary">
                         رفتن به دیمت
                     </Link>
                 </div>
@@ -194,137 +256,313 @@ export default function InquiryPublicClient({ idOrSlug }: { idOrSlug: string }) 
     }
 
     const showFooterCta = canTouchOffer && !isOwner;
+    const bizLogo = inquiry.business?.logoUrl || null;
+    const ownerAvatar = inquiry.owner?.avatarUrl || null;
+    const isLive = isOpen && !deadlineOver;
+
+    // ✅ ارتباط تجاری سه‌حالته — «ارسال درخواست تامین» (خواستهٔ مالک): هم عمومی هم خصوصی
+    //     none → دکمه | pending → چیپ «در انتظار تایید» | member → چیپ «تاییدشده»
+    const openCoop = () => {
+        if (!isAuthenticated) {
+            router.push(`/login?redirect=${encodeURIComponent(`/${inquiry.slug || inquiry.id}`)}`);
+            return;
+        }
+        setPrivOpen(true);
+    };
+
+    const CoopAction = ({ className = '' }: { className?: string }) => {
+        if (isOwner) return null;
+        if (accessState === 'member') return (
+            <span aria-label="ارتباط تامین شما با این خریدار برقرار است"
+                className={`flex h-11 w-full items-center justify-center gap-1.5 rounded-xl border border-emerald-200/70 bg-emerald-50 text-sm font-bold text-emerald-700 dark:border-emerald-500/30 dark:bg-emerald-500/10 dark:text-emerald-300 ${className}`}>
+                <Check className="size-4" />
+                تامین‌کنندهٔ تاییدشدهٔ این خریدار هستی
+            </span>
+        );
+        if (accessState === 'pending' || requestedSelf) return (
+            <span aria-label="درخواست تامین در انتظار تایید خریدار است"
+                className={`flex h-11 w-full items-center justify-center gap-1.5 rounded-xl border border-brand-accent-tint bg-brand-accent-soft text-sm font-bold text-amber-700 dark:border-amber-500/30 dark:bg-amber-500/10 dark:text-amber-300 ${className}`}>
+                <Clock className="size-4" />
+                درخواست تامین در انتظار تایید خریدار
+            </span>
+        );
+        return (
+            <button onClick={openCoop} aria-label="ارسال درخواست تامین"
+                title="با کاتالوگ قیمتت به این خریدار درخواست تامین بده"
+                className={`flex h-11 w-full items-center justify-center gap-2 rounded-xl bg-primary text-sm font-extrabold text-on-primary shadow-lg shadow-primary/25 transition-all hover:scale-[1.01] hover:opacity-95 active:scale-95 ${className}`}>
+                <Handshake className="size-4" />
+                ارسال درخواست تامین
+            </button>
+        );
+    };
+
+    // آمار کارت هویت — اعداد مفید صفحه (خواستهٔ مالک: ۳-۴ عدد کاربردی + بازدید و ذخیره)
+    const Stat = ({ v, l, lSm, accent = false }: { v: number; l: string; lSm?: string; accent?: boolean }) => (
+        <div className="text-center">
+            <p className={`text-sm font-black sm:text-base ${accent ? 'text-primary' : 'text-stone-900 dark:text-gray-100'}`}>{faNum(v)}</p>
+            <p className="mt-0.5 text-[8.5px] font-bold text-stone-400 dark:text-gray-500 sm:text-[10px]">
+                <span className="hidden sm:inline">{l}</span>
+                <span className="sm:hidden">{lSm || l}</span>
+            </p>
+        </div>
+    );
 
     return (
         <div className="min-h-screen bg-white text-stone-900 dark:bg-gray-950 dark:text-gray-100">
-            {/* هدر */}
-            <header className="sticky top-0 z-40 border-b border-stone-100 bg-white/90 backdrop-blur-md dark:border-gray-800 dark:bg-gray-950/90">
-                <div className="mx-auto flex h-14 max-w-2xl items-center justify-between px-4">
-                    <Link href="/" className="flex items-center gap-1.5 text-sm font-bold text-stone-500 transition-colors hover:text-stone-900 dark:text-gray-400 dark:hover:text-gray-100">
-                        دیمت
-                    </Link>
-                    <div className="flex items-center gap-1.5">
-                        <span className={`rounded-full px-2.5 py-1 text-[10px] font-extrabold ${STATUS_CHIP[inquiry.status] ?? ''}`}>
-                            {STATUS_FA[inquiry.status]}
-                        </span>
-                        <button onClick={copyLink} aria-label="کپی لینک"
-                            className="grid size-9 place-items-center rounded-full border border-stone-200 text-stone-500 transition-colors hover:border-brand-contrast hover:text-amber-600 dark:border-gray-700">
-                            {copied ? <Check className="size-4 text-emerald-500" /> : <Share2 className="size-4" />}
+            {/* ═══ نوار ابزار — قرینهٔ کاتالوگ: بازگشت | سوییچر بازوهای ذخیره‌شده | تنظیمات/ذخیره/اشتراک ═══ */}
+            <header className="sticky top-0 z-40 border-b border-stone-100/80 bg-white/90 backdrop-blur-md dark:border-gray-800 dark:bg-gray-950/90">
+                <div className="mx-auto flex h-14 max-w-2xl items-center justify-between gap-1 px-4">
+                    {/* بازگشت */}
+                    <button onClick={handleBack} aria-label="بازگشت"
+                        className="grid size-10 shrink-0 place-items-center rounded-full border border-stone-200/80 bg-white text-stone-600 shadow-sm transition-all hover:scale-105 active:scale-95 dark:border-gray-700 dark:bg-gray-900 dark:text-gray-200">
+                        <ArrowRight className="size-5" />
+                    </button>
+
+                    {/* ═══ سوییچر بازوهای خرید ذخیره‌شده — وسط؛ برای همه (مالک و بازدیدکننده) ═══ */}
+                    {isAuthenticated && (
+                        <div className="relative flex min-w-0 flex-1 justify-center" ref={savedDropdownRef}>
+                            <button onClick={() => setSavedOpen((v) => !v)} aria-label="سوییچ بین بازوهای خرید ذخیره‌شده"
+                                className="inline-flex min-w-0 items-center gap-1.5 rounded-full px-3 py-2 text-[11px] font-bold text-stone-500 transition-colors hover:bg-stone-100 hover:text-stone-800 dark:text-gray-400 dark:hover:bg-gray-800/60 dark:hover:text-gray-100">
+                                <Bookmark className="hidden size-3.5 sm:block" />
+                                <span className="hidden sm:inline">بازوهای ذخیره‌شده</span>
+                                <span className="sm:hidden">ذخیره‌ها</span>
+                                <span className="rounded-full bg-stone-100 px-1.5 py-0.5 text-[10px] dark:bg-gray-800">{faNum(savedInquiries.length)}</span>
+                                <ChevronDown className={`size-3.5 transition-transform duration-200 ${savedOpen ? 'rotate-180' : ''}`} />
+                            </button>
+
+                            {savedOpen && (
+                                <div className="absolute top-full mt-1 w-72 overflow-hidden rounded-2xl border border-stone-200/70 bg-white shadow-xl dark:border-gray-700 dark:bg-gray-900">
+                                    <div className="max-h-72 overflow-y-auto py-1">
+                                        {savedInquiries.length === 0 ? (
+                                            <p className="px-4 py-6 text-center text-[11px] font-bold leading-5 text-stone-400 dark:text-gray-500">
+                                                هنوز بازویی ذخیره نکردی —<br />با آیکون نشانکِ بالای همین صفحه ذخیره کن
+                                            </p>
+                                        ) : savedInquiries.map((s: any) => {
+                                            const arm = s.inquiry ?? {};
+                                            const armSlug = arm.slug || arm.id;
+                                            const active = armSlug === (inquiry.slug || inquiry.id);
+                                            return (
+                                                <button key={s.id} onClick={() => { setSavedOpen(false); if (!active) router.push(`/${armSlug}`); }}
+                                                    className={`flex w-full items-center gap-2.5 px-3 py-2.5 text-right transition-colors ${active ? 'bg-brand-primary-soft dark:bg-primary/10' : 'hover:bg-stone-50 dark:hover:bg-gray-800/50'}`}>
+                                                    <span className="grid size-8 shrink-0 place-items-center overflow-hidden rounded-lg bg-stone-100 dark:bg-gray-800">
+                                                        {arm.business?.logoUrl
+                                                            ? <Image src={arm.business.logoUrl} alt="" width={32} height={32} className="size-full object-cover" unoptimized />
+                                                            : <ClipboardList className="size-3.5 text-stone-400" />}
+                                                    </span>
+                                                    <span className="min-w-0 flex-1">
+                                                        <span className="block truncate text-xs font-bold">{arm.title}</span>
+                                                        {arm.city && <span className="block text-[9px] text-stone-400">{arm.city}</span>}
+                                                    </span>
+                                                    {active && <span className="size-2 shrink-0 rounded-full bg-primary" />}
+                                                </button>
+                                            );
+                                        })}
+                                    </div>
+                                </div>
+                            )}
+                        </div>
+                    )}
+
+                    {/* تنظیمات (پنل) / ذخیره / اشتراک — سمت مقابل سوییچر */}
+                    <div className="flex shrink-0 items-center gap-1.5">
+                        {isOwner && (
+                            <Link href={`/my-inquiries?catalog=${inquiry.id}`} aria-label="مدیریت بازوی خرید در پنل" title="مدیریت در پنل"
+                                className="grid size-10 place-items-center rounded-full border border-stone-200/80 bg-white text-stone-600 shadow-sm transition-all hover:scale-105 active:scale-95 dark:border-gray-700 dark:bg-gray-900 dark:text-gray-200">
+                                <Settings className="size-5" />
+                            </Link>
+                        )}
+                        <button onClick={handleSaveToggle} aria-label={isSaved ? 'حذف از ذخیره‌ها' : 'ذخیرهٔ بازوی خرید'} title={isSaved ? 'حذف از ذخیره‌ها' : 'ذخیره'}
+                            className={`grid size-10 place-items-center rounded-full border shadow-sm transition-all hover:scale-105 active:scale-95 ${isSaved ? 'border-primary/30 bg-brand-primary-soft text-primary dark:bg-primary/15' : 'border-stone-200/80 bg-white text-stone-600 dark:border-gray-700 dark:bg-gray-900 dark:text-gray-200'}`}>
+                            <Bookmark className={`size-5 ${isSaved ? 'fill-primary' : ''}`} />
+                        </button>
+                        <button onClick={copyLink} aria-label="اشتراک‌گذاری" title="اشتراک‌گذاری"
+                            className="grid size-10 place-items-center rounded-full border border-stone-200/80 bg-white text-stone-600 shadow-sm transition-all hover:scale-105 active:scale-95 dark:border-gray-700 dark:bg-gray-900 dark:text-gray-200">
+                            {copied ? <Check className="size-5 text-emerald-500" /> : <Share2 className="size-5" />}
                         </button>
                     </div>
                 </div>
             </header>
 
-            <main className="mx-auto max-w-2xl px-4 pb-32 pt-6">
-                {/* کارت سرآیند */}
-                <motion.section {...fadeUp()} className={`p-5 sm:p-6 ${CARD} rounded-3xl`}>
-                    <div className="flex items-start gap-3">
-                        <span className="grid size-12 shrink-0 place-items-center rounded-2xl bg-brand-contrast-soft text-amber-600 dark:text-amber-400">
-                            <ClipboardList className="size-6" />
-                        </span>
-                        <div className="min-w-0 flex-1">
-                            <h1 className="text-xl font-black leading-8 sm:text-2xl">{inquiry.title}</h1>
-                            <div className="mt-1.5 flex flex-wrap items-center gap-x-4 gap-y-1 text-xs font-bold text-stone-400 dark:text-gray-500">
-                                <span className="flex items-center gap-1"><User className="size-3.5" /> {inquiry.business?.name || inquiry.owner?.fullName || 'کاربر دیمت'}</span>
-                                {inquiry.city && <span className="flex items-center gap-1"><MapPin className="size-3.5" /> {inquiry.city}</span>}
-                                <span>{faTimeAgo(inquiry.createdAt)}</span>
-                                <span className="flex items-center gap-1 text-amber-600 dark:text-amber-400"><Eye className="size-3.5" /> {faNum(inquiry.viewCount)}</span>
+            <main className="mx-auto max-w-2xl px-4 pb-32 pt-5">
+                {/* ═══ کارت هویت بازو — هم‌خانوادهٔ هدر کاتالوگ قیمت ═══ */}
+                <motion.section {...fadeUp()} className={`overflow-hidden ${CARD} rounded-3xl`}>
+                    <div className="h-1 bg-gradient-to-l from-primary via-brand-accent to-brand-primary/50" />
+                    <div className="p-5 sm:p-6">
+                        {/* ردیف هویت — لوگو + عنوان + بج زندهٔ «در حال قیمت گیری» */}
+                        <div className="flex items-center gap-3.5">
+                            <div className="size-16 shrink-0 overflow-hidden rounded-2xl bg-brand-primary-soft sm:size-20">
+                                {bizLogo ? (
+                                    <Image src={bizLogo} alt={inquiry.business?.name || inquiry.title} width={80} height={80} className="size-full object-cover" unoptimized />
+                                ) : (
+                                    <span className="grid size-full place-items-center"><ClipboardList className="size-7 text-primary sm:size-8" /></span>
+                                )}
+                            </div>
+                            <div className="min-w-0 flex-1">
+                                <div className="flex flex-wrap items-center gap-x-2 gap-y-1.5">
+                                    <h1 className="text-lg font-black leading-7 sm:text-2xl sm:leading-9">{inquiry.title}</h1>
+                                    {isLive ? (
+                                        <span className="inline-flex shrink-0 items-center gap-1.5 rounded-full bg-brand-primary-soft px-2.5 py-1 text-[9px] font-black text-brand-primary dark:bg-primary/15 sm:text-[10.5px]">
+                                            <span className="size-1.5 animate-pulse rounded-full bg-primary" />
+                                            در حال قیمت گیری
+                                        </span>
+                                    ) : (
+                                        <span className="inline-flex shrink-0 items-center gap-1.5 rounded-full bg-stone-100 px-2.5 py-1 text-[9px] font-black text-stone-500 dark:bg-gray-800 dark:text-gray-400 sm:text-[10.5px]">
+                                            <Pause className="size-3" />
+                                            توقف قیمت گیری
+                                        </span>
+                                    )}
+                                </div>
+                                <p className="mt-1 text-[11px] font-bold text-stone-400 dark:text-gray-500">
+                                    {inquiry.business?.name || inquiry.owner?.fullName || 'کاربر دیمت'}
+                                    {inquiry.city ? ` · ${inquiry.city}` : ''} · {faTimeAgo(inquiry.createdAt)}
+                                </p>
                             </div>
                         </div>
-                    </div>
 
-                    {inquiry.description && (
-                        <p className="mt-4 rounded-2xl bg-stone-50 px-4 py-3 text-sm leading-7 text-stone-600 dark:bg-gray-950/60 dark:text-gray-300">
-                            {inquiry.description}
-                        </p>
-                    )}
+                        {/* آمار — قیمت‌گیری/اقلام/تامین‌کننده/بازدید/ذخیره */}
+                        <div className="mt-4 grid grid-cols-5 gap-1 border-y border-stone-100 py-3 dark:border-gray-800">
+                            <Stat v={urgentItems.length} l="در حال قیمت‌گیری" lSm="قیمت‌گیری" accent />
+                            <Stat v={items.length} l="قلم خرید" lSm="قلم" />
+                            <Stat v={suppliersCount} l="تامین‌کننده" lSm="تامین" />
+                            <Stat v={inquiry.viewCount} l="بازدید" />
+                            <Stat v={savesCount} l="ذخیره" />
+                        </div>
 
-                    <div className="mt-4 flex flex-wrap items-center gap-2">
-                        {dl && (
-                            <span className={`flex items-center gap-1 rounded-full px-3 py-1 text-[11px] font-extrabold ${dl.urgent ? 'bg-red-50 text-red-600 dark:bg-red-500/10 dark:text-red-400' : 'bg-stone-100 text-stone-500 dark:bg-gray-800 dark:text-gray-400'}`}>
-                                <Clock className="size-3.5" /> {dl.text}
-                            </span>
-                        )}
-                        {inquiry.deliveryNote && (
-                            <span className="flex items-center gap-1 rounded-full bg-stone-100 px-3 py-1 text-[11px] font-bold text-stone-500 dark:bg-gray-800 dark:text-gray-400">
-                                <Truck className="size-3.5" /> {inquiry.deliveryNote}
-                            </span>
-                        )}
-                        {inquiry.paymentTerms && (
-                            <span className="flex items-center gap-1 rounded-full bg-stone-100 px-3 py-1 text-[11px] font-bold text-stone-500 dark:bg-gray-800 dark:text-gray-400">
-                                <Wallet className="size-3.5" /> {inquiry.paymentTerms}
-                            </span>
-                        )}
-                        {inquiry.tags.map((t) => (
-                            <span key={t} className="rounded-full bg-brand-contrast-soft px-3 py-1 text-[11px] font-bold text-amber-700 dark:text-amber-400">{t}</span>
-                        ))}
-                    </div>
+                        {/* ✅ ارتباط — «ارسال درخواست تامین» برای همه دیده می‌شود (عمومی و خصوصی) */}
+                        {!isOwner && <CoopAction className="mt-4" />}
 
-                    {/* ☎️💾 اکشن‌های بازدیدکننده — تماس + ذخیرهٔ مخاطب (خواستهٔ مالک) */}
-                    {!isOwner && (
-                        <div className="mt-4 flex flex-wrap gap-2 border-t border-dashed border-stone-100 pt-4 dark:border-gray-800">
-                            {bizPhone && (
-                                <a href={`tel:${bizPhone}`} dir="ltr"
-                                    className="flex h-10 items-center gap-1.5 rounded-full border border-stone-200 px-4 text-xs font-extrabold text-stone-700 transition-colors hover:border-emerald-400 hover:text-emerald-600 dark:border-gray-700 dark:text-gray-200">
-                                    <PhoneCall className="size-3.5 text-emerald-500" />
-                                    تماس
-                                </a>
+                        {/* 👤 باکس خریدار — عکس پروفایل + تماس؛ ارتباط موثر (خواستهٔ مالک) */}
+                        {!isOwner && (
+                            <div className="mt-3 flex items-center gap-2.5 rounded-2xl bg-stone-50 px-3.5 py-3 dark:bg-gray-950/60">
+                                {ownerAvatar ? (
+                                    <Image src={ownerAvatar} alt={inquiry.owner?.fullName || ''} width={48} height={48}
+                                        className="size-11 shrink-0 rounded-full object-cover ring-2 ring-white dark:ring-gray-800" unoptimized />
+                                ) : (
+                                    <span className="grid size-11 shrink-0 place-items-center rounded-full bg-white shadow-sm dark:bg-gray-900">
+                                        <User className="size-5 text-stone-300 dark:text-gray-600" />
+                                    </span>
+                                )}
+                                <div className="min-w-0 flex-1">
+                                    <p className="truncate text-xs font-black">{inquiry.owner?.fullName || inquiry.business?.name || 'خریدار'}</p>
+                                    <p className="mt-0.5 text-[10px] font-bold text-stone-400 dark:text-gray-500">خریدار — برای هماهنگی تامین در دسترسه</p>
+                                </div>
+                                {bizPhone && (
+                                    <a href={`tel:${bizPhone}`} aria-label="تماس با خریدار"
+                                        className="inline-flex h-9 shrink-0 items-center gap-1 rounded-lg bg-primary px-3.5 text-[11px] font-extrabold text-on-primary transition active:scale-95">
+                                        <PhoneCall className="size-3.5" />
+                                        تماس
+                                    </a>
+                                )}
+                                <button onClick={saveContact}
+                                    className="inline-flex h-9 shrink-0 items-center gap-1 rounded-lg border border-stone-200 bg-white px-3 text-[11px] font-extrabold text-stone-600 transition active:scale-95 dark:border-gray-700 dark:bg-gray-900 dark:text-gray-200">
+                                    <UserPlus className="size-3.5 text-primary" />
+                                    ذخیره مخاطب
+                                </button>
+                            </div>
+                        )}
+
+                        {inquiry.description && (
+                            <p className="mt-4 rounded-2xl bg-stone-50 px-4 py-3 text-sm leading-7 text-stone-600 dark:bg-gray-950/60 dark:text-gray-300">
+                                {inquiry.description}
+                            </p>
+                        )}
+
+                        <div className="mt-4 flex flex-wrap items-center gap-2">
+                            {dl && (
+                                <span className={`flex items-center gap-1 rounded-full px-3 py-1 text-[11px] font-extrabold ${dl.urgent ? 'bg-red-50 text-red-600 dark:bg-red-500/10 dark:text-red-400' : 'bg-stone-100 text-stone-500 dark:bg-gray-800 dark:text-gray-400'}`}>
+                                    <Clock className="size-3.5" /> {dl.text}
+                                </span>
                             )}
-                            <button onClick={saveContact}
-                                className="flex h-10 items-center gap-1.5 rounded-full border border-stone-200 px-4 text-xs font-extrabold text-stone-700 transition-colors hover:border-brand-contrast hover:text-amber-700 dark:border-gray-700 dark:text-gray-200">
-                                <UserPlus className="size-3.5 text-brand-contrast" />
-                                ذخیره مخاطب
-                            </button>
+                            {inquiry.deliveryNote && (
+                                <span className="flex items-center gap-1 rounded-full bg-stone-100 px-3 py-1 text-[11px] font-bold text-stone-500 dark:bg-gray-800 dark:text-gray-400">
+                                    <Truck className="size-3.5" /> {inquiry.deliveryNote}
+                                </span>
+                            )}
+                            {inquiry.paymentTerms && (
+                                <span className="flex items-center gap-1 rounded-full bg-stone-100 px-3 py-1 text-[11px] font-bold text-stone-500 dark:bg-gray-800 dark:text-gray-400">
+                                    <Wallet className="size-3.5" /> {inquiry.paymentTerms}
+                                </span>
+                            )}
+                            {inquiry.tags.map((t) => (
+                                <span key={t} className="rounded-full bg-brand-accent-soft px-3 py-1 text-[11px] font-bold text-amber-700 dark:text-amber-400">{t}</span>
+                            ))}
                         </div>
-                    )}
-
-                    {/* اکشن‌های مالک — بدون حذف؛ فقط توقف/ادامهٔ پذیرش قیمت */}
-                    {isOwner && (
-                        <div className="mt-4 flex flex-wrap gap-2 border-t border-dashed border-stone-100 pt-4 dark:border-gray-800">
-                            <Link href={`/my-inquiries?catalog=${inquiry.id}`}
-                                className="flex h-10 items-center gap-1.5 rounded-full bg-brand-contrast px-4 text-xs font-extrabold text-white shadow-md shadow-brand-contrast/25 transition-colors hover:bg-brand-contrast-strong">
-                                <Settings className="size-3.5" />
-                                مدیریت در پنل
-                            </Link>
-                            <button onClick={toggleStatus}
-                                className="flex h-10 items-center gap-1.5 rounded-full border border-stone-200 px-4 text-xs font-bold text-stone-600 transition-colors hover:border-stone-400 dark:border-gray-700 dark:text-gray-300">
-                                {inquiry.status === 'open' ? <><Ban className="size-3.5" /> توقف پذیرش قیمت</> : <><RotateCcw className="size-3.5" /> بازکردن دوباره</>}
-                            </button>
-                        </div>
-                    )}
+                    </div>
                 </motion.section>
+
+                {/* ═══ ✅ خلاصهٔ پیشنهادها — جلوی چشم مدیر، نه ته صفحه (خواستهٔ مالک) ═══ */}
+                {isOwner && (inquiry.offers?.length ?? 0) > 0 && (
+                    <motion.button {...fadeUp(0.05)} onClick={scrollToOffers}
+                        className="mt-4 flex w-full items-center gap-3 rounded-2xl border border-primary/25 bg-brand-primary-soft px-4 py-3.5 text-right shadow-sm transition-all hover:shadow-md active:scale-[0.99] dark:border-primary/20 dark:bg-primary/10">
+                        <span className="grid size-9 shrink-0 place-items-center rounded-xl bg-white shadow-sm dark:bg-gray-900">
+                            <MessageSquareText className="size-4 text-primary" />
+                        </span>
+                        <span className="min-w-0 flex-1">
+                            <span className="block text-[12.5px] font-black text-brand-primary dark:text-emerald-300">
+                                {faNum(inquiry.offers!.length)} پیشنهاد قیمت دریافتی
+                            </span>
+                            <span className="mt-0.5 block text-[10.5px] font-bold leading-4 text-brand-primary/70 dark:text-emerald-300/70">
+                                تامین‌کننده‌ها واکنش داده‌اند — ببین چی پیشنهاد دادن
+                            </span>
+                        </span>
+                        <ChevronDown className="size-4 shrink-0 -rotate-90 text-brand-primary dark:text-emerald-300" />
+                    </motion.button>
+                )}
 
                 {/* ═══ بنر بازوی خرید خصوصی — لیست دیده می‌شود، قیمت فقط برای اعضا ═══ */}
                 {limited && (
                     <motion.div {...fadeUp(0.05)}
-                        className="mt-4 flex items-center gap-3 rounded-2xl border border-brand-contrast/30 bg-brand-contrast-soft/50 px-4 py-3.5 dark:border-amber-500/25 dark:bg-amber-500/5">
+                        className="mt-4 flex items-center gap-3 rounded-2xl border border-brand-accent/30 bg-brand-accent-soft/70 px-4 py-3.5 dark:border-amber-500/25 dark:bg-amber-500/5">
                         <span className="grid size-9 shrink-0 place-items-center rounded-xl bg-white shadow-sm dark:bg-gray-900">
                             <Lock className="size-4 text-amber-600 dark:text-amber-400" />
                         </span>
                         <div className="min-w-0 flex-1">
                             <p className="text-[12px] font-black text-amber-800 dark:text-amber-300">این بازوی خرید خصوصیه</p>
                             <p className="mt-0.5 text-[10.5px] font-bold leading-4 text-amber-700/80 dark:text-amber-400/80">
-                                {requestedSelf
-                                    ? 'درخواست همکاری‌ات ثبت شد — به‌محض تایید خریدار، دکمهٔ قیمت برایت فعال می‌شود'
+                                {(accessState === 'pending' || requestedSelf)
+                                    ? 'درخواست تامینت ثبت شد — به‌محض تایید خریدار می‌توانی قیمت بفرستی'
                                     : 'همه لیست را می‌بینند؛ ولی فقط تامین‌کننده‌های تاییدشدهٔ خریدار می‌توانند قیمت بدهند'}
                             </p>
                         </div>
-                        {!requestedSelf && (
-                            <button onClick={() => (isAuthenticated ? setPrivOpen(true) : router.push(`/login?redirect=${encodeURIComponent(`/${inquiry.slug || inquiry.id}`)}`))}
-                                className="shrink-0 rounded-full bg-brand-contrast px-3.5 py-2 text-[11px] font-extrabold text-white shadow-sm transition-colors hover:bg-brand-contrast-strong">
-                                {isAuthenticated ? 'درخواست همکاری' : 'ورود'}
+                        {accessState !== 'pending' && !requestedSelf && (
+                            <button onClick={openCoop}
+                                className="shrink-0 rounded-full bg-primary px-3.5 py-2 text-[11px] font-extrabold text-on-primary shadow-sm transition-opacity hover:opacity-90">
+                                {isAuthenticated ? 'ارسال درخواست تامین' : 'ورود'}
                             </button>
                         )}
                     </motion.div>
                 )}
 
-                {/* ═══ اقلام فعال — بالای صفحه ═══ */}
+                {/* ═══ در حال قیمت گیری — بالای صفحه (نام جدید به خواستهٔ مالک) ═══ */}
                 <section className="mt-6">
-                    <h2 className="mb-3 flex items-center gap-2 text-sm font-black text-stone-700 dark:text-gray-300">
-                        <Megaphone className="size-4 text-brand-contrast" />
-                        اقلام فعال
-                        <span className="rounded-full bg-brand-contrast px-2 py-0.5 text-[9px] font-black text-white">{faNum(urgentItems.length)}</span>
-                    </h2>
+                    <div className="mb-3 flex items-center justify-between gap-2">
+                        <h2 className="flex items-center gap-2 text-sm font-black text-stone-700 dark:text-gray-300">
+                            <Megaphone className="size-4 text-primary" />
+                            در حال قیمت گیری
+                            <span className="rounded-full bg-primary px-2 py-0.5 text-[9px] font-black text-on-primary">{faNum(urgentItems.length)}</span>
+                        </h2>
+
+                        {/* ⏯️ مالک: توقف/شروع قیمت‌گیری — آیکون پلی/پاز جای دکمهٔ بزرگ (خواستهٔ مالک) */}
+                        {isOwner && items.length > 0 && (
+                            <button onClick={toggleStatus} disabled={updateInquiry.isPending}
+                                title={isOpen ? 'توقف قیمت‌گیری — پیشنهاد جدید پذیرفته نمی‌شود' : 'شروع قیمت‌گیری'}
+                                aria-label={isOpen ? 'توقف قیمت‌گیری' : 'شروع قیمت‌گیری'}
+                                className={`inline-flex h-8 shrink-0 items-center gap-1.5 rounded-full border px-2.5 text-[10px] font-extrabold transition-all active:scale-95 disabled:opacity-50 ${isOpen ? 'border-stone-200 bg-white text-stone-500 hover:border-red-200 hover:text-red-500 dark:border-gray-700 dark:bg-gray-900 dark:text-gray-400' : 'border-primary/40 bg-brand-primary-soft text-primary dark:bg-primary/15'}`}>
+                                {isOpen ? (
+                                    <><Pause className="size-3.5" /><span className="hidden sm:inline">توقف قیمت‌گیری</span></>
+                                ) : (
+                                    <><Play className="size-3.5" /><span className="hidden sm:inline">شروع قیمت‌گیری</span></>
+                                )}
+                            </button>
+                        )}
+                    </div>
+
+                    {!isLive && items.length > 0 && (
+                        <p className="mb-3 flex items-center gap-1.5 rounded-xl bg-stone-50 px-3 py-2 text-[11px] font-bold text-stone-400 dark:bg-gray-950/60 dark:text-gray-500">
+                            <Pause className="size-3.5" />
+                            قیمت‌گیری این بازو فعلاً متوقفه — پیشنهاد جدید پذیرفته نمی‌شود.
+                        </p>
+                    )}
 
                     {items.length === 0 ? (
                         <div className={`${CARD} rounded-2xl px-4 py-8 text-center`}>
@@ -348,14 +586,23 @@ export default function InquiryPublicClient({ idOrSlug }: { idOrSlug: string }) 
                                     className={`p-4 ${CARD} rounded-2xl transition-shadow hover:shadow-[0_6px_20px_-8px_rgba(15,23,42,0.22)]`}>
                                     <div className="flex items-start justify-between gap-3">
                                         <div className="min-w-0">
-                                            <div className="flex items-center gap-1.5">
+                                            <div className="flex flex-wrap items-center gap-1.5">
                                                 <h3 className="font-extrabold text-stone-800 dark:text-gray-200">{it.name}</h3>
-                                                <span className="shrink-0 rounded-full bg-brand-contrast px-1.5 py-0.5 text-[8.5px] font-black text-white">فعال</span>
+                                                {isOwner && (offersByItem.get(it.id) ?? 0) > 0 && (
+                                                    <button onClick={scrollToOffers} title="دیدن پیشنهادهای این قلم"
+                                                        className="inline-flex shrink-0 items-center gap-1 rounded-full bg-brand-accent-soft px-2 py-0.5 text-[9.5px] font-black text-amber-700 transition-colors hover:bg-brand-accent-tint dark:bg-amber-500/10 dark:text-amber-400">
+                                                        <MessageSquareText className="size-3" />
+                                                        {faNum(offersByItem.get(it.id))} پیشنهاد
+                                                    </button>
+                                                )}
+                                                {isLive && (
+                                                    <span className="shrink-0 rounded-full bg-primary px-1.5 py-0.5 text-[8.5px] font-black text-on-primary">فعال</span>
+                                                )}
                                             </div>
                                             {it.brand && <p className="mt-0.5 text-xs font-bold text-stone-400 dark:text-gray-500">{it.brand}</p>}
                                         </div>
                                         {(it.quantity || it.unit) && (
-                                            <span className="shrink-0 rounded-full bg-brand-contrast-soft px-3 py-1 text-xs font-extrabold text-amber-700 dark:text-amber-400">
+                                            <span className="shrink-0 rounded-full bg-brand-accent-soft px-3 py-1 text-xs font-extrabold text-amber-700 dark:text-amber-400">
                                                 {faNum(it.quantity)} {it.unit}
                                             </span>
                                         )}
@@ -377,7 +624,7 @@ export default function InquiryPublicClient({ idOrSlug }: { idOrSlug: string }) 
                                     <div className="mt-3 flex items-center justify-between gap-2">
                                         {it.referenceUrl ? (
                                             <a href={it.referenceUrl} target="_blank" rel="noreferrer"
-                                                className="inline-flex items-center gap-1 text-[11px] font-bold text-stone-400 hover:text-amber-600 dark:text-gray-500">
+                                                className="inline-flex items-center gap-1 text-[11px] font-bold text-stone-400 hover:text-primary dark:text-gray-500">
                                                 <ExternalLink className="size-3" /> نمونه / کاتالوگ سازنده
                                             </a>
                                         ) : <span />}
@@ -385,7 +632,7 @@ export default function InquiryPublicClient({ idOrSlug }: { idOrSlug: string }) 
                                             <motion.button
                                                 whileTap={{ scale: 0.96 }}
                                                 onClick={() => handleOffer({ id: it.id, name: it.name, quantity: it.quantity, unit: it.unit })}
-                                                className="flex h-9 items-center gap-1.5 rounded-full bg-brand-contrast px-4 text-xs font-extrabold text-white shadow-md shadow-brand-contrast/25 transition-colors hover:bg-brand-contrast-strong">
+                                                className="flex h-9 items-center gap-1.5 rounded-full bg-primary px-4 text-xs font-extrabold text-on-primary shadow-md shadow-primary/25 transition-opacity hover:opacity-95">
                                                 <Send className="size-3.5" />
                                                 پیشنهاد قیمت
                                             </motion.button>
@@ -447,7 +694,7 @@ export default function InquiryPublicClient({ idOrSlug }: { idOrSlug: string }) 
                                     <div className="mt-3 flex items-center justify-between gap-2">
                                         {it.referenceUrl ? (
                                             <a href={it.referenceUrl} target="_blank" rel="noreferrer"
-                                                className="inline-flex items-center gap-1 text-[11px] font-bold text-stone-400 hover:text-amber-600 dark:text-gray-500">
+                                                className="inline-flex items-center gap-1 text-[11px] font-bold text-stone-400 hover:text-primary dark:text-gray-500">
                                                 <ExternalLink className="size-3" /> نمونه / کاتالوگ سازنده
                                             </a>
                                         ) : <span />}
@@ -455,7 +702,7 @@ export default function InquiryPublicClient({ idOrSlug }: { idOrSlug: string }) 
                                             <motion.button
                                                 whileTap={{ scale: 0.96 }}
                                                 onClick={() => handleOffer({ id: it.id, name: it.name, quantity: it.quantity, unit: it.unit })}
-                                                className="flex h-9 items-center gap-1.5 rounded-full border border-brand-contrast/60 px-4 text-xs font-extrabold text-amber-700 transition-colors hover:bg-brand-contrast-soft dark:text-amber-400">
+                                                className="flex h-9 items-center gap-1.5 rounded-full border border-primary/40 px-4 text-xs font-extrabold text-primary transition-colors hover:bg-brand-primary-soft dark:text-emerald-300">
                                                 <Send className="size-3.5" />
                                                 پیشنهاد قیمت
                                             </motion.button>
@@ -471,7 +718,7 @@ export default function InquiryPublicClient({ idOrSlug }: { idOrSlug: string }) 
                 {canOfferWholeList && items.length > 1 && (
                     <motion.div {...fadeUp()} className="mt-6 hidden text-center lg:block">
                         <button onClick={() => handleOffer({ name: 'کل لیست' })}
-                            className="text-xs font-bold text-stone-400 underline decoration-dotted underline-offset-4 transition-colors hover:text-amber-600 dark:text-gray-500">
+                            className="text-xs font-bold text-stone-400 underline decoration-dotted underline-offset-4 transition-colors hover:text-primary dark:text-gray-500">
                             پیشنهاد برای کل لیست
                         </button>
                     </motion.div>
@@ -492,7 +739,7 @@ export default function InquiryPublicClient({ idOrSlug }: { idOrSlug: string }) 
                             وارد شو و همین حالا قیمتت رو بذار — خریدار مستقیم باهات در تماسه.
                         </p>
                         <Link href={`/login?redirect=${encodeURIComponent(`/${inquiry.slug || inquiry.id}`)}`}
-                            className="mt-5 inline-flex h-11 items-center gap-2 rounded-full bg-brand-contrast px-7 text-sm font-extrabold text-white shadow-lg shadow-brand-contrast/30 hover:bg-brand-contrast-strong">
+                            className="mt-5 inline-flex h-11 items-center gap-2 rounded-full bg-primary px-7 text-sm font-extrabold text-on-primary shadow-lg shadow-primary/30 hover:opacity-95">
                             ورود و ثبت پیشنهاد
                         </Link>
                     </motion.section>
@@ -500,9 +747,9 @@ export default function InquiryPublicClient({ idOrSlug }: { idOrSlug: string }) 
 
                 {/* ─── پیشنهادها (مالک) ─── */}
                 {isOwner && (
-                    <section className="mt-8">
+                    <section id="offers" className="mt-8 scroll-mt-20">
                         <h2 className="mb-3 flex items-center gap-2 text-sm font-black text-stone-500 dark:text-gray-400">
-                            <MessageSquareText className="size-4 text-brand-contrast" />
+                            <MessageSquareText className="size-4 text-primary" />
                             پیشنهادهای دریافتی — {faNum(inquiry.offers?.length ?? 0)}
                         </h2>
                         {(inquiry.offers?.length ?? 0) === 0 ? (
@@ -537,14 +784,14 @@ export default function InquiryPublicClient({ idOrSlug }: { idOrSlug: string }) 
                                                     </div>
                                                 </div>
                                                 <div className="text-end">
-                                                    <p className="text-base font-black text-brand-contrast">{faPrice(o.price)}</p>
+                                                    <p className="text-base font-black text-primary dark:text-emerald-300">{faPrice(o.price)}</p>
                                                     {o.priceBasis && <p className="text-[10px] font-bold text-stone-400">{o.priceBasis}</p>}
                                                 </div>
                                             </div>
 
                                             <div className="mt-2 flex flex-wrap gap-2 text-[11px] font-bold text-stone-400">
                                                 {o.itemName && (
-                                                    <span className="rounded-full bg-brand-contrast-soft px-2 py-0.5 text-amber-700 dark:text-amber-400">{o.itemName}</span>
+                                                    <span className="rounded-full bg-brand-accent-soft px-2 py-0.5 text-amber-700 dark:text-amber-400">{o.itemName}</span>
                                                 )}
                                                 {o.deliveryDays != null && <span className="flex items-center gap-1"><Truck className="size-3" /> {faNum(o.deliveryDays)} روزه</span>}
                                                 {o.contactPhone && <span className="flex items-center gap-1" dir="ltr"><Phone className="size-3" /> {o.contactPhone}</span>}
@@ -586,11 +833,11 @@ export default function InquiryPublicClient({ idOrSlug }: { idOrSlug: string }) 
                         <div className="min-w-0">
                             <p className="truncate text-[12px] font-black text-stone-800 dark:text-gray-200">می‌تونی این لیست رو تامین کنی؟</p>
                             <p className="truncate text-[10px] font-bold text-stone-400 dark:text-gray-500">
-                                {limited ? 'بازوی خرید خصوصیه — اول درخواست همکاری' : 'قیمت بده، خریدار باهات تماس می‌گیره'}
+                                {limited ? 'بازوی خرید خصوصیه — اول درخواست تامین' : 'قیمت بده، خریدار باهات تماس می‌گیره'}
                             </p>
                         </div>
                         <motion.button whileTap={{ scale: 0.96 }} onClick={() => handleOffer({ name: 'کل لیست' })}
-                            className="flex h-11 shrink-0 items-center gap-1.5 rounded-full bg-brand-contrast px-5 text-[13px] font-extrabold text-white shadow-lg shadow-brand-contrast/30 transition-colors hover:bg-brand-contrast-strong">
+                            className="flex h-11 shrink-0 items-center gap-1.5 rounded-full bg-primary px-5 text-[13px] font-extrabold text-on-primary shadow-lg shadow-primary/30 transition-opacity hover:opacity-95">
                             <Send className="size-4" />
                             پیشنهاد قیمت
                         </motion.button>
@@ -621,8 +868,9 @@ function dl_over(deadline?: string | null): boolean {
     } catch { return false; }
 }
 
-// ═══ مدال درخواست همکاری — با کاتالوگ قیمتت به خریدار درخواست می‌دهی؛
-//     بعد از تایید او، همیشه می‌توانی به درخواست‌های قیمتش پیشنهاد بدهی ═══
+// ═══ مدال ارسال درخواست تامین — با کاتالوگ قیمتت به خریدار درخواست می‌دهی؛
+//     هم روی بازوی عمومی هم خصوصی دیده می‌شود (خواستهٔ مالک)؛
+//     بعد از تایید او، هم از همین صفحه هم از کاتالوگش می‌توانی پیشنهاد قیمت بفرستی ═══
 function PrivateRequestModal({ inquiry, onClose, onRequested }: { inquiry: any; onClose: () => void; onRequested: () => void }) {
     const isAuthenticated = useSelector((s: RootState) => s.auth.isAuthenticated);
     const requestAccess = useRequestInquiryAccess();
@@ -643,15 +891,20 @@ function PrivateRequestModal({ inquiry, onClose, onRequested }: { inquiry: any; 
                     <X className="size-4" />
                 </button>
 
-                <span className="mx-auto grid size-14 place-items-center rounded-2xl bg-brand-contrast-soft dark:bg-amber-500/10">
-                    <ShieldCheck className="size-6 text-amber-600 dark:text-amber-400" />
+                <span className="mx-auto grid size-14 place-items-center rounded-2xl bg-brand-primary-soft dark:bg-primary/10">
+                    <Handshake className="size-6 text-primary" />
                 </span>
-                <h1 className="mt-4 text-lg font-black">بازوی خرید خصوصیه</h1>
+                <h1 className="mt-4 text-lg font-black">ارسال درخواست تامین</h1>
                 {inquiry.title && <p className="mt-1 text-sm font-bold text-stone-500 dark:text-gray-400">«{inquiry.title}»</p>}
                 <p className="mx-auto mt-3 max-w-xs text-[12px] font-bold leading-6 text-stone-500 dark:text-gray-400">
-                    فقط تامین‌کننده‌های تاییدشدهٔ خریدار می‌توانند قیمت بدهند —
-                    با کاتالوگ قیمتت بهش درخواست همکاری بده؛ وقتی پذیرفت، همیشه می‌توانی به درخواست‌های قیمتش پیشنهاد بدهی.
+                    با یکی از کاتالوگ‌های قیمتت به این خریدار درخواست تامین بده؛
+                    وقتی پذیرفت، هم از همین صفحه هم از کاتالوگش می‌توانی برایش پیشنهاد قیمت بفرستی.
                 </p>
+                {inquiry.visibility === 'private' && (
+                    <p className="mx-auto mt-2 max-w-xs rounded-xl bg-brand-accent-soft px-3 py-2 text-[11px] font-bold leading-5 text-amber-700 dark:bg-amber-500/10 dark:text-amber-400">
+                        این بازوی خرید خصوصیه — فقط تامین‌کننده‌های تاییدشدهٔ خریدار می‌توانند قیمت بدهند.
+                    </p>
+                )}
                 <ModalBody inquiry={inquiry} isAuthenticated={isAuthenticated} requestAccess={requestAccess} onRequested={onRequested} />
             </motion.div>
         </div>,
@@ -681,7 +934,7 @@ function ModalBody({ inquiry, isAuthenticated, requestAccess, onRequested }: {
         if (!catalogId) return;
         try {
             await requestAccess.mutateAsync({ inquiryId: inquiry.id, catalogId });
-            toast.success('درخواست همکاری‌ات ثبت شد — منتظر تایید خریدار باش');
+            toast.success('درخواست تامینت ثبت شد — منتظر تایید خریدار باش');
             onRequested();
         } catch (e: any) {
             toast.error(e?.response?.data?.message || 'ارسال درخواست ناموفق بود');
@@ -691,9 +944,9 @@ function ModalBody({ inquiry, isAuthenticated, requestAccess, onRequested }: {
     if (!isAuthenticated) {
         return (
             <Link href={loginHref}
-                className="mt-5 inline-flex h-12 items-center gap-2 rounded-full bg-brand-contrast px-8 text-sm font-extrabold text-white shadow-lg shadow-brand-contrast/25 transition-colors hover:bg-brand-contrast-strong">
+                className="mt-5 inline-flex h-12 items-center gap-2 rounded-full bg-primary px-8 text-sm font-extrabold text-on-primary shadow-lg shadow-primary/25 transition-opacity hover:opacity-95">
                 <Handshake className="size-4" />
-                ورود و درخواست همکاری
+                ورود و ارسال درخواست تامین
             </Link>
         );
     }
@@ -703,9 +956,9 @@ function ModalBody({ inquiry, isAuthenticated, requestAccess, onRequested }: {
     if (myCatalogs.length === 0) {
         return (
             <>
-                <p className="mt-5 text-[12px] font-bold text-stone-500 dark:text-gray-400">برای درخواست همکاری اول یک کاتالوگ قیمت بساز</p>
+                <p className="mt-5 text-[12px] font-bold text-stone-500 dark:text-gray-400">برای درخواست تامین اول یک کاتالوگ قیمت بساز</p>
                 <Link href="/business/register"
-                    className="mt-3 inline-flex h-11 items-center gap-2 rounded-full bg-brand-contrast px-6 text-sm font-extrabold text-white transition-colors hover:bg-brand-contrast-strong">
+                    className="mt-3 inline-flex h-11 items-center gap-2 rounded-full bg-primary px-6 text-sm font-extrabold text-on-primary transition-opacity hover:opacity-95">
                     ساخت کاتالوگ قیمت
                 </Link>
             </>
@@ -718,7 +971,7 @@ function ModalBody({ inquiry, isAuthenticated, requestAccess, onRequested }: {
                     <button key={c.id} type="button" onClick={() => setCatalogId(c.id)}
                         className={`flex w-full items-center gap-2 rounded-xl border-2 p-2.5 text-right transition-all ${
                             catalogId === c.id
-                                ? 'border-brand-contrast bg-brand-contrast-soft/50 dark:bg-amber-500/10'
+                                ? 'border-primary bg-brand-primary-soft/60 dark:bg-primary/10'
                                 : 'border-stone-100 hover:border-stone-200 dark:border-gray-800'
                         }`}>
                         <span className="grid size-8 shrink-0 place-items-center overflow-hidden rounded-lg bg-stone-100 dark:bg-gray-800">
@@ -728,14 +981,14 @@ function ModalBody({ inquiry, isAuthenticated, requestAccess, onRequested }: {
                                 : <Store className="size-3.5 text-stone-400" />}
                         </span>
                         <span className="min-w-0 flex-1 truncate text-[12px] font-black text-stone-800 dark:text-gray-200">{c.name}</span>
-                        {catalogId === c.id && <Check className="size-4 shrink-0 text-amber-600 dark:text-amber-400" />}
+                        {catalogId === c.id && <Check className="size-4 shrink-0 text-primary" />}
                     </button>
                 ))}
             </div>
             <motion.button whileTap={{ scale: 0.97 }} disabled={!catalogId || requestAccess.isPending} onClick={send}
-                className="mt-4 flex h-12 w-full items-center justify-center gap-2 rounded-full bg-brand-contrast text-sm font-extrabold text-white shadow-lg shadow-brand-contrast/25 transition-colors hover:bg-brand-contrast-strong disabled:opacity-50">
+                className="mt-4 flex h-12 w-full items-center justify-center gap-2 rounded-full bg-primary text-sm font-extrabold text-on-primary shadow-lg shadow-primary/25 transition-opacity hover:opacity-95 disabled:opacity-50">
                 {requestAccess.isPending ? <Loader2 className="size-4 animate-spin" /> : <Handshake className="size-4" />}
-                درخواست همکاری
+                ارسال درخواست تامین
             </motion.button>
         </>
     );
