@@ -397,8 +397,13 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
                         isCollapsed ? 'lg:mr-[72px]' : 'lg:mr-64'
                     )}
                 >
-                    {/* ⭐ هدر دسکتاپ - fixed */}
-                    <header className="hidden lg:flex items-center justify-between h-16 px-6 bg-white dark:bg-gray-900 border-b border-outline-variant/20 dark:border-gray-800 fixed top-0 left-0 right-0 z-30">
+                    {/* ⭐ هدر دسکتاپ - fixed — فیکس: با right هم‌عرض سایدبار، عنوان زیر سایدبار پنهان نمی‌ماند */}
+                    <header
+                        className={cn(
+                            "hidden lg:flex items-center justify-between h-16 px-6 bg-white dark:bg-gray-900 border-b border-outline-variant/20 dark:border-gray-800 fixed top-0 left-0 z-30",
+                            isCollapsed ? 'right-[72px]' : 'right-64'
+                        )}
+                    >
                         <div className="flex items-center gap-3 min-w-0">
                             {showBackButton && (
                                 <button
