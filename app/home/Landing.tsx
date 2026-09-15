@@ -628,7 +628,7 @@ export default function Landing() {
                 </span>
 
                   <h1 className="mt-5 pb-4 text-xl font-black leading-[1.5] tracking-tight text-stone-950 dark:text-white sm:text-xl md:text-[1.5rem] md:leading-[1.35]">
-                     شبکه تامین کنندگان و خریدران خودت رو بساز.
+                     شبکه تامین کنندگان و خریدرانت رو بساز.
                   </h1>
 
                  {/* <div className={"text-base text-justify"}>
