@@ -85,6 +85,11 @@ api.interceptors.response.use(
 
         const isSkipped = SKIP_FORCE_LOGOUT.some((p) => url.includes(p)) || originalRequest?._skipAuth;
 
+        // ✅ خطای «رمز فعلی اشتباه است» (تغییر رمز) ریزشِ طبیعیِ فرم است —
+        //    نباید کل سشن را پاک کند! (ریشهٔ باگ: کاربر رمز عوض می‌کرد، 401ِ
+        //    WRONG_PASSWORD سشن را می‌پاکید و بعد از رفرش به لاگین پرت می‌شد)
+        const isWrongPassword = error.response?.data?.errorCode === 'WRONG_PASSWORD';
+
         // ✅ 401 فقط وقتی توکن داشتیم یعنی «نشست باطل شده» —
         //    درخواستِ بدون توکن (کاربر مهمان یا بوت سرد قبل از rehydrate)
         //    نباید سشن را پاک کند؛ فقط خطا برمی‌گردد
@@ -95,7 +100,7 @@ api.interceptors.response.use(
             hadToken = !!auth && String(auth).startsWith('Bearer ');
         }
 
-        if (error.response?.status === 401 && !isSkipped && hadToken) {
+        if (error.response?.status === 401 && !isSkipped && !isWrongPassword && hadToken) {
             // توکن منقضی یا باطل‌شده (SESSION_REVOKED بعد از لاگ‌اوت/تغییر رمز)
             // → پاک‌سازی کامل کلاینت؛ auth-provider کاربر را به لاگین می‌برد
             forceLocalLogout();

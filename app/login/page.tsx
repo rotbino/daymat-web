@@ -13,15 +13,18 @@ import { AppFooter } from '@/components/AppFooter';
 import { apiService } from '@/lib/api/apiService';
 import { getApiUrl } from '@/lib/api/apiRequest';
 import { readStoredRef, clearStoredRef } from "@/app/components/RefCapture";
+import { toastFormErrors } from '@/lib/formAlerts';
 
 export default function LoginPage() {
     const router = useRouter();
     const searchParams = useSearchParams();
     const dispatch = useDispatch();
 
-    const [step, setStep] = useState<'phone' | 'password'>('phone');
+    const [step, setStep] = useState<'phone' | 'password' | 'register'>('phone');
     const [phone, setPhone] = useState('');
     const [password, setPassword] = useState('');
+    const [firstName, setFirstName] = useState('');
+    const [lastName, setLastName] = useState('');
     const [showPassword, setShowPassword] = useState(false);
     const [errors, setErrors] = useState<Record<string, string>>({});
     const [isLoading, setIsLoading] = useState(false);
@@ -97,49 +100,66 @@ export default function LoginPage() {
                 return;
             }
 
-            try {
-                await dispatch(clearUserSession());
-
-                const registerResponse = await registerMutation.mutateAsync({
-                    phone,
-                    password: '123456',
-                    refCode: readStoredRef() ?? undefined,
-                } as any);
-
-                dispatch(setUser(registerResponse.user));
-                dispatch(setAccessToken(registerResponse.access_token));
-
-                if (armSlug) {
-                    try {
-                        await apiService.arm.join(armSlug);
-                        toast.success('با موفقیت به بازار پیوستید');
-                    } catch (error: any) {
-                        if (error?.data?.errorCode !== 'ALREADY_MEMBER') {
-                            console.error('Join error:', error);
-                        }
-                    }
-                }
-
-                toast.success('ثبت‌نام با موفقیت انجام شد');
-
-                // ✅ کاربرِ تازه‌ثبت‌نام — اگر از لندینگ redirect آمده (انتخاب ابزار: کاتالوگ/دیوار) همان مقصد؛ وگرنه my-catalogs
-                clearStoredRef();
-                router.replace(getRedirectPath());
-                return;
-            } catch (registerError: any) {
-                if (registerError?.data?.errorCode === 'DUPLICATE_PHONE') {
-                    toast.error('این شماره موبایل قبلاً ثبت شده است');
-                } else {
-                    toast.error(registerError?.message || 'خطا در ثبت‌نام');
-                }
-                setIsLoading(false);
-                return;
-            }
+            // ✅ کاربر جدید — مرحلهٔ دوم: نام و نام خانوادگی بگیر، بعد ثبت‌نام کن
+            setStep('register');
+            setIsLoading(false);
         } catch (error: any) {
             console.error('Check phone error:', error);
             toast.error(error?.message || 'خطا در بررسی شماره موبایل');
             setIsLoading(false);
-        } finally {
+        }
+    };
+
+    // ─── مرحلهٔ دوم ثبت‌نام — نام و نام خانوادگی کاربر ───
+    const handleRegisterSubmit = async (ev: React.FormEvent) => {
+        ev.preventDefault();
+
+        // ⚖️ قانون دیمت: الرتِ واضح کنار خطای CSSِ فیلدها
+        const errs: Record<string, string> = {};
+        if (!firstName.trim()) errs.firstName = 'نام وارد نشده';
+        if (!lastName.trim()) errs.lastName = 'نام خانوادگی وارد نشده';
+        setErrors(errs);
+        if (Object.keys(errs).length > 0) {
+            toastFormErrors(errs);
+            return;
+        }
+
+        setIsLoading(true);
+        try {
+            await dispatch(clearUserSession());
+
+            const registerResponse = await registerMutation.mutateAsync({
+                phone,
+                password: '123456',
+                fullName: `${firstName.trim()} ${lastName.trim()}`,
+                refCode: readStoredRef() ?? undefined,
+            } as any);
+
+            dispatch(setUser(registerResponse.user));
+            dispatch(setAccessToken(registerResponse.access_token));
+
+            if (armSlug) {
+                try {
+                    await apiService.arm.join(armSlug);
+                    toast.success('با موفقیت به بازار پیوستید');
+                } catch (error: any) {
+                    if (error?.data?.errorCode !== 'ALREADY_MEMBER') {
+                        console.error('Join error:', error);
+                    }
+                }
+            }
+
+            toast.success('ثبت‌نام با موفقیت انجام شد');
+
+            // ✅ کاربرِ تازه‌ثبت‌نام — اگر از لندینگ redirect آمده (انتخاب ابزار: کاتالوگ/دیوار) همان مقصد؛ وگرنه my-catalogs
+            clearStoredRef();
+            router.replace(getRedirectPath());
+        } catch (registerError: any) {
+            if (registerError?.data?.errorCode === 'DUPLICATE_PHONE') {
+                toast.error('این شماره موبایل قبلاً ثبت شده است');
+            } else {
+                toast.error(registerError?.message || 'خطا در ثبت‌نام');
+            }
             setIsLoading(false);
         }
     };
@@ -194,9 +214,12 @@ export default function LoginPage() {
         <div className="min-h-screen flex flex-col bg-background">
             <header className="bg-surface w-full fixed top-0 left-0 right-0 z-50 border-b border-outline-variant flex justify-between items-center px-4 h-16">
                 <div className="flex items-center gap-3">
-                    {step === 'password' && (
+                    {step !== 'phone' && (
                         <button
-                            onClick={() => setStep('phone')}
+                            onClick={() => {
+                                setStep('phone');
+                                setErrors({});
+                            }}
                             className="flex items-center justify-center w-10 h-10 text-on-surface-variant hover:text-primary transition-colors active:scale-95"
                         >
                             <ArrowLeft className="w-6 h-6" />
@@ -204,10 +227,10 @@ export default function LoginPage() {
                     )}
                     <div className="flex flex-col text-right">
                         <span className="font-headline-sm text-headline-sm text-on-surface leading-tight">
-                            {step === 'phone' ? 'ورود / ثبت نام' : 'ورود'}
+                            {step === 'phone' ? 'ورود / ثبت نام' : step === 'register' ? 'ثبت‌نام' : 'ورود'}
                         </span>
                         <span className="text-[10px] text-on-surface-variant leading-tight">
-                            {step === 'phone' ? 'شماره موبایل خود را وارد کنید' : 'رمز عبور خود را وارد کنید'}
+                            {step === 'phone' ? 'شماره موبایل خود را وارد کنید' : step === 'register' ? 'نام و نام خانوادگی خود را وارد کنید' : 'رمز عبور خود را وارد کنید'}
                         </span>
                     </div>
                 </div>
@@ -264,6 +287,69 @@ export default function LoginPage() {
 
                             <div className="text-center text-xs text-on-surface-variant">
                                 با ادامه، با <Link href="/docs/terms" className="text-primary hover:underline">قوانین</Link> موافقت می‌کنید
+                            </div>
+                        </form>
+                    ) : step === 'register' ? (
+                        <form onSubmit={handleRegisterSubmit} className="space-y-6">
+                            <div className="text-right mb-8">
+                                <h2 className="font-headline-md text-headline-md text-on-surface">خوش آمدید 👋</h2>
+                                <p className="text-body-md text-on-surface-variant mt-1">
+                                    حساب جدید برای <b dir="ltr">{phone}</b> — فقط نام و نام خانوادگی‌ات را بنویس
+                                </p>
+                            </div>
+
+                            <div className="flex flex-col gap-2">
+                                <label className="font-label-md text-label-md text-on-surface-variant">
+                                    نام <span className="text-primary">*</span>
+                                </label>
+                                <input
+                                    type="text"
+                                    value={firstName}
+                                    maxLength={40}
+                                    onChange={(e) => {
+                                        setFirstName(e.target.value);
+                                        if (errors.firstName) setErrors({ ...errors, firstName: undefined });
+                                    }}
+                                    placeholder="مثلا: سعید"
+                                    className={`w-full bg-surface-container-lowest border h-14 px-4 text-right focus:ring-1 focus:ring-primary focus:border-primary outline-none transition-all ${errors.firstName ? 'border-error' : 'border-outline'}`}
+                                />
+                                {errors.firstName && <p className="text-error text-sm mt-1">{errors.firstName}</p>}
+                            </div>
+
+                            <div className="flex flex-col gap-2">
+                                <label className="font-label-md text-label-md text-on-surface-variant">
+                                    نام خانوادگی <span className="text-primary">*</span>
+                                </label>
+                                <input
+                                    type="text"
+                                    value={lastName}
+                                    maxLength={40}
+                                    onChange={(e) => {
+                                        setLastName(e.target.value);
+                                        if (errors.lastName) setErrors({ ...errors, lastName: undefined });
+                                    }}
+                                    placeholder="مثلا: یوسفی"
+                                    className={`w-full bg-surface-container-lowest border h-14 px-4 text-right focus:ring-1 focus:ring-primary focus:border-primary outline-none transition-all ${errors.lastName ? 'border-error' : 'border-outline'}`}
+                                />
+                                {errors.lastName && <p className="text-error text-sm mt-1">{errors.lastName}</p>}
+                            </div>
+
+                            <div className="rounded-xl bg-surface-container-low border border-outline-variant/60 px-4 py-3">
+                                <p className="text-xs text-on-surface-variant leading-5">
+                                    🔑 برای شروع، رمز موقت <b dir="ltr">123456</b> ساخته می‌شود — بعد از ورود از پروفایل عوضش کن.
+                                </p>
+                            </div>
+
+                            <button
+                                type="submit"
+                                disabled={isLoading}
+                                className="w-full bg-primary text-on-primary h-14 font-headline-sm text-headline-sm flex items-center justify-center gap-2 active:scale-95 transition-transform duration-150"
+                            >
+                                {isLoading ? 'در حال ثبت‌نام...' : <><ArrowLeft className="w-5 h-5" />ثبت‌نام</>}
+                            </button>
+
+                            <div className="text-center text-xs text-on-surface-variant">
+                                با ثبت‌نام، با <Link href="/docs/terms" className="text-primary hover:underline">قوانین</Link> موافقت می‌کنید
                             </div>
                         </form>
                     ) : (
