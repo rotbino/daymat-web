@@ -15,7 +15,7 @@ import React, { useEffect, useMemo, useState } from 'react';
 import Image from 'next/image';
 import { createPortal } from 'react-dom';
 import {
-    Building2, ChevronDown, X, Search, Plus, Loader2, BadgeCheck, Check, MapPin, Users,
+    Building2, ChevronDown, X, Search, Plus, Loader2, BadgeCheck, Check, MapPin,
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { useBusinessSearch, useMyBusinesses, useLocationsTree } from '@/lib/api/apiHooks';
@@ -203,6 +203,18 @@ function BusinessPickerModal({ onPick, onClose, onBusinessCreated }: {
                             </button>
                         )}
                     </div>
+
+                    {/* ✅ تابلوی ثبت کسب‌وکار جدید — پرکاربردترین اقدام؛ همیشه بالای چشم، توپرِ سبزِ برند */}
+                    <button type="button" onClick={() => setSetupOpen(true)}
+                            className="w-full h-11 rounded-xl bg-primary text-on-primary text-sm font-extrabold
+                                flex items-center justify-center gap-2 shadow-md shadow-primary/30
+                                hover:bg-primary/90 active:scale-[0.99] transition-all">
+                        <Plus className="w-4.5 h-4.5" />
+                        ثبت کسب‌وکار جدید
+                    </button>
+                    <p className="text-[9.5px] text-on-surface-variant/50 text-center -mt-0.5">
+                        کسب‌وکارت را پیدا نکردی؟ همین‌جا ثبتش کن — شاید همکارانت قبلاً ثبت کرده باشند
+                    </p>
                 </div>
 
                 {/* نتایج */}
@@ -260,27 +272,9 @@ function BusinessPickerModal({ onPick, onClose, onBusinessCreated }: {
                         <div className="py-6 text-center space-y-1">
                             <Building2 className="w-8 h-8 text-on-surface-variant/20 mx-auto" />
                             <p className="text-xs text-on-surface-variant/70">کسب‌وکاری با این مشخصات پیدا نشد</p>
-                            <p className="text-[10px] text-on-surface-variant/50">اگر مطمئنی تکراری نیست، پایین صفحه ثبتش کن</p>
+                            <p className="text-[10px] text-on-surface-variant/50">اگر مطمئنی تکراری نیست، با دکمهٔ سبزِ «ثبت کسب‌وکار جدید» در بالا ثبتش کن</p>
                         </div>
                     )}
-                </div>
-
-                {/* فوتر — ثبت کسب‌وکار جدید */}
-                <div className="flex-shrink-0 px-4 py-3 border-t border-outline-variant/20">
-                    <button type="button" onClick={() => setSetupOpen(true)}
-                            className="w-full rounded-xl border border-dashed border-primary/40 bg-primary/5
-                                p-3 flex items-center gap-2.5 text-right hover:bg-primary/10 transition-colors">
-                        <span className="w-9 h-9 rounded-lg bg-primary/10 grid place-items-center flex-shrink-0">
-                            <Plus className="w-4.5 h-4.5 text-primary" />
-                        </span>
-                        <span className="flex-1 min-w-0">
-                            <span className="block text-xs font-bold text-on-surface">ثبت کسب‌وکار جدید</span>
-                            <span className="block text-[9.5px] text-on-surface-variant/60 mt-0.5">
-                                اگر در جستجو پیدا نشد ثبتش کن — شاید همکارانت قبلاً ثبت کرده باشند
-                            </span>
-                        </span>
-                        <Users className="w-4 h-4 text-primary/50 flex-shrink-0" />
-                    </button>
                 </div>
             </div>
 
