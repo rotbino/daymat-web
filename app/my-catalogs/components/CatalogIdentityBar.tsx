@@ -40,7 +40,7 @@ export default function CatalogIdentityBar({ catalogs, inquiries = [], currentCa
     const logoSrc = currentCatalog?.logoFile?.path || currentCatalog?.logoUrl;
 
     const identity = (
-        <span className="flex items-center gap-2.5 min-w-0">
+        <span className="flex flex-1 items-center gap-2.5 min-w-0">
             <span className="w-10 h-10 rounded-lg overflow-hidden bg-surface-container-high dark:bg-gray-800
                     ring-1 ring-outline-variant/40 dark:ring-gray-700 flex items-center justify-center flex-shrink-0">
                 {logoSrc
@@ -56,10 +56,9 @@ export default function CatalogIdentityBar({ catalogs, inquiries = [], currentCa
                             {currentCatalog?.teamMode === 'admin' ? 'مدیر' : currentCatalog?.teamMode === 'pending' ? 'در انتظار' : 'فروشنده'}
                         </span>
                     )}
-                    {canOpen && <ChevronDown className={cn('w-4 h-4 text-on-surface-variant/60 flex-shrink-0 transition-transform', open && 'rotate-180')} />}
                 </span>
                 <span className="block text-[10px] text-on-surface-variant/70">
-                    {multi ? 'برای تغییر کاتالوگ لمس کن' : 'کاتالوگ شما'}
+                    {multi ? 'برای تغییر لمس کن' : 'کاتالوگ شما'}
                 </span>
             </span>
         </span>
@@ -70,10 +69,15 @@ export default function CatalogIdentityBar({ catalogs, inquiries = [], currentCa
             {/* سوییچر / نمایش هویت */}
             {canOpen ? (
                 <button type="button" onClick={() => setOpen((o) => !o)} aria-expanded={open}
-                        aria-label="تغییر کاتالوگ"
-                        className="min-w-0 flex-1 text-right rounded-lg py-1 ps-1 pe-2 -ms-1 hover:bg-surface-container-high/60
-                            dark:hover:bg-gray-800/60 active:scale-[0.99] transition-all">
+                        aria-label="سوییچ بین کاتالوگ‌ها و بازوهای خرید"
+                        className={cn('flex min-w-0 flex-1 items-center gap-2 rounded-2xl border-2 bg-white p-2 ps-2.5 text-right shadow-sm transition-all dark:bg-gray-900',
+                            open ? 'border-primary/60 ring-2 ring-primary/10'
+                                 : 'border-outline-variant/40 dark:border-gray-700 hover:border-primary/40 active:scale-[0.99]')}>
                     {identity}
+                    {/* ✅ فلشِ درشتِ دراپ‌داون در چیپِ متمایز — کل هدر شکلیِ سلکت گرفت تا سوییچر بودنش مشهود باشد */}
+                    <span className="grid w-8 h-8 place-items-center rounded-xl bg-surface-container-high dark:bg-gray-800 flex-shrink-0">
+                        <ChevronDown className={cn('w-4.5 h-4.5 text-on-surface-variant transition-transform', open && 'rotate-180')} />
+                    </span>
                 </button>
             ) : (
                 <div className="min-w-0 flex-1">{identity}</div>

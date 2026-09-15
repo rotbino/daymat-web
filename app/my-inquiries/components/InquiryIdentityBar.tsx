@@ -40,9 +40,13 @@ export default function InquiryIdentityBar({ inquiries, catalogs, currentInquiry
         <div className="relative flex items-center justify-between gap-1.5">
             {/* هویت — کلیک = باز شدن سوییچر */}
             <button type="button" onClick={() => { if (canOpen) setOpen((o) => !o); }} aria-expanded={open}
-                    aria-label="تغییر کاتالوگ"
-                    className={cn('flex min-w-0 flex-1 items-center gap-3 rounded-3xl border-2 border-stone-100 bg-white p-3 text-right shadow-sm transition-all dark:border-gray-800 dark:bg-gray-900',
-                        canOpen && 'hover:border-brand-contrast-tint active:scale-[0.995]')}>
+                    aria-label="سوییچ بین بازوهای خرید و کاتالوگ‌های قیمت"
+                    className={cn('flex min-w-0 flex-1 items-center gap-3 rounded-3xl border-2 bg-white p-3 text-right shadow-sm transition-all dark:bg-gray-900',
+                        open
+                            ? 'border-brand-contrast/70 ring-2 ring-brand-contrast/10 dark:border-amber-500/60'
+                            : canOpen
+                                ? 'border-stone-200 hover:border-brand-contrast-tint active:scale-[0.995] dark:border-gray-700'
+                                : 'border-stone-100 dark:border-gray-800')}>
                 <span className="grid size-10 shrink-0 place-items-center rounded-2xl bg-brand-contrast-soft dark:bg-amber-500/15">
                     <ClipboardList className="size-5 text-amber-600 dark:text-amber-400" />
                 </span>
@@ -51,14 +55,19 @@ export default function InquiryIdentityBar({ inquiries, catalogs, currentInquiry
                         <span className="truncate text-[15px] font-black text-stone-900 dark:text-gray-100">
                             {current ? current.title : 'بازوهای خرید من'}
                         </span>
-                        {canOpen && <ChevronDown className={cn('size-4 shrink-0 text-stone-400 transition-transform', open && 'rotate-180')} />}
                     </span>
                     <span className="mt-0.5 block text-[10px] font-bold text-stone-400 dark:text-gray-500">
                         {current
                             ? (current.status === 'open' ? 'بازوی خرید کارنت — باز' : 'بازوی خرید کارنت — بسته')
-                            : (multi ? 'برای تغییر کاتالوگ لمس کن' : 'بازوی خرید شما')}
+                            : (multi ? 'برای تغییر لمس کن' : 'بازوی خرید شما')}
                     </span>
                 </span>
+                {/* ✅ فلشِ درشتِ دراپ‌داون در چیپِ متمایز — شکلیِ سلکت تا سوییچر بودن هدر مشهود باشد */}
+                {canOpen && (
+                    <span className="grid size-8 shrink-0 place-items-center rounded-full bg-stone-100 dark:bg-gray-800">
+                        <ChevronDown className={cn('size-4 text-stone-500 transition-transform dark:text-gray-400', open && 'rotate-180')} />
+                    </span>
+                )}
             </button>
 
             {/* اشتراک‌گذاری سریع — همان‌جا، بدون تب */}
