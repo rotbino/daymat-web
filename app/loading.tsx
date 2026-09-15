@@ -11,7 +11,7 @@ import Image from 'next/image';
 const BRAND = {
     logo: '/images/logo4.png',
     name: 'دیمت',
-    slogan: 'ساخت و انتشار اعلام خرید',
+    slogan: 'ساخت و انتشار فهرست خرید',
 } as const;
 
 export default function Loading() {

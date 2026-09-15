@@ -1,5 +1,5 @@
 // app/inquiries/new/page.tsx
-// ساخت اعلام خرید — نسخهٔ ۳ (جریان پنل‌محور بر اساس ایدهٔ مالک):
+// ساخت فهرست خرید — نسخهٔ ۳ (جریان پنل‌محور بر اساس ایدهٔ مالک):
 //   کسب‌وکار را انتخاب کن → کاتالوگ ساخته می‌شود → مستقیم به پنل مدیریت می‌روی؛
 //   اقلام بعداً قلم‌به‌قلم از پنل اضافه می‌شوند (مثل کاتالوگ فروش که اول کاتالوگ ساخته می‌شود).
 //   ذهن کاربر اولِ کار آمادهٔ واردکردن قلم نیست — پس هیچ قلمی اینجا خواسته نمی‌شود.
@@ -67,14 +67,14 @@ export default function NewInquiryPage() {
     }, [hydrated, isAuthenticated, router, bizParam]);
 
     useEffect(() => {
-        document.title = 'اعلام خرید جدید | دیمت';
+        document.title = 'فهرست خرید جدید | دیمت';
     }, []);
 
-    // کسب‌وکاری که از قبل اعلام خرید باز دارد → مستقیم به پنلش (اعلام خریدِ هر کسب‌وکار یکی است)
+    // کسب‌وکاری که از قبل فهرست خرید باز دارد → مستقیم به پنلش (اعلام خریدِ هر کسب‌وکار یکی است)
     const checkExisting = (b: any): boolean => {
         const existing = (myInquiries ?? []).find((w: any) => w.businessId === b.id && w.status !== 'archived');
         if (existing) {
-            toast.info('این کسب‌وکار از قبل اعلام خرید داره — رفتیم به پنلش');
+            toast.info('این کسب‌وکار از قبل فهرست خرید داره — رفتیم به پنلش');
             dispatch(setCurrentInquiry(existing.id));
             router.replace(`/my-inquiries?catalog=${existing.id}`);
             return true;
@@ -106,7 +106,7 @@ export default function NewInquiryPage() {
         setSubmitting(true);
         try {
             const res = await create.mutateAsync({
-                title: `اعلام خرید ${biz.name || ''}`.trim().slice(0, 140),
+                title: `فهرست خرید ${biz.name || ''}`.trim().slice(0, 140),
                 businessId: biz.id,
                 visibility,
                 slug: slug.trim(),
@@ -119,7 +119,7 @@ export default function NewInquiryPage() {
             if (code === 'SLUG_TAKEN' || code === 'SLUG_RESERVED' || code === 'INVALID_SLUG') {
                 toast.error(e?.response?.data?.message || 'این آدرس در دسترس نیست — کمی عوضش کن');
             } else {
-                toast.error(e?.response?.data?.message || 'ساختن اعلام خرید ناموفق بود');
+                toast.error(e?.response?.data?.message || 'ساختن فهرست خرید ناموفق بود');
             }
         } finally {
             setSubmitting(false);
@@ -151,7 +151,7 @@ export default function NewInquiryPage() {
                 <motion.section {...fadeUp()} className="text-center">
                     <span className="inline-flex items-center gap-1.5 rounded-full bg-brand-amber-soft px-3 py-1 text-[11px] font-extrabold text-amber-700 dark:text-amber-400">
                         <ClipboardList className="size-3.5" />
-                        اعلام خرید جدید
+                        فهرست خرید جدید
                     </span>
                     <h1 className="mt-3 text-[22px] font-black leading-9 sm:text-2xl">
                         برای کدام کسب‌وکار می‌سازی؟
@@ -211,7 +211,7 @@ export default function NewInquiryPage() {
                                 disabled={submitting}
                                 className="flex h-14 w-full items-center justify-center gap-2 rounded-2xl bg-brand-amber text-[15px] font-extrabold text-white shadow-xl shadow-brand-amber/30 transition-colors hover:bg-brand-amber-strong disabled:opacity-50">
                                 {submitting ? <Loader2 className="size-5 animate-spin" /> : <Building2 className="size-5" />}
-                                ساخت اعلام خرید
+                                ساخت فهرست خرید
                             </motion.button>
                         </motion.div>
                     )}
@@ -221,7 +221,7 @@ export default function NewInquiryPage() {
                 <motion.div {...fadeUp(0.12)} className="mt-8 grid grid-cols-3 gap-2">
                     {[
                         { icon: ClipboardList, t: 'قلم به قلم اضافه کن' },
-                        { icon: Megaphone, t: 'اعلام خرید بزن' },
+                        { icon: Megaphone, t: 'فهرست خرید بزن' },
                         { icon: Send, t: 'لینک رو بفرست' },
                     ].map(({ icon: Icon, t }, i) => (
                         <div key={i} className="flex flex-col items-center gap-1.5 rounded-2xl border border-stone-100 bg-white px-2 py-3.5 text-center dark:border-gray-800 dark:bg-gray-900">

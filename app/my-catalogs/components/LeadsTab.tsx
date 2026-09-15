@@ -150,7 +150,7 @@ export default function LeadsTab() {
                         <Megaphone className="mx-auto size-9 text-stone-200 dark:text-gray-700" />
                         <p className="mt-2 text-[13px] font-black text-stone-500 dark:text-gray-400">هنوز اعلام خریدی از طرف خریدارن تو اعلام نشده. از برگه اعضا درخواست همکاریهای بیشتری بفرست</p>
                         <p className="mx-auto mt-1 max-w-xs text-[11px] font-bold leading-5 text-stone-400 dark:text-gray-500">
-                            وقتی تامین‌کنندهٔ اعلام خرید کسی باشی، اقلام فوریش اینجا می‌آید
+                            وقتی تامین‌کنندهٔ فهرست خرید کسی باشی، اقلام فوریش اینجا می‌آید
                         </p>
                     </div>
                 ) : (
@@ -183,7 +183,7 @@ export default function LeadsTab() {
                                         <ChevronDown className={cn('size-4 shrink-0 text-stone-400 transition-transform', open && 'rotate-180')} />
                                     </button>
 
-                                    {/* اقلام اعلام خرید */}
+                                    {/* اقلام فهرست خرید */}
                                     {open && (
                                         <motion.div initial={{ height: 0, opacity: 0 }} animate={{ height: 'auto', opacity: 1 }} className="overflow-hidden">
                                             <div className="space-y-2 border-t border-outline-variant/20 p-3 dark:border-gray-800">
@@ -224,7 +224,7 @@ export default function LeadsTab() {
                                                 ))}
                                                 <Link href={`/${lead.inquiry.slug || lead.inquiry.id}`}
                                                     className="flex items-center justify-center gap-1 pt-1 text-[11px] font-extrabold text-amber-700 hover:underline dark:text-amber-400">
-                                                    مشاهدهٔ کل اعلام خرید
+                                                    مشاهدهٔ کل فهرست خرید
                                                     <ArrowLeft className="size-3" />
                                                 </Link>
                                             </div>

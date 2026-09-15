@@ -1,7 +1,7 @@
 // app/[slug]/page.tsx
 // ✅ روت واحد کاتالوگ + بازار + صفحهٔ اعلان خرید:
 //    resolver سمت سرور تعیین می‌کند این slug کاتالوگ است یا تابلوی بازار یا صفحهٔ اعلان خرید.
-//    اولویت با کاتالوگ (Catalog) است؛ تداخل اسلاگ با قید سه-جدولی (کاتالوگ/بازار/اعلام خرید)
+//    اولویت با کاتالوگ (Catalog) است؛ تداخل اسلاگ با قید سه-جدولی (کاتالوگ/بازار/فهرست خرید)
 //    در checkSlug هر دو سرویس جلوگیری می‌شود.
 //    اسلش انتهایی و انکودینگ نرمال می‌شود.
 
@@ -57,7 +57,7 @@ export async function generateMetadata({ params }: Props) {
             return {
                 title: `${inquiry.title} | دیمت`,
                 alternates: { canonical: `/${slug}` },
-                description: inquiry.description || `اعلام خرید ${inquiry.business?.name || ''} — ${inquiry.city || 'دیمت'}`.trim(),
+                description: inquiry.description || `فهرست خرید ${inquiry.business?.name || ''} — ${inquiry.city || 'دیمت'}`.trim(),
                 openGraph: {
                     title: inquiry.title,
                     description: inquiry.description || undefined,

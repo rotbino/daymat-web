@@ -570,7 +570,7 @@ export const useManualPurchase = () => {
         mutationFn: (data: PurchaseCreditDto) => apiService.credit.manualPurchase(data),
         onSuccess: () => {
             queryClient.invalidateQueries({ queryKey: ['credit', 'balance'] });
-            toast.success('اعلام خرید با موفقیت ثبت شد');
+            toast.success('فهرست خرید با موفقیت ثبت شد');
         },
         onError: (error: ApiError) => toast.error(error.message || 'خطا در ثبت درخواست'),
     });
@@ -1707,7 +1707,7 @@ export const useRemoveContact = () => {
 };
 
 // ═══════════════════════════════════════════════════════════
-// INQUIRY HOOKS — اعلام خرید (استعلام قیمت)
+// INQUIRY HOOKS — فهرست خرید (استعلام قیمت)
 // ═══════════════════════════════════════════════════════════
 
 export interface InquiryListParams {
@@ -1724,7 +1724,7 @@ export const usePublicInquiries = (params: InquiryListParams = {}) => {
     });
 };
 
-/** جزئیات یک اعلام خرید (مالک: به‌همراه پیشنهادها) */
+/** جزئیات یک فهرست خرید (مالک: به‌همراه پیشنهادها) */
 export const useInquiry = (idOrSlug?: string) => {
     return useQuery({
         queryKey: ['inquiry', 'detail', idOrSlug],
@@ -1811,9 +1811,9 @@ export const useUpdateOfferStatus = () => {
     });
 };
 
-// ─── قلم‌به‌قلم (پنل اعلام خرید) ───
+// ─── قلم‌به‌قلم (پنل فهرست خرید) ───
 
-/** پیشنهادهای دریافتی یک اعلام خرید (فقط مالک) — پنل */
+/** پیشنهادهای دریافتی یک فهرست خرید (فقط مالک) — پنل */
 export const useInquiryOffers = (inquiryId?: string) => {
     const { hasAccess } = useAuthState();
     return useQuery({
@@ -1824,7 +1824,7 @@ export const useInquiryOffers = (inquiryId?: string) => {
     });
 };
 
-/** افزودن یک قلم به اعلام خرید */
+/** افزودن یک قلم به فهرست خرید */
 export const useAddInquiryItem = () => {
     const qc = useQueryClient();
     return useMutation({
@@ -1837,7 +1837,7 @@ export const useAddInquiryItem = () => {
     });
 };
 
-/** ویرایش یک قلم — شامل تاگل اعلام خرید */
+/** ویرایش یک قلم — شامل تاگل فهرست خرید */
 export const useUpdateInquiryItem = () => {
     const qc = useQueryClient();
     return useMutation({
@@ -1863,9 +1863,9 @@ export const useRemoveInquiryItem = () => {
     });
 };
 
-// ─── اعضای اعلام خرید — تامین‌کننده‌های تاییدشده (شبکهٔ خرید↔فروش) ───
+// ─── اعضای فهرست خرید — تامین‌کننده‌های تاییدشده (شبکهٔ خرید↔فروش) ───
 
-/** فهرست تامین‌کننده‌های یک اعلام خرید (مالک) */
+/** فهرست تامین‌کننده‌های یک فهرست خرید (مالک) */
 export const useInquiryMembers = (inquiryId?: string) => {
     const { hasAccess } = useAuthState();
     return useQuery({
@@ -1915,7 +1915,7 @@ export const useDecideInquiryMember = () => {
     });
 };
 
-/** فرصت‌های فروش تامین‌کننده — دعوت‌ها + اقلام فوری (تب «اعلام خرید» پنل فروش) */
+/** فرصت‌های فروش تامین‌کننده — دعوت‌ها + اقلام فوری (تب «فهرست خرید» پنل فروش) */
 export const useInquiryOpportunities = () => {
     const { hasAccess } = useAuthState();
     return useQuery({

@@ -766,7 +766,7 @@ export const PERMISSION_LEVELS = {
 
 
 // ═══════════════════════════════════════════════════════════
-// INQUIRY — اعلام خرید (استعلام قیمت)
+// INQUIRY — فهرست خرید (استعلام قیمت)
 // فلسفه: ساده به‌صورت پیش‌فرض، پیشرفته اختیاری (قطعهٔ صنعتی)
 // ═══════════════════════════════════════════════════════════
 
@@ -789,7 +789,7 @@ export interface InquiryItem {
     referenceUrl?: string | null;
     note?: string | null;
     order: number;
-    /** ✅ اعلام خرید فعال — بالای کاتالوگ عمومی در «درخواست‌های خرید جاری» */
+    /** ✅ فهرست خرید فعال — بالای کاتالوگ عمومی در «درخواست‌های خرید جاری» */
     urgent?: boolean | null;
     urgentAt?: string | null;
     createdAt: string;
@@ -806,7 +806,7 @@ export interface InquiryBusinessBrief {
     name: string;
     logoUrl?: string | null;
     city?: string | null;
-    /** ☎️ شمارهٔ تماس عمومی کسب‌وکار — برای دکمهٔ تماس صفحهٔ اعلام خرید */
+    /** ☎️ شمارهٔ تماس عمومی کسب‌وکار — برای دکمهٔ تماس صفحهٔ فهرست خرید */
     phone?: string | null;
 }
 
@@ -828,9 +828,9 @@ export interface InquiryBase {
     tags: string[];
     viewCount: number;
     offerCount: number;
-    /** ✅ امکان ارسال قیمت برای خریدهای غیر فوری (سایر کالاها) — تنظیمات اعلام خرید */
+    /** ✅ امکان ارسال قیمت برای خریدهای غیر فوری (سایر کالاها) — تنظیمات فهرست خرید */
     allowNonUrgentOffers?: boolean;
-    /** ✅ واحدهای اختصاصی اعلام خرید — [{ unitId }] */
+    /** ✅ واحدهای اختصاصی فهرست خرید — [{ unitId }] */
     units?: InquiryUnitPayload[] | null;
     createdAt: string;
     updatedAt: string;
@@ -894,7 +894,7 @@ export interface CreateInquiryItemPayload {
     imageUrl?: string | null;
     referenceUrl?: string | null;
     note?: string | null;
-    urgent?: boolean;                  // ✅ اعلام خرید فعال
+    urgent?: boolean;                  // ✅ فهرست خرید فعال
 }
 
 export interface CreateInquiryPayload {
@@ -912,7 +912,7 @@ export interface CreateInquiryPayload {
     paymentTerms?: string;
     tags?: string[];
     businessId?: string;
-    units?: InquiryUnitPayload[];      // ✅ واحدهای اختصاصی اعلام خرید (مثل کاتالوگ فروش)
+    units?: InquiryUnitPayload[];      // ✅ واحدهای اختصاصی فهرست خرید (مثل کاتالوگ فروش)
     allowNonUrgentOffers?: boolean;    // ✅ امکان ارسال قیمت برای خریدهای غیر فوری
 }
 

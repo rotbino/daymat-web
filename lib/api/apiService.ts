@@ -588,7 +588,7 @@ export const apiService = {
         getMemberInquiries: (slug: string, userId: string): Promise<any> =>
             apiRequest(`/arm/${slug}/members/${userId}/inquiries`),
 
-        // ✅ انتشار/توقف «تابلوی خرید» خریدار روی دیوار خریداران بازار (مالک دفتر یا مدیر بازار)
+        // ✅ انتشار/توقف «فهرست خرید» خریدار روی دیوار خریداران بازار (مالک دفتر یا مدیر بازار)
         toggleInquiryPublish: (slug: string, inquiryId: string, published: boolean): Promise<any> =>
             apiRequest(`/arm/${slug}/inquiry-publish`, { method: 'PATCH', data: { inquiryId, published } }),
 
@@ -1385,7 +1385,7 @@ export const apiService = {
     },
 
     // ============================================================
-    // INQUIRY — اعلام خرید (استعلام قیمت)
+    // INQUIRY — فهرست خرید (استعلام قیمت)
     // ============================================================
     inquiry: {
         /** دیوار عمومی اعلام‌های خرید باز */
@@ -1411,7 +1411,7 @@ export const apiService = {
         checkSlug: (slug: string, excludeId?: string): Promise<{ available: boolean; reason?: string; slug?: string }> =>
             apiRequest(`/inquiry/check-slug?slug=${encodeURIComponent(slug)}${excludeId ? `&excludeId=${excludeId}` : ''}`),
 
-        /** ساخت اعلام خرید */
+        /** ساخت فهرست خرید */
         create: (data: CreateInquiryPayload): Promise<InquiryDetail> =>
             apiRequest('/inquiry', { method: 'POST', data }),
 
@@ -1426,12 +1426,12 @@ export const apiService = {
         mine: (): Promise<InquiryListItem[]> =>
             apiRequest('/inquiry/mine'),
 
-        // ─── مدیریت قلم‌به‌قلم (پنل اعلام خرید) ───
+        // ─── مدیریت قلم‌به‌قلم (پنل فهرست خرید) ───
         /** افزودن یک قلم — هر بار یک کالا */
         addItem: (inquiryId: string, data: CreateInquiryItemPayload): Promise<InquiryItem> =>
             apiRequest(`/inquiry/${inquiryId}/items`, { method: 'POST', data }),
 
-        /** ویرایش یک قلم (شامل تاگل اعلام خرید urgent) */
+        /** ویرایش یک قلم (شامل تاگل فهرست خرید urgent) */
         updateItem: (inquiryId: string, itemId: string, data: Partial<CreateInquiryItemPayload>): Promise<InquiryItem> =>
             apiRequest(`/inquiry/${inquiryId}/items/${itemId}`, { method: 'PATCH', data }),
 
@@ -1455,12 +1455,12 @@ export const apiService = {
         myOffers: (): Promise<InquiryOffer[]> =>
             apiRequest('/inquiry/my-offers'),
 
-        // ─── اعضای اعلام خرید — تامین‌کننده‌های تاییدشده (شبکهٔ خرید↔فروش) ───
-        /** 🪪 ذخیره/حذف مشخصات کارت ویزیت اعلام خرید — قرینهٔ کاتالوگ فروش */
+        // ─── اعضای فهرست خرید — تامین‌کننده‌های تاییدشده (شبکهٔ خرید↔فروش) ───
+        /** 🪪 ذخیره/حذف مشخصات کارت ویزیت فهرست خرید — قرینهٔ کاتالوگ فروش */
         updateVisitCard: (inquiryId: string, spec: Record<string, any> | null): Promise<any> =>
             apiRequest(`/inquiry/${inquiryId}/visit-card`, { method: 'PATCH', data: { spec } }),
 
-        /** فهرست تامین‌کننده‌های این اعلام خرید (مالک) */
+        /** فهرست تامین‌کننده‌های این فهرست خرید (مالک) */
         getMembers: (inquiryId: string): Promise<any[]> =>
             apiRequest(`/inquiry/${inquiryId}/members`),
 

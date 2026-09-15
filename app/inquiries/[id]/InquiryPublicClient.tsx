@@ -6,7 +6,7 @@
 // ✅ طراحی ۱۴۰۴ (بازطراحی به خواست مالک):
 //   - بستر سفید + کارت‌های سایه‌دار مثل کاتالوگ فروش (پس‌زمینهٔ کهربایی حذف شد)
 //   - لیستِ لیستی حفظ شد؛ دکمهٔ قیمت برای «همه» فعال است
-//   - اعلام خرید خصوصی: دکمه فعال می‌ماند؛ لمسش → پیام «درخواست همکاری» + مدال عضویت
+//   - فهرست خرید خصوصی: دکمه فعال می‌ماند؛ لمسش → پیام «درخواست همکاری» + مدال عضویت
 //   - موبایل: CTA جمع‌وجور فوتر «پیشنهاد قیمت»؛ دسکتاپ: باکس «می‌تونی این لیست رو تامین کنی؟»
 //   - حذف از صفحهٔ مالک برداشته شد — کاتالوگ حذف نمی‌شود، فقط پذیرش قیمت متوقف/بسته می‌شود
 //   - تماس + ذخیرهٔ مخاطب (vCard) برای بازدیدکننده
@@ -61,7 +61,7 @@ export default function InquiryPublicClient({ idOrSlug }: { idOrSlug: string }) 
     const [requestedSelf, setRequestedSelf] = useState(false);
 
     useEffect(() => {
-        if (inquiry?.title) document.title = `${inquiry.title} | اعلام خرید دیمت`;
+        if (inquiry?.title) document.title = `${inquiry.title} | فهرست خرید دیمت`;
     }, [inquiry?.title]);
 
     const isOwner = !!inquiry?.isOwner;
@@ -133,7 +133,7 @@ export default function InquiryPublicClient({ idOrSlug }: { idOrSlug: string }) 
             `FN:${name}`,
             bizPhone ? `TEL;TYPE=CELL:${bizPhone}` : null,
             inquiry.city ? `ADR;TYPE=WORK:;;${inquiry.city};;;;` : null,
-            `NOTE:اعلام خرید «${inquiry.title}» — دیمت`,
+            `NOTE:فهرست خرید «${inquiry.title}» — دیمت`,
             shareUrl ? `URL:${shareUrl}` : null,
             'END:VCARD',
         ].filter(Boolean).join('\n');
@@ -163,7 +163,7 @@ export default function InquiryPublicClient({ idOrSlug }: { idOrSlug: string }) 
         const next = inquiry.status === 'open' ? 'closed' : 'open';
         try {
             await updateInquiry.mutateAsync({ id: inquiry.id, data: { status: next } });
-            toast.success(next === 'open' ? 'اعلام خرید باز شد' : 'پذیرش قیمت متوقف شد');
+            toast.success(next === 'open' ? 'فهرست خرید باز شد' : 'پذیرش قیمت متوقف شد');
             refetch();
         } catch (e: any) {
             toast.error(e?.response?.data?.message || 'تغییر وضعیت ناموفق بود');
@@ -183,7 +183,7 @@ export default function InquiryPublicClient({ idOrSlug }: { idOrSlug: string }) 
             <div className="grid min-h-screen place-items-center bg-white px-4 text-center dark:bg-gray-950">
                 <div>
                     <Package className="mx-auto size-14 text-stone-300 dark:text-gray-700" />
-                    <h1 className="mt-4 text-xl font-black">این اعلام خرید پیدا نشد</h1>
+                    <h1 className="mt-4 text-xl font-black">این فهرست خرید پیدا نشد</h1>
                     <p className="mt-2 text-sm text-stone-500">ممکن است حذف شده باشد یا لینک اشتباه باشد.</p>
                     <Link href="/" className="mt-5 inline-flex h-11 items-center gap-2 rounded-full bg-brand-amber px-6 text-sm font-extrabold text-white">
                         رفتن به دیمت
@@ -294,7 +294,7 @@ export default function InquiryPublicClient({ idOrSlug }: { idOrSlug: string }) 
                     )}
                 </motion.section>
 
-                {/* ═══ بنر اعلام خرید خصوصی — لیست دیده می‌شود، قیمت فقط برای اعضا ═══ */}
+                {/* ═══ بنر فهرست خرید خصوصی — لیست دیده می‌شود، قیمت فقط برای اعضا ═══ */}
                 {limited && (
                     <motion.div {...fadeUp(0.05)}
                         className="mt-4 flex items-center gap-3 rounded-2xl border border-brand-amber/30 bg-brand-amber-soft/50 px-4 py-3.5 dark:border-amber-500/25 dark:bg-amber-500/5">
@@ -302,7 +302,7 @@ export default function InquiryPublicClient({ idOrSlug }: { idOrSlug: string }) 
                             <Lock className="size-4 text-amber-600 dark:text-amber-400" />
                         </span>
                         <div className="min-w-0 flex-1">
-                            <p className="text-[12px] font-black text-amber-800 dark:text-amber-300">این اعلام خرید خصوصیه</p>
+                            <p className="text-[12px] font-black text-amber-800 dark:text-amber-300">این فهرست خرید خصوصیه</p>
                             <p className="mt-0.5 text-[10.5px] font-bold leading-4 text-amber-700/80 dark:text-amber-400/80">
                                 {requestedSelf
                                     ? 'درخواست همکاری‌ات ثبت شد — به‌محض تایید خریدار، دکمهٔ قیمت برایت فعال می‌شود'
@@ -480,7 +480,7 @@ export default function InquiryPublicClient({ idOrSlug }: { idOrSlug: string }) 
                 {/* بسته/مهلت — بازدیدکننده */}
                 {!isOwner && (!isOpen || deadlineOver) && (
                     <p className="mt-6 rounded-2xl bg-stone-50 px-4 py-3 text-center text-sm text-stone-500 dark:bg-gray-950/60 dark:text-gray-400">
-                        پذیرش قیمت این اعلام خرید بسته شده است.
+                        پذیرش قیمت این فهرست خرید بسته شده است.
                     </p>
                 )}
 
@@ -586,7 +586,7 @@ export default function InquiryPublicClient({ idOrSlug }: { idOrSlug: string }) 
                         <div className="min-w-0">
                             <p className="truncate text-[12px] font-black text-stone-800 dark:text-gray-200">می‌تونی این لیست رو تامین کنی؟</p>
                             <p className="truncate text-[10px] font-bold text-stone-400 dark:text-gray-500">
-                                {limited ? 'اعلام خرید خصوصیه — اول درخواست همکاری' : 'قیمت بده، خریدار باهات تماس می‌گیره'}
+                                {limited ? 'فهرست خرید خصوصیه — اول درخواست همکاری' : 'قیمت بده، خریدار باهات تماس می‌گیره'}
                             </p>
                         </div>
                         <motion.button whileTap={{ scale: 0.96 }} onClick={() => handleOffer({ name: 'کل لیست' })}
@@ -598,7 +598,7 @@ export default function InquiryPublicClient({ idOrSlug }: { idOrSlug: string }) 
                 </div>
             )}
 
-            {/* ═══ مدال درخواست همکاری — اعلام خرید خصوصی ═══ */}
+            {/* ═══ مدال درخواست همکاری — فهرست خرید خصوصی ═══ */}
             {privOpen && (
                 <PrivateRequestModal
                     inquiry={inquiry as any}
@@ -646,7 +646,7 @@ function PrivateRequestModal({ inquiry, onClose, onRequested }: { inquiry: any; 
                 <span className="mx-auto grid size-14 place-items-center rounded-2xl bg-brand-amber-soft dark:bg-amber-500/10">
                     <ShieldCheck className="size-6 text-amber-600 dark:text-amber-400" />
                 </span>
-                <h1 className="mt-4 text-lg font-black">اعلام خرید خصوصیه</h1>
+                <h1 className="mt-4 text-lg font-black">فهرست خرید خصوصیه</h1>
                 {inquiry.title && <p className="mt-1 text-sm font-bold text-stone-500 dark:text-gray-400">«{inquiry.title}»</p>}
                 <p className="mx-auto mt-3 max-w-xs text-[12px] font-bold leading-6 text-stone-500 dark:text-gray-400">
                     فقط تامین‌کننده‌های تاییدشدهٔ خریدار می‌توانند قیمت بدهند —

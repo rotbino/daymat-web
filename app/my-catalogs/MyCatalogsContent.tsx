@@ -81,7 +81,7 @@ export default function MyCatalogsContent() {
         staleTime: 60_000,
     });
 
-    // ✅ شبکهٔ خرید↔فروش — دعوت‌های در انتظار پذیرش (بج قرمز تب «اعلام خرید»)
+    // ✅ شبکهٔ خرید↔فروش — دعوت‌های در انتظار پذیرش (بج قرمز تب «فهرست خرید»)
     const { data: oppsData } = useInquiryOpportunities();
     const pendingInvites = (oppsData?.invitations ?? []).length;
 
@@ -289,9 +289,9 @@ export default function MyCatalogsContent() {
     const canShare = !!(currentCatalog as any)?.slug;
 
     const goNewCatalog = () => router.push('/business/register');
-    // اعلام خرید جدید — فرم محصول دوم
+    // فهرست خرید جدید — فرم محصول دوم
     const goNewInquiry = () => router.push('/inquiries/new');
-    // انتخاب اعلام خرید از سوییچر → پرش به مدیریت آن + ثبت «اعلام خرید کارنت» (پرسیست)
+    // انتخاب فهرست خرید از سوییچر → پرش به مدیریت آن + ثبت «فهرست خرید کارنت» (پرسیست)
     const selectInquiry = (id: string) => {
         dispatch(setCurrentInquiry(id));
         router.push(`/my-inquiries?catalog=${id}`);
@@ -501,7 +501,7 @@ export default function MyCatalogsContent() {
                     <TeamTab catalogId={currentCatalog.id} />
                 )}
 
-                {/* ✅ تب اعلام خرید — شبکهٔ خرید↔فروش از سمت تامین‌کننده */}
+                {/* ✅ تب فهرست خرید — شبکهٔ خرید↔فروش از سمت تامین‌کننده */}
                 {tab === 'leads' && (
                     <LeadsTab />
                 )}

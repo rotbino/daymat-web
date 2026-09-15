@@ -104,7 +104,7 @@ export default function MarketContent({ search: searchProp }: { search?: string 
         }
     }, [searchParams, currentSlug, router]);
 
-    // ✅ تابلوی قیمت خاموش و تابلوی خرید روشن → این صفحه جایی ندارد؛ برو خریداران
+    // ✅ تابلوی قیمت خاموش و فهرست خرید روشن → این صفحه جایی ندارد؛ برو خریداران
     useEffect(() => {
         if (!sellersOn && buyersOn && currentSlug && !armLoading) {
             router.replace(`/${currentSlug}/buyers`);

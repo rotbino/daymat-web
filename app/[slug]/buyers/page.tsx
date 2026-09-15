@@ -34,7 +34,7 @@ export default async function BuyersPage({ params }: Props) {
     const slug = decodeURIComponent(rawSlug).replace(/\/+$/, '').trim();
     if (!slug) notFound();
 
-    // ✅ فقط بازار — اگر این slug کاتالوگ یا اعلام خرید بود، مسیر اشتباه است
+    // ✅ فقط بازار — اگر این slug کاتالوگ یا فهرست خرید بود، مسیر اشتباه است
     const arm = await apiService.arm.fetchArmData(slug).catch(() => null);
     if (!arm) notFound();
 

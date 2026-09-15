@@ -1,9 +1,9 @@
 // app/my-inquiries/page.tsx
-// پنل مدیریت اعلام خرید — قرینهٔ کنسول کاتالوگ فروش (/my-catalogs):
+// پنل مدیریت فهرست خرید — قرینهٔ کنسول کاتالوگ فروش (/my-catalogs):
 //   انتخاب کسب‌وکار در /inquiries/new انجام می‌شود و کاربر مستقیم به همین پنل می‌آید؛
-//   اقلام قلم‌به‌قلم از همین‌جا اضافه می‌شوند (هر بار یک کالا + تیک اعلام خرید).
+//   اقلام قلم‌به‌قلم از همین‌جا اضافه می‌شوند (هر بار یک کالا + تیک فهرست خرید).
 //   تب‌ها: اقلام | پیشنهادها | تامین‌کنندگان | تنظیمات | انتشار — سوییچر دو-محصولی بالای پنل.
-// ✅ تب «تامین‌کنندگان»: شبکهٔ خرید↔فروش — دعوت/تایید تامین‌کننده‌های اعلام خرید
+// ✅ تب «تامین‌کنندگان»: شبکهٔ خرید↔فروش — دعوت/تایید تامین‌کننده‌های فهرست خرید
 'use client';
 
 import React, { useEffect, useMemo, useState } from 'react';
@@ -41,7 +41,7 @@ export default function MyInquiriesPage() {
     const queryClient = useQueryClient();
     const { isAuthenticated, _hydrated } = useSelector((s: RootState) => s.auth) as any;
     const hydrated = _hydrated !== false;
-    // «اعلام خرید کارنت» — پرسیست؛ با رفرش هم سرجاش می‌ماند
+    // «فهرست خرید کارنت» — پرسیست؛ با رفرش هم سرجاش می‌ماند
     const currentInquiryId = useSelector((s: RootState) => s.catalog.currentInquiryId);
 
     const [tab, setTab] = useState<string>('items');
@@ -96,7 +96,7 @@ export default function MyInquiriesPage() {
     }, []);
 
     useEffect(() => {
-        document.title = 'تابلوی خرید من | دیمت';
+        document.title = 'فهرست خرید من | دیمت';
     }, []);
 
     useEffect(() => {
@@ -120,7 +120,7 @@ export default function MyInquiriesPage() {
                 itemId: item.id,
                 data: { urgent: !item.urgent },
             });
-            toast.success(item.urgent ? 'اعلام خرید این قلم تمام شد' : 'اعلام خرید فعال شد — تامین‌کننده‌ها قیمت می‌دن');
+            toast.success(item.urgent ? 'فهرست خرید این قلم تمام شد' : 'فهرست خرید فعال شد — تامین‌کننده‌ها قیمت می‌دن');
         } catch (e: any) {
             toast.error(e?.response?.data?.message || 'تغییر وضعیت ناموفق بود');
         } finally {
@@ -160,7 +160,7 @@ export default function MyInquiriesPage() {
         const next = currentRow.status === 'open' ? 'closed' : 'open';
         try {
             await updateInquiry.mutateAsync({ id: currentRow.id, data: { status: next } });
-            toast.success(next === 'open' ? 'اعلام خرید باز شد' : 'اعلام خرید بسته شد');
+            toast.success(next === 'open' ? 'فهرست خرید باز شد' : 'فهرست خرید بسته شد');
         } catch (e: any) {
             toast.error(e?.response?.data?.message || 'تغییر وضعیت ناموفق بود');
         }
@@ -242,7 +242,7 @@ export default function MyInquiriesPage() {
                         <a href="/inquiries/new"
                             className="flex h-11 items-center gap-2 rounded-full bg-brand-amber px-6 text-sm font-extrabold text-white shadow-lg shadow-brand-amber/30 transition-colors hover:bg-brand-amber-strong">
                             <Plus className="size-4" />
-                            ساخت اعلام خرید
+                            ساخت فهرست خرید
                         </a>
                     </div>
                 ) : (
@@ -328,7 +328,7 @@ export default function MyInquiriesPage() {
                             ) : (
                                 <div className="grid place-items-center rounded-3xl border border-stone-100 bg-white py-14 text-center dark:border-gray-800 dark:bg-gray-900">
                                     <ClipboardList className="size-10 text-stone-300 dark:text-gray-700" />
-                                    <p className="mt-3 text-sm font-bold text-stone-400">اعلام خرید پیدا نشد</p>
+                                    <p className="mt-3 text-sm font-bold text-stone-400">فهرست خرید پیدا نشد</p>
                                 </div>
                             )}
                         </div>
@@ -342,7 +342,7 @@ export default function MyInquiriesPage() {
                             editItem={editItem}
                         />
 
-                        {/* مدال واحدهای اختصاصی اعلام خرید */}
+                        {/* مدال واحدهای اختصاصی فهرست خرید */}
                         <UnitSettingsModal
                             isOpen={unitsOpen}
                             onClose={() => setUnitsOpen(false)}
@@ -354,11 +354,11 @@ export default function MyInquiriesPage() {
                                 return { units };
                             }}
                             onSaved={() => { /* کش با invalidate تازه می‌شود */ }}
-                            title="واحدهای اعلام خرید"
+                            title="واحدهای فهرست خرید"
                             showQtyFields={false}
                         />
 
-                        {/* ✅ کیت اشتراک‌گذاری اعلام خرید — مخاطبان تلفن + واتساپ/تلگرام + QR چاپی */}
+                        {/* ✅ کیت اشتراک‌گذاری فهرست خرید — مخاطبان تلفن + واتساپ/تلگرام + QR چاپی */}
                         {detail && (
                             <ShareKitModal
                                 open={shareOpen}
@@ -370,7 +370,7 @@ export default function MyInquiriesPage() {
                             />
                         )}
 
-                        {/* 🪪 استودیوی کارت ویزیت اعلام خرید — برای تامین‌کننده‌ها؛ ذخیره در metadata */}
+                        {/* 🪪 استودیوی کارت ویزیت فهرست خرید — برای تامین‌کننده‌ها؛ ذخیره در metadata */}
                         {detail && (
                             <VisitCardModal
                                 open={cardOpen}

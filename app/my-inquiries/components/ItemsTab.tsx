@@ -1,5 +1,5 @@
 // app/my-inquiries/components/ItemsTab.tsx
-// تب اقلام پنل اعلام خرید — دو بخش:
+// تب اقلام پنل فهرست خرید — دو بخش:
 //   ۱) اقلام فعال (بالای کاتالوگ عمومی، قیمت‌پذیر)
 //   ۲) سایر کالاها (لیست معمول خرید — قیمت‌گیری بسته به تنظیمات)
 // ردیف‌ها با layout انیمیت می‌شوند؛ جابه‌جایی بین بخش‌ها نرم است.
@@ -96,7 +96,7 @@ function ItemRow({ item, offerCount, variant, busy, onEdit, onToggleUrgent, onDe
                     <button onClick={onToggleUrgent} disabled={busy}
                         className="flex h-8 items-center gap-1.5 rounded-lg bg-brand-amber-soft px-2.5 text-[11px] font-extrabold text-amber-700 transition-colors hover:bg-brand-amber-tint disabled:opacity-50 dark:bg-amber-500/10 dark:text-amber-400">
                         {busy ? <Loader2 className="size-3.5 animate-spin" /> : <Megaphone className="size-3.5" />}
-                        اعلام خرید
+                        فهرست خرید
                     </button>
                 )}
                 <button onClick={onEdit} aria-label="ویرایش قلم" title="ویرایش"
@@ -149,7 +149,7 @@ export default function ItemsTab({ detail, offers, loading, onAdd, onEdit, onTog
                         <p className="mt-1.5 text-xs font-bold leading-6 text-stone-400 dark:text-gray-500">
                             قلم به قلم لیست خریدت ساخته می‌شه —
                             <br />
-                            هر قلم رو می‌تونی همین حالا «اعلام خرید» کنی.
+                            هر قلم رو می‌تونی همین حالا «فهرست خرید» کنی.
                         </p>
                     </div>
                 </motion.div>

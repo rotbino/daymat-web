@@ -1,11 +1,11 @@
 // app/my-inquiries/components/InquiryIdentityBar.tsx
-// نوار هویت اعلام خرید — قرینهٔ CatalogIdentityBar (سوییچر دو-محصولی)
+// نوار هویت فهرست خرید — قرینهٔ CatalogIdentityBar (سوییچر دو-محصولی)
 // هر دو نوع کاتالوگ در منو با برچسب پرانتزی؛ انتخاب فروش → مدیریت کاتالوگ فروش
 // ✅ پایینِ سوییچر: لینک ساخت فقط برای نوعی که هنوز ندارد (ایدهٔ مالک:
 //    هر کاربر از هر نوع یکی — سیستم پر از کاتالوگ سرگردان نشود)
 // ✅ شیر + چشم + ⋯ کنار هویت — دسترسی سریع بدون رفتن به تبها (بنا بر خواستهٔ کاربر)
 //    «ساخت صفحه جدید» هم داخل همین ⋯ است؛ قرینهٔ منوی ⋯ کاتالوگ فروش
-// پالت اعلام خرید: سنگی/کهربایی (هماهنگ با کارت‌های همین صفحه)
+// پالت فهرست خرید: سنگی/کهربایی (هماهنگ با کارت‌های همین صفحه)
 'use client';
 
 import React, { useState } from 'react';
@@ -55,14 +55,14 @@ export default function InquiryIdentityBar({ inquiries, catalogs, currentInquiry
                     </span>
                     <span className="mt-0.5 block text-[10px] font-bold text-stone-400 dark:text-gray-500">
                         {current
-                            ? (current.status === 'open' ? 'اعلام خرید کارنت — باز' : 'اعلام خرید کارنت — بسته')
-                            : (multi ? 'برای تغییر کاتالوگ لمس کن' : 'اعلام خرید شما')}
+                            ? (current.status === 'open' ? 'فهرست خرید کارنت — باز' : 'فهرست خرید کارنت — بسته')
+                            : (multi ? 'برای تغییر کاتالوگ لمس کن' : 'فهرست خرید شما')}
                     </span>
                 </span>
             </button>
 
             {/* اشتراک‌گذاری سریع — همان‌جا، بدون تب */}
-            <button type="button" onClick={onShare} aria-label="اشتراک‌گذاری اعلام خرید" title="اشتراک‌گذاری"
+            <button type="button" onClick={onShare} aria-label="اشتراک‌گذاری فهرست خرید" title="اشتراک‌گذاری"
                     className="grid size-9 shrink-0 place-items-center rounded-xl bg-brand-amber-soft text-amber-700
                         transition-all hover:bg-amber-500/25 active:scale-95 dark:bg-amber-500/15 dark:text-amber-400">
                 <Share2 className="size-4" />
@@ -91,7 +91,7 @@ export default function InquiryIdentityBar({ inquiries, catalogs, currentInquiry
                             {/* 📍 ساخت صفحه جدید — از همین منو، بدون باز کردن سوییچر */}
                             <button type="button" onClick={() => { setMenuOpen(false); onNew(); }}
                                     className="flex h-10 w-full items-center gap-2.5 rounded-lg px-3 text-[13px] text-stone-800 transition-colors hover:bg-stone-50 dark:text-gray-200 dark:hover:bg-gray-800">
-                                <ClipboardList className="size-4 text-amber-600 dark:text-amber-400" /> اعلام خرید جدید
+                                <ClipboardList className="size-4 text-amber-600 dark:text-amber-400" /> فهرست خرید جدید
                             </button>
                             <button type="button" onClick={() => { setMenuOpen(false); onNewCatalog(); }}
                                     className="flex h-10 w-full items-center gap-2.5 rounded-lg px-3 text-[13px] text-stone-800 transition-colors hover:bg-stone-50 dark:text-gray-200 dark:hover:bg-gray-800">
@@ -128,7 +128,7 @@ export default function InquiryIdentityBar({ inquiries, catalogs, currentInquiry
                                         <span className={cn('truncate text-[13px] font-bold', active ? 'text-amber-700 dark:text-amber-400' : 'text-stone-800 dark:text-gray-200')}>
                                             {w.title}
                                         </span>
-                                        <span className="shrink-0 whitespace-nowrap text-[9px] font-bold text-amber-600/90 dark:text-amber-400/90">(اعلام خرید)</span>
+                                        <span className="shrink-0 whitespace-nowrap text-[9px] font-bold text-amber-600/90 dark:text-amber-400/90">(فهرست خرید)</span>
                                     </span>
                                     {w.status === 'closed' && (
                                         <span className="shrink-0 rounded-full bg-stone-100 px-1.5 py-0.5 text-[9px] font-bold text-stone-400 dark:bg-gray-800">بسته</span>
@@ -166,7 +166,7 @@ export default function InquiryIdentityBar({ inquiries, catalogs, currentInquiry
                                     <button type="button" role="menuitem" onClick={() => { setOpen(false); onNew(); }}
                                             className="flex h-11 w-full items-center gap-2.5 rounded-xl px-3 text-right text-[13px] font-extrabold text-amber-700 transition-colors hover:bg-brand-amber-soft dark:text-amber-400 dark:hover:bg-amber-500/10">
                                         <Plus className="size-4" />
-                                        ساخت اعلام خرید
+                                        ساخت فهرست خرید
                                     </button>
                                 )}
                                 {missingCatalog && (
