@@ -325,7 +325,9 @@ export default function MyCatalogsContent() {
 
     // ─── گاردها ───
     if (!isLoading && allCatalogs.length === 0) {
-        return <EmptyCatalogState hasTemporaryPassword={hasTemporaryPassword} user={user} />;
+        // ✅ حتی بدون کاتالوگ، بازوهای خرید کاربر با دکمهٔ مدیریت همین‌جا دیده شوند
+        return <EmptyCatalogState hasTemporaryPassword={hasTemporaryPassword} user={user}
+                                  inquiries={myInquiries} onOpenInquiry={selectInquiry} />;
     }
     if (!currentCatalog) {
         return (

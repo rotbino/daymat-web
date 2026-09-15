@@ -8,7 +8,7 @@
 import React, {useState} from 'react';
 import Link from 'next/link';
 import { motion } from 'framer-motion';
-import { BookOpen, ClipboardList, Copy, ExternalLink, Plus, Check, Store } from 'lucide-react';
+import { BookOpen, ClipboardList, Copy, ExternalLink, Plus, Check, Store, Settings2 } from 'lucide-react';
 import { toast } from 'sonner';
 
 export interface ManageCatalogItem {
@@ -103,6 +103,14 @@ export function CatalogLinksCard({ catalogs, inquiries = [], businessId }: {
                                     )}
                                 </div>
                             </div>
+                            {/* ✅ ورودی پنل مدیریت — فقط مشاهدهٔ عمومی نبود (درخواست مالک) */}
+                            <Link
+                                href={`/my-catalogs?catalog=${c.id}`}
+                                aria-label="مدیریت کاتالوگ"
+                                className="h-8 px-2.5 rounded-lg bg-primary text-on-primary text-[10px] font-extrabold flex items-center gap-1 hover:bg-primary/90 active:scale-95 transition-all flex-shrink-0 shadow-sm"
+                            >
+                                <Settings2 className="w-3.5 h-3.5" /> مدیریت
+                            </Link>
                             {c.slug && (
                                 <>
                                     <button
@@ -157,6 +165,14 @@ export function CatalogLinksCard({ catalogs, inquiries = [], businessId }: {
                                     </span>
                                 </div>
                             </div>
+                            {/* ✅ ورودی پنل مدیریت بازوی خرید (/my-inquiries?catalog=…) — درخواست مالک */}
+                            <Link
+                                href={`/my-inquiries?catalog=${w.id}`}
+                                aria-label="مدیریت بازوی خرید"
+                                className="h-8 px-2.5 rounded-lg bg-amber-500 text-white text-[10px] font-extrabold flex items-center gap-1 hover:bg-amber-600 active:scale-95 transition-all flex-shrink-0 shadow-sm"
+                            >
+                                <Settings2 className="w-3.5 h-3.5" /> مدیریت
+                            </Link>
                             <button
                                 type="button"
                                 onClick={() => copyLink(`/${w.slug || w.id}`, w.id)}

@@ -7,7 +7,7 @@ import { useDispatch, useSelector } from 'react-redux';
 import { toast } from 'sonner';
 import { apiService } from '@/lib/api/apiService';
 import { RootState } from '@/lib/store/store';
-import { setUser } from '@/lib/store/slices/authSlice';
+import { setUser, setAccessToken } from '@/lib/store/slices/authSlice';
 import { toastFormErrors } from '@/lib/formAlerts';
 
 interface ChangePasswordModalProps {
@@ -56,10 +56,13 @@ export function ChangePasswordModal({ isOpen, onClose, onSuccess }: ChangePasswo
         try {
             // ✅ رمزِ فعلیِ واقعیِ کاربر فرستاده می‌شود — قبلاً '123456' هاردکد شده بود و
             //    برای هر کاربری که رمزش 123456 نبود، 401 می‌گرفت و کل سشنش پاک می‌شد!
-            await apiService.auth.changePassword({
+            const res = await apiService.auth.changePassword({
                 currentPassword: currentPassword,
                 newPassword: newPassword,
             });
+            // ✅ فیکس «اخراج بعد از تغییر رمز»: بک با tokenVersion++ توکنِ فعلی را باطل می‌کند؛
+            //    توکنِ تازهٔ پاسخ ذخیره می‌شود تا کاربر لاگ‌این بماند (بدون پرش به لاگین)
+            if (res?.access_token) dispatch(setAccessToken(res.access_token));
             // ✅ بروزرسانی فوری redux — بنر «رمز موقت» بدون رفرش از همهٔ صفحات محو می‌شود
             if (user) dispatch(setUser({ ...user, temporaryPassword: false } as any));
             toast.success('رمز عبور با موفقیت تغییر یافت');
