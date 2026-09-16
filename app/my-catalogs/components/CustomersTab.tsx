@@ -47,8 +47,35 @@ export default function CustomersTab({ catalogId, slug }: Props) {
         refetch();
     };
 
-    const run = async (key: string, fn: () => Promise<any>, successMsg?: string) => {
+    // ✅ به‌روزرسانی خوش‌بینانه — ردیف همان لحظه از کشِ برگه می‌رود؛ رفرش سرور در پس‌زمینه هم‌گام می‌کند
+    //    (رفع گزارش مالک: «حذف میشه ولی باید رفرش کنی تا از لیست بره»)
+    const patchTeam = (patch: (old: any) => any) => {
+        queryClient.setQueryData(['catalog-team', catalogId], (old: any) => (old ? patch(old) : old));
+    };
+    /** حذف کامل عضو از ردیف‌ها و درخواست‌های در انتظار — لغو/حذف/رد */
+    const stripMemberFrom = (memberId: string) => (old: any) => ({
+        ...old,
+        customers: (old.customers || []).filter((c: any) => c.id !== memberId),
+        pendingRequests: (old.pendingRequests || []).filter((r: any) => r.id !== memberId),
+    });
+    /** فعال‌شدن عضو بعد از پذیرش — چیپ «در حال انتظار» همان لحظه می‌رود */
+    const activateMemberIn = (memberId: string) => (old: any) => ({
+        ...old,
+        customers: (old.customers || []).map((c: any) => (c.id === memberId ? { ...c, customerStatus: 'active' } : c)),
+        pendingRequests: (old.pendingRequests || []).filter((r: any) => r.id !== memberId),
+    });
+
+    const run = async (
+        key: string,
+        fn: () => Promise<any>,
+        successMsg?: string,
+        optimistic?: (old: any) => any,
+    ) => {
         setBusy(key);
+        // ✅ به‌روزرسانی خوش‌بینانه «قبل از ارسال» — ردیف همان لحظهٔ کلیک غیب می‌شود؛
+        //    حذف/رد در پس‌زمینه تمام می‌شود (زنجیرهٔ بک چند رفت‌وبرگشت به دیتابیس دارد و کند است)؛
+        //    اگر عملیات خطا بخورد، refresh() حقیقت سرور را برمی‌گرداند (ردیف خودش برمی‌گردد)
+        if (optimistic) patchTeam(optimistic);
         try {
             const res = await fn();
             if (successMsg) toast.success(successMsg || res?.message);
@@ -56,6 +83,7 @@ export default function CustomersTab({ catalogId, slug }: Props) {
             return res;
         } catch (e: any) {
             toast.error(e?.data?.message || e?.message || 'خطا در انجام عملیات');
+            refresh(); // ✅ بازگردانی خودکار در خطا — چیزی که نبود حذف نمی‌ماند
         } finally {
             setBusy(null);
         }
@@ -124,11 +152,11 @@ export default function CustomersTab({ catalogId, slug }: Props) {
             acts.push({
                 key: 'reject',
                 icon: X,
-                label: 'رد درخواست خریداربودن',
+                label: 'رد درخواست',
                 danger: true,
                 onClick: () => {
                     if (window.confirm(`درخواست خریداری «${displayName}» رد شود؟`)) {
-                        run(`rej-${m.id}`, () => apiService.catalog.team.rejectBuyer(catalogId, m.id), 'درخواست رد شد');
+                        run(`rej-${m.id}`, () => apiService.catalog.team.rejectBuyer(catalogId, m.id), 'درخواست رد شد', stripMemberFrom(m.id));
                     }
                 },
             });
@@ -136,14 +164,21 @@ export default function CustomersTab({ catalogId, slug }: Props) {
             acts.push({
                 key: 'remove',
                 icon: Trash2,
-                label: st === 'owner_pending' ? 'لغو درخواست ثبت خریدار' : 'حذف خریدار',
+                // ✅ برچسب کوتاه و روشن (خواستهٔ مالک): «لغو درخواست» — نه جملهٔ بلند
+                label: st === 'owner_pending' ? 'لغو درخواست' : 'حذف خریدار',
                 danger: true,
                 onClick: () => {
-                    const confirmText = st === 'owner_pending'
+                    const isCancel = st === 'owner_pending';
+                    const confirmText = isCancel
                         ? `درخواست ثبت خریداری «${displayName}» لغو شود؟`
                         : `«${displayName}» از فهرست خریداران حذف شود؟`;
                     if (window.confirm(confirmText)) {
-                        run(`rm-${m.id}`, () => apiService.catalog.team.removeCustomer(catalogId, m.id), 'از لیست حذف شد');
+                        run(
+                            `rm-${m.id}`,
+                            () => apiService.catalog.team.removeCustomer(catalogId, m.id),
+                            isCancel ? 'درخواست لغو شد' : 'از لیست حذف شد',
+                            stripMemberFrom(m.id),
+                        );
                     }
                 },
             });
@@ -185,7 +220,7 @@ export default function CustomersTab({ catalogId, slug }: Props) {
                     <button
                         onClick={() => {
                             if (window.confirm(`«${displayName}» از لیست حذف شود؟`)) {
-                                run(`rm-${m.id}`, () => apiService.catalog.team.removeCustomer(catalogId, m.id), 'از لیست حذف شد');
+                                run(`rm-${m.id}`, () => apiService.catalog.team.removeCustomer(catalogId, m.id), 'از لیست حذف شد', stripMemberFrom(m.id));
                             }
                         }}
                         className="p-2 rounded-full text-stone-400 hover:bg-red-50 hover:text-red-500 dark:hover:bg-red-900/20 transition-colors flex-shrink-0"
@@ -277,14 +312,14 @@ export default function CustomersTab({ catalogId, slug }: Props) {
                                         {/* ✅ تماس با متقاضی — همیشه (شمارهٔ ثبت‌نام) */}
                                         <OfferCallButton phone={s.phone} title="تماس با متقاضی خریداربودن" />
                                         <button
-                                            onClick={() => run(`apr-${s.id}`, () => apiService.catalog.team.approveBuyer(catalogId, s.id), 'به‌عنوان خریدار تایید شد')}
+                                            onClick={() => run(`apr-${s.id}`, () => apiService.catalog.team.approveBuyer(catalogId, s.id), 'به‌عنوان خریدار تایید شد', activateMemberIn(s.id))}
                                             className="h-8 px-2.5 rounded-xl bg-emerald-600 text-white text-[11px] font-bold flex items-center gap-1"
                                             title="تایید درخواست"
                                         >
                                             <Check className="w-3.5 h-3.5" />تایید
                                         </button>
                                         <button
-                                            onClick={() => run(`rej-${s.id}`, () => apiService.catalog.team.rejectBuyer(catalogId, s.id), 'درخواست رد شد')}
+                                            onClick={() => run(`rej-${s.id}`, () => apiService.catalog.team.rejectBuyer(catalogId, s.id), 'درخواست رد شد', stripMemberFrom(s.id))}
                                             className="h-8 px-2.5 rounded-xl bg-gray-200 dark:bg-gray-800 text-gray-700 dark:text-gray-300 text-[11px] font-bold"
                                             title="رد درخواست"
                                         >

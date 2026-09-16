@@ -133,8 +133,15 @@ export const apiRequest = async <T = any>(
     url: string,
     options?: AxiosRequestConfig
 ): Promise<T> => {
-    // ۱) اول اینترنت چک می‌شود؛ قطع بود → همین‌جا تمام است (بدون کال)
-    await gateInternet();
+    // ۱) گارد اینترنت — فقط برای خواندنی‌ها (GET).
+    //    ✅ اصلاح ریشه‌ای (گزارش مالک: «لغو درخواست حذف می‌شود ولی باید رفرش کنی تا از لیست بره»):
+    //    پیش‌تر هر کالِ کاربر (حتی DELETE/POST) پشتِ پروبِ اینترنتِ تا ۳.۵ثانیه‌ای معطل می‌شد —
+    //    در شبکهٔ ایران که cloudflare/gstatic کند یا فیلترند، کلیکِ کاربر ثانیه‌ها بی‌جواب می‌ماند
+    //    و کاربر فکر می‌کرد «کاری نکرد، باید رفرش کنم». حالا اقدامِ کاربر (mutation) همان لحظه
+    //    کال می‌شود؛ اگر شبکه واقعا قطع باشد خودِ axios سریع خطای شبکه می‌دهد و همان مسیر
+    //    پیام فارسی/صفحهٔ آفلاین می‌رود. خواندنی‌ها همچنان از گارد می‌گذرند (فلسفهٔ صفحهٔ آفلاین).
+    const method = (options?.method || 'GET').toUpperCase();
+    if (method === 'GET') await gateInternet();
     try {
         const fullUrl = getApiUrl(url);
         const response = await api({ url: fullUrl, ...options });
