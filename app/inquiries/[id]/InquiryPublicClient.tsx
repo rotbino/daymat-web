@@ -29,11 +29,13 @@ import {
     ClipboardList, Clock, User, Share2, Check, Loader2,
     Send, Package, Ban, MessageSquareText, Store,
     Truck, Wallet, ExternalLink, Phone, Megaphone, PackageSearch, X, Settings,
-    Lock, Handshake, PhoneCall, UserPlus,
+    Lock, Handshake, PhoneCall, UserPlus, Gift, Sparkles,
     Bookmark, ChevronDown, ArrowRight, Pause, Play,
 } from 'lucide-react';
 import { faNum, faPrice, faTimeAgo, faDeadlineLeft, STATUS_FA, STATUS_CHIP } from '../utils';
 import OfferSheet from '@/app/components/OfferSheet';
+import ArmFooter from './ArmFooter';
+import { useMyInquiries } from '@/lib/api/apiHooks';
 
 const fadeUp = (delay = 0) => ({
     initial: { opacity: 0, y: 18 },
@@ -60,6 +62,8 @@ export default function InquiryPublicClient({ idOrSlug }: { idOrSlug: string }) 
     const [privOpen, setPrivOpen] = useState(false);
     // بعد از ثبت درخواست همکاری — بنر حالت «در انتظار تایید» می‌شود
     const [requestedSelf, setRequestedSelf] = useState(false);
+    // 🦠 قیف تامین‌کننده — مهمان پیش از ورود، راهنمای «ثبت‌نام + ساخت کاتالوگ» می‌بیند
+    const [supOpen, setSupOpen] = useState(false);
 
     // 💾 سوییچر بازوهای خرید ذخیره‌شده + نشانک این بازو (قرینهٔ کاتالوگ)
     const [savedOpen, setSavedOpen] = useState(false);
@@ -128,6 +132,19 @@ export default function InquiryPublicClient({ idOrSlug }: { idOrSlug: string }) 
     const suppliersCount = (inquiry as any)?.suppliersCount ?? 0;
     const savesCount = (inquiry as any)?.savesCount ?? 0;
     const limited = !!(inquiry as any)?.limited; // خصوصی + بازدیدکننده غیرعضو
+
+    // 🦠 لینک‌های ویروسی — فقط برای کسانی که بازو ندارند (خواستهٔ مالک):
+    //    مالکِ بازو و کسی که قبلاً بازو ساخته هرگز نبینند؛ مهمان‌ها همیشه می‌بینند
+    const { data: myInqData } = useMyInquiries();
+    const hasArm = (myInqData?.length ?? 0) > 0;
+    const viralReady = !isAuthenticated || myInqData !== undefined; // قبل از لود، فلش نزند
+    const showViral = viralReady && !isOwner && !hasArm;
+    // ✅ کد دعوت مالک — انتساب هر ثبت‌نام از این صفحه به صاحب بازو (بک برمی‌گرداند)
+    const refCode: string | undefined = (inquiry as any)?.owner?.referralCode ?? undefined;
+    const q = refCode ? `?ref=${refCode}` : '';
+    const supplierJoinHref = `/login?redirect=${encodeURIComponent(`/business/register${q}`)}&intent=catalog`; // ثبت‌نام + ساخت کاتالوگ
+    const armJoinHref = `/login?redirect=${encodeURIComponent(`/inquiries/new${q}`)}`; // ثبت‌نام + ساخت بازوی خرید (انتساب با RefCapture)
+    const armHref = isAuthenticated ? `/inquiries/new${q}` : armJoinHref;
     const items = inquiry?.items ?? [];
     const urgentItems = useMemo(() => items.filter((it: any) => it.urgent), [items]);
     const otherItems = useMemo(() => items.filter((it: any) => !it.urgent), [items]);
@@ -159,11 +176,12 @@ export default function InquiryPublicClient({ idOrSlug }: { idOrSlug: string }) 
     const showItemOffer = (it: any) => canTouchOffer && (it.urgent || allowOther);
     const canOfferWholeList = canTouchOffer && items.length > 0 && (allowOther || urgentItems.length === items.length);
 
-    // لمس دکمهٔ قیمت: مهمان → ورود | خصوصی و غیرعضو → درخواست همکاری | بقیه → شیت قیمت
+    // لمس دکمهٔ قیمت: مهمان → قیف تامین‌کننده | خصوصی و غیرعضو → درخواست همکاری | بقیه → شیت قیمت
     const handleOffer = (target: { id?: string; name: string; quantity?: number | null; unit?: string | null }) => {
         if (!inquiry) return;
+        // 🦠 مهمان: قبل از صفحهٔ ورودِ شماره، مدالِ راهنمای تامین — مسیر: ثبت‌نام → کاتالوگ → تامین
         if (!isAuthenticated) {
-            router.push(`/login?redirect=${encodeURIComponent(`/${inquiry.slug || inquiry.id}`)}`);
+            setSupOpen(true);
             return;
         }
         if (limited) {
@@ -263,8 +281,9 @@ export default function InquiryPublicClient({ idOrSlug }: { idOrSlug: string }) 
     // ✅ ارتباط تجاری سه‌حالته — «ارسال درخواست تامین» (خواستهٔ مالک): هم عمومی هم خصوصی
     //     none → دکمه | pending → چیپ «در انتظار تایید» | member → چیپ «تاییدشده»
     const openCoop = () => {
+        // 🦠 مهمان: قیف تامین‌کننده — اول توضیح، بعد ثبت‌نام و ساخت کاتالوگ
         if (!isAuthenticated) {
-            router.push(`/login?redirect=${encodeURIComponent(`/${inquiry.slug || inquiry.id}`)}`);
+            setSupOpen(true);
             return;
         }
         setPrivOpen(true);
@@ -318,9 +337,9 @@ export default function InquiryPublicClient({ idOrSlug }: { idOrSlug: string }) 
                         <ArrowRight className="size-5" />
                     </button>
 
-                    {/* ═══ سوییچر بازوهای خرید ذخیره‌شده — وسط؛ برای همه (مالک و بازدیدکننده) ═══ */}
-                    {isAuthenticated && (
-                        <div className="relative flex min-w-0 flex-1 justify-center" ref={savedDropdownRef}>
+                    {/* ═══ سوییچر بازوهای ذخیره‌شده (کاربر لاگین) یا چیپ پروفایل خریدار (مهمان) — وسط ═══ */}
+                    {isAuthenticated ? (
+                    <div className="relative flex min-w-0 flex-1 justify-center" ref={savedDropdownRef}>
                             <button onClick={() => setSavedOpen((v) => !v)} aria-label="سوییچ بین بازوهای خرید ذخیره‌شده"
                                 className="inline-flex min-w-0 items-center gap-1.5 rounded-full px-3 py-2 text-[11px] font-bold text-stone-500 transition-colors hover:bg-stone-100 hover:text-stone-800 dark:text-gray-400 dark:hover:bg-gray-800/60 dark:hover:text-gray-100">
                                 <Bookmark className="hidden size-3.5 sm:block" />
@@ -361,9 +380,26 @@ export default function InquiryPublicClient({ idOrSlug }: { idOrSlug: string }) 
                                 </div>
                             )}
                         </div>
-                    )}
+                    ) : null}
 
-                    {/* تنظیمات (پنل) / ذخیره / اشتراک — سمت مقابل سوییچر */}
+                    {/* 👤 چیپ پروفایل خریدار در هدر — مهمان‌ها (مخاطب اصلی لینک) هویت صاحب بازو را در هدر ببینند (خواستهٔ مالک — الگو از هدر کاتالوگ) */}
+                    {!isAuthenticated && (
+                        <button onClick={() => document.getElementById('buyer-box')?.scrollIntoView({ behavior: 'smooth', block: 'center' })}
+                            aria-label="پروفایل خریدار" title="پروفایل خریدار"
+                            className="flex min-w-0 flex-1 items-center justify-center gap-2">
+                            {ownerAvatar ? (
+                                <Image src={ownerAvatar} alt={inquiry.owner?.fullName || ''} width={32} height={32}
+                                    className="size-7 shrink-0 rounded-full object-cover ring-1 ring-stone-200 dark:ring-gray-700" unoptimized />
+                            ) : (
+                                <span className="grid size-7 shrink-0 place-items-center rounded-full bg-stone-100 dark:bg-gray-800">
+                                    <User className="size-3.5 text-stone-400" />
+                                </span>
+                            )}
+                            <span className="min-w-0 truncate text-[11px] font-black text-stone-600 dark:text-gray-300">
+                                {inquiry.owner?.fullName || inquiry.business?.name || 'خریدار دیمت'}
+                            </span>
+                        </button>
+                    )}
                     <div className="flex shrink-0 items-center gap-1.5">
                         {isOwner && (
                             <Link href={`/my-inquiries?catalog=${inquiry.id}`} aria-label="مدیریت بازوی خرید در پنل" title="مدیریت در پنل"
@@ -431,35 +467,37 @@ export default function InquiryPublicClient({ idOrSlug }: { idOrSlug: string }) 
                         {/* ✅ ارتباط — «ارسال درخواست تامین» برای همه دیده می‌شود (عمومی و خصوصی) */}
                         {!isOwner && <CoopAction className="mt-4" />}
 
-                        {/* 👤 باکس خریدار — عکس پروفایل + تماس؛ ارتباط موثر (خواستهٔ مالک) */}
-                        {!isOwner && (
-                            <div className="mt-3 flex items-center gap-2.5 rounded-2xl bg-stone-50 px-3.5 py-3 dark:bg-gray-950/60">
-                                {ownerAvatar ? (
-                                    <Image src={ownerAvatar} alt={inquiry.owner?.fullName || ''} width={48} height={48}
-                                        className="size-11 shrink-0 rounded-full object-cover ring-2 ring-white dark:ring-gray-800" unoptimized />
-                                ) : (
-                                    <span className="grid size-11 shrink-0 place-items-center rounded-full bg-white shadow-sm dark:bg-gray-900">
-                                        <User className="size-5 text-stone-300 dark:text-gray-600" />
-                                    </span>
-                                )}
-                                <div className="min-w-0 flex-1">
-                                    <p className="truncate text-xs font-black">{inquiry.owner?.fullName || inquiry.business?.name || 'خریدار'}</p>
-                                    <p className="mt-0.5 text-[10px] font-bold text-stone-400 dark:text-gray-500">خریدار — برای هماهنگی تامین در دسترسه</p>
-                                </div>
-                                {bizPhone && (
-                                    <a href={`tel:${bizPhone}`} aria-label="تماس با خریدار"
-                                        className="inline-flex h-9 shrink-0 items-center gap-1 rounded-lg bg-primary px-3.5 text-[11px] font-extrabold text-on-primary transition active:scale-95">
-                                        <PhoneCall className="size-3.5" />
-                                        تماس
-                                    </a>
-                                )}
+                        {/* 👤 باکس خریدار — عکس پروفایل + تماس؛ برای همه رندر می‌شود (هویت صاحب بازو — خواستهٔ مالک) */}
+                        <div id="buyer-box" className="mt-3 flex items-center gap-2.5 rounded-2xl bg-stone-50 px-3.5 py-3 dark:bg-gray-950/60">
+                            {ownerAvatar ? (
+                                <Image src={ownerAvatar} alt={inquiry.owner?.fullName || ''} width={48} height={48}
+                                    className="size-11 shrink-0 rounded-full object-cover ring-2 ring-white dark:ring-gray-800" unoptimized />
+                            ) : (
+                                <span className="grid size-11 shrink-0 place-items-center rounded-full bg-white shadow-sm dark:bg-gray-900">
+                                    <User className="size-5 text-stone-300 dark:text-gray-600" />
+                                </span>
+                            )}
+                            <div className="min-w-0 flex-1">
+                                <p className="truncate text-xs font-black">{inquiry.owner?.fullName || inquiry.business?.name || 'خریدار'}</p>
+                                <p className="mt-0.5 text-[10px] font-bold text-stone-400 dark:text-gray-500">
+                                    {isOwner ? 'این بازوی خرید مال توست' : 'خریدار — برای هماهنگی تامین در دسترسه'}
+                                </p>
+                            </div>
+                            {!isOwner && bizPhone && (
+                                <a href={`tel:${bizPhone}`} aria-label="تماس با خریدار"
+                                    className="inline-flex h-9 shrink-0 items-center gap-1 rounded-lg bg-primary px-3.5 text-[11px] font-extrabold text-on-primary transition active:scale-95">
+                                    <PhoneCall className="size-3.5" />
+                                    تماس
+                                </a>
+                            )}
+                            {!isOwner && (
                                 <button onClick={saveContact}
                                     className="inline-flex h-9 shrink-0 items-center gap-1 rounded-lg border border-stone-200 bg-white px-3 text-[11px] font-extrabold text-stone-600 transition active:scale-95 dark:border-gray-700 dark:bg-gray-900 dark:text-gray-200">
                                     <UserPlus className="size-3.5 text-primary" />
                                     ذخیره مخاطب
                                 </button>
-                            </div>
-                        )}
+                            )}
+                        </div>
 
                         {inquiry.description && (
                             <p className="mt-4 rounded-2xl bg-stone-50 px-4 py-3 text-sm leading-7 text-stone-600 dark:bg-gray-950/60 dark:text-gray-300">
@@ -490,7 +528,42 @@ export default function InquiryPublicClient({ idOrSlug }: { idOrSlug: string }) 
                     </div>
                 </motion.section>
 
-                {/* ═══ ✅ خلاصهٔ پیشنهادها — جلوی چشم مدیر، نه ته صفحه (خواستهٔ مالک) ═══ */}
+                {/* ═══ 🦠 قیف تامین‌کننده — فقط مهمان؛ تامین‌کننده به کاتالوگ نیاز دارد نه بازو (خواستهٔ مالک) ═══ */}
+                {!isAuthenticated && (
+                    <motion.div {...fadeUp(0.05)}
+                        className="mt-4 flex items-center gap-3 rounded-2xl border border-brand-accent/30 bg-brand-accent-soft/60 px-4 py-3.5 dark:border-amber-500/25 dark:bg-amber-500/5">
+                        <span className="grid size-9 shrink-0 place-items-center rounded-xl bg-white shadow-sm dark:bg-gray-900">
+                            <Store className="size-4 text-amber-600 dark:text-amber-400" />
+                        </span>
+                        <div className="min-w-0 flex-1">
+                            <p className="text-[12px] font-black text-amber-800 dark:text-amber-300">تامین‌کننده هستی؟ اول کاتالوگت را بساز</p>
+                            <p className="mt-0.5 text-[10.5px] font-bold leading-4 text-amber-700/80 dark:text-amber-400/80">
+                                در دیمت ثبت‌نام کن و در یک دقیقه کاتالوگ محصولات بساز — از این پس تامین‌کنندهٔ صدها بازوی خرید باش
+                            </p>
+                        </div>
+                        <button onClick={() => router.push(supplierJoinHref)}
+                            className="shrink-0 rounded-full bg-amber-500 px-3.5 py-2 text-[11px] font-extrabold text-white shadow-sm transition-opacity hover:opacity-90">
+                            ثبت‌نام تامین‌کننده
+                        </button>
+                    </motion.div>
+                )}
+
+                {/* ═══ 🦠 نوار ویروسی ساخت بازو — فقط کسانی که بازو ندارند (مهمان/بدون بازو) ═══ */}
+                {showViral && (
+                    <motion.button {...fadeUp(0.08)} onClick={() => router.push(armHref)}
+                        className="mt-3 flex w-full items-center gap-3 rounded-2xl border border-primary/25 bg-gradient-to-l from-brand-primary-soft via-brand-primary-soft/60 to-transparent px-4 py-3.5 text-right shadow-sm transition-all hover:shadow-md active:scale-[0.99] dark:border-primary/20 dark:from-primary/10 dark:via-primary/5 dark:to-transparent">
+                        <span className="grid size-9 shrink-0 place-items-center rounded-xl bg-white shadow-sm dark:bg-gray-900">
+                            <Gift className="size-4 text-primary" />
+                        </span>
+                        <span className="min-w-0 flex-1">
+                            <span className="block text-[12.5px] font-black text-brand-primary dark:text-emerald-300">این بازوی خرید را می‌خواهی؟ برای خودت هم بساز</span>
+                            <span className="mt-0.5 block text-[10.5px] font-bold leading-4 text-brand-primary/70 dark:text-emerald-300/70">
+                                لیست خریدت را بساز، برای تامین‌کننده‌ها بفرست و قیمت‌ها را یک‌جا بگیر
+                            </span>
+                        </span>
+                        <span className="shrink-0 rounded-full bg-primary px-3.5 py-2 text-[11px] font-extrabold text-on-primary shadow-sm">ساخت بازو</span>
+                    </motion.button>
+                )}
                 {isOwner && (inquiry.offers?.length ?? 0) > 0 && (
                     <motion.button {...fadeUp(0.05)} onClick={scrollToOffers}
                         className="mt-4 flex w-full items-center gap-3 rounded-2xl border border-primary/25 bg-brand-primary-soft px-4 py-3.5 text-right shadow-sm transition-all hover:shadow-md active:scale-[0.99] dark:border-primary/20 dark:bg-primary/10">
@@ -509,8 +582,9 @@ export default function InquiryPublicClient({ idOrSlug }: { idOrSlug: string }) 
                     </motion.button>
                 )}
 
-                {/* ═══ بنر بازوی خرید خصوصی — لیست دیده می‌شود، قیمت فقط برای اعضا ═══ */}
-                {limited && (
+                {/* ═══ بنر بازوی خرید خصوصی — فقط کاربر لاگین‌شده؛ مهمان به‌جایش قیف تامین‌کننده را می‌بیند
+                    (برای غیرعضو مهم نیست «خصوصیه» بداند — باید راه تامین را ببیند: خواستهٔ مالک) ═══ */}
+                {limited && isAuthenticated && (
                     <motion.div {...fadeUp(0.05)}
                         className="mt-4 flex items-center gap-3 rounded-2xl border border-brand-accent/30 bg-brand-accent-soft/70 px-4 py-3.5 dark:border-amber-500/25 dark:bg-amber-500/5">
                         <span className="grid size-9 shrink-0 place-items-center rounded-xl bg-white shadow-sm dark:bg-gray-900">
@@ -825,6 +899,9 @@ export default function InquiryPublicClient({ idOrSlug }: { idOrSlug: string }) 
                 )}
             </main>
 
+            {/* ═══ فوتر بازوی خرید — اطلاعات خریدار + بلوک‌های ویروسی (فقط بدون بازو) ═══ */}
+            <ArmFooter inquiry={inquiry} showViral={showViral} bottomBar={showFooterCta} />
+
             {/* ═══ فوتر موبایل — CTA جمع‌وجور «پیشنهاد قیمت» (خواستهٔ مالک) ═══ */}
             {showFooterCta && (
                 <div className="fixed inset-x-0 bottom-0 z-40 border-t border-stone-100 bg-white/95 backdrop-blur-md dark:border-gray-800 dark:bg-gray-950/95 lg:hidden"
@@ -851,6 +928,14 @@ export default function InquiryPublicClient({ idOrSlug }: { idOrSlug: string }) 
                     inquiry={inquiry as any}
                     onClose={() => setPrivOpen(false)}
                     onRequested={() => { setRequestedSelf(true); setPrivOpen(false); refetch(); }}
+                />
+            )}
+
+            {/* ═══ 🦠 مدال قیف تامین‌کننده — مهمان قبل از ورود؛ مسیر: ثبت‌نام ← کاتالوگ ← تامین ═══ */}
+            {supOpen && (
+                <SupplierOnboardModal
+                    inquiry={inquiry as any}
+                    onClose={() => setSupOpen(false)}
                 />
             )}
 
@@ -928,8 +1013,6 @@ function ModalBody({ inquiry, isAuthenticated, requestAccess, onRequested }: {
     const myCatalogs: any[] = catalogsRaw ?? [];
     const [catalogId, setCatalogId] = useState<string>('');
 
-    const loginHref = `/login?redirect=${encodeURIComponent(`/${inquiry.slug || inquiry.id}`)}`;
-
     const send = async () => {
         if (!catalogId) return;
         try {
@@ -942,12 +1025,25 @@ function ModalBody({ inquiry, isAuthenticated, requestAccess, onRequested }: {
     };
 
     if (!isAuthenticated) {
+        // 🦠 مهمان: به‌جای پرش خشک به ورود — توضیح مسیر تامین + CTA ثبت‌نام و ساخت کاتالوگ
+        const refQ = inquiry?.owner?.referralCode ? `?ref=${inquiry.owner.referralCode}` : '';
+        const joinHref = `/login?redirect=${encodeURIComponent(`/business/register${refQ}`)}&intent=catalog`;
         return (
-            <Link href={loginHref}
-                className="mt-5 inline-flex h-12 items-center gap-2 rounded-full bg-primary px-8 text-sm font-extrabold text-on-primary shadow-lg shadow-primary/25 transition-opacity hover:opacity-95">
-                <Handshake className="size-4" />
-                ورود و ارسال درخواست تامین
-            </Link>
+            <>
+                <p className="mx-auto mt-4 max-w-xs rounded-xl bg-brand-accent-soft px-3 py-2.5 text-[11.5px] font-bold leading-6 text-amber-800 dark:bg-amber-500/10 dark:text-amber-300">
+                    برای تامین این بازوی خرید اول عضو دیمت شو و کاتالوگ محصولاتت را بساز —
+                    بعد با کاتالوگت به این خریدار درخواست تامین بده.
+                </p>
+                <Link href={joinHref}
+                    className="mt-4 inline-flex h-12 items-center gap-2 rounded-full bg-primary px-6 text-sm font-extrabold text-on-primary shadow-lg shadow-primary/25 transition-opacity hover:opacity-95">
+                    <Store className="size-4" />
+                    ثبت‌نام و ساخت کاتالوگ تامین
+                </Link>
+                <Link href={`/login?redirect=${encodeURIComponent(`/${inquiry.slug || inquiry.id}`)}`}
+                    className="mt-2.5 block text-center text-[11px] font-bold text-stone-400 hover:text-primary dark:text-gray-500">
+                    قبلا عضو دیمت هستم — فقط ورود
+                </Link>
+            </>
         );
     }
     if (catsLoading) {
@@ -991,5 +1087,54 @@ function ModalBody({ inquiry, isAuthenticated, requestAccess, onRequested }: {
                 ارسال درخواست تامین
             </motion.button>
         </>
+    );
+}
+
+// ═══ 🦠 مدال قیف تامین‌کننده — مهمان که دکمهٔ قیمت/درخواست را لمس کرد،
+//     قبل از صفحهٔ ورودِ شماره، مسیرِ تامین را می‌بیند:
+//     ثبت‌نام در دیمت ← ساخت کاتالوگ محصولات ← تامین این خریدار و صدها خریدار دیگر
+//     (خواستهٔ مالک: ابزارها تامین‌کننده را به‌طور طبیعی به ثبت‌نام و ساخت کاتالوگ برسانند) ═══
+function SupplierOnboardModal({ inquiry, onClose }: { inquiry: any; onClose: () => void }) {
+    const [mounted, setMounted] = useState(false);
+    useEffect(() => setMounted(true), []);
+    if (!mounted) return null;
+
+    const refQ = inquiry?.owner?.referralCode ? `?ref=${inquiry.owner.referralCode}` : '';
+    const joinHref = `/login?redirect=${encodeURIComponent(`/business/register${refQ}`)}&intent=catalog`;
+    const backHref = `/login?redirect=${encodeURIComponent(`/${inquiry?.slug || inquiry?.id || ''}`)}`;
+
+    return createPortal(
+        <div className="fixed inset-0 z-[70] grid place-items-end sm:place-items-center">
+            <div className="absolute inset-0 bg-stone-950/50 backdrop-blur-[2px]" onClick={onClose} />
+            <motion.div
+                initial={{ opacity: 0, y: 24 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.25 }}
+                className="relative w-full sm:max-w-md rounded-t-3xl sm:rounded-3xl bg-white p-6 text-center shadow-2xl dark:bg-gray-900"
+                style={{ paddingBottom: 'calc(1.5rem + env(safe-area-inset-bottom))' }}>
+                <button onClick={onClose} aria-label="بستن"
+                    className="absolute end-4 top-4 grid size-8 place-items-center rounded-full text-stone-400 transition-colors hover:bg-stone-100 dark:hover:bg-gray-800">
+                    <X className="size-4" />
+                </button>
+
+                <span className="mx-auto grid size-14 place-items-center rounded-2xl bg-brand-accent-soft dark:bg-amber-500/10">
+                    <Store className="size-6 text-amber-600 dark:text-amber-400" />
+                </span>
+                <h1 className="mt-4 text-lg font-black">می‌خواهی این لیست را تامین کنی؟</h1>
+                {inquiry?.title && <p className="mt-1 text-sm font-bold text-stone-500 dark:text-gray-400">«{inquiry.title}»</p>}
+                <p className="mx-auto mt-3 max-w-xs text-[12px] font-bold leading-6 text-stone-500 dark:text-gray-400">
+                    برای تامین، اول عضو دیمت شو و در یک دقیقه کاتالوگ محصولاتت را بساز؛
+                    از این پس با کاتالوگت می‌توانی این خریدار را تامین کنی و تامین‌کنندهٔ صدها بازوی خرید دیگر باشی.
+                </p>
+                <Link href={joinHref}
+                    className="mt-5 inline-flex h-12 w-full items-center justify-center gap-2 rounded-full bg-primary text-sm font-extrabold text-on-primary shadow-lg shadow-primary/25 transition-opacity hover:opacity-95">
+                    <Sparkles className="size-4" />
+                    ثبت‌نام و ساخت کاتالوگ محصولات
+                </Link>
+                <Link href={backHref}
+                    className="mt-2.5 block text-center text-[11px] font-bold text-stone-400 hover:text-primary dark:text-gray-500">
+                    قبلا عضو دیمت هستم — فقط ورود
+                </Link>
+            </motion.div>
+        </div>,
+        document.body,
     );
 }
