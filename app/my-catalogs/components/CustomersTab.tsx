@@ -18,7 +18,7 @@ import { CARD_CLS } from '../constants';
 import { useCatalogTeam } from '@/lib/api/apiHooks';
 import ConnectionRequestModal from './ConnectionRequestModal';
 import OfferCallButton from '@/app/components/OfferCallButton';
-import { Avatar, MemberMainInfo, personalSlugOf, bizBadge, badgeBase, REQUEST_LABEL, inviteStateOf, InviteStateChip } from './MemberBits';
+import { Avatar, BuyerMainInfo, personalSlugOf, REQUEST_LABEL, InviteStateChip } from './MemberBits';
 
 interface Props {
     catalogId: string;
@@ -89,26 +89,30 @@ export default function CustomersTab({ catalogId, slug }: Props) {
     const customers: any[] = team.customers || [];
     const activeCustomers = customers.filter((c) => c.customerStatus === 'active');
 
-    const decorate = (m: any) => ({
-        ...m,
-        __isMyCustomer: !!team.myRole?.isSeller && m.assignedSellerUserId === team.myRole?.userId,
-    });
-    // ✅ ترتیب لیست خریدارها (خواستهٔ مالک — Task 26):
-    //    خریدارهای من اول → بقیهٔ فعال‌ها → «در انتظار پذیرش خریدار» (ثبتِ ما) → «درخواست رد شده» (با حذف)
-    const buyerRows = activeCustomers.concat(
-        customers.filter((c) => c.customerStatus === 'pending' && c.customerVia === 'owner_add'),
-        customers.filter((c) => c.customerStatus === 'declined' && c.customerVia === 'owner_add'),
-    ).map(decorate)
-        .sort((a: any, b: any) => {
-            const rank = (c: any) => (c.customerStatus === 'active' ? (c.__isMyCustomer ? 0 : 1) : c.customerStatus === 'pending' ? 2 : 3);
-            return rank(a) - rank(b);
-        });
+    // ✅ وضعیت ردیف خریدار — درخواستِ خودِ متقاضی (self_request و ردیف‌های قدیمیِ بی‌via) در انتظار تاییدِ مدیر است
+    const rowStateOf = (c: any): 'active' | 'self_pending' | 'owner_pending' | 'declined' => {
+        if (c.customerStatus === 'active') return 'active';
+        if (c.customerStatus === 'pending') return c.customerVia === 'owner_add' ? 'owner_pending' : 'self_pending';
+        return 'declined';
+    };
+    // ✅ ترتیب (Task 26): خریدارهایِ مسئولِ من → بقیهٔ فعال‌ها → «در حال انتظار تایید شما» → «در انتظار پذیرش خریدار» → «درخواست رد شده»
+    //    ✅ درخواست همکاریِ خریدار (خواستهٔ مالک): در خودِ لیست خریداران می‌آید با وضعیت «در حال انتظار» — نه فقط در کارت بالا
+    const myId = team.myRole?.userId || null;
+    const rankOf = (c: any) => {
+        const st = rowStateOf(c);
+        if (st === 'active') return c.assignedSellerUserId && c.assignedSellerUserId === myId ? 0 : 1;
+        if (st === 'self_pending') return 2;
+        if (st === 'owner_pending') return 3;
+        return 4;
+    };
+    const buyerRows = [...customers].sort((a: any, b: any) => rankOf(a) - rankOf(b));
 
-    // ✅ منوی خریدار — فقط کارهای خریدار: تغییر مسئول و حذف (بدون ارتقا/تغییر نقش)
-    //    ثبتِ منتظرِ پذیرش فقط «لغو درخواست» دارد
+    // ✅ منوی خریدار — بسته به وضعیت: فعال → تغییر مسئول/حذف؛ درخواستِ متقاضی → رد؛ ثبتِ ما → لغو
     const menuActionsFor = (m: any) => {
         const acts: { key: string; icon: any; label: string; onClick: () => void; danger?: boolean }[] = [];
-        if (m.customerStatus === 'active') {
+        const st = rowStateOf(m);
+        const displayName = m.customerBusiness?.name || m.fullName || 'این خریدار';
+        if (st === 'active') {
             acts.push({
                 key: 'reassign',
                 icon: ArrowLeftRight,
@@ -116,53 +120,71 @@ export default function CustomersTab({ catalogId, slug }: Props) {
                 onClick: () => setReassignTarget(m),
             });
         }
-        acts.push({
-            key: 'remove',
-            icon: Trash2,
-            label: m.customerStatus === 'pending' ? 'لغو درخواست ثبت خریدار' : 'حذف خریدار',
-            danger: true,
-            onClick: () => {
-                if (window.confirm(`«${m.fullName}» از فهرست خریداران حذف شود؟`)) {
-                    run(`rm-${m.id}`, () => apiService.catalog.team.removeCustomer(catalogId, m.id), 'خریدار حذف شد');
-                }
-            },
-        });
+        if (st === 'self_pending') {
+            acts.push({
+                key: 'reject',
+                icon: X,
+                label: 'رد درخواست خریداربودن',
+                danger: true,
+                onClick: () => {
+                    if (window.confirm(`درخواست خریداری «${displayName}» رد شود؟`)) {
+                        run(`rej-${m.id}`, () => apiService.catalog.team.rejectBuyer(catalogId, m.id), 'درخواست رد شد');
+                    }
+                },
+            });
+        } else {
+            acts.push({
+                key: 'remove',
+                icon: Trash2,
+                label: st === 'owner_pending' ? 'لغو درخواست ثبت خریدار' : 'حذف خریدار',
+                danger: true,
+                onClick: () => {
+                    const confirmText = st === 'owner_pending'
+                        ? `درخواست ثبت خریداری «${displayName}» لغو شود؟`
+                        : `«${displayName}» از فهرست خریداران حذف شود؟`;
+                    if (window.confirm(confirmText)) {
+                        run(`rm-${m.id}`, () => apiService.catalog.team.removeCustomer(catalogId, m.id), 'از لیست حذف شد');
+                    }
+                },
+            });
+        }
         return acts;
     };
 
     const rowFor = (m: any) => {
-        const bb = bizBadge(m);
-        const invite = inviteStateOf(m, 'customer');
+        const st = rowStateOf(m);
         const menuOpen = menuFor === m.id;
         const actions = canManage ? menuActionsFor(m) : [];
         const pSlug = personalSlugOf(m);
+        const displayName = m.customerBusiness?.name || m.fullName || 'خریدار';
         return (
             <div key={m.id} className={cn(
                 'flex items-center gap-2.5 p-2.5 rounded-xl transition-colors',
-                invite === 'declined' ? 'bg-rose-50/50 dark:bg-rose-900/10'
-                    : m.__isMyCustomer ? 'bg-primary/5' : 'hover:bg-gray-50 dark:hover:bg-gray-800/50',
+                st === 'declined' ? 'bg-rose-50/50 dark:bg-rose-900/10' : 'hover:bg-gray-50 dark:hover:bg-gray-800/50',
             )}>
-                <Avatar url={m.avatarUrl} name={m.fullName} />
-                <MemberMainInfo m={m} onOpen={pSlug ? () => router.push(`/${pSlug}`) : undefined} />
+                <Avatar url={m.avatarUrl} name={m.customerBusiness?.name || m.fullName} />
+                <BuyerMainInfo m={m} onOpen={pSlug ? () => router.push(`/${pSlug}`) : undefined} />
 
-                {/* نقش بیزینسی — یا برچسب وضعیت ثبتِ خریدار */}
-                {invite ? (
-                    <InviteStateChip state={invite} pendingLabel="در انتظار پذیرش خریدار" />
-                ) : (
-                    <span className={cn(badgeBase, 'w-16 flex-shrink-0', bb?.cls || 'invisible')}>{bb?.text || '—'}</span>
-                )}
+                {/* ✅ وضعیت درخواست — درخواستِ متقاضی در خودِ لیست با «در حال انتظار تایید شما» دیده می‌شود */}
+                {st === 'self_pending' && <InviteStateChip state="pending" pendingLabel="در حال انتظار تایید شما" />}
+                {st === 'owner_pending' && <InviteStateChip state="pending" pendingLabel="در انتظار پذیرش خریدار" />}
+                {st === 'declined' && <InviteStateChip state="declined" />}
 
                 {/* ✅ تماس با خریدار — همیشه (شمارهٔ ثبت‌نام شخص؛ قاعدهٔ تماس‌ها) */}
                 <OfferCallButton
                     phone={m.phone}
-                    title={invite === 'pending' ? 'تماس — یادآوری پذیرش ثبت خریدار' : `تماس با ${m.fullName || 'خریدار'}`}
+                    title={st === 'self_pending'
+                        ? 'تماس با متقاضی خریداربودن'
+                        : st === 'owner_pending'
+                            ? 'تماس — یادآوری پذیرش ثبت خریدار'
+                            : `تماس با ${displayName}`}
                 />
 
                 {/* منو یا دکمهٔ حذفِ ردشده */}
-                {invite === 'declined' ? (
+                {st === 'declined' ? (
                     <button
                         onClick={() => {
-                            if (window.confirm(`«${m.fullName}» از لیست حذف شود؟`)) {
+                            if (window.confirm(`«${displayName}» از لیست حذف شود؟`)) {
                                 run(`rm-${m.id}`, () => apiService.catalog.team.removeCustomer(catalogId, m.id), 'از لیست حذف شد');
                             }
                         }}
@@ -202,9 +224,6 @@ export default function CustomersTab({ catalogId, slug }: Props) {
                         )}
                     </div>
                 )}
-
-                {/* جای بج سیستمی خالی — هم‌ترازی با تب تیم فروش */}
-                <span className={cn(badgeBase, 'w-24 flex-shrink-0', 'invisible')}>{'—'}</span>
             </div>
         );
     };
@@ -245,17 +264,12 @@ export default function CustomersTab({ catalogId, slug }: Props) {
                     <div className="space-y-2">
                         {pendingBuyers.map((s) => (
                             <div key={s.id} className="flex items-center gap-2.5 p-3 rounded-xl bg-amber-50/60 dark:bg-amber-900/10">
-                                <Avatar url={s.avatarUrl} name={s.fullName} size={36} />
+                                <Avatar url={s.avatarUrl} name={s.customerBusiness?.name || s.fullName} size={36} />
                                 <div className="flex-1 min-w-0">
-                                    <p className="font-bold text-sm text-gray-900 dark:text-gray-100 truncate">
-                                        {s.fullName || s.customerBusiness?.name || s.business?.name || '—'}
-                                    </p>
-                                    <p className="text-xs text-gray-500 dark:text-gray-400 truncate">
-                                        {((s.customerBusiness?.name || s.business?.name) && s.customerBusiness?.name !== s.fullName) ? `${s.customerBusiness?.name || s.business?.name} · ` : ''}
-                                        {s.memberCity || ''}
-                                    </p>
+                                    {/* ✅ هویتِ تجاری جلو است: کسب‌وکار (بازوی خرید) / صاحب (نقش) */}
+                                    <BuyerMainInfo m={s} />
                                     <p className="text-[11px] text-amber-600 dark:text-amber-400 mt-0.5">
-                                        {REQUEST_LABEL.buyer} — در انتظار تایید شما
+                                        {REQUEST_LABEL.buyer} — در حال انتظار تایید شما
                                     </p>
                                 </div>
                                 {busy === `apr-${s.id}` ? <Loader2 className="w-4 h-4 animate-spin flex-shrink-0" /> : (

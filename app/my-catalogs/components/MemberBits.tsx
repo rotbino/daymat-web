@@ -173,3 +173,44 @@ export function MemberMainInfo({ m, onOpen }: { m: any; onOpen?: () => void }) {
         </div>
     );
 }
+
+/**
+ * ✅ بلوک اصلی ردیف خریدار — خریدار خودِ کسب‌وکار/بازوی خرید است، نه مدیرش (خواستهٔ مالک):
+ *    خط ۱ (پررنگ): نام کسب‌وکار (نام بازوی خرید) — اگر بازو ندارد فقط نام کسب‌وکار
+ *    خط ۲: نام صاحب کسب‌وکار (نقشِ کاربر در آن کسب‌وکار) + شهر
+ *    مدیریتِ یک نفر ممکن است ده کسب‌وکار بی‌ربط داشته باشد — اینجا هویتِ تجاری جلو است.
+ */
+export function BuyerMainInfo({ m, onOpen }: { m: any; onOpen?: () => void }) {
+    const biz = m.customerBusiness || null;
+    const arm = m.customerArm || null;
+    const personalSlug = personalSlugOf(m);
+    const title = biz ? (arm ? `${biz.name} (${arm.title})` : biz.name) : (m.fullName || 'بدون نام');
+    // نقشِ کاربر در کسب‌وکار: مالک / پستِ نمایشی (مثل «مدیر فروش») / عضو
+    const rolePart = m.customerMemberIsOwner ? 'مالک' : (m.customerMemberPosition || 'عضو');
+    const ownerLine = biz ? `${m.customerBusinessOwner || ''} (${rolePart})`.trim() : null;
+    const cityChip = biz?.city || m.memberCity || null;
+    const extraArms = Math.max((m.customerArmCount ?? 0) - (arm ? 1 : 0), 0);
+    return (
+        <div
+            className={cn('flex-1 min-w-0', personalSlug && onOpen && 'cursor-pointer')}
+            onClick={() => { if (personalSlug && onOpen) onOpen(); }}
+            title={personalSlug && onOpen ? 'مشاهده صفحهٔ شخصی' : undefined}
+        >
+            <p className="font-bold text-sm text-gray-900 dark:text-gray-100 truncate">{title}</p>
+            <p className="text-[11px] text-gray-500 dark:text-gray-400 truncate mt-0.5 flex items-center gap-2">
+                {ownerLine && <span className="truncate">{ownerLine}</span>}
+                {cityChip && (
+                    <span className="inline-flex items-center gap-0.5 flex-shrink-0 text-gray-400">
+                        <MapPin className="w-3 h-3" />{cityChip}
+                    </span>
+                )}
+                {extraArms > 0 && (
+                    <span className="inline-flex items-center gap-1 flex-shrink-0 rounded-full bg-brand-contrast-soft px-2 py-0.5 text-[9px] font-black text-amber-700 dark:bg-amber-500/10 dark:text-amber-400">
+                        <ClipboardList className="h-2.5 w-2.5" />
+                        +{extraArms.toLocaleString('fa-IR')} بازوی خرید دیگر
+                    </span>
+                )}
+            </p>
+        </div>
+    );
+}

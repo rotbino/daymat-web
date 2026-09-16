@@ -1630,12 +1630,15 @@ export const useToggleBuyerPaused = (slug?: string) => {
 
 // ✅ دادهٔ تیم کاتالوگ — کشِ مشترک بین تب «تیم فروش»، تب «خریداران» و بج‌های نوار کنسول
 //    (همان کلید ['catalog-team', catalogId] — react-query یک بار می‌گیرد، همه مصرف می‌کنند)
+//    ✅ refetchOnMount 'always' — با هر باز شدن برگه تازه می‌شود؛ درخواست همکاری که از
+//    صفحهٔ کاتالوگ آمده بدون رفرش دستی همان‌جا دیده می‌شود (refetchOnWindowFocus خاموش است)
 export const useCatalogTeam = (catalogId?: string | null, enabled = true) => {
     return useQuery({
         queryKey: ['catalog-team', catalogId],
         queryFn: () => apiService.catalog.team.getTeam(catalogId as string),
         enabled: !!catalogId && enabled,
         staleTime: 15_000,
+        refetchOnMount: 'always',
     });
 };
 

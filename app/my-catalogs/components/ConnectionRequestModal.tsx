@@ -10,7 +10,7 @@
 
 import React, { useEffect, useMemo, useState } from 'react';
 import Link from 'next/link';
-import { useQuery } from '@tanstack/react-query';
+import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { apiService } from '@/lib/api/apiService';
 import { BUSINESS_TYPE } from '@/lib/api/data-types';
 import { resolveFileSrc } from '@/app/business/manage/components/BusinessLogo';
@@ -22,6 +22,7 @@ import {
     ChevronDown, Sparkles, Smartphone,
 } from 'lucide-react';
 import PhoneContactsPanel from '@/components/share/PhoneContactsPanel';
+import BuyerContactsPanel from './BuyerContactsPanel';
 
 interface Props {
     open: boolean;
@@ -60,6 +61,7 @@ const TAG_CLS = 'px-1.5 py-0.5 rounded-md text-[9px] font-bold bg-primary/10 tex
 
 export default function ConnectionRequestModal({ open, onClose, catalogId, mode, canAssign, sellers, slug }: Props) {
     const scopeList = SCOPES[mode];
+    const queryClient = useQueryClient();
     const [scope, setScope] = useState<Scope>(DEFAULT_SCOPE[mode]);
     const [q, setQ] = useState('');
     const [debounced, setDebounced] = useState('');
@@ -128,6 +130,13 @@ export default function ConnectionRequestModal({ open, onClose, catalogId, mode,
         try { setQuota(await apiService.catalog.team.connectionQuota(catalogId)); } catch { /* بی‌صدا — بک‌اند خودش گیت می‌گذارد */ }
     };
 
+    // ✅ بعد از هر ارسال، برگهٔ تیم/خریداران همان لحظه تازه می‌شود — ردیفِ «در حال انتظار» بدون رفرش دستی می‌آید
+    const refreshTeam = () => {
+        queryClient.invalidateQueries({ queryKey: ['catalog-team', catalogId] });
+        queryClient.invalidateQueries({ queryKey: ['catalog-pending-summary'] });
+        queryClient.invalidateQueries({ queryKey: ['my-pending-approvals'] });
+    };
+
     // پسوند روایی توست — «چند تا رایگان مونده» یا «چند اعتبار خورد»
     const quotaSuffix = (qv: any) => {
         if (!qv) return '';
@@ -191,6 +200,7 @@ export default function ConnectionRequestModal({ open, onClose, catalogId, mode,
             toast.success((res?.message || 'درخواست ثبت خریدار ارسال شد — در انتظار پذیرش خریدار') + quotaSuffix(res?.quota));
             markSent(`biz-${b.id}`);
             refreshQuota();
+            refreshTeam();
         } catch (e: any) {
             handleSendError(e, 'خطا در ارسال درخواست');
         } finally {
@@ -205,6 +215,7 @@ export default function ConnectionRequestModal({ open, onClose, catalogId, mode,
             toast.success((res?.message || 'دعوت همکاری در فروش ارسال شد — در انتظار پذیرش همکار') + quotaSuffix(res?.quota));
             markSent(`usr-${u.id}`);
             refreshQuota();
+            refreshTeam();
         } catch (e: any) {
             handleSendError(e, 'خطا در ارسال دعوت');
         } finally {
@@ -327,57 +338,64 @@ export default function ConnectionRequestModal({ open, onClose, catalogId, mode,
                     </div>
                 )}
 
-                {/* 📱 تب مخاطبین — دفترچهٔ تلفن:
-                      مود team     → اعضای دیمت دعوت همکاری در فروش می‌گیرند، غیراعضا لینک کاتالوگ
-                      مود buyers   → کسب‌وکار اعضای دیمت ثبت خریدار می‌شود، غیراعضا لینک کاتالوگ */}
-                {scope === 'contacts' && (
+                {/* 📱 تب مخاطبین:
+                      مود team   → لیست عمومی مخاطبین: اعضای دیمت دعوت همکاری در فروش می‌گیرند، غیراعضا لینک کاتالوگ
+                      مود buyers → ✅ پنل تخصصی خریداران: کسب‌وکارها + بازوهای خریدِ هر عضو؛ بی‌کسب‌وکار قابل افزودن نیست */}
+                {scope === 'contacts' && mode === 'team' && (
                     <PhoneContactsPanel
                         title="دفترچهٔ مخاطبین تلفن تو"
-                        membersTitle={mode === 'team'
-                            ? 'اعضای دیمت — دعوت همکاری در فروش می‌گیرند'
-                            : 'اعضای دیمت — درخواست بازوی خرید به کسب‌وکارشان می‌رود'}
+                        membersTitle="اعضای دیمت — دعوت همکاری در فروش می‌گیرند"
                         inviteTitle="دعوت به دیمت — لینک کاتالوگ را می‌گیرند"
-                        memberSend={mode === 'team'
-                            ? {
-                                label: 'دعوت',
-                                doneLabel: 'دعوت رفت',
-                                reason: () => null,
-                                onSend: async (c) => {
-                                    try {
-                                        const res = await apiService.catalog.team.inviteSeller(catalogId, c.matchedUser!.id, inviteRole);
-                                        toast.success((res?.message || 'دعوت همکاری در فروش ارسال شد — در انتظار پذیرش همکار') + quotaSuffix(res?.quota));
+                        memberSend={{
+                            label: 'دعوت',
+                            doneLabel: 'دعوت رفت',
+                            reason: () => null,
+                            onSend: async (c) => {
+                                try {
+                                    const res = await apiService.catalog.team.inviteSeller(catalogId, c.matchedUser!.id, inviteRole);
+                                    toast.success((res?.message || 'دعوت همکاری در فروش ارسال شد — در انتظار پذیرش همکار') + quotaSuffix(res?.quota));
+                                    refreshQuota();
+                                    refreshTeam();
+                                } catch (e: any) {
+                                    if (e?.data?.errorCode === 'INSUFFICIENT_CREDIT') {
                                         refreshQuota();
-                                    } catch (e: any) {
-                                        if (e?.response?.data?.errorCode === 'INSUFFICIENT_CREDIT') {
-                                            refreshQuota();
-                                            throw new Error(e?.response?.data?.message || 'موجودی اعتبار کافی نیست');
-                                        }
-                                        throw e;
+                                        throw new Error(e?.data?.message || 'موجودی اعتبار کافی نیست');
                                     }
-                                },
+                                    throw e;
+                                }
+                            },
+                        }}
+                        invite={{
+                            label: 'دعوت به دیمت',
+                            getText: () => 'سلام! کاتالوگ قیمتی ما در دیمت را ببین:',
+                            getUrl: () => (slug ? `${window.location.origin}/${slug}` : undefined),
+                        }}
+                    />
+                )}
+
+                {scope === 'contacts' && mode === 'buyers' && (
+                    <BuyerContactsPanel
+                        title="دفترچهٔ مخاطبین تلفن تو"
+                        membersTitle="اعضای دیمت — کسب‌وکارشان را خریدار ثبت کن"
+                        inviteTitle="دعوت به دیمت — لینک کاتالوگ را می‌گیرند"
+                        doneLabel="درخواست رفت"
+                        onAddBusiness={async (businessId) => {
+                            try {
+                                const res = await apiService.catalog.team.addCustomer(catalogId, {
+                                    businessId,
+                                    ...(assignTo ? { sellerUserId: assignTo } : {}),
+                                });
+                                toast.success((res?.message || 'درخواست ثبت خریدار ارسال شد — در انتظار پذیرش خریدار') + quotaSuffix(res?.quota));
+                                refreshQuota();
+                                refreshTeam();
+                            } catch (e: any) {
+                                if (e?.data?.errorCode === 'INSUFFICIENT_CREDIT') {
+                                    refreshQuota();
+                                    throw new Error(e?.data?.message || 'موجودی اعتبار کافی نیست');
+                                }
+                                throw e;
                             }
-                            : {
-                                label: 'ارسال',
-                                doneLabel: 'درخواست رفت',
-                                reason: (c) => (c.matchedUser?.business ? null : 'کسب‌وکاری ثبت نکرده — با دعوت، لینک کاتالوگ را بفرست'),
-                                onSend: async (c) => {
-                                    const biz = c.matchedUser!.business!;
-                                    try {
-                                        const res = await apiService.catalog.team.addCustomer(catalogId, {
-                                            businessId: biz.id,
-                                            ...(assignTo ? { sellerUserId: assignTo } : {}),
-                                        });
-                                        toast.success((res?.message || 'درخواست ثبت خریدار ارسال شد — در انتظار پذیرش خریدار') + quotaSuffix(res?.quota));
-                                        refreshQuota();
-                                    } catch (e: any) {
-                                        if (e?.response?.data?.errorCode === 'INSUFFICIENT_CREDIT') {
-                                            refreshQuota();
-                                            throw new Error(e?.response?.data?.message || 'موجودی اعتبار کافی نیست');
-                                        }
-                                        throw e;
-                                    }
-                                },
-                            }}
+                        }}
                         invite={{
                             label: 'دعوت به دیمت',
                             getText: () => 'سلام! کاتالوگ قیمتی ما در دیمت را ببین:',

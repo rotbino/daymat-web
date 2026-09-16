@@ -21,6 +21,20 @@ import { cn } from '@/lib/utils/utils';
 import { resolveFileSrc } from '@/app/business/manage/components/BusinessLogo';
 import { useMyContacts, useSyncContacts } from '@/lib/api/apiHooks';
 
+/** ✅ یک کسب‌وکارِ عضو دیمت — با بازوهای خریدش (Inquiry) و نقشِ مخاطب در آن */
+export interface ContactBusinessItem {
+    id: string;
+    name: string;
+    logoUrl: string | null;
+    city: string | null;
+    /** مخاطب، مالک/سازندهٔ این کسب‌وکار است */
+    isOwner: boolean;
+    /** پستِ نمایشی مخاطب در کسب‌وکار (مثل «مدیر فروش») */
+    position: string | null;
+    /** بازوهای خریدِ این کسب‌وکار — غیرآرشیوشده */
+    arms: { id: string; title: string; status: string }[];
+}
+
 export interface PhoneContactItem {
     id: string;
     name: string | null;
@@ -30,8 +44,10 @@ export interface PhoneContactItem {
         id: string;
         fullName: string | null;
         avatarUrl: string | null;
-        /** کسب‌وکار فعالِ عضو — مقصد «درخواست خریدار» در برگهٔ اعضای کاتالوگ */
-        business?: { id: string; name: string; logoUrl: string | null; city: string | null } | null;
+        /** ✅ همهٔ کسب‌وکارهای فعالِ عضو — مخاطب می‌تواند عضو چند کسب‌وکار باشد؛ هر کدام خریدار جداگانه‌اند */
+        businesses?: ContactBusinessItem[];
+        /** اولین کسب‌وکار (سازگاری با کدهای قبلی) */
+        business?: (Pick<ContactBusinessItem, 'id' | 'name' | 'logoUrl' | 'city'> & Partial<ContactBusinessItem>) | null;
         /** کاتالوگ فعالِ عضو — مقصد «درخواست تامین» در بازوی خرید */
         catalog?: { id: string; name: string; slug: string | null; logoUrl: string | null; city: string | null; salesType: string | null } | null;
     } | null;
@@ -86,13 +102,13 @@ export function contactPickerSupported(): boolean {
 }
 
 /** لینک پیامک — اندروید ?body= ، آیفون &body= */
-function smsHref(phone: string, body: string): string {
+export function smsHref(phone: string, body: string): string {
     const isIOS = typeof navigator !== 'undefined' && /iPad|iPhone|iPod/.test(navigator.userAgent);
     return `sms:${phone}${isIOS ? '&' : '?'}body=${encodeURIComponent(body)}`;
 }
 
 /** 09xxxxxxxxx → 989xxxxxxxxx — برای wa.me */
-function toIntl98(phone: string): string {
+export function toIntl98(phone: string): string {
     const d = phone.replace(/\D/g, '');
     if (d.startsWith('98')) return d;
     if (d.startsWith('0')) return `98${d.slice(1)}`;
@@ -475,7 +491,7 @@ export default function PhoneContactsPanel({
 }
 
 /** نوار کانال‌های دعوت — واتساپ / تلگرام / پیامک / سایر */
-function ChannelStrip({ onPick }: { onPick: (ch: 'whatsapp' | 'telegram' | 'sms' | 'more') => void }) {
+export function ChannelStrip({ onPick }: { onPick: (ch: 'whatsapp' | 'telegram' | 'sms' | 'more') => void }) {
     const items: { key: 'whatsapp' | 'telegram' | 'sms' | 'more'; label: string; icon: React.ElementType }[] = [
         { key: 'whatsapp', label: 'واتساپ', icon: MessageCircle },
         { key: 'telegram', label: 'تلگرام', icon: Send },
