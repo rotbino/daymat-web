@@ -15,12 +15,12 @@ import { setCurrentCatalog, setCurrentInquiry } from '@/lib/store/slices/catalog
 import { apiService } from '@/lib/api/apiService';
 import {
     useArms, useMyUncategorized, useSetOwnAdCategory,
-    useCatalogPendingSummary, useMyPendingApprovals, useMyInquiries,
-    useInquiryOpportunities,
+    useMyPendingApprovals, useMyInquiries,
+    useInquiryOpportunities, useCatalogTeam,
 } from '@/lib/api/apiHooks';
 import { toast } from 'sonner';
 import { cn } from '@/lib/utils';
-import { BarChart3, Globe, IdCard, Loader2, Package, Users, Hourglass, Check, X, Megaphone } from 'lucide-react';
+import { BarChart3, Globe, IdCard, Loader2, Package, Users, Handshake, Hourglass, Check, X, Megaphone } from 'lucide-react';
 
 import UnitSettingsModal from '@/app/ad/components/UnitSettingsModal';
 import CategorySettingsModal from '@/app/ad/components/CategorySettingsModal';
@@ -39,6 +39,7 @@ import ProductsTab from './components/ProductsTab';
 import PublishTab from './components/PublishTab';
 import StatsTab from './components/StatsTab';
 import TeamTab from './components/TeamTab';
+import CustomersTab from './components/CustomersTab';
 import LeadsTab from './components/LeadsTab';
 import CatalogCategoryModal from './components/CatalogCategoryModal';
 import CatalogEditModal from './CatalogEditModal';
@@ -86,9 +87,7 @@ export default function MyCatalogsContent() {
     const pendingInvites = (oppsData?.invitations ?? []).length;
 
     // ✅ بج قرمز برگهٔ اعضا + کارت «در انتظار تایید شما» — چرخهٔ عضویت
-    const { data: pendingSummary } = useCatalogPendingSummary();
     const { data: pendingApprovals } = useMyPendingApprovals();
-    const pendingTotal = pendingSummary?.total || 0;
     const approvals: any[] = pendingApprovals?.items || [];
     // ✅ بازوهای خرید من — در همان سوییچر کنار کاتالوگ‌های قیمت (محصول دوم دیمت)
     const { data: myInquiriesRaw } = useMyInquiries();
@@ -139,6 +138,11 @@ export default function MyCatalogsContent() {
     //    کاتالوگ‌های تیمی از قبل داخل پاسخِ getAll ادغام شده‌اند (isTeamEntry) و جزو catalogs هستند
     const teamMode = (currentCatalog as any)?.teamMode as string | undefined;
     const isTeamEntry = !!(currentCatalog as any)?.isTeamEntry;
+
+    // ✅ دادهٔ تیم کاتالوگ — برای بج قرمز جدا‌گانهٔ تب «تیم فروش» و «خریداران» (کش مشترک با خود تب‌ها)
+    const { data: teamData } = useCatalogTeam(currentId);
+    const teamPendingOther = ((teamData as any)?.pendingRequests ?? []).filter((r: any) => r.requestType !== 'buyer').length;
+    const teamPendingBuyers = ((teamData as any)?.pendingRequests ?? []).filter((r: any) => r.requestType === 'buyer').length;
 
     // ── نگه‌داری snapshot «کاتالوگ کارنت» همیشه تازه — برای مصرف در جای دیگر برنامه ──
     useEffect(() => {
@@ -237,17 +241,19 @@ export default function MyCatalogsContent() {
         }
     }, []);
 
-    // ✅ حالت اعضا — عضوِ فروش/درانتظار فقط تب اعضا؛ مدیر محصولات+اعضا
+    // ✅ حالت اعضا — عضوِ فروش/درانتظار فقط تب‌های تیم؛ مدیر محصولات+تیم+خریداران
     useEffect(() => {
         if (!isTeamEntry) return;
-        if (teamMode !== 'admin' && tab !== 'team') setTab('team');
-        if (tab === 'profile' || tab === 'publish' || tab === 'stats') setTab('team');
+        const allowed: Tab[] = teamMode === 'admin'
+            ? ['products', 'team', 'customers']
+            : ['team', 'customers'];
+        if (!allowed.includes(tab)) setTab(teamMode === 'admin' ? 'products' : 'team');
     }, [isTeamEntry, teamMode, tab]);
 
-    // ✅ دیپ‌لینک اعلان‌ها — ?tab=team (بررسی درخواست‌های فروشندگی) و ?tab=leads (دعوت به تامین‌کنندگی)
+    // ✅ دیپ‌لینک اعلان‌ها — ?tab=team (درخواست‌های تیم فروش) و ?tab=customers (خریدارها) و ?tab=leads (دعوت به تامین‌کنندگی)
     useEffect(() => {
         const t = new URLSearchParams(window.location.search).get('tab');
-        if (t === 'team' || t === 'leads') {
+        if (t === 'team' || t === 'customers' || t === 'leads') {
             setTab(t as Tab);
             window.history.replaceState({}, '', '/my-catalogs');
         }
@@ -340,19 +346,22 @@ export default function MyCatalogsContent() {
     const userAvatar = user?.avatarFile?.thumbnailPath || user?.avatarUrl;
     const userHasName = !!user?.fullName?.trim();
 
-    // ─── تب‌های بخش‌های کاتالوگ (RTL: مشخصات در راست) ───
+    // ─── تب‌های بخش‌های کاتالوگ (RTL: مشخصات در راست) — «اعضا» دو تب شد: تیم فروش + خریداران ───
     const tabItems = isTeamEntry
         ? teamMode === 'admin'
             ? [
                   { key: 'products' as Tab, label: 'محصولات', icon: Package, count: products.length },
-                  { key: 'team' as Tab, label: 'اعضا', icon: Users, alert: pendingTotal },
+                  { key: 'team' as Tab, label: 'تیم فروش', icon: Users, alert: teamPendingOther },
+                  { key: 'customers' as Tab, label: 'خریداران', icon: Handshake, alert: teamPendingBuyers },
               ]
             : [
-                  { key: 'team' as Tab, label: 'اعضا', icon: Users, alert: pendingTotal },
+                  { key: 'team' as Tab, label: 'تیم فروش', icon: Users },
+                  { key: 'customers' as Tab, label: 'خریداران', icon: Handshake },
               ]
         : [
               { key: 'products' as Tab, label: 'محصولات', icon: Package, count: products.length },
-              { key: 'team' as Tab, label: 'اعضا', icon: Users, alert: pendingTotal },
+              { key: 'team' as Tab, label: 'تیم فروش', icon: Users, alert: teamPendingOther },
+              { key: 'customers' as Tab, label: 'خریداران', icon: Handshake, alert: teamPendingBuyers },
               { key: 'leads' as Tab, label: 'سرنخ‌های فروش', mobileLabel: 'سرنخ‌ها', icon: Megaphone, alert: pendingInvites },
               { key: 'profile' as Tab, label: 'مشخصات', icon: IdCard },
               { key: 'stats' as Tab, label: 'آمار', icon: BarChart3 },
@@ -498,9 +507,14 @@ export default function MyCatalogsContent() {
                     <StatsTab currentCatalog={currentCatalog} stats={stats} productsCount={products.length} />
                 )}
 
-                {/* تب اعضا — مالک/مدیر/عضوِ فروش (بازار پخش) */}
+                {/* تب تیم فروش — مالک/مدیر/عضوِ فروش (بازار پخش) */}
                 {tab === 'team' && (
                     <TeamTab catalogId={currentCatalog.id} slug={(currentCatalog as any)?.slug} />
+                )}
+
+                {/* ✅ تب خریداران — مدیریت خریدارها (مقایسِ «تامین‌کنندگان» در بازوی خرید) */}
+                {tab === 'customers' && (
+                    <CustomersTab catalogId={currentCatalog.id} slug={(currentCatalog as any)?.slug} />
                 )}
 
                 {/* ✅ تب بازوی خرید — شبکهٔ خرید↔فروش از سمت تامین‌کننده */}

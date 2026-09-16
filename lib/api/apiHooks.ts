@@ -1627,6 +1627,17 @@ export const useToggleBuyerPaused = (slug?: string) => {
 };
 // ─── اعلان‌ها + درخواست‌های در انتظار (چرخهٔ عضویت) ───
 
+// ✅ دادهٔ تیم کاتالوگ — کشِ مشترک بین تب «تیم فروش»، تب «خریداران» و بج‌های نوار کنسول
+//    (همان کلید ['catalog-team', catalogId] — react-query یک بار می‌گیرد، همه مصرف می‌کنند)
+export const useCatalogTeam = (catalogId?: string | null, enabled = true) => {
+    return useQuery({
+        queryKey: ['catalog-team', catalogId],
+        queryFn: () => apiService.catalog.team.getTeam(catalogId as string),
+        enabled: !!catalogId && enabled,
+        staleTime: 15_000,
+    });
+};
+
 // ✅ شمارندهٔ بج قرمز برگهٔ اعضا — درخواست‌های در انتظارِ کاتالوگ‌های مدیریتی من
 export const useCatalogPendingSummary = (enabled = true) => {
     return useQuery({

@@ -4,7 +4,8 @@
 import { BadgeCheck, Hourglass, PauseCircle, Store, Package, Wrench, XCircle } from 'lucide-react';
 
 // ─── انواع ───
-export type Tab = 'profile' | 'products' | 'publish' | 'stats' | 'team' | 'leads';
+// ✅ تب «اعضا» به دو تب تفکیک شد: team (تیم فروش) + customers (خریداران)
+export type Tab = 'profile' | 'products' | 'publish' | 'stats' | 'team' | 'leads' | 'customers';
 export type StatusFilter = 'all' | 'table' | 'catalog' | 'stale' | 'uncat';
 
 // ─── هلپرهای وضعیت آگهی ───

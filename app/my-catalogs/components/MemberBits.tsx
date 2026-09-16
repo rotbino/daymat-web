@@ -1,0 +1,132 @@
+// app/my-catalogs/components/MemberBits.tsx
+// ✂️ مشترکات ردیف اعضا — بعد از تفکیک تب «اعضا» به «تیم فروش» + «خریداران»
+//    Avatar | بج نقش بیزینسی | بج نقش سیستمی | بلوک اطلاعات (نام/کسب‌وکار/شهر/بازوی خرید)
+'use client';
+
+import React, { useState } from 'react';
+import { MapPin, ClipboardList } from 'lucide-react';
+import { cn } from '@/lib/utils';
+
+export const badgeBase =
+    'text-[10px] font-bold px-2 py-0.5 rounded-full whitespace-nowrap text-center';
+
+export const EVENT_LABEL: Record<string, string> = {
+    coop_requested: 'درخواست ارتباط تجاری داد',
+    seller_requested: 'درخواست همکاری در فروش داد',
+    seller_approved: 'به‌عنوان همکار فروش تایید شد',
+    seller_rejected: 'درخواستش رد شد',
+    seller_removed: 'از اعضا حذف شد',
+    seller_left: 'خودش از اعضا خارج شد',
+    seller_role_changed: 'نقش بیزینسی‌اش عوض شد',
+    buyer_approved: 'به‌عنوان خریدار تایید شد',
+    buyer_rejected: 'بازوی خریدش رد شد',
+    supplier_approved: 'به‌عنوان تامین‌کننده تایید شد',
+    supplier_rejected: 'درخواست تامین‌کننده‌اش رد شد',
+    supplier_removed: 'تامین‌کننده‌اش حذف شد',
+    service_approved: 'به‌عنوان سرویس‌دهندهٔ خدمات تایید شد',
+    service_rejected: 'درخواست تامین خدماتش رد شد',
+    supplier_invite_sent: 'برای تامین‌کنندگی دعوت شد',
+    supplier_invite_declined: 'دعوت تامین‌کنندگی را رد کرد',
+    service_invite_sent: 'برای تامین خدمات دعوت شد',
+    service_invite_declined: 'دعوت تامین خدمات را رد کرد',
+    seller_invite_sent: 'به همکاری در فروش دعوت شد',
+    seller_invite_declined: 'دعوت همکاری در فروش را رد کرد',
+    admin_promoted: 'مدیر کاتالوگ شد',
+    admin_demoted: 'نقش مدیرش گرفته شد',
+    customer_added: 'به‌عنوان خریدار ثبت شد',
+    customer_confirmed: 'خریداربودنش را تایید کرد',
+    customer_declined: 'ثبت خریداربودنش را رد کرد',
+    customer_removed: 'به‌عنوان خریدار حذف شد',
+    customer_left: 'خریداربودنش را لغو کرد',
+    customer_reassigned: 'مسئولش عوض شد',
+    customer_unassigned: 'بی‌مسئول شد',
+    region_set: 'منطقه‌اش تغییر کرد',
+    joined: 'به اعضای کاتالوگ اضافه شد',
+    migrated: 'به مدل اعضای کاتالوگ منتقل شد',
+};
+
+// ✅ برچسب گویا برای هر نوع درخواست — UX writing به‌جای واژه‌های خام
+export const REQUEST_LABEL: Record<string, string> = {
+    seller: 'درخواست همکاری در فروش',
+    buyer: 'درخواست ثبت به‌عنوان خریدار',
+    supplier: 'درخواست تامین‌کنندگی',
+    service: 'درخواست تامین خدمات',
+};
+
+export function Avatar({ url, name, size = 40 }: { url?: string | null; name?: string | null; size?: number }) {
+    const [broken, setBroken] = useState(false);
+    if (url && !broken) {
+        return (
+            // eslint-disable-next-line @next/next/no-img-element
+            <img src={url} alt="" style={{ width: size, height: size }} onError={() => setBroken(true)}
+                 className="rounded-full object-cover flex-shrink-0 border border-outline-variant/30" />
+        );
+    }
+    const initial = (name || '؟').trim().charAt(0);
+    return (
+        <div style={{ width: size, height: size }}
+             className="rounded-full bg-gray-100 dark:bg-gray-800 flex items-center justify-center flex-shrink-0 text-gray-500 font-bold">
+            {initial}
+        </div>
+    );
+}
+
+/** بج نقش بیزینسی — هر تب فقط برچسب‌های مرتبط با خودش را نشان می‌دهد */
+export const bizBadge = (m: any) => {
+    if (m.__isMyCustomer) return { text: 'خریدار من', cls: 'bg-primary text-on-primary' };
+    if (m.supplierStatus === 'active') return { text: 'تامین‌کننده', cls: 'bg-sky-50 text-sky-700 dark:bg-sky-900/30 dark:text-sky-300' };
+    if (m.serviceStatus === 'active') return { text: 'سرویس‌دهنده', cls: 'bg-teal-50 text-teal-700 dark:bg-teal-900/30 dark:text-teal-300' };
+    if (m.customerStatus === 'active') return { text: 'خریدار', cls: 'bg-gray-100 text-gray-600 dark:bg-gray-800 dark:text-gray-300' };
+    if (m.sellerStatus === 'active') return m.sellerRole === 'visitor'
+        ? { text: 'بازاریاب', cls: 'bg-violet-100 text-violet-700 dark:bg-violet-900/30 dark:text-violet-300' }
+        : { text: 'همکار فروش', cls: 'bg-emerald-50 text-emerald-700 dark:bg-emerald-900/30 dark:text-emerald-300' };
+    return null;
+};
+
+/** بج نقش سیستمی — فقط مالک/مدیر/خودم (تب تیم فروش) */
+export const sysBadge = (m: any) => {
+    if (m.isOwner) return { text: 'مالک کاتالوگ', cls: 'bg-amber-100 text-amber-800 dark:bg-amber-900/40 dark:text-amber-300' };
+    if (m.isAdmin) return { text: 'مدیر کاتالوگ', cls: 'bg-sky-100 text-sky-700 dark:bg-sky-900/30 dark:text-sky-300' };
+    if (m.__isMe) return { text: 'خودم', cls: 'border border-outline-variant/60 text-gray-500 dark:text-gray-400' };
+    return null;
+};
+
+/** اسلاگ صفحهٔ شخصی عضو — برای ناوبری با router والد */
+export const personalSlugOf = (m: any) =>
+    m.supplierCatalog?.slug || m.customerBusiness?.slug || m.sellerBusiness?.slug || m.business?.slug || null;
+
+/** بلوک اصلی ردیف عضو — آواتار + نام + کسب‌وکار + شهر + بازوی خرید */
+export function MemberMainInfo({ m, onOpen }: { m: any; onOpen?: () => void }) {
+    const personalSlug = personalSlugOf(m);
+    const cityChip = m.sellerRegion || m.memberCity || (m.customerStatus ? m.customerBusiness?.city : null) || null;
+    const bizName = m.customerBusiness?.name || m.sellerBusiness?.name || m.supplierCatalog?.name || m.business?.name;
+    return (
+        <div
+            className={cn('flex-1 min-w-0', personalSlug && onOpen && 'cursor-pointer')}
+            onClick={() => { if (personalSlug && onOpen) onOpen(); }}
+            title={personalSlug && onOpen ? 'مشاهده صفحه شخصی' : undefined}
+        >
+            <p className="font-bold text-sm text-gray-900 dark:text-gray-100 truncate">{m.fullName || 'بدون نام'}</p>
+            <p className="text-[11px] text-gray-500 dark:text-gray-400 truncate mt-0.5 flex items-center gap-2">
+                {bizName && (
+                    <span className="truncate">
+                        {m.supplierCatalog?.name && m.supplierCatalog?.slug ? 'کاتالوگ: ' : ''}
+                        {bizName}
+                    </span>
+                )}
+                {cityChip && (
+                    <span className="inline-flex items-center gap-0.5 flex-shrink-0 text-gray-400">
+                        <MapPin className="w-3 h-3" />{cityChip}
+                    </span>
+                )}
+                {/* ✅ بازوی خریدِ خریدار — شبکهٔ خرید↔فروش */}
+                {(m.purchaseCatalogs?.length ?? 0) > 0 && (
+                    <span className="inline-flex items-center gap-1 flex-shrink-0 rounded-full bg-brand-contrast-soft px-2 py-0.5 text-[9px] font-black text-amber-700 dark:bg-amber-500/10 dark:text-amber-400">
+                        <ClipboardList className="h-2.5 w-2.5" />
+                        {m.purchaseCatalogs[0].title}{m.purchaseCatalogs.length > 1 ? ` +${m.purchaseCatalogs.length - 1}` : ''}
+                    </span>
+                )}
+            </p>
+        </div>
+    );
+}

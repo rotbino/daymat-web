@@ -32,6 +32,8 @@ interface Props {
     sellers: any[]; // اعضای فروش فعال (برای انتساب خریدار)
     /** اسلاگ کاتالوگ — لینک دعوت در تب مخاطبین */
     slug?: string | null;
+    /** تب شروع مودال — تب «خریداران» = کسب‌وکارها، تب «تیم فروش» = افراد */
+    defaultScope?: Scope;
 }
 
 type Scope = 'businesses' | 'catalogs' | 'people' | 'contacts';
@@ -55,8 +57,8 @@ const SALES_TYPE_LABEL: Record<string, string> = {
 
 const TAG_CLS = 'px-1.5 py-0.5 rounded-md text-[9px] font-bold bg-primary/10 text-primary whitespace-nowrap';
 
-export default function ConnectionRequestModal({ open, onClose, catalogId, canAssign, sellers, slug }: Props) {
-    const [scope, setScope] = useState<Scope>('businesses');
+export default function ConnectionRequestModal({ open, onClose, catalogId, canAssign, sellers, slug, defaultScope }: Props) {
+    const [scope, setScope] = useState<Scope>(defaultScope || 'businesses');
     const [q, setQ] = useState('');
     const [debounced, setDebounced] = useState('');
     const [searching, setSearching] = useState(false);
@@ -86,7 +88,8 @@ export default function ConnectionRequestModal({ open, onClose, catalogId, canAs
 
     useEffect(() => {
         if (!open) return;
-        setQ(''); setDebounced(''); setResults([]); setSentIds(new Set()); setAssignTo(''); setScope('businesses');
+        setScope(defaultScope || 'businesses');
+        setQ(''); setDebounced(''); setResults([]); setSentIds(new Set()); setAssignTo('');
         setFProvince(''); setFCity(''); setFSector(''); setFRole(''); setFSalesType(''); setSuggested(false);
         // وضعیت سهمیهٔ درخواست ارتباط — رایگانِ باقی‌مانده / هزینه / موجودی
         let alive = true;
@@ -94,7 +97,7 @@ export default function ConnectionRequestModal({ open, onClose, catalogId, canAs
             .then((res) => { if (alive) setQuota(res); })
             .catch(() => { if (alive) setQuota(null); });
         return () => { alive = false; };
-    }, [open, catalogId]);
+    }, [open, catalogId, defaultScope]);
 
     // ─── گزینه‌های فیلتر جغرافیا ───
     const { data: provincesData } = useQuery({
