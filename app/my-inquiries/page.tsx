@@ -508,7 +508,7 @@ function StartPricingModal({ item, currentDeadline, busy, onCancel, onConfirm }:
                     تامین‌کننده‌های عضو بازوی تو تا این فرصت می‌توانند قیمت بدهند — بعد از تمام‌شدن، قیمت‌گیری خودکار متوقف می‌شود.
                 </p>
                 <label className="mt-3.5 mb-1 block text-[11px] font-bold text-stone-500 dark:text-gray-400">
-                    مهلت ارسال قیمت — به ساعت (حداکثر {faNum(MAX_DEADLINE_HOURS)})
+                    مهلت ارسال قیمت — به ساعت (حداکثر {faNum(MAX_DEADLINE_HOURS)} ساعت)
                 </label>
                 <input
                     value={hours}

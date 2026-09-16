@@ -1025,7 +1025,7 @@ function SupplierConnectModal({ inquiry, target, onClose, onConnected, onRequest
                 onConnected();
             } else {
                 // خصوصی: درخواست در انتظار تایید خریدار
-                toast.success('درخواست تامینت ثبت شد — منتظر تایید خریدار باش');
+                toast.success('درخواست تامینت ثبت شد — منتظر تایید خریدار باش. یا می تونی باهاش تماس بگیری و بگی سریعتر تاییدت کنه');
                 onRequested();
             }
         } catch (e: any) {
@@ -1045,7 +1045,7 @@ function SupplierConnectModal({ inquiry, target, onClose, onConnected, onRequest
           ? 'درخواستت در انتظار تایید است'
           : noCatalog
             ? 'اول کاتالوگ محصولاتت را بساز'
-            : 'با کدام کاتالوگت می‌خواهی تامین‌کنندهٔ این خریدار باشی؟';
+            : 'با کدوم کاتالوگت می‌خوای تامین‌کنندهٔ این خریدار باشی؟';
     const Icon = guest || noCatalog ? Store : pending ? Clock : Handshake;
     const iconTone = guest || noCatalog || pending
         ? 'bg-brand-accent-soft dark:bg-amber-500/10'
@@ -1136,8 +1136,8 @@ function SupplierConnectModal({ inquiry, target, onClose, onConnected, onRequest
                     <>
                         <p className="mx-auto mt-3 max-w-xs text-[12px] font-bold leading-6 text-stone-500 dark:text-gray-400">
                             {isPrivate
-                                ? 'این بازوی خرید خصوصیه — با یکی از کاتالوگ‌هایت درخواست تامین بده؛ بعد از تایید خریدار پیشنهاد بده.'
-                                : 'کاتالوگت را انتخاب کن تا همین حالا به‌عنوان تامین‌کنندهٔ این خریدار متصل شوی و پیشنهادت را ثبت کنی.'}
+                                ? 'این بازوی خرید خصوصیه — با یکی از کاتالوگ‌هات درخواست تامین بده؛ بعد از تایید خریدار می تونی پیشنهاد بدی.'
+                                : 'کاتالوگت را انتخاب کن تا همین حالا به‌عنوان تامین‌کنندهٔ این خریدار پیشنهادت را ثبت کنی.'}
                         </p>
                         <div className="mt-4 max-h-44 space-y-1.5 overflow-y-auto pl-1 text-right">
                             {myCatalogs.map((c: any) => (
