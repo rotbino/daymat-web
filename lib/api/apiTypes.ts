@@ -857,6 +857,8 @@ export interface InquiryDetail extends InquiryBase {
     items: InquiryItem[];
     isOwner?: boolean;
     offers?: InquiryOffer[];
+    /** ✅ سمت مالک بازو در کسب‌وکار (BusinessMember.position) — زیر اسم در باکس خریدار صفحهٔ عمومی */
+    ownerPosition?: string | null;
 }
 
 export interface InquiryOffer {

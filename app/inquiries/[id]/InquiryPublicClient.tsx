@@ -95,7 +95,8 @@ export default function InquiryPublicClient({ idOrSlug }: { idOrSlug: string }) 
     const handleSaveToggle = () => {
         if (!inquiry) return;
         if (!isAuthenticated) {
-            router.push(`/login?redirect=${encodeURIComponent(`/${inquiry.slug || inquiry.id}`)}`);
+            // 🡒 مهمان — اول ورود/ثبت‌نام با شماره موبایل؛ بعد از برگشت، ذخیره خودش ادامه پیدا می‌کند (?save=1)
+            router.push(`/login?redirect=${encodeURIComponent(`/${inquiry.slug || inquiry.id}?save=1`)}`);
             return;
         }
         const next = !isSaved;
@@ -139,6 +140,30 @@ export default function InquiryPublicClient({ idOrSlug }: { idOrSlug: string }) 
     const suppliersCount = (inquiry as any)?.suppliersCount ?? 0;
     const savesCount = (inquiry as any)?.savesCount ?? 0;
     const limited = !!(inquiry as any)?.limited; // خصوصی + بازدیدکننده غیرعضو
+
+    // 💾 بازگشت از ورود/ثبت‌نام با نیت ذخیره (?save=1) — ذخیره بدون لمسِ دوباره تمام می‌شود
+    //    (اصل مالک: سیستم دست کاربر را می‌گیرد — بعد از ثبت‌نام کار همان‌جا ادامه دارد)
+    const saveIntentDone = useRef(false);
+    useEffect(() => {
+        if (saveIntentDone.current || typeof window === 'undefined') return;
+        const sp = new URLSearchParams(window.location.search);
+        if (sp.get('save') !== '1' || !inquiry?.id || !isAuthenticated || isOwner) return;
+        saveIntentDone.current = true;
+        setSavedOpt(true); // خوش‌بینانه
+        saveToggle.mutate(
+            { id: inquiry.id, save: true },
+            {
+                onError: () => {
+                    setSavedOpt(false);
+                    toast.error('ذخیره نشد — دوباره تلاش کن');
+                },
+                onSuccess: () => toast.success('در سوییچر «بازوهای ذخیره‌شده» دیده می‌شود'),
+            },
+        );
+        sp.delete('save'); // پارامتر پاک شود — رفرش بعدی دوباره ذخیره نزند
+        const qs = sp.toString();
+        router.replace(`${window.location.pathname}${qs ? `?${qs}` : ''}`, { scroll: false });
+    }, [inquiry?.id, isAuthenticated, isOwner]);
 
     // 🦠 لینک‌های ویروسی — فقط برای کسانی که بازو ندارند (خواستهٔ مالک):
     //    مالکِ بازو و کسی که قبلاً بازو ساخته هرگز نبینند؛ مهمان‌ها همیشه می‌بینند
@@ -208,6 +233,8 @@ export default function InquiryPublicClient({ idOrSlug }: { idOrSlug: string }) 
     const bizPhone: string | undefined = inquiry?.business?.phone || undefined;
 
     // 💾 ذخیرهٔ مخاطب — vCard استاندارد؛ موبایل بازش می‌کند و به مخاطبین اضافه می‌شود
+    //    (خواستهٔ مالک: کنار «تماس» بماند — کاربر اجازهٔ دسترسی مخاطبین را می‌دهد
+    //    و بعداً این مخاطب را در لیست کانتکت‌هایش می‌بیند)
     const saveContact = () => {
         if (!inquiry) return;
         const name = inquiry.business?.name || inquiry.owner?.fullName || inquiry.title;
@@ -416,12 +443,12 @@ export default function InquiryPublicClient({ idOrSlug }: { idOrSlug: string }) 
                                 <PhoneCall className="size-5" />
                             </a>
                         )}
-                        {isAuthenticated && (
-                            <button onClick={handleSaveToggle} aria-label={isSaved ? 'حذف از ذخیره‌ها' : 'ذخیرهٔ بازوی خرید'} title={isSaved ? 'حذف از ذخیره‌ها' : 'ذخیره'}
-                                className={`grid size-10 place-items-center rounded-full border shadow-sm transition-all hover:scale-105 active:scale-95 ${isSaved ? 'border-primary/30 bg-brand-primary-soft text-primary dark:bg-primary/15' : 'border-stone-200/80 bg-white text-stone-600 dark:border-gray-700 dark:bg-gray-900 dark:text-gray-200'}`}>
-                                <Bookmark className={`size-5 ${isSaved ? 'fill-primary' : ''}`} />
-                            </button>
-                        )}
+                        {/* 💾 ذخیرهٔ بازوی خرید — برای «همه» دیده می‌شود حتی مهمان (خواستهٔ مالک):
+                            مهمان با لمس به ورود/ثبت‌نام شماره موبایل می‌رود و بعد از برگشت ذخیره خودکار تمام می‌شود */}
+                        <button onClick={handleSaveToggle} aria-label={isSaved ? 'حذف از ذخیره‌ها' : 'ذخیرهٔ بازوی خرید'} title={isSaved ? 'حذف از ذخیره‌ها' : 'ذخیره'}
+                            className={`grid size-10 place-items-center rounded-full border shadow-sm transition-all hover:scale-105 active:scale-95 ${isSaved ? 'border-primary/30 bg-brand-primary-soft text-primary dark:bg-primary/15' : 'border-stone-200/80 bg-white text-stone-600 dark:border-gray-700 dark:bg-gray-900 dark:text-gray-200'}`}>
+                            <Bookmark className={`size-5 ${isSaved ? 'fill-primary' : ''}`} />
+                        </button>
                         <button onClick={copyLink} aria-label="اشتراک‌گذاری" title="اشتراک‌گذاری"
                             className="grid size-10 place-items-center rounded-full border border-stone-200/80 bg-white text-stone-600 shadow-sm transition-all hover:scale-105 active:scale-95 dark:border-gray-700 dark:bg-gray-900 dark:text-gray-200">
                             {copied ? <Check className="size-5 text-emerald-500" /> : <Share2 className="size-5" />}
@@ -490,19 +517,27 @@ export default function InquiryPublicClient({ idOrSlug }: { idOrSlug: string }) 
                             )}
                             <div className="min-w-0 flex-1">
                                 <p className="truncate text-xs font-black">{inquiry.owner?.fullName || inquiry.business?.name || 'خریدار'}</p>
-                                <p className="mt-0.5 text-[10px] font-bold text-stone-400 dark:text-gray-500">
-                                    {isOwner ? 'این بازوی خرید مال توست' : 'خریدار — برای هماهنگی تامین در دسترسه'}
-                                </p>
+                                {/* نقش مالک در کسب‌وکار — بازدیدکننده بفهمد با چه نقشی طرف است
+                                    (خواستهٔ مالک: هر نقشی ممکن است برای خودش بازوی تامین جدا بسازد) */}
+                                {isOwner ? (
+                                    <p className="mt-0.5 text-[10px] font-bold text-stone-400 dark:text-gray-500">این بازوی خرید مال توست</p>
+                                ) : (
+                                    <p className="mt-0.5 text-[10px] font-bold text-primary">
+                                        {inquiry.ownerPosition || 'خریدار'}
+                                    </p>
+                                )}
                             </div>
+                            {/* ☎️ تماس + 💾 ذخیرهٔ مخاطب (vCard) — کنار هم برای غیرمالک
+                                (خواستهٔ مالک: ذخیرهٔ مخاطب بماند — مخاطب به لیست کانتکت‌ها اضافه می‌شود) */}
                             {!isOwner && bizPhone && (
-                                <a href={`tel:${bizPhone}`} aria-label="تماس با خریدار"
+                                <a href={`tel:${bizPhone}`} aria-label="تماس با خریدار" title="تماس با خریدار"
                                     className="inline-flex h-9 shrink-0 items-center gap-1 rounded-lg bg-primary px-3.5 text-[11px] font-extrabold text-on-primary transition active:scale-95">
                                     <PhoneCall className="size-3.5" />
                                     تماس
                                 </a>
                             )}
                             {!isOwner && (
-                                <button onClick={saveContact}
+                                <button onClick={saveContact} aria-label="ذخیرهٔ مخاطب" title="ذخیرهٔ مخاطب"
                                     className="inline-flex h-9 shrink-0 items-center gap-1 rounded-lg border border-stone-200 bg-white px-3 text-[11px] font-extrabold text-stone-600 transition active:scale-95 dark:border-gray-700 dark:bg-gray-900 dark:text-gray-200">
                                     <UserPlus className="size-3.5 text-primary" />
                                     ذخیره مخاطب
