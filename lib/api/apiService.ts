@@ -1426,8 +1426,12 @@ export const apiService = {
             apiRequest(`/inquiry/${id}`, { method: 'DELETE' }),
 
         /** بازوهای خرید من */
-        mine: (): Promise<InquiryListItem[]> =>
-            apiRequest('/inquiry/mine'),
+        mine: (archived = false): Promise<InquiryListItem[]> =>
+            apiRequest(`/inquiry/mine${archived ? '?archived=1' : ''}`),
+
+        /** ✅ بستن پروندهٔ بازوی خرید — نتیجهٔ معامله (موفق/ناموفق)؛ پیشنهادهای بی‌تصمیم رد می‌شوند */
+        finalizeInquiry: (id: string, outcome: 'succeeded' | 'failed'): Promise<InquiryDetail> =>
+            apiRequest(`/inquiry/${id}/finalize`, { method: 'POST', data: { outcome } }),
 
         // ─── مدیریت قلم‌به‌قلم (پنل بازوی خرید) ───
         /** افزودن یک قلم — هر بار یک کالا */

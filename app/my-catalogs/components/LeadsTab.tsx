@@ -42,6 +42,9 @@ export default function LeadsTab() {
 
     const invitations = (data?.invitations ?? []) as any[];
     const requests = (data?.requests ?? []) as any[];
+    // ✅ فاز ۳ سناریو — درخواست ردشدهٔ خودت هم باید ببینی تا با یک دکمهٔ حذف تکلیفش را روشن کنی
+    const pendingRequests = requests.filter((r) => r.status === 'pending');
+    const declinedRequests = requests.filter((r) => r.status === 'declined');
     const leads = (data?.leads ?? []) as any[];
     const accepted = (data?.accepted ?? []) as any[];
 
@@ -167,6 +170,15 @@ export default function LeadsTab() {
                                             {' (برای تغییر، دکمهٔ دیگر را بزن)'}
                                         </p>
                                     )}
+                                    {/* ✅ نتیجهٔ نهایی بازو از نگاه خریدار — پرونده بسته شد (فاز ۶ سناریو) */}
+                                    {a.inquiryStatus === 'archived' && (
+                                        <p className={cn('mt-2 rounded-lg px-2 py-1 text-[10px] font-black',
+                                            a.outcome === 'succeeded'
+                                                ? 'bg-emerald-600 text-white'
+                                                : 'bg-stone-200 text-stone-600 dark:bg-gray-700 dark:text-gray-300')}>
+                                            {a.outcome === 'succeeded' ? 'پرونده بسته شد — معامله انجام شد ✅' : 'پرونده بسته شد — خریدار به نتیجه نرسید'}
+                                        </p>
+                                    )}
                                 </motion.div>
                             );
                         })}
@@ -226,17 +238,44 @@ export default function LeadsTab() {
             )}
 
             {/* درخواست‌های عضویت من در انتظار تایید خریدار */}
-            {requests.length > 0 && (
+            {pendingRequests.length > 0 && (
                 <div className={cn(CARD_CLS, 'p-4')}>
                     <p className="mb-2 text-[12px] font-black text-stone-500 dark:text-gray-400">
                         در انتظار تایید خریدار
                     </p>
                     <div className="space-y-1.5">
-                        {requests.map((r) => (
+                        {pendingRequests.map((r) => (
                             <div key={r.memberId} className="flex items-center gap-2 rounded-lg bg-stone-50 px-3 py-2 text-[12px] dark:bg-gray-800/60">
                                 <HourglassIcon />
                                 <span className="min-w-0 flex-1 truncate font-bold text-stone-600 dark:text-gray-300">«{r.inquiry.title}»</span>
                                 <span className="shrink-0 text-[10px] font-bold text-stone-400">درخواستت ثبت شده</span>
+                            </div>
+                        ))}
+                    </div>
+                </div>
+            )}
+
+            {/* ✅ درخواست رد شده — همون‌جا می‌ماند + دکمهٔ حذف (فاز ۳ سناریو، خواستهٔ مالک) */}
+            {declinedRequests.length > 0 && (
+                <div className={cn(CARD_CLS, 'p-4')}>
+                    <p className="mb-2 text-[12px] font-black text-stone-500 dark:text-gray-400">
+                        درخواست رد شده
+                    </p>
+                    <div className="space-y-1.5">
+                        {declinedRequests.map((r) => (
+                            <div key={r.memberId} className="flex items-center gap-2 rounded-lg bg-red-50/60 px-3 py-2 text-[12px] dark:bg-red-500/5">
+                                <X className="size-3.5 shrink-0 text-red-400" />
+                                <span className="min-w-0 flex-1 truncate font-bold text-stone-600 dark:text-gray-300">«{r.inquiry.title}»</span>
+                                {busyId === r.memberId ? (
+                                    <Loader2 className="size-3.5 shrink-0 animate-spin text-stone-400" />
+                                ) : (
+                                    <button
+                                        onClick={() => run(r.memberId, () => apiService.inquiry.decideMember(r.inquiry.id, r.memberId, 'removed'), 'حذف شد')}
+                                        className="shrink-0 rounded-lg border border-stone-200 px-2 py-1 text-[10px] font-bold text-stone-500 transition-colors hover:border-red-300 hover:text-red-500 dark:border-gray-700 dark:text-gray-400"
+                                        aria-label="حذف درخواست ردشده">
+                                        حذف
+                                    </button>
+                                )}
                             </div>
                         ))}
                     </div>
@@ -267,6 +306,12 @@ export default function LeadsTab() {
                     <div className="space-y-2.5">
                         {leads.map((lead) => {
                             const open = openLead === lead.inquiry.id;
+                            // ✅ گیت پیشنهاد (فاز ۴ سناریو): بازوی متوقف یا مهلت گذشته = پیشنهاد جدید ممنوع؛
+                            //    ویرایشِ پیشنهادهای قبلی همچنان آزاد است
+                            const paused = !!lead.inquiry.paused || lead.inquiry.status === 'closed';
+                            const dlMs = lead.inquiry.deadline ? new Date(lead.inquiry.deadline).getTime() : 0;
+                            const deadlineOver = !!dlMs && dlMs <= Date.now();
+                            const offerBlocked = paused || deadlineOver;
                             return (
                                 <motion.div key={lead.inquiry.id} initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} className={CARD_CLS}>
                                     {/* سربرگ خریدار */}
@@ -281,9 +326,15 @@ export default function LeadsTab() {
                                         <span className="min-w-0 flex-1">
                                             <span className="flex items-center gap-1.5">
                                                 <span className="truncate text-[13px] font-black text-stone-900 dark:text-gray-100">{lead.buyer?.name || 'خریدار'}</span>
-                                                <span className="shrink-0 rounded-full bg-brand-contrast px-1.5 py-0.5 text-[8.5px] font-black text-white">
-                                                    {faNum(lead.items.length)} قلم فوری
-                                                </span>
+                                                {lead.inquiry.paused ? (
+                                                    <span className="shrink-0 rounded-full bg-stone-200 px-1.5 py-0.5 text-[8.5px] font-black text-stone-600 dark:bg-gray-700 dark:text-gray-300">
+                                                        توقف موقت
+                                                    </span>
+                                                ) : (
+                                                    <span className="shrink-0 rounded-full bg-brand-contrast px-1.5 py-0.5 text-[8.5px] font-black text-white">
+                                                        {faNum(lead.items.length)} قلم فوری
+                                                    </span>
+                                                )}
                                             </span>
                                             <span className="mt-0.5 flex items-center gap-2 text-[10px] font-bold text-stone-400 dark:text-gray-500">
                                                 <span className="truncate">«{lead.inquiry.title}»</span>
@@ -364,13 +415,33 @@ export default function LeadsTab() {
                                                                     رد شده
                                                                 </span>
                                                             ) : (
-                                                                <button
-                                                                    onClick={() => setOfferTarget({ inquiry: lead.inquiry, item: it, existing: it.myOffer })}
-                                                                    className="flex shrink-0 items-center gap-1 rounded-full bg-brand-contrast-soft px-2.5 py-1.5 text-[10.5px] font-extrabold text-amber-700 ring-1 ring-brand-contrast-tint transition-colors hover:bg-brand-contrast-soft/80 dark:bg-amber-500/10 dark:text-amber-400 dark:ring-amber-500/30">
-                                                                    <Check className="size-3.5" />
-                                                                    ارسال شده · ویرایش
-                                                                </button>
+                                                                <span className="flex shrink-0 items-center gap-1">
+                                                                    <button
+                                                                        onClick={() => setOfferTarget({ inquiry: lead.inquiry, item: it, existing: it.myOffer })}
+                                                                        className="flex shrink-0 items-center gap-1 rounded-full bg-brand-contrast-soft px-2.5 py-1.5 text-[10.5px] font-extrabold text-amber-700 ring-1 ring-brand-contrast-tint transition-colors hover:bg-brand-contrast-soft/80 dark:bg-amber-500/10 dark:text-amber-400 dark:ring-amber-500/30">
+                                                                        <Check className="size-3.5" />
+                                                                        ارسال شده · ویرایش
+                                                                    </button>
+                                                                    {/* ✅ انصراف از پیشنهاد (فاز ۴ سناریو) — تا وقتی خریدار تصمیم نگرفته */}
+                                                                    <button
+                                                                        disabled={busyId === it.myOffer.id}
+                                                                        onClick={() => {
+                                                                            if (!window.confirm('از این پیشنهاد منصرف می‌شوی؟ پیشنهادت از دید خریدار خارج می‌شود.')) return;
+                                                                            run(`wd-${it.myOffer.id}`,
+                                                                                () => apiService.inquiry.updateOffer(it.myOffer.id, { status: 'withdrawn' }),
+                                                                                'پیشنهادت حذف شد — منصرف شدی');
+                                                                        }}
+                                                                        className="grid size-7 shrink-0 place-items-center rounded-full border border-stone-200 text-stone-400 transition-colors hover:border-red-300 hover:text-red-500 disabled:opacity-50 dark:border-gray-700 dark:text-gray-500"
+                                                                        aria-label="انصراف از پیشنهاد"
+                                                                        title="انصراف از پیشنهاد">
+                                                                        {busyId === `wd-${it.myOffer.id}` ? <Loader2 className="size-3 animate-spin" /> : <X className="size-3.5" />}
+                                                                    </button>
+                                                                </span>
                                                             )
+                                                        ) : offerBlocked ? (
+                                                            <span className="shrink-0 rounded-full bg-stone-100 px-2.5 py-1.5 text-[10px] font-bold text-stone-400 dark:bg-gray-800 dark:text-gray-500">
+                                                                {paused ? 'توقف موقت قیمت‌گیری' : 'مهلت تمام شده'}
+                                                            </span>
                                                         ) : (
                                                             <button
                                                                 onClick={() => setOfferTarget({ inquiry: lead.inquiry, item: it })}

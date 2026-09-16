@@ -1746,11 +1746,11 @@ export const useInquiry = (idOrSlug?: string) => {
 };
 
 /** بازوهای خرید من */
-export const useMyInquiries = () => {
+export const useMyInquiries = (archived = false) => {
     const { hasAccess } = useAuthState();
     return useQuery({
-        queryKey: ['inquiries', 'mine'],
-        queryFn: () => apiService.inquiry.mine(),
+        queryKey: ['inquiries', 'mine', archived ? 'archived' : 'active'],
+        queryFn: () => apiService.inquiry.mine(archived),
         enabled: hasAccess,
         staleTime: 60 * 1000,
     });
@@ -1785,6 +1785,22 @@ export const useUpdateInquiry = () => {
         onSuccess: (_res, vars) => {
             qc.invalidateQueries({ queryKey: ['inquiries'] });
             qc.invalidateQueries({ queryKey: ['inquiry', 'detail', vars.id] });
+        },
+    });
+};
+
+/** ✅ بستن پروندهٔ بازوی خرید (فاز ۶ سناریو) — نتیجهٔ معامله + ردِ خودکارِ بی‌تصمیم‌ها */
+export const useFinalizeInquiry = () => {
+    const qc = useQueryClient();
+    return useMutation({
+        mutationFn: ({ id, outcome }: { id: string; outcome: 'succeeded' | 'failed' }) =>
+            apiService.inquiry.finalizeInquiry(id, outcome),
+        onSuccess: (_res, vars) => {
+            qc.invalidateQueries({ queryKey: ['inquiries'] });
+            qc.invalidateQueries({ queryKey: ['inquiry', 'detail', vars.id] });
+            qc.invalidateQueries({ queryKey: ['inquiry', 'offers', vars.id] });
+            qc.invalidateQueries({ queryKey: ['inquiry-opportunities'] });
+            qc.invalidateQueries({ queryKey: ['notifications'] });
         },
     });
 };

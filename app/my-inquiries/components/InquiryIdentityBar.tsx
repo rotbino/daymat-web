@@ -142,6 +142,15 @@ export default function InquiryIdentityBar({ inquiries, catalogs, currentInquiry
                                     {w.status === 'closed' && (
                                         <span className="shrink-0 rounded-full bg-stone-100 px-1.5 py-0.5 text-[9px] font-bold text-stone-400 dark:bg-gray-800">بسته</span>
                                     )}
+                                    {/* ✅ پروندهٔ بسته‌شده (فاز ۶ سناریو) — از لیست‌های زنده خارج است */}
+                                    {w.status === 'archived' && (
+                                        <span className={`shrink-0 rounded-full px-1.5 py-0.5 text-[9px] font-black ${
+                                            (w as any).outcome === 'succeeded'
+                                                ? 'bg-emerald-100 text-emerald-700 dark:bg-emerald-500/15 dark:text-emerald-400'
+                                                : 'bg-stone-100 text-stone-500 dark:bg-gray-800 dark:text-gray-400'}`}>
+                                            {(w as any).outcome === 'succeeded' ? 'موفق' : 'بسته'}
+                                        </span>
+                                    )}
                                     {active && <Check className="size-4 shrink-0 text-amber-600 dark:text-amber-400" />}
                                 </button>
                             );

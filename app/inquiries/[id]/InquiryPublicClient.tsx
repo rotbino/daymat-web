@@ -957,6 +957,13 @@ export default function InquiryPublicClient({ idOrSlug }: { idOrSlug: string }) 
                                                 {o.deliveryDays != null && <span className="flex items-center gap-1"><Truck className="size-3" /> {faNum(o.deliveryDays)} روزه</span>}
                                                 {!!o.contactPhone && <OfferCallButton phone={o.contactPhone} />}
                                                 <span className={`rounded-full px-2 py-0.5 ${STATUS_CHIP[o.status] ?? ''}`}>{STATUS_FA[o.status]}</span>
+                                                {/* ✅ نتیجهٔ معامله که تامین‌کننده ثبت کرده — خریدار هم می‌بیند (فاز ۶ سناریو) */}
+                                                {o.status === 'accepted' && o.saleStatus === 'sold' && (
+                                                    <span className="rounded-full bg-emerald-600 px-2 py-0.5 text-white">فروش نهایی شد</span>
+                                                )}
+                                                {o.status === 'accepted' && o.saleStatus === 'not_sold' && (
+                                                    <span className="rounded-full bg-stone-200 px-2 py-0.5 text-stone-600 dark:bg-gray-700 dark:text-gray-300">فروش نهایی نشد</span>
+                                                )}
                                             </div>
 
                                             {o.message && (

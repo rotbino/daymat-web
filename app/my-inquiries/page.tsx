@@ -16,7 +16,7 @@ import { apiService } from '@/lib/api/apiService';
 import {
     useMyInquiries, useInquiry, useInquiryOffers, useInquiryMembers,
     useAddInquiryItem, useUpdateInquiryItem, useRemoveInquiryItem,
-    useUpdateInquiry, useUpdateOfferStatus,
+    useUpdateInquiry, useUpdateOfferStatus, useFinalizeInquiry,
 } from '@/lib/api/apiHooks';
 import { toast } from 'sonner';
 import NavTabs from '@/app/home/nav/NavTabs';
@@ -33,7 +33,7 @@ import UnitSettingsModal from '@/app/ad/components/UnitSettingsModal';
 import ShareKitModal from '@/components/profile/ShareKitModal';
 import VisitCardModal from '@/components/profile/VisitCardModal';
 import { useQueryClient } from '@tanstack/react-query';
-import { ClipboardList, Package, MessageSquareText, Settings, Globe, Plus, Loader2, PackageSearch, Handshake, Megaphone } from 'lucide-react';
+import { ClipboardList, Package, MessageSquareText, Settings, Globe, Plus, Loader2, PackageSearch, Handshake, Megaphone, FolderClosed } from 'lucide-react';
 import type { InquiryItem } from '@/lib/api/apiTypes';
 
 export default function MyInquiriesPage() {
@@ -59,7 +59,13 @@ export default function MyInquiriesPage() {
 
     const { data: items, isLoading } = useMyInquiries();
     const list: any[] = items ?? [];
-    const currentRow = useMemo(() => list.find((w) => w.id === currentInquiryId) || null, [list, currentInquiryId]);
+    // ✅ پرونده‌های بسته‌شده (فاز ۶ سناریو) — در فهرست انتخاب بالا هم می‌آیند تا پرونده در دسترس بماند
+    const { data: archivedItems } = useMyInquiries(true);
+    const archivedList: any[] = archivedItems ?? [];
+    const currentRow = useMemo(
+        () => [...list, ...archivedList].find((w) => w.id === currentInquiryId) || null,
+        [list, archivedList, currentInquiryId],
+    );
 
     // جزئیات کاتالوگ کارنت (اقلام + isOwner)
     const { data: detail, isLoading: detailLoading, refetch: refetchDetail } = useInquiry(currentInquiryId ?? undefined);
@@ -113,6 +119,7 @@ export default function MyInquiriesPage() {
     const updateItem = useUpdateInquiryItem();
     const removeItem = useRemoveInquiryItem();
     const updateOfferStatus = useUpdateOfferStatus();
+    const finalizeInquiry = useFinalizeInquiry();
 
     // ✅ توقف/شروع قیمت‌گیری — نام‌های درست (جای «پایان اعلام» و ریپلیسِ «بازوی خرید»)
     const toggleUrgent = async (item: InquiryItem) => {
@@ -213,6 +220,33 @@ export default function MyInquiriesPage() {
         }
     };
 
+    /** ✅ بستن پروندهٔ بازوی خرید (فاز ۶ سناریو) — با ثبت نتیجهٔ معامله */
+    const closeFile = async (outcome: 'succeeded' | 'failed') => {
+        if (!currentInquiryId) return;
+        try {
+            await finalizeInquiry.mutateAsync({ id: currentInquiryId, outcome });
+            toast.success(outcome === 'succeeded'
+                ? 'پرونده بسته شد — این خرید نتیجه گرفت 🎉'
+                : 'پرونده بسته شد — این خرید به نتیجه نرسید');
+            refetchOffers();
+            refetchDetail();
+        } catch (e: any) {
+            toast.error(e?.response?.data?.message || 'بستن پرونده ناموفق بود');
+        }
+    };
+
+    /** بازکردن دوبارهٔ پروندهٔ بسته‌شده (اشتباه زدی؟) — نتیجهٔ قبلی پاک می‌شود */
+    const reopenFile = async () => {
+        if (!currentInquiryId || !window.confirm('پرونده دوباره باز شود؟ نتیجهٔ ثبت‌شده پاک می‌شود.')) return;
+        try {
+            await updateInquiry.mutateAsync({ id: currentInquiryId, data: { status: 'open' } });
+            toast.success('پرونده دوباره باز شد — بازوی خریدت به حالت قیمت‌گیری برگشت');
+            refetchDetail();
+        } catch (e: any) {
+            toast.error(e?.response?.data?.message || 'بازگشایی ناموفق بود');
+        }
+    };
+
     const saveSettings = async (data: Record<string, any>) => {
         if (!currentInquiryId) return;
         await updateInquiry.mutateAsync({ id: currentInquiryId, data }).then(() => refetchDetail());
@@ -302,7 +336,7 @@ export default function MyInquiriesPage() {
                                 shadow-[0_6px_16px_-8px_rgba(15,23,42,0.28)] dark:shadow-[0_6px_16px_-8px_rgba(0,0,0,0.7)]">
                             <div className="pb-4 pt-2">
                                 <InquiryIdentityBar
-                                    inquiries={list}
+                                    inquiries={[...list, ...archivedList]}
                                     catalogs={salesCatalogs}
                                     currentInquiryId={currentInquiryId}
                                     onSelectInquiry={selectInquiry}
@@ -318,6 +352,28 @@ export default function MyInquiriesPage() {
 
                         {/* محتوای تب‌ها */}
                         <div className="pt-4">
+                            {/* ✅ بنر پروندهٔ بسته‌شده — بازو از همهٔ لیست‌ها خارج شده؛ فقط مالک این را می‌بیند (فاز ۶) */}
+                            {detail?.status === 'archived' && (
+                                <div className="mb-3 rounded-2xl border-2 border-stone-200 bg-white p-4 dark:border-gray-700 dark:bg-gray-900">
+                                    <p className="flex items-center gap-2 text-[13px] font-black text-stone-800 dark:text-gray-100">
+                                        <FolderClosed className="size-4 text-stone-500" />
+                                        پروندهٔ این بازوی خرید بسته شد
+                                        <span className={`rounded-full px-2 py-0.5 text-[10px] font-black ${
+                                            (detail as any).outcome === 'succeeded'
+                                                ? 'bg-emerald-600 text-white'
+                                                : 'bg-stone-200 text-stone-600 dark:bg-gray-700 dark:text-gray-300'}`}>
+                                            {(detail as any).outcome === 'succeeded' ? 'معامله انجام شد' : 'به نتیجه نرسید'}
+                                        </span>
+                                    </p>
+                                    <p className="mt-1 text-[11px] font-bold text-stone-400 dark:text-gray-500">
+                                        از لیست‌های عمومی، بازار و سرنخ‌های فروش خارج شده — فقط تو می‌بینی‌اش.
+                                    </p>
+                                    <button onClick={reopenFile}
+                                        className="mt-2.5 h-9 rounded-full border border-stone-200 px-4 text-[11px] font-extrabold text-stone-600 transition-colors hover:border-brand-contrast hover:text-amber-700 dark:border-gray-700 dark:text-gray-300">
+                                        بازکردن دوبارهٔ پرونده
+                                    </button>
+                                </div>
+                            )}
                             {!currentInquiryId || (!detail && detailLoading) ? (
                                 <div className="grid gap-3">
                                     {[0, 1].map((i) => <div key={i} className="h-24 animate-pulse rounded-2xl bg-white/70 dark:bg-gray-900/70" />)}
@@ -349,6 +405,8 @@ export default function MyInquiriesPage() {
                                             loading={offersLoading}
                                             busyOfferId={busyOfferId}
                                             onDecide={decideOffer}
+                                            onFinalize={closeFile}
+                                            finalizing={finalizeInquiry.isPending}
                                             onGoPublish={() => setTab('publish')}
                                         />
                                     )}

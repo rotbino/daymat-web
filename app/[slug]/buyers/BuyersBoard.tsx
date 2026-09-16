@@ -179,7 +179,8 @@ function InquiryCard({ inq }: { inq: any }) {
                     </p>
                 </div>
                 <span className="shrink-0 rounded-full bg-brand-contrast px-2 py-0.5 text-[9px] font-black text-white">
-                    {(inq.items?.length ?? 0).toLocaleString('fa-IR')} قلم فوری
+                    {/* ✅ شمارش فقط اقلام فوریِ در حال قیمت‌گیری (رفع اغراق در بج) */}
+                    {(inq.items ?? []).filter((it: any) => it.urgent).length.toLocaleString('fa-IR')} قلم فوری
                 </span>
             </div>
             {inq.items?.length > 0 && (
