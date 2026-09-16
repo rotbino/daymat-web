@@ -539,25 +539,7 @@ export default function InquiryPublicClient({ idOrSlug }: { idOrSlug: string }) 
                     </div>
                 </motion.section>
 
-                {/* ✅ خواستهٔ مالک: هیچ باکس تبلیغی مستقلی در بدنه نیست — سناریوی تامین‌کننده پشت دکمهٔ «پیشنهاد قیمت» است؛
-                    شبکه‌سازی فقط در فوتر (ArmFooter) که «کاملا تبلیغی و لینک مستقیم» اشکالی ندارد */}
 
-                {/* ═══ 🦠 نوار ویروسی ساخت بازو — فقط کسانی که بازو ندارند (مهمان/بدون بازو) ═══ */}
-                {showViral && (
-                    <motion.button {...fadeUp(0.08)} onClick={() => router.push(armHref)}
-                        className="mt-3 flex w-full items-center gap-3 rounded-2xl border border-primary/25 bg-gradient-to-l from-brand-primary-soft via-brand-primary-soft/60 to-transparent px-4 py-3.5 text-right shadow-sm transition-all hover:shadow-md active:scale-[0.99] dark:border-primary/20 dark:from-primary/10 dark:via-primary/5 dark:to-transparent">
-                        <span className="grid size-9 shrink-0 place-items-center rounded-xl bg-white shadow-sm dark:bg-gray-900">
-                            <Gift className="size-4 text-primary" />
-                        </span>
-                        <span className="min-w-0 flex-1">
-                            <span className="block text-[12.5px] font-black text-brand-primary dark:text-emerald-300">این بازوی خرید را می‌خواهی؟ برای خودت هم بساز</span>
-                            <span className="mt-0.5 block text-[10.5px] font-bold leading-4 text-brand-primary/70 dark:text-emerald-300/70">
-                                لیست خریدت را بساز، برای تامین‌کننده‌ها بفرست و قیمت‌ها را یک‌جا بگیر
-                            </span>
-                        </span>
-                        <span className="shrink-0 rounded-full bg-primary px-3.5 py-2 text-[11px] font-extrabold text-on-primary shadow-sm">ساخت بازو</span>
-                    </motion.button>
-                )}
                 {isOwner && (inquiry.offers?.length ?? 0) > 0 && (
                     <motion.button {...fadeUp(0.05)} onClick={scrollToOffers}
                         className="mt-4 flex w-full items-center gap-3 rounded-2xl border border-primary/25 bg-brand-primary-soft px-4 py-3.5 text-right shadow-sm transition-all hover:shadow-md active:scale-[0.99] dark:border-primary/20 dark:bg-primary/10">
@@ -579,25 +561,30 @@ export default function InquiryPublicClient({ idOrSlug }: { idOrSlug: string }) 
                 {/* ═══ بنر بازوی خرید خصوصی — فقط کاربر لاگین‌شده؛ مهمان به‌جایش قیف تامین‌کننده را می‌بیند
                     (برای غیرعضو مهم نیست «خصوصیه» بداند — باید راه تامین را ببیند: خواستهٔ مالک) ═══ */}
                 {limited && isAuthenticated && (
-                    <motion.div {...fadeUp(0.05)}
-                        className="mt-4 flex items-center gap-3 rounded-2xl border border-brand-accent/30 bg-brand-accent-soft/70 px-4 py-3.5 dark:border-amber-500/25 dark:bg-amber-500/5">
-                        <span className="grid size-9 shrink-0 place-items-center rounded-xl bg-white shadow-sm dark:bg-gray-900">
-                            <Lock className="size-4 text-amber-600 dark:text-amber-400" />
-                        </span>
-                        <div className="min-w-0 flex-1">
-                            <p className="text-[12px] font-black text-amber-800 dark:text-amber-300">این بازوی خرید خصوصیه</p>
-                            <p className="mt-0.5 text-[10.5px] font-bold leading-4 text-amber-700/80 dark:text-amber-400/80">
-                                {(accessState === 'pending' || requestedSelf)
-                                    ? 'درخواست تامینت ثبت شد — به‌محض تایید خریدار می‌توانی قیمت بفرستی'
-                                    : 'همه لیست را می‌بینند؛ ولی فقط تامین‌کننده‌های تاییدشدهٔ خریدار می‌توانند قیمت بدهند'}
-                            </p>
+                    <motion.div
+                        {...fadeUp(0.05)}
+                        className="mt-4 flex flex-col gap-3 rounded-2xl border border-brand-accent/30 bg-brand-accent-soft/70 px-4 py-3.5
+            dark:border-amber-500/25 dark:bg-amber-500/5
+            sm:flex-row sm:items-center"
+                    >
+                        {/* آیکون + متن */}
+                        <div className="flex items-start gap-3 sm:flex-1 sm:items-center">
+            <span className="grid size-9 shrink-0 place-items-center rounded-xl bg-white shadow-sm dark:bg-gray-900">
+                <Lock className="size-4 text-amber-600 dark:text-amber-400" />
+            </span>
+                            <div className="min-w-0 flex-1">
+                                <p className="text-[12px] font-black text-amber-800 dark:text-amber-300">
+                                    این بازوی خرید خصوصی است
+                                </p>
+                                <p className="mt-0.5 text-[10.5px] font-bold leading-4 text-amber-700/80 dark:text-amber-400/80">
+                                    {(accessState === 'pending' || requestedSelf)
+                                        ? 'درخواست تامینت ثبت شد — به‌محض تایید خریدار می‌توانی قیمت بفرستی'
+                                        : 'فقط بعد از تایید درخواست تامین کنندگی می توانید پیشنهاد قیمت ارسال کنید.'}
+                                </p>
+                            </div>
                         </div>
-                        {accessState !== 'pending' && !requestedSelf && (
-                            <button onClick={openCoop}
-                                className="shrink-0 rounded-full bg-primary px-3.5 py-2 text-[11px] font-extrabold text-on-primary shadow-sm transition-opacity hover:opacity-90">
-                                {isAuthenticated ? 'ارسال درخواست تامین' : 'ورود'}
-                            </button>
-                        )}
+
+
                     </motion.div>
                 )}
 
