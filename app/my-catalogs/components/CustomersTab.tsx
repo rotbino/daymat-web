@@ -17,7 +17,8 @@ import { cn } from '@/lib/utils';
 import { CARD_CLS } from '../constants';
 import { useCatalogTeam } from '@/lib/api/apiHooks';
 import ConnectionRequestModal from './ConnectionRequestModal';
-import { Avatar, MemberMainInfo, personalSlugOf, bizBadge, badgeBase, REQUEST_LABEL } from './MemberBits';
+import OfferCallButton from '@/app/components/OfferCallButton';
+import { Avatar, MemberMainInfo, personalSlugOf, bizBadge, badgeBase, REQUEST_LABEL, inviteStateOf, InviteStateChip } from './MemberBits';
 
 interface Props {
     catalogId: string;
@@ -92,23 +93,33 @@ export default function CustomersTab({ catalogId, slug }: Props) {
         ...m,
         __isMyCustomer: !!team.myRole?.isSeller && m.assignedSellerUserId === team.myRole?.userId,
     });
-    // خریدارهای من اول — بعد بقیه (شبکهٔ خرید↔فروش)
-    const buyerRows = activeCustomers.map(decorate)
-        .sort((a: any, b: any) => (a.__isMyCustomer ? 0 : 1) - (b.__isMyCustomer ? 0 : 1));
+    // ✅ ترتیب لیست خریدارها (خواستهٔ مالک — Task 26):
+    //    خریدارهای من اول → بقیهٔ فعال‌ها → «در انتظار پذیرش خریدار» (ثبتِ ما) → «درخواست رد شده» (با حذف)
+    const buyerRows = activeCustomers.concat(
+        customers.filter((c) => c.customerStatus === 'pending' && c.customerVia === 'owner_add'),
+        customers.filter((c) => c.customerStatus === 'declined' && c.customerVia === 'owner_add'),
+    ).map(decorate)
+        .sort((a: any, b: any) => {
+            const rank = (c: any) => (c.customerStatus === 'active' ? (c.__isMyCustomer ? 0 : 1) : c.customerStatus === 'pending' ? 2 : 3);
+            return rank(a) - rank(b);
+        });
 
     // ✅ منوی خریدار — فقط کارهای خریدار: تغییر مسئول و حذف (بدون ارتقا/تغییر نقش)
+    //    ثبتِ منتظرِ پذیرش فقط «لغو درخواست» دارد
     const menuActionsFor = (m: any) => {
         const acts: { key: string; icon: any; label: string; onClick: () => void; danger?: boolean }[] = [];
-        acts.push({
-            key: 'reassign',
-            icon: ArrowLeftRight,
-            label: 'تغییر مسئولِ خریدار',
-            onClick: () => setReassignTarget(m),
-        });
+        if (m.customerStatus === 'active') {
+            acts.push({
+                key: 'reassign',
+                icon: ArrowLeftRight,
+                label: 'تغییر مسئولِ خریدار',
+                onClick: () => setReassignTarget(m),
+            });
+        }
         acts.push({
             key: 'remove',
             icon: Trash2,
-            label: 'حذف خریدار',
+            label: m.customerStatus === 'pending' ? 'لغو درخواست ثبت خریدار' : 'حذف خریدار',
             danger: true,
             onClick: () => {
                 if (window.confirm(`«${m.fullName}» از فهرست خریداران حذف شود؟`)) {
@@ -121,22 +132,47 @@ export default function CustomersTab({ catalogId, slug }: Props) {
 
     const rowFor = (m: any) => {
         const bb = bizBadge(m);
+        const invite = inviteStateOf(m, 'customer');
         const menuOpen = menuFor === m.id;
         const actions = canManage ? menuActionsFor(m) : [];
         const pSlug = personalSlugOf(m);
         return (
             <div key={m.id} className={cn(
                 'flex items-center gap-2.5 p-2.5 rounded-xl transition-colors',
-                m.__isMyCustomer ? 'bg-primary/5' : 'hover:bg-gray-50 dark:hover:bg-gray-800/50',
+                invite === 'declined' ? 'bg-rose-50/50 dark:bg-rose-900/10'
+                    : m.__isMyCustomer ? 'bg-primary/5' : 'hover:bg-gray-50 dark:hover:bg-gray-800/50',
             )}>
                 <Avatar url={m.avatarUrl} name={m.fullName} />
                 <MemberMainInfo m={m} onOpen={pSlug ? () => router.push(`/${pSlug}`) : undefined} />
 
-                {/* نقش بیزینسی */}
-                <span className={cn(badgeBase, 'w-16 flex-shrink-0', bb?.cls || 'invisible')}>{bb?.text || '—'}</span>
+                {/* نقش بیزینسی — یا برچسب وضعیت ثبتِ خریدار */}
+                {invite ? (
+                    <InviteStateChip state={invite} pendingLabel="در انتظار پذیرش خریدار" />
+                ) : (
+                    <span className={cn(badgeBase, 'w-16 flex-shrink-0', bb?.cls || 'invisible')}>{bb?.text || '—'}</span>
+                )}
 
-                {/* منوی مدیریت — فقط اقدامات خریدار */}
-                {actions.length > 0 && (
+                {/* ✅ تماس با خریدار — همیشه (شمارهٔ ثبت‌نام شخص؛ قاعدهٔ تماس‌ها) */}
+                <OfferCallButton
+                    phone={m.phone}
+                    title={invite === 'pending' ? 'تماس — یادآوری پذیرش ثبت خریدار' : `تماس با ${m.fullName || 'خریدار'}`}
+                />
+
+                {/* منو یا دکمهٔ حذفِ ردشده */}
+                {invite === 'declined' ? (
+                    <button
+                        onClick={() => {
+                            if (window.confirm(`«${m.fullName}» از لیست حذف شود؟`)) {
+                                run(`rm-${m.id}`, () => apiService.catalog.team.removeCustomer(catalogId, m.id), 'از لیست حذف شد');
+                            }
+                        }}
+                        className="p-2 rounded-full text-stone-400 hover:bg-red-50 hover:text-red-500 dark:hover:bg-red-900/20 transition-colors flex-shrink-0"
+                        title="حذف از لیست"
+                        aria-label="حذف از لیست"
+                    >
+                        <Trash2 className="w-4 h-4" />
+                    </button>
+                ) : actions.length > 0 && (
                     <div className="relative flex-shrink-0">
                         <button
                             onClick={() => setMenuFor(menuOpen ? null : m.id)}
@@ -217,7 +253,6 @@ export default function CustomersTab({ catalogId, slug }: Props) {
                                     <p className="text-xs text-gray-500 dark:text-gray-400 truncate">
                                         {((s.customerBusiness?.name || s.business?.name) && s.customerBusiness?.name !== s.fullName) ? `${s.customerBusiness?.name || s.business?.name} · ` : ''}
                                         {s.memberCity || ''}
-                                        {canManage && s.phone ? ` · ${s.phone}` : ''}
                                     </p>
                                     <p className="text-[11px] text-amber-600 dark:text-amber-400 mt-0.5">
                                         {REQUEST_LABEL.buyer} — در انتظار تایید شما
@@ -225,6 +260,8 @@ export default function CustomersTab({ catalogId, slug }: Props) {
                                 </div>
                                 {busy === `apr-${s.id}` ? <Loader2 className="w-4 h-4 animate-spin flex-shrink-0" /> : (
                                     <div className="flex items-center gap-1 flex-shrink-0">
+                                        {/* ✅ تماس با متقاضی — همیشه (شمارهٔ ثبت‌نام) */}
+                                        <OfferCallButton phone={s.phone} title="تماس با متقاضی خریداربودن" />
                                         <button
                                             onClick={() => run(`apr-${s.id}`, () => apiService.catalog.team.approveBuyer(catalogId, s.id), 'به‌عنوان خریدار تایید شد')}
                                             className="h-8 px-2.5 rounded-xl bg-emerald-600 text-white text-[11px] font-bold flex items-center gap-1"
@@ -247,7 +284,7 @@ export default function CustomersTab({ catalogId, slug }: Props) {
                 </div>
             )}
 
-            {/* فهرست خریدارها — با بازوی خریدشان */}
+            {/* فهرست خریدارها — با بازوی خریدشان + ثبت‌های منتظرِ پذیرش/ردشده */}
             <div className={cn(CARD_CLS, 'p-2')}>
                 <p className="flex items-center gap-1.5 px-2 pt-2 pb-1 text-[11px] font-black text-primary">
                     <Handshake className="h-3.5 w-3.5" />
@@ -259,15 +296,15 @@ export default function CustomersTab({ catalogId, slug }: Props) {
                 )}
             </div>
 
-            {/* ─── مودال درخواست ارتباط — ثبت خریدار (کسب‌وکارها/مخاطبین) ─── */}
+            {/* ─── مودال ثبت خریدار — کسب‌وکارها / مخاطبین (بیزینس + بازوی خریدش؛ خواستهٔ مالک) ─── */}
             <ConnectionRequestModal
                 open={addOpen}
                 onClose={() => setAddOpen(false)}
                 catalogId={catalogId}
+                mode="buyers"
                 canAssign={canManage}
-                sellers={sellers}
+                sellers={sellers.filter((s: any) => s.sellerStatus === 'active')}
                 slug={slug}
-                defaultScope="businesses"
             />
 
             {/* ─── مودال تغییر مسئولِ مشتری ─── */}

@@ -1,10 +1,11 @@
 // app/my-catalogs/components/MemberBits.tsx
 // ✂️ مشترکات ردیف اعضا — بعد از تفکیک تب «اعضا» به «تیم فروش» + «خریداران»
 //    Avatar | بج نقش بیزینسی | بج نقش سیستمی | بلوک اطلاعات (نام/کسب‌وکار/شهر/بازوی خرید)
+//    ✅ چرخهٔ «ما اضافه کردیم» (Task 26): منتظر پذیرش (کهربایی) → پذیرش/رد → ردشده (قرمز + حذف)
 'use client';
 
 import React, { useState } from 'react';
-import { MapPin, ClipboardList } from 'lucide-react';
+import { MapPin, ClipboardList, Hourglass, XCircle } from 'lucide-react';
 import { cn } from '@/lib/utils';
 
 export const badgeBase =
@@ -23,6 +24,7 @@ export const EVENT_LABEL: Record<string, string> = {
     supplier_approved: 'به‌عنوان تامین‌کننده تایید شد',
     supplier_rejected: 'درخواست تامین‌کننده‌اش رد شد',
     supplier_removed: 'تامین‌کننده‌اش حذف شد',
+    service_removed: 'سرویس‌دهنده‌اش حذف شد',
     service_approved: 'به‌عنوان سرویس‌دهندهٔ خدمات تایید شد',
     service_rejected: 'درخواست تامین خدماتش رد شد',
     supplier_invite_sent: 'برای تامین‌کنندگی دعوت شد',
@@ -90,6 +92,47 @@ export const sysBadge = (m: any) => {
     if (m.__isMe) return { text: 'خودم', cls: 'border border-outline-variant/60 text-gray-500 dark:text-gray-400' };
     return null;
 };
+
+// ─── ✅ چرخهٔ «ما اضافه کردیم» (خواستهٔ مالک — Task 26) ───
+//   وقتی مدیر کسی را به تیم/خریداران اضافه می‌کند، ردیف همان‌جا می‌آید با برچسب «در انتظار پذیرش»؛
+//   اگر طرف رد کند برچسب «درخواست رد شده» می‌گیرد و آیکون حذف کنارش می‌آید.
+export type MemberLane = 'seller' | 'customer' | 'supplier' | 'service';
+
+/** مسیری که درخواست را «مدیرِ کاتالوگ» شروع کرده — تنها اینها در لیستِ دعوت‌کننده pending/declined نشان داده می‌شوند */
+const MANAGER_INITIATED_VIA: Record<MemberLane, string> = {
+    seller: 'manager_invite',
+    customer: 'owner_add',
+    supplier: 'manager_add',
+    service: 'manager_add',
+};
+
+/** وضعیت دعوتِ در جریان یک لِین — pending | declined | null (null = عضو عادی/درخواستِ خودِ متقاضی) */
+export const inviteStateOf = (m: any, lane: MemberLane): 'pending' | 'declined' | null => {
+    if (!m) return null;
+    if (m[`${lane}Via`] !== MANAGER_INITIATED_VIA[lane]) return null;
+    const status = m[`${lane}Status`];
+    if (status === 'pending') return 'pending';
+    if (status === 'declined') return 'declined';
+    return null;
+};
+
+/** چیپ وضعیت دعوت — کهربایی «در انتظار پذیرش …» یا قرمز «درخواست رد شده» */
+export function InviteStateChip({ state, pendingLabel }: { state: 'pending' | 'declined'; pendingLabel?: string }) {
+    if (state === 'declined') {
+        return (
+            <span className="inline-flex flex-shrink-0 items-center gap-1 whitespace-nowrap rounded-full bg-rose-50 px-2 py-0.5 text-[9px] font-black text-rose-700 dark:bg-rose-900/25 dark:text-rose-300">
+                <XCircle className="size-3" />
+                درخواست رد شده
+            </span>
+        );
+    }
+    return (
+        <span className="inline-flex flex-shrink-0 items-center gap-1 whitespace-nowrap rounded-full bg-brand-contrast-soft px-2 py-0.5 text-[9px] font-black text-amber-700 dark:bg-amber-500/10 dark:text-amber-400">
+            <Hourglass className="size-3" />
+            {pendingLabel || 'در انتظار پذیرش'}
+        </span>
+    );
+}
 
 /** اسلاگ صفحهٔ شخصی عضو — برای ناوبری با router والد */
 export const personalSlugOf = (m: any) =>

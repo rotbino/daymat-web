@@ -17,7 +17,8 @@ import { cn } from '@/lib/utils';
 import { CARD_CLS } from '../constants';
 import { useCatalogTeam } from '@/lib/api/apiHooks';
 import ConnectionRequestModal from './ConnectionRequestModal';
-import { Avatar, MemberMainInfo, personalSlugOf, bizBadge, sysBadge, badgeBase, EVENT_LABEL, REQUEST_LABEL } from './MemberBits';
+import OfferCallButton from '@/app/components/OfferCallButton';
+import { Avatar, MemberMainInfo, personalSlugOf, bizBadge, sysBadge, badgeBase, EVENT_LABEL, REQUEST_LABEL, inviteStateOf, InviteStateChip, type MemberLane } from './MemberBits';
 
 interface Props {
     catalogId: string;
@@ -123,19 +124,36 @@ export default function TeamTab({ catalogId, slug }: Props) {
         __isMe: m.userId === team.myRole?.userId && !m.isOwner && !m.isAdmin,
     });
     // ✅ دی‌دوپ — مدیری که خودش هم فروشندهٔ فعال است فقط یک‌بار نشان داده شود
+    //    ✅ دعوت‌های منتظرِ پذیرش بعد از اعضای فعال، ردشده‌ها آخر (خواستهٔ مالک — Task 26)
     const teamRows = [...staff, ...sellers].map(decorate)
         .filter((m: any, i: number, arr: any[]) => arr.findIndex((x: any) => x.id === m.id) === i)
         .sort((a: any, b: any) => {
-            const rank = (m: any) => (m.isOwner ? 0 : m.isAdmin ? 1 : m.__isMe ? 2 : m.sellerStatus === 'active' ? 3 : 4);
+            const rank = (m: any) => (m.isOwner ? 0 : m.isAdmin ? 1 : m.__isMe ? 2 : m.sellerStatus === 'active' ? 3 : m.sellerStatus === 'pending' ? 4 : 5);
             return rank(a) - rank(b);
         });
     const supplyRows = [...suppliers, ...services].map(decorate);
 
+    // ✅ حذف ردیفِ «درخواست رد شده» از لیست — فروشنده/تامین‌کننده/سرویس‌دهنده (خواستهٔ مالک)
+    const dismissDeclined = (m: any, lane: 'seller' | 'supplier' | 'service') => {
+        const name = m.fullName || 'این مورد';
+        if (!window.confirm(`«${name}» از لیست حذف شود؟`)) return;
+        run(
+            `rm-${m.id}`,
+            () => (lane === 'seller'
+                ? apiService.catalog.team.removeSeller(catalogId, m.id)
+                : lane === 'supplier'
+                    ? apiService.catalog.team.removeSupplier(catalogId, m.id)
+                    : apiService.catalog.team.removeService(catalogId, m.id)),
+            'از لیست حذف شد',
+        );
+    };
+
     // ─── منوی مدیریت هر ردیف — فقط اقداماتِ معنادار برای همان نقش ───
     //    ارتقا به مدیر فقط برای اعضای تیم فروش؛ حذف فقط برای نقش‌هایی که اندپوینت دارند
-    const menuActionsFor = (m: any) => {
+    //    دعوت‌های منتظر/ردشده منو ندارند — فقط برچسب وضعیت + تماس (+ حذف برای ردشده)
+    const menuActionsFor = (m: any, lane: 'seller' | 'supplier' | 'service' = 'seller') => {
         const acts: { key: string; icon: any; label: string; onClick: () => void; danger?: boolean }[] = [];
-        if (m.sellerStatus === 'active') {
+        if (m.sellerStatus === 'active' && lane === 'seller') {
             acts.push({
                 key: 'role',
                 icon: ArrowLeftRight,
@@ -152,7 +170,7 @@ export default function TeamTab({ catalogId, slug }: Props) {
             }
         }
         // ✅ ارتقا/سلب مدیریت — فقط اعضای تیم فروش (تامین‌کننده/خدمات بیرون می‌مانند)
-        if (m.sellerStatus === 'active' && !m.isAdmin) {
+        if (m.sellerStatus === 'active' && !m.isAdmin && lane === 'seller') {
             acts.push({
                 key: 'promote',
                 icon: ShieldCheck,
@@ -168,7 +186,7 @@ export default function TeamTab({ catalogId, slug }: Props) {
                 onClick: () => run(`dem-${m.id}`, () => apiService.catalog.team.demoteToMember(catalogId, m.id), 'نقش مدیر گرفته شد'),
             });
         }
-        if (m.sellerStatus === 'active') {
+        if (m.sellerStatus === 'active' && lane === 'seller') {
             acts.push({
                 key: 'remove',
                 icon: Trash2,
@@ -180,7 +198,7 @@ export default function TeamTab({ catalogId, slug }: Props) {
                     }
                 },
             });
-        } else if (m.supplierStatus === 'active') {
+        } else if (m.supplierStatus === 'active' && lane === 'supplier') {
             acts.push({
                 key: 'remove',
                 icon: Trash2,
@@ -196,22 +214,46 @@ export default function TeamTab({ catalogId, slug }: Props) {
         return acts;
     };
 
-    const rowFor = (m: any) => {
+    const rowFor = (m: any, lane: 'seller' | 'supplier' | 'service' = 'seller') => {
         const bb = bizBadge(m);
         const sb = sysBadge(m);
+        const invite = canManage ? inviteStateOf(m, lane) : null;
         const menuOpen = menuFor === m.id;
-        const actions = canManage && !m.isOwner ? menuActionsFor(m) : [];
+        const actions = canManage && !m.isOwner && !invite ? menuActionsFor(m, lane) : [];
         const pSlug = personalSlugOf(m);
+        const pendingLabel = lane === 'seller' ? 'در انتظار پذیرش همکار' : lane === 'supplier' ? 'در انتظار پذیرش تامین‌کننده' : 'در انتظار پذیرش سرویس‌دهنده';
         return (
-            <div key={m.id} className="flex items-center gap-2.5 p-2.5 rounded-xl transition-colors hover:bg-gray-50 dark:hover:bg-gray-800/50">
+            <div key={m.id} className={cn(
+                'flex items-center gap-2.5 p-2.5 rounded-xl transition-colors',
+                invite === 'declined' ? 'bg-rose-50/50 dark:bg-rose-900/10' : 'hover:bg-gray-50 dark:hover:bg-gray-800/50',
+            )}>
                 <Avatar url={m.avatarUrl} name={m.fullName} />
                 <MemberMainInfo m={m} onOpen={pSlug ? () => router.push(`/${pSlug}`) : undefined} />
 
-                {/* نقش بیزینسی */}
-                <span className={cn(badgeBase, 'w-16 flex-shrink-0', bb?.cls || 'invisible')}>{bb?.text || '—'}</span>
+                {/* نقش بیزینسی — یا برچسب وضعیت دعوت (منتظر پذیرش/رد شده) */}
+                {invite ? (
+                    <InviteStateChip state={invite} pendingLabel={pendingLabel} />
+                ) : (
+                    <span className={cn(badgeBase, 'w-16 flex-shrink-0', bb?.cls || 'invisible')}>{bb?.text || '—'}</span>
+                )}
 
-                {/* منوی مدیریت */}
-                {actions.length > 0 && (
+                {/* ✅ تماس — همیشه (شمارهٔ ثبت‌نام شخص؛ خواستهٔ مالک: تماس تیم را قوی‌تر می‌کند) */}
+                <OfferCallButton
+                    phone={m.phone}
+                    title={invite === 'pending' ? 'تماس — یادآوری پذیرش دعوت' : `تماس با ${m.fullName || 'عضو'}`}
+                />
+
+                {/* حذف ردشده / منوی مدیریت */}
+                {invite === 'declined' ? (
+                    <button
+                        onClick={() => dismissDeclined(m, lane)}
+                        className="p-2 rounded-full text-stone-400 hover:bg-red-50 hover:text-red-500 dark:hover:bg-red-900/20 transition-colors flex-shrink-0"
+                        title="حذف از لیست"
+                        aria-label="حذف از لیست"
+                    >
+                        <Trash2 className="w-4 h-4" />
+                    </button>
+                ) : actions.length > 0 && (
                     <div className="relative flex-shrink-0">
                         <button
                             onClick={() => setMenuFor(menuOpen ? null : m.id)}
@@ -242,8 +284,8 @@ export default function TeamTab({ catalogId, slug }: Props) {
                     </div>
                 )}
 
-                {/* نقش سیستمی */}
-                <span className={cn(badgeBase, 'w-24 flex-shrink-0', sb?.cls || 'invisible')}>{sb?.text || '—'}</span>
+                {/* نقش سیستمی — برای ردیف‌های دعوت خالی */}
+                <span className={cn(badgeBase, 'w-24 flex-shrink-0', !invite && sb?.cls || 'invisible')}>{!invite ? (sb?.text || '—') : '—'}</span>
             </div>
         );
     };
@@ -268,7 +310,7 @@ export default function TeamTab({ catalogId, slug }: Props) {
                         className="flex items-center gap-1.5 px-3 py-2 rounded-xl bg-primary text-white text-sm font-bold hover:opacity-90 transition"
                     >
                         <UserPlus className="w-4 h-4" />
-                        <span className="hidden sm:inline">دعوت همکار / تامین‌کننده</span>
+                        <span className="hidden sm:inline">افزودن همکار</span>
                         <span className="sm:hidden">دعوت</span>
                     </button>
                 )}
@@ -301,7 +343,6 @@ export default function TeamTab({ catalogId, slug }: Props) {
                                         <p className="text-xs text-gray-500 dark:text-gray-400 truncate">
                                             {(entityName !== s.fullName) ? `${entityName} · ` : ''}
                                             {s.memberCity || ''}
-                                            {canManage && s.phone ? ` · ${s.phone}` : ''}
                                         </p>
                                         <p className="text-[11px] text-amber-600 dark:text-amber-400 mt-0.5">
                                             {REQUEST_LABEL[s.requestType] || 'درخواست ارتباط تجاری'} — در انتظار تایید شما
@@ -309,6 +350,8 @@ export default function TeamTab({ catalogId, slug }: Props) {
                                     </div>
                                     {busy === `apr-${s.id}` ? <Loader2 className="w-4 h-4 animate-spin flex-shrink-0" /> : (
                                         <div className="flex items-center gap-1 flex-shrink-0" onClick={() => { setMenuFor(null); setApproveFor(null); }}>
+                                            {/* ✅ تماس با متقاضی — همیشه (شمارهٔ ثبت‌نام) */}
+                                            <OfferCallButton phone={s.phone} title="تماس با متقاضی همکاری" />
                                             <div className="relative">
                                                 <button
                                                     onClick={() => setApproveFor(approveFor === s.id ? null : s.id)}
@@ -384,7 +427,7 @@ export default function TeamTab({ catalogId, slug }: Props) {
                     <Users className="h-3.5 w-3.5" />
                     تیم فروش و مدیریت
                 </p>
-                {teamRows.map((m: any) => <React.Fragment key={m.id}>{rowFor(m)}</React.Fragment>)}
+                {teamRows.map((m: any) => <React.Fragment key={m.id}>{rowFor(m, 'seller')}</React.Fragment>)}
             </div>
 
             {/* تامین‌کننده‌ها و خدمات — لِین کاتالوگ قیمت */}
@@ -394,7 +437,7 @@ export default function TeamTab({ catalogId, slug }: Props) {
                         <Truck className="h-3.5 w-3.5" />
                         تامین‌کننده‌ها و خدمات
                     </p>
-                    {supplyRows.map((m: any) => <React.Fragment key={m.id}>{rowFor(m)}</React.Fragment>)}
+                    {supplyRows.map((m: any) => <React.Fragment key={m.id}>{rowFor(m, m.serviceStatus || m.serviceCatalog ? 'service' : 'supplier')}</React.Fragment>)}
                 </div>
             )}
 
@@ -473,15 +516,15 @@ export default function TeamTab({ catalogId, slug }: Props) {
                 </div>
             )}
 
-            {/* ─── مودال درخواست ارتباط — دعوت همکار (افراد) / تامین‌کننده (کاتالوگ‌ها) ─── */}
+            {/* ─── مودال افزودن همکار — افراد / مخاطبین (فقط شخص؛ خواستهٔ مالک) ─── */}
             <ConnectionRequestModal
                 open={addOpen}
                 onClose={() => setAddOpen(false)}
                 catalogId={catalogId}
+                mode="team"
                 canAssign={canManage}
-                sellers={sellers}
+                sellers={sellers.filter((s: any) => s.sellerStatus === 'active')}
                 slug={slug}
-                defaultScope="people"
             />
         </div>
     );

@@ -1,12 +1,11 @@
 // app/my-catalogs/components/ConnectionRequestModal.tsx
-// 🤝 «درخواست ارتباط» — کشفِ مخاطبِ مرتبط میان کسب‌وکارها، کاتالوگ‌ها و افراد
+// 🤝 «افزودن به تیم فروش / درخواست ارتباط با خریدار» — کشفِ مخاطبِ مرتبط میان کسب‌وکارها و افراد
+//   ✅ دو مودِ جدا (خواستهٔ مالک — Task 26):
+//     mode=team    → فقط «شخص»: افرادِ دیمت + مخاطبین موبایل (پذیرش با خودِ دعوت‌شده)
+//     mode=buyers  → فقط «بیزینس + بازوی خریدش»: کسب‌وکارها + مخاطبین (پذیرش با خودِ خریدار)
 //   مودال با «پیشنهادهای مرتبط» باز می‌شود — لیستِ اولِ هر تب هرگز خالی نیست:
 //   سورتِ مرتبط‌سازی: هم‌شهری → هم‌استان → پیش‌شمارهٔ تلفن (مثل ۰۹۱۸ همدان) → مکملِ زنجیرهٔ کاری
-//   فیلترها: استان | شهر | صنف (سطح ۱) | زمینهٔ فعالیت (سطح ۲) | نوعِ فروش (تب کاتالوگ‌ها)
-//   نوع درخواست بسته به تب و مقصد:
-//     کسب‌وکارها → «بازوی خرید» (مشتری ثبت می‌شود؛ تایید با صاحب کسب‌وکار)
-//     کاتالوگ‌ها → «درخواست تامین‌کنندگی» یا اگر کاتالوگ مقصد خدماتی باشد «درخواست تامین خدمات»
-//     افراد     → «دعوت به همکاری در فروش» (پذیرش با خودِ دعوت‌شده)
+//   فیلترها: استان | شهر | صنف (سطح ۱) | زمینهٔ فعالیت (سطح ۲)
 'use client';
 
 import React, { useEffect, useMemo, useState } from 'react';
@@ -18,8 +17,8 @@ import { resolveFileSrc } from '@/app/business/manage/components/BusinessLogo';
 import { toast } from 'sonner';
 import { cn } from '@/lib/utils';
 import {
-    X, Loader2, Search, Store, BookOpen, User, ExternalLink,
-    ShoppingBasket, Truck, Wrench, Handshake, Wallet, SlidersHorizontal,
+    X, Loader2, Search, Store, User,
+    ShoppingBasket, Handshake, Wallet, SlidersHorizontal,
     ChevronDown, Sparkles, Smartphone,
 } from 'lucide-react';
 import PhoneContactsPanel from '@/components/share/PhoneContactsPanel';
@@ -28,37 +27,40 @@ interface Props {
     open: boolean;
     onClose: () => void;
     catalogId: string;
+    /** ✅ حالت مودال — team: دعوت همکار (فقط شخص) | buyers: ثبت خریدار (بیزینس + بازوی خریدش) */
+    mode: 'team' | 'buyers';
     canAssign: boolean; // مالک/مدیر — می‌تواند مسئول فروش را هم انتخاب کند
     sellers: any[]; // اعضای فروش فعال (برای انتساب خریدار)
     /** اسلاگ کاتالوگ — لینک دعوت در تب مخاطبین */
     slug?: string | null;
-    /** تب شروع مودال — تب «خریداران» = کسب‌وکارها، تب «تیم فروش» = افراد */
-    defaultScope?: Scope;
 }
 
-type Scope = 'businesses' | 'catalogs' | 'people' | 'contacts';
+type Scope = 'businesses' | 'people' | 'contacts';
 
-const SCOPES: { key: Scope; label: string; icon: React.ElementType; hint: string }[] = [
-    { key: 'businesses', label: 'کسب‌وکارها', icon: Store, hint: 'کسب‌وکارها را به‌عنوان خریدار ثبت کن تا تماس‌شان به شما برسد' },
-    { key: 'catalogs', label: 'کاتالوگ‌ها', icon: BookOpen, hint: 'درخواست تامین‌کنندگی یا تامین خدمات بفرست' },
-    { key: 'people', label: 'افراد', icon: User, hint: 'فروشندگان و بازاریابان دیمت را به فروش کاتالوگ دعوت کن' },
-    { key: 'contacts', label: 'مخاطبین', icon: Smartphone, hint: 'از دفترچهٔ تلفنت: عضوهای دیمت درخواست می‌گیرند، غیراعضا با لینک کاتالوگ دعوت می‌شوند' },
-];
+// ✅ تب‌های هر مود — خواستهٔ مالک: تیم فقط «افراد + مخاطبین» (کاتالوگ و بیزینس حذف)؛
+//    خریداران فقط «کسب‌وکارها + مخاطبین» (مقصدها همیشه بیزینس + بازوی خریدش است)
+const SCOPES: Record<'team' | 'buyers', { key: Scope; label: string; icon: React.ElementType; hint: string }[]> = {
+    team: [
+        { key: 'people', label: 'افراد', icon: User, hint: 'فروشندگان و بازاریابان دیمت را به فروش کاتالوگ دعوت کن' },
+        { key: 'contacts', label: 'مخاطبین', icon: Smartphone, hint: 'از دفترچهٔ تلفنت: اعضای دیمت دعوت همکاری می‌گیرند، غیراعضا با لینک کاتالوگ دعوت می‌شوند' },
+    ],
+    buyers: [
+        { key: 'businesses', label: 'کسب‌وکارها', icon: Store, hint: 'کسب‌وکارها را به‌عنوان خریدار ثبت کن تا تماس‌شان به شما برسد' },
+        { key: 'contacts', label: 'مخاطبین', icon: Smartphone, hint: 'از دفترچهٔ تلفنت: کسب‌وکار اعضای دیمت به‌عنوان خریدار ثبت می‌شود، غیراعضا با لینک کاتالوگ دعوت می‌شوند' },
+    ],
+};
+
+const DEFAULT_SCOPE: Record<'team' | 'buyers', Scope> = { team: 'people', buyers: 'businesses' };
 
 // برچسب فارسی زمینه‌های فعالیت (سطح ۲ درخت) — برای نمایش روی کارت‌ها
 const ROLE_LABEL: Record<string, string> = {};
 (BUSINESS_TYPE as readonly any[]).forEach((s) => s.children.forEach((c: any) => { ROLE_LABEL[c.id] = c.label; }));
 
-const SALES_TYPE_LABEL: Record<string, string> = {
-    wholesale: 'عمده‌فروشی',
-    retail: 'خرده‌فروشی',
-    service: 'خدماتی',
-};
-
 const TAG_CLS = 'px-1.5 py-0.5 rounded-md text-[9px] font-bold bg-primary/10 text-primary whitespace-nowrap';
 
-export default function ConnectionRequestModal({ open, onClose, catalogId, canAssign, sellers, slug, defaultScope }: Props) {
-    const [scope, setScope] = useState<Scope>(defaultScope || 'businesses');
+export default function ConnectionRequestModal({ open, onClose, catalogId, mode, canAssign, sellers, slug }: Props) {
+    const scopeList = SCOPES[mode];
+    const [scope, setScope] = useState<Scope>(DEFAULT_SCOPE[mode]);
     const [q, setQ] = useState('');
     const [debounced, setDebounced] = useState('');
     const [searching, setSearching] = useState(false);
@@ -76,9 +78,8 @@ export default function ConnectionRequestModal({ open, onClose, catalogId, canAs
     const [fCity, setFCity] = useState('');
     const [fSector, setFSector] = useState('');
     const [fRole, setFRole] = useState('');
-    const [fSalesType, setFSalesType] = useState('');
 
-    const activeFilters = [fProvince, fCity, fSector, fRole, scope === 'catalogs' ? fSalesType : ''].filter(Boolean).length;
+    const activeFilters = [fProvince, fCity, fSector, fRole].filter(Boolean).length;
 
     // دیبانس جستجو
     useEffect(() => {
@@ -88,16 +89,16 @@ export default function ConnectionRequestModal({ open, onClose, catalogId, canAs
 
     useEffect(() => {
         if (!open) return;
-        setScope(defaultScope || 'businesses');
+        setScope(DEFAULT_SCOPE[mode]);
         setQ(''); setDebounced(''); setResults([]); setSentIds(new Set()); setAssignTo('');
-        setFProvince(''); setFCity(''); setFSector(''); setFRole(''); setFSalesType(''); setSuggested(false);
+        setFProvince(''); setFCity(''); setFSector(''); setFRole(''); setSuggested(false);
         // وضعیت سهمیهٔ درخواست ارتباط — رایگانِ باقی‌مانده / هزینه / موجودی
         let alive = true;
         apiService.catalog.team.connectionQuota(catalogId)
             .then((res) => { if (alive) setQuota(res); })
             .catch(() => { if (alive) setQuota(null); });
         return () => { alive = false; };
-    }, [open, catalogId, defaultScope]);
+    }, [open, catalogId, mode]);
 
     // ─── گزینه‌های فیلتر جغرافیا ───
     const { data: provincesData } = useQuery({
@@ -121,7 +122,7 @@ export default function ConnectionRequestModal({ open, onClose, catalogId, canAs
         [fSector],
     );
 
-    const clearFilters = () => { setFProvince(''); setFCity(''); setFSector(''); setFRole(''); setFSalesType(''); };
+    const clearFilters = () => { setFProvince(''); setFCity(''); setFSector(''); setFRole(''); };
 
     const refreshQuota = async () => {
         try { setQuota(await apiService.catalog.team.connectionQuota(catalogId)); } catch { /* بی‌صدا — بک‌اند خودش گیت می‌گذارد */ }
@@ -158,12 +159,11 @@ export default function ConnectionRequestModal({ open, onClose, catalogId, canAs
                     city: fCity || undefined,
                     sector: fSector || undefined,
                     role: fRole || undefined,
-                    ...(scope === 'catalogs' ? { salesType: fSalesType || undefined } : {}),
                 };
-                let res: { items?: any[]; suggested?: boolean };
-                if (scope === 'businesses') res = await apiService.catalog.team.customerCandidates(catalogId, params);
-                else if (scope === 'catalogs') res = await apiService.catalog.team.partnerCatalogs(catalogId, params);
-                else res = await apiService.catalog.team.peopleCandidates(catalogId, params);
+                // ✅ مود team → جستجوی افراد | مود buyers → جستجوی کسب‌وکارها
+                const res = await (scope === 'businesses'
+                    ? apiService.catalog.team.customerCandidates(catalogId, params)
+                    : apiService.catalog.team.peopleCandidates(catalogId, params));
                 if (alive) {
                     setResults(res?.items || []);
                     setSuggested(!!res?.suggested);
@@ -175,7 +175,7 @@ export default function ConnectionRequestModal({ open, onClose, catalogId, canAs
             }
         })();
         return () => { alive = false; };
-    }, [open, catalogId, scope, debounced, fProvince, fCity, fSector, fRole, fSalesType]);
+    }, [open, catalogId, scope, debounced, fProvince, fCity, fSector, fRole]);
 
     if (!open) return null;
 
@@ -188,27 +188,8 @@ export default function ConnectionRequestModal({ open, onClose, catalogId, canAs
                 businessId: b.id,
                 ...(assignTo ? { sellerUserId: assignTo } : {}),
             });
-            toast.success((res?.message || 'بازوی خرید ارسال شد — در انتظار تایید صاحب کسب‌وکار') + quotaSuffix(res?.quota));
+            toast.success((res?.message || 'درخواست ثبت خریدار ارسال شد — در انتظار پذیرش خریدار') + quotaSuffix(res?.quota));
             markSent(`biz-${b.id}`);
-            refreshQuota();
-        } catch (e: any) {
-            handleSendError(e, 'خطا در ارسال درخواست');
-        } finally {
-            setBusyId(null);
-        }
-    };
-
-    const sendSupplierOrService = async (c: any) => {
-        setBusyId(c.id);
-        try {
-            const isService = c.salesType === 'service';
-            const res = isService
-                ? await apiService.catalog.team.inviteService(catalogId, c.id)
-                : await apiService.catalog.team.inviteSupplier(catalogId, c.id);
-            toast.success((res?.message || (isService
-                ? 'درخواست تامین خدمات ارسال شد — در انتظار تایید صاحب کاتالوگ'
-                : 'درخواست تامین‌کنندگی ارسال شد — در انتظار تایید صاحب کاتالوگ')) + quotaSuffix(res?.quota));
-            markSent(`cat-${c.id}`);
             refreshQuota();
         } catch (e: any) {
             handleSendError(e, 'خطا در ارسال درخواست');
@@ -221,7 +202,7 @@ export default function ConnectionRequestModal({ open, onClose, catalogId, canAs
         setBusyId(u.id);
         try {
             const res = await apiService.catalog.team.inviteSeller(catalogId, u.id, inviteRole);
-            toast.success((res?.message || 'دعوت همکاری در فروش ارسال شد') + quotaSuffix(res?.quota));
+            toast.success((res?.message || 'دعوت همکاری در فروش ارسال شد — در انتظار پذیرش همکار') + quotaSuffix(res?.quota));
             markSent(`usr-${u.id}`);
             refreshQuota();
         } catch (e: any) {
@@ -240,12 +221,16 @@ export default function ConnectionRequestModal({ open, onClose, catalogId, canAs
                 className="bg-white dark:bg-gray-900 w-full sm:max-w-xl rounded-t-2xl sm:rounded-2xl p-5 max-h-[88vh] overflow-y-auto"
                 onClick={(e) => e.stopPropagation()}
             >
-                {/* سربرگ */}
+                {/* سربرگ — عنوان بسته به مود (خواستهٔ مالک: حرفه‌ای و روشن) */}
                 <div className="flex items-start justify-between gap-3 mb-3">
                     <div>
-                        <p className="font-bold text-gray-900 dark:text-gray-100">درخواست ارتباط تجاری</p>
+                        <p className="font-bold text-gray-900 dark:text-gray-100">
+                            {mode === 'team' ? 'افزودن به تیم فروش' : 'درخواست ارتباط با خریدار'}
+                        </p>
                         <p className="text-[11px] text-gray-500 dark:text-gray-400 mt-0.5">
-                            پیشنهادِ مرتبط‌ترین مخاطبان — یا جستجو و فیلتر کن
+                            {mode === 'team'
+                                ? 'همکارِ فروش از میان اعضای دیمت یا مخاطبین تلفنت — پذیرش با خودِ دعوت‌شده'
+                                : 'خریدار از میان کسب‌وکارها یا مخاطبین تلفنت — پذیرش با خودِ خریدار'}
                         </p>
                     </div>
                     <button onClick={onClose} className="p-2 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-800 flex-shrink-0">
@@ -253,9 +238,9 @@ export default function ConnectionRequestModal({ open, onClose, catalogId, canAs
                     </button>
                 </div>
 
-                {/* فیلتر دیواری — چهار مسیر */}
-                <div className="grid grid-cols-4 gap-2 mb-3">
-                    {SCOPES.map(({ key, label, icon: Icon }) => (
+                {/* تب‌های مود — دو مسیر (فیلتر دیواری) */}
+                <div className="grid grid-cols-2 gap-2 mb-3">
+                    {scopeList.map(({ key, label, icon: Icon }) => (
                         <button
                             key={key}
                             onClick={() => { setScope(key); setResults([]); }}
@@ -272,7 +257,7 @@ export default function ConnectionRequestModal({ open, onClose, catalogId, canAs
                     ))}
                 </div>
                 <p className="text-[11px] text-gray-400 mb-3 leading-5">
-                    {SCOPES.find((s) => s.key === scope)?.hint}
+                    {scopeList.find((s) => s.key === scope)?.hint}
                 </p>
 
                 {/* سهمیه و هزینهٔ درخواست ارتباط — عضوگیری پارامتری */}
@@ -305,8 +290,8 @@ export default function ConnectionRequestModal({ open, onClose, catalogId, canAs
                     )
                 )}
 
-                {/* انتساب مسئول فروش — فقط مالک/مدیر با بیش از یک فروشنده */}
-                {(scope === 'businesses' || scope === 'contacts') && canAssign && sellers.length > 1 && (
+                {/* انتساب مسئول فروش — فقط مود خریداران، مالک/مدیر با بیش از یک فروشنده */}
+                {mode === 'buyers' && canAssign && sellers.length > 1 && (
                     <div className="mb-3">
                         <label className="text-xs text-gray-500 dark:text-gray-400 mb-1 block">مسئول فروش این خریدار</label>
                         <select
@@ -322,8 +307,8 @@ export default function ConnectionRequestModal({ open, onClose, catalogId, canAs
                     </div>
                 )}
 
-                {/* نقش دعوت — تب افراد */}
-                {scope === 'people' && (
+                {/* نقش دعوت — مود تیم (افراد و مخاطبین) */}
+                {mode === 'team' && (
                     <div className="flex gap-2 mb-3">
                         {([['seller', 'فروشنده'], ['visitor', 'بازاریاب (ویزیتور)']] as const).map(([val, label]) => (
                             <button
@@ -342,34 +327,57 @@ export default function ConnectionRequestModal({ open, onClose, catalogId, canAs
                     </div>
                 )}
 
-                {/* 📱 تب مخاطبین — دفترچهٔ تلفن: اعضا درخواست می‌گیرند، غیراعضا دعوت */}
+                {/* 📱 تب مخاطبین — دفترچهٔ تلفن:
+                      مود team     → اعضای دیمت دعوت همکاری در فروش می‌گیرند، غیراعضا لینک کاتالوگ
+                      مود buyers   → کسب‌وکار اعضای دیمت ثبت خریدار می‌شود، غیراعضا لینک کاتالوگ */}
                 {scope === 'contacts' && (
                     <PhoneContactsPanel
                         title="دفترچهٔ مخاطبین تلفن تو"
-                        membersTitle="اعضای دیمت — درخواست بازوی خرید به کسب‌وکارشان می‌رود"
+                        membersTitle={mode === 'team'
+                            ? 'اعضای دیمت — دعوت همکاری در فروش می‌گیرند'
+                            : 'اعضای دیمت — درخواست بازوی خرید به کسب‌وکارشان می‌رود'}
                         inviteTitle="دعوت به دیمت — لینک کاتالوگ را می‌گیرند"
-                        memberSend={{
-                            label: 'ارسال',
-                            doneLabel: 'درخواست رفت',
-                            reason: (c) => (c.matchedUser?.business ? null : 'کسب‌وکاری ثبت نکرده — با دعوت، لینک کاتالوگ را بفرست'),
-                            onSend: async (c) => {
-                                const biz = c.matchedUser!.business!;
-                                try {
-                                    const res = await apiService.catalog.team.addCustomer(catalogId, {
-                                        businessId: biz.id,
-                                        ...(assignTo ? { sellerUserId: assignTo } : {}),
-                                    });
-                                    toast.success((res?.message || 'بازوی خرید ارسال شد — در انتظار تایید صاحب کسب‌وکار') + quotaSuffix(res?.quota));
-                                    refreshQuota();
-                                } catch (e: any) {
-                                    if (e?.response?.data?.errorCode === 'INSUFFICIENT_CREDIT') {
+                        memberSend={mode === 'team'
+                            ? {
+                                label: 'دعوت',
+                                doneLabel: 'دعوت رفت',
+                                reason: () => null,
+                                onSend: async (c) => {
+                                    try {
+                                        const res = await apiService.catalog.team.inviteSeller(catalogId, c.matchedUser!.id, inviteRole);
+                                        toast.success((res?.message || 'دعوت همکاری در فروش ارسال شد — در انتظار پذیرش همکار') + quotaSuffix(res?.quota));
                                         refreshQuota();
-                                        throw new Error(e?.response?.data?.message || 'موجودی اعتبار کافی نیست');
+                                    } catch (e: any) {
+                                        if (e?.response?.data?.errorCode === 'INSUFFICIENT_CREDIT') {
+                                            refreshQuota();
+                                            throw new Error(e?.response?.data?.message || 'موجودی اعتبار کافی نیست');
+                                        }
+                                        throw e;
                                     }
-                                    throw e;
-                                }
-                            },
-                        }}
+                                },
+                            }
+                            : {
+                                label: 'ارسال',
+                                doneLabel: 'درخواست رفت',
+                                reason: (c) => (c.matchedUser?.business ? null : 'کسب‌وکاری ثبت نکرده — با دعوت، لینک کاتالوگ را بفرست'),
+                                onSend: async (c) => {
+                                    const biz = c.matchedUser!.business!;
+                                    try {
+                                        const res = await apiService.catalog.team.addCustomer(catalogId, {
+                                            businessId: biz.id,
+                                            ...(assignTo ? { sellerUserId: assignTo } : {}),
+                                        });
+                                        toast.success((res?.message || 'درخواست ثبت خریدار ارسال شد — در انتظار پذیرش خریدار') + quotaSuffix(res?.quota));
+                                        refreshQuota();
+                                    } catch (e: any) {
+                                        if (e?.response?.data?.errorCode === 'INSUFFICIENT_CREDIT') {
+                                            refreshQuota();
+                                            throw new Error(e?.response?.data?.message || 'موجودی اعتبار کافی نیست');
+                                        }
+                                        throw e;
+                                    }
+                                },
+                            }}
                         invite={{
                             label: 'دعوت به دیمت',
                             getText: () => 'سلام! کاتالوگ قیمتی ما در دیمت را ببین:',
@@ -385,11 +393,7 @@ export default function ConnectionRequestModal({ open, onClose, catalogId, canAs
                     <input
                         value={q}
                         onChange={(e) => setQ(e.target.value)}
-                        placeholder={
-                            scope === 'businesses' ? 'نام کسب‌وکار یا شمارهٔ تماس…'
-                            : scope === 'catalogs' ? 'نام کاتالوگ یا کسب‌وکار…'
-                            : 'نام یا شمارهٔ موبایل…'
-                        }
+                        placeholder={scope === 'businesses' ? 'نام کسب‌وکار یا شمارهٔ تماس…' : 'نام یا شمارهٔ موبایل…'}
                         className="w-full pr-9 pl-3 py-2.5 rounded-xl bg-gray-50 dark:bg-gray-800 border border-outline-variant/40 text-sm"
                     />
                     {searching && <Loader2 className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 animate-spin text-gray-400" />}
@@ -420,7 +424,7 @@ export default function ConnectionRequestModal({ open, onClose, catalogId, canAs
                         )}
                     </div>
                     {showFilters && (
-                        <div className={cn('grid grid-cols-2 gap-2 px-3 pb-3', scope !== 'catalogs' && 'sm:grid-cols-2')}>
+                        <div className="grid grid-cols-2 gap-2 px-3 pb-3">
                             <select
                                 value={fProvince}
                                 onChange={(e) => { setFProvince(e.target.value); setFCity(''); }}
@@ -463,18 +467,6 @@ export default function ConnectionRequestModal({ open, onClose, catalogId, canAs
                                     <option key={c.id} value={c.id}>{c.label}</option>
                                 ))}
                             </select>
-                            {scope === 'catalogs' && (
-                                <select
-                                    value={fSalesType}
-                                    onChange={(e) => setFSalesType(e.target.value)}
-                                    className={cn(selectCls, 'col-span-2')}
-                                >
-                                    <option value="">همهٔ انواع کاتالوگ</option>
-                                    <option value="wholesale">عمده‌فروشی</option>
-                                    <option value="retail">خرده‌فروشی</option>
-                                    <option value="service">خدماتی</option>
-                                </select>
-                            )}
                         </div>
                     )}
                 </div>
@@ -496,42 +488,30 @@ export default function ConnectionRequestModal({ open, onClose, catalogId, canAs
                 <div className="space-y-2">
                     {results.map((item: any) => {
                         const isBiz = scope === 'businesses';
-                        const isCat = scope === 'catalogs';
-                        const isServiceCat = isCat && item.salesType === 'service';
-                        const key = isBiz ? `biz-${item.id}` : isCat ? `cat-${item.id}` : `usr-${item.id}`;
+                        const key = isBiz ? `biz-${item.id}` : `usr-${item.id}`;
                         const sent = sentIds.has(key);
                         const location = [item.province, item.city].filter(Boolean).join(' · ');
-                        const roleLabel = isBiz ? ROLE_LABEL[item.businessRole] : isCat ? ROLE_LABEL[item.business?.businessRole] : '';
-                        const catLocation = isCat ? [item.province || item.business?.province, item.city || item.business?.city].filter(Boolean).join(' · ') : '';
+                        const roleLabel = isBiz ? ROLE_LABEL[item.businessRole] : '';
                         const tags: string[] = item.relevanceTags || [];
                         return (
                             <div key={key} className="flex items-center gap-3 p-3 rounded-xl border border-outline-variant/30 dark:border-gray-800">
-                                {!isBiz && !isCat && item.avatarUrl ? (
+                                {!isBiz && item.avatarUrl ? (
                                     <img src={resolveFileSrc(item.avatarUrl)!} alt="" className="w-9 h-9 rounded-xl object-cover flex-shrink-0" />
                                 ) : (
                                     <span className="w-9 h-9 rounded-xl bg-gray-100 dark:bg-gray-800 grid place-items-center flex-shrink-0 text-gray-400">
-                                        {isBiz ? <Store className="w-4 h-4" /> : isCat ? <BookOpen className="w-4 h-4" /> : <User className="w-4 h-4" />}
+                                        {isBiz ? <Store className="w-4 h-4" /> : <User className="w-4 h-4" />}
                                     </span>
                                 )}
                                 <div className="flex-1 min-w-0">
                                     <p className="font-bold text-sm text-gray-900 dark:text-gray-100 truncate flex items-center gap-1.5">
-                                        {isBiz || isCat ? item.name : (item.fullName || 'کاربر دیمت')}
-                                        {isCat && item.slug && (
-                                            <Link href={`/${item.slug}`} target="_blank" title="مشاهدهٔ کاتالوگ"
-                                                  className="text-primary/70 hover:text-primary flex-shrink-0">
-                                                <ExternalLink className="w-3.5 h-3.5" />
-                                            </Link>
-                                        )}
+                                        {isBiz ? item.name : (item.fullName || 'کاربر دیمت')}
                                     </p>
                                     <p className="text-[11px] text-gray-500 dark:text-gray-400 truncate">
                                         {isBiz && (item.owner?.fullName ? `صاحب: ${item.owner.fullName}` : '')}
                                         {isBiz && location ? ` · ${location}` : ''}
                                         {isBiz && roleLabel ? ` · ${roleLabel}` : ''}
-                                        {isCat && (item.business?.name ? `${item.business.name}` : '')}
-                                        {isCat && item.salesType ? ` · ${SALES_TYPE_LABEL[item.salesType] || item.salesType}` : ''}
-                                        {isCat && catLocation ? ` · ${catLocation}` : ''}
-                                        {!isBiz && !isCat && item.businessName ? `${item.businessName}` : ''}
-                                        {!isBiz && !isCat && item.phone ? <> · <span dir="ltr">{item.phone}</span></> : null}
+                                        {!isBiz && item.businessName ? `${item.businessName}` : ''}
+                                        {!isBiz && item.phone ? <> · <span dir="ltr">{item.phone}</span></> : null}
                                     </p>
                                     {tags.length > 0 && (
                                         <div className="flex flex-wrap gap-1 mt-1">
@@ -547,13 +527,12 @@ export default function ConnectionRequestModal({ open, onClose, catalogId, canAs
                                     <span className="text-[11px] font-bold text-emerald-600 dark:text-emerald-400 flex-shrink-0">ارسال شد ✓</span>
                                 ) : (
                                     <button
-                                        onClick={() => (isBiz ? sendBuyerRequest(item) : isCat ? sendSupplierOrService(item) : sendSellerInvite(item))}
+                                        onClick={() => (isBiz ? sendBuyerRequest(item) : sendSellerInvite(item))}
                                         className="px-3 py-2 rounded-xl bg-primary text-white text-xs font-bold flex-shrink-0 flex items-center gap-1.5 hover:opacity-90 active:scale-95 transition"
                                     >
-                                        {isBiz && <><ShoppingBasket className="w-3.5 h-3.5" /> بازوی خرید</>}
-                                        {isCat && !isServiceCat && <><Truck className="w-3.5 h-3.5" /> درخواست تامین‌کنندگی</>}
-                                        {isCat && isServiceCat && <><Wrench className="w-3.5 h-3.5" /> درخواست تامین خدمات</>}
-                                        {!isBiz && !isCat && <><Handshake className="w-3.5 h-3.5" /> دعوت</>}
+                                        {isBiz
+                                            ? <><ShoppingBasket className="w-3.5 h-3.5" /> درخواست ارتباط</>
+                                            : <><Handshake className="w-3.5 h-3.5" /> دعوت</>}
                                     </button>
                                 )}
                             </div>

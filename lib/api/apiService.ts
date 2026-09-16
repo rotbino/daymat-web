@@ -343,6 +343,9 @@ export const apiService = {
             removeSupplier: (catalogId: string, memberId: string, note?: string): Promise<any> =>
                 apiRequest(`/catalog/${catalogId}/team/suppliers/${memberId}${note ? `?note=${encodeURIComponent(note)}` : ''}`, { method: 'DELETE' }),
 
+            removeService: (catalogId: string, memberId: string, note?: string): Promise<any> =>
+                apiRequest(`/catalog/${catalogId}/team/services/${memberId}${note ? `?note=${encodeURIComponent(note)}` : ''}`, { method: 'DELETE' }),
+
             setSellerRole: (catalogId: string, memberId: string, sellerRole: 'seller' | 'visitor'): Promise<any> =>
                 apiRequest(`/catalog/${catalogId}/team/sellers/${memberId}/role`, { method: 'PATCH', data: { sellerRole } }),
 

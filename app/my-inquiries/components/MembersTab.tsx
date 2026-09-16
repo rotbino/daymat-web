@@ -16,12 +16,13 @@ import { motion } from 'framer-motion';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import {
     Handshake, UserPlus, Check, X, Trash2, Loader2, Search,
-    Hourglass, ExternalLink, ShieldCheck, Users, Smartphone,
+    Hourglass, ExternalLink, ShieldCheck, Users, Smartphone, XCircle,
 } from 'lucide-react';
 import { toast } from 'sonner';
 import { apiService } from '@/lib/api/apiService';
 import { useInquiryMembers, useAddInquiryMember, useDecideInquiryMember } from '@/lib/api/apiHooks';
 import PhoneContactsPanel from '@/components/share/PhoneContactsPanel';
+import OfferCallButton from '@/app/components/OfferCallButton';
 import { IranLocationSelector } from '@/app/components/IranLocationSelector';
 import { DropSelector } from '@/components/common/DropSelector';
 
@@ -48,6 +49,8 @@ export default function MembersTab({ inquiryId, visibility, slug }: Props) {
     const incoming = list.filter((m) => m.status === 'pending' && m.via === 'supplier_request');
     const invited = list.filter((m) => m.status === 'pending' && m.via === 'buyer_add');
     const active = list.filter((m) => m.status === 'active');
+    // ✅ ردشده‌ها — دعوت‌های «ما فرستادیم، تامین‌کننده رد کرد» (خواستهٔ مالک: دیده شود + دکمهٔ حذف)
+    const declinedMine = list.filter((m) => m.status === 'declined' && m.via === 'buyer_add');
 
     const run = async (key: string, fn: () => Promise<any>, msg: string) => {
         setBusyId(key);
@@ -61,7 +64,7 @@ export default function MembersTab({ inquiryId, visibility, slug }: Props) {
         }
     };
 
-    const memberRow = (m: any, mode: 'active' | 'incoming' | 'invited') => {
+    const memberRow = (m: any, mode: 'active' | 'incoming' | 'invited' | 'declined') => {
         const cat = m.catalog || {};
         const busy = busyId === m.id;
         return (
@@ -69,7 +72,7 @@ export default function MembersTab({ inquiryId, visibility, slug }: Props) {
                 key={m.id}
                 initial={{ opacity: 0, y: 8 }}
                 animate={{ opacity: 1, y: 0 }}
-                className={`flex items-center gap-3 rounded-xl p-2.5 ${mode === 'incoming' ? 'bg-brand-contrast-soft/50 dark:bg-amber-500/5' : 'hover:bg-stone-50 dark:hover:bg-gray-800/50'}`}
+                className={`flex items-center gap-3 rounded-xl p-2.5 ${mode === 'incoming' ? 'bg-brand-contrast-soft/50 dark:bg-amber-500/5' : mode === 'declined' ? 'bg-rose-50/60 dark:bg-rose-900/10' : 'hover:bg-stone-50 dark:hover:bg-gray-800/50'}`}
             >
                 <span className="grid size-10 shrink-0 place-items-center overflow-hidden rounded-xl bg-stone-100 dark:bg-gray-800">
                     {cat.logoUrl
@@ -90,6 +93,8 @@ export default function MembersTab({ inquiryId, visibility, slug }: Props) {
                     <Loader2 className="size-4 shrink-0 animate-spin text-stone-400" />
                 ) : mode === 'incoming' ? (
                     <div className="flex shrink-0 items-center gap-1.5">
+                        {/* ✅ تماس با متقاضی — همیشه (شمارهٔ ثبت‌نام شخص) */}
+                        <OfferCallButton phone={m.user?.phone} title="تماس با متقاضی همکاری" />
                         <button
                             onClick={() => run(m.id, () => decide.mutateAsync({ inquiryId, memberId: m.id, status: 'active' }), 'درخواست همکاری تایید شد')}
                             className="inline-flex h-8 items-center gap-1 rounded-lg bg-emerald-600 px-2.5 text-[11px] font-extrabold text-white shadow-sm transition hover:bg-emerald-700 active:scale-95"
@@ -120,6 +125,16 @@ export default function MembersTab({ inquiryId, visibility, slug }: Props) {
                                 <Hourglass className="size-3" /> در انتظار پذیرش تامین‌کننده
                             </span>
                         )}
+                        {mode === 'declined' && (
+                            <span className="flex items-center gap-1 rounded-full bg-rose-50 px-2 py-0.5 text-[9px] font-black text-rose-700 dark:bg-rose-900/25 dark:text-rose-300">
+                                <XCircle className="size-3" /> درخواست رد شده
+                            </span>
+                        )}
+                        {/* ✅ تماس با تامین‌کننده — همیشه (شمارهٔ ثبت‌نام؛ یادآوری پذیرش/اتصال تیم را قوی‌تر می‌کند) */}
+                        <OfferCallButton
+                            phone={m.user?.phone}
+                            title={mode === 'invited' ? 'تماس — یادآوری پذیرش درخواست همکاری' : `تماس با ${m.user?.fullName || 'تامین‌کننده'}`}
+                        />
                         <button
                             onClick={() => {
                                 if (window.confirm(`«${cat.name}» از تامین‌کننده‌ها حذف شود؟`)) {
@@ -180,7 +195,7 @@ export default function MembersTab({ inquiryId, visibility, slug }: Props) {
 
                     {/* همکارهای فعال */}
                     <div className={`${card} p-2`}>
-                        {active.length === 0 && invited.length === 0 ? (
+                        {active.length === 0 && invited.length === 0 && declinedMine.length === 0 ? (
                             <div className="px-4 py-8 text-center">
                                 <Handshake className="mx-auto size-8 text-stone-200 dark:text-gray-700" />
                                 <p className="mt-2 text-[13px] font-black text-stone-500 dark:text-gray-400">هنوز تامین‌کننده‌ای نداری</p>
@@ -198,6 +213,8 @@ export default function MembersTab({ inquiryId, visibility, slug }: Props) {
                             <>
                                 {active.map((m) => memberRow(m, 'active'))}
                                 {invited.map((m) => memberRow(m, 'invited'))}
+                                {/* ✅ ردشده‌ها — همان‌جا دیده می‌شوند و دکمهٔ حذف دارند (خواستهٔ مالک) */}
+                                {declinedMine.map((m) => memberRow(m, 'declined'))}
                             </>
                         )}
                     </div>
