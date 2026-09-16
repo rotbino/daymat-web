@@ -1464,9 +1464,16 @@ export const apiService = {
         getMembers: (inquiryId: string): Promise<any[]> =>
             apiRequest(`/inquiry/${inquiryId}/members`),
 
-        /** جست‌وجوی کاتالوگ قیمت برای دعوت تامین‌کننده (مالک) */
-        supplierCandidates: (inquiryId: string, q?: string): Promise<{ items: any[] }> =>
-            apiRequest(`/inquiry/${inquiryId}/supplier-candidates${q?.trim() ? `?q=${encodeURIComponent(q.trim())}` : ''}`),
+        /** جست‌وجوی کاتالوگ قیمت برای درخواست همکاری تامین‌کننده (مالک) — فیلتر استان/شهر/صنف */
+        supplierCandidates: (inquiryId: string, f?: { q?: string; provinceCode?: string; cityCode?: string; industry?: string }): Promise<{ items: any[] }> => {
+            const p = new URLSearchParams();
+            if (f?.q?.trim()) p.set('q', f.q.trim());
+            if (f?.provinceCode?.trim()) p.set('provinceCode', f.provinceCode.trim());
+            if (f?.cityCode?.trim()) p.set('cityCode', f.cityCode.trim());
+            if (f?.industry?.trim()) p.set('industry', f.industry.trim());
+            const qs = p.toString();
+            return apiRequest(`/inquiry/${inquiryId}/supplier-candidates${qs ? `?${qs}` : ''}`);
+        },
 
         /** دعوت تامین‌کننده توسط خریدار — تایید نهایی با تامین‌کننده */
         addMember: (inquiryId: string, data: { catalogId: string; note?: string }): Promise<any> =>

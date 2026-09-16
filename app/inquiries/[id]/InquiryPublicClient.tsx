@@ -314,7 +314,7 @@ export default function InquiryPublicClient({ idOrSlug }: { idOrSlug: string }) 
     const ownerAvatar = inquiry.owner?.avatarUrl || null;
     const isLive = isOpen && !deadlineOver;
 
-    // ✅ ارتباط تجاری سه‌حالته — «ارسال درخواست تامین» (خواستهٔ مالک): هم عمومی هم خصوصی
+    // ✅ ارتباط تجاری سه‌حالته — «ارسال درخواست همکاری» (خواستهٔ مالک): هم عمومی هم خصوصی
     //     none → دکمه | pending → چیپ «در انتظار تایید» | member → چیپ «تاییدشده»
     const openCoop = () => {
         // 🛒 همان مدال سناریومحور دکمهٔ پیشنهاد — مهمان/بدون کاتالوگ/انتخاب کاتالوگ همه‌جا یک‌جور
@@ -332,18 +332,18 @@ export default function InquiryPublicClient({ idOrSlug }: { idOrSlug: string }) 
             </span>
         );
         if (accessState === 'pending' || requestedSelf) return (
-            <span aria-label="درخواست تامین در انتظار تایید خریدار است"
+            <span aria-label="درخواست همکاری در انتظار تایید خریدار است"
                 className={`flex h-11 w-full items-center justify-center gap-1.5 rounded-xl border border-brand-accent-tint bg-brand-accent-soft text-sm font-bold text-amber-700 dark:border-amber-500/30 dark:bg-amber-500/10 dark:text-amber-300 ${className}`}>
                 <Clock className="size-4" />
-                درخواست تامین در انتظار تایید خریدار
+                درخواست همکاری در انتظار تایید خریدار
             </span>
         );
         return (
-            <button onClick={openCoop} aria-label="ارسال درخواست تامین"
-                title="با کاتالوگ قیمتت به این خریدار درخواست تامین بده"
+            <button onClick={openCoop} aria-label="ارسال درخواست همکاری"
+                title="با کاتالوگ قیمتت به این خریدار درخواست همکاری بده"
                 className={`flex h-11 w-full items-center justify-center gap-2 rounded-xl bg-primary text-sm font-extrabold text-on-primary shadow-lg shadow-primary/25 transition-all hover:scale-[1.01] hover:opacity-95 active:scale-95 ${className}`}>
                 <Handshake className="size-4" />
-                ارسال درخواست تامین
+                ارسال درخواست همکاری
             </button>
         );
     };
