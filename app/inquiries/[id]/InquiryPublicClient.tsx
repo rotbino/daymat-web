@@ -229,9 +229,13 @@ export default function InquiryPublicClient({ idOrSlug }: { idOrSlug: string }) 
         } catch { /* noop */ }
     };
 
-    // ☎️ تماس با خریدار — contactPhone از بک: اول شمارهٔ کسب‌وکار؛ نبود؟ شمارهٔ خودِ مالک (کنترل‌شده)
-    //    (خواستهٔ مالک: دکمهٔ تماس «همیشه» جلوی چشم باشد — اگر خواست همان لحظه تماس بگیرد)
-    const bizPhone: string | undefined = (inquiry as any)?.contactPhone || inquiry?.business?.phone || undefined;
+    // ☎️ تماس با خریدار — فقط contactPhone کنترل‌شدهٔ بک (با اجازهٔ خریدار در تنظیمات بازو):
+    //    اجازه دارد؟ اول شمارهٔ کسب‌وکار، نبود؟ شمارهٔ خود مالک. دیگر هیچ فال‌بک محلی‌ای نیست تا
+    //    خاموش‌کردن تنظیم، دکمه را واقعاً حذف کند (خواستهٔ مالک: فرمان دست خود خریدار باشد)
+    const bizPhone: string | undefined = (inquiry as any)?.contactPhone || undefined;
+    // ⚙️ اجازهٔ نمایش شماره (تنظیمات بازو) — برای پیوضیت وضعیت در باکس خریدارِ مالک؛
+    //    بازوهای قدیمی (فیلد ندارند) اجازه‌دار فرض می‌شوند
+    const showContactAllowed = (inquiry as any)?.showContactPhone !== false;
 
     // 💾 ذخیرهٔ مخاطب — vCard استاندارد؛ موبایل بازش می‌کند و به مخاطبین اضافه می‌شود
     //    (خواستهٔ مالک: کنار «تماس» بماند — کاربر اجازهٔ دسترسی مخاطبین را می‌دهد
@@ -521,15 +525,32 @@ export default function InquiryPublicClient({ idOrSlug }: { idOrSlug: string }) 
                                 {/* نقش مالک در کسب‌وکار — بازدیدکننده بفهمد با چه نقشی طرف است
                                     (خواستهٔ مالک: هر نقشی ممکن است برای خودش بازوی تامین جدا بسازد) */}
                                 {isOwner ? (
-                                    <p className="mt-0.5 text-[10px] font-bold text-stone-400 dark:text-gray-500">این بازوی خرید مال توست</p>
+                                    <>
+                                        <p className="mt-0.5 text-[10px] font-bold text-stone-400 dark:text-gray-500">این بازوی خرید مال توست</p>
+                                        {/* ⚙️ وضعیت «نمایش شمارهٔ من» — مالک بفهمد تامین‌کننده می‌تواند تماس بگیرد یا نه
+                                            (خواستهٔ مالک: فرمان تنظیم دست خود خریدار باشد) */}
+                                        <p className="mt-0.5 flex items-center gap-1 text-[10px] font-bold text-stone-400 dark:text-gray-500">
+                                            {showContactAllowed ? (
+                                                <>
+                                                    <PhoneCall className="size-3 text-primary" />
+                                                    شمارهٔ شما برای تامین‌کننده‌ها فعال است
+                                                </>
+                                            ) : (
+                                                <>
+                                                    <Lock className="size-3" />
+                                                    شمارهٔ شما پنهان است — در تنظیمات بازو روشنش کن
+                                                </>
+                                            )}
+                                        </p>
+                                    </>
                                 ) : (
                                     <p className="mt-0.5 text-[10px] font-bold text-primary">
                                         {inquiry.ownerPosition || 'خریدار'}
                                     </p>
                                 )}
                             </div>
-                            {/* ☎️ تماس (پررنگ — سبز برند) + 💾 ذخیرهٔ مخاطب (کم‌نماتر — خواستهٔ مالک):
-                                هر دو همیشه برای غیرمالک — تماس با فال‌بک شمارهٔ مالک دیگر هرگز حذف نمی‌شود */}
+                            {/* ☎️ تماس (پررنگ — سبز برند) + 💾 ذخیرهٔ مخاطب (کم‌نماتر) — کنار هم جلوی عکس و اسم
+                                خریدار (خواستهٔ مالک)؛ هر دو فقط تا وقتی خریدار اجازهٔ نمایش شماره داده (تنظیمات بازو) */}
                             {!isOwner && bizPhone && (
                                 <a href={`tel:${bizPhone}`} aria-label="تماس با خریدار" title="تماس با خریدار"
                                     className="inline-flex h-9 shrink-0 items-center gap-1 rounded-lg bg-primary px-3.5 text-[11px] font-extrabold text-on-primary shadow-sm transition active:scale-95">
@@ -537,7 +558,7 @@ export default function InquiryPublicClient({ idOrSlug }: { idOrSlug: string }) 
                                     تماس
                                 </a>
                             )}
-                            {!isOwner && (
+                            {!isOwner && bizPhone && (
                                 <button onClick={saveContact} aria-label="ذخیرهٔ مخاطب" title="ذخیرهٔ مخاطب"
                                     className="inline-flex h-9 shrink-0 items-center gap-1 rounded-lg border border-stone-200 bg-white px-3 text-[11px] font-bold text-stone-500 transition active:scale-95 dark:border-gray-700 dark:bg-gray-900 dark:text-gray-300">
                                     <UserPlus className="size-3.5 text-brand-accent-strong" />

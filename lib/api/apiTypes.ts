@@ -861,6 +861,8 @@ export interface InquiryDetail extends InquiryBase {
     ownerPosition?: string | null;
     /** ☎️ شمارهٔ تماس عمومی صفحه — اول کسب‌وکار، فال‌بک شمارهٔ مالک (کنترل‌شده در بک) */
     contactPhone?: string | null;
+    /** ⚙️ اجازهٔ خریدار برای دیدن/ذخیرهٔ شماره‌اش (تنظیمات بازو) — بک فقط با اجازه contactPhone می‌فرستد */
+    showContactPhone?: boolean | null;
 }
 
 export interface InquiryOffer {

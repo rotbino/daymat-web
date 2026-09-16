@@ -39,6 +39,9 @@ export default function SettingsTab({ detail, onSave, onOpenUnits, onToggleStatu
     const [paymentTerms, setPaymentTerms] = useState('');
     const [visibility, setVisibility] = useState<'public' | 'private'>('public');
     const [allowNonUrgentOffers, setAllowNonUrgent] = useState(true);
+    // ☎️ نمایش شمارهٔ تماس من — فرمان دست خود خریدار (خواستهٔ مالک):
+    //    روشن = تامین‌کننده می‌تواند شماره را ببیند/ذخیره کند/تماس بگیرد؛ خاموش = پنهان
+    const [showContactPhone, setShowContactPhone] = useState(true);
     // ✅ آدرس عمومی — قابل ویرایش مثل کاتالوگ قیمت (لینک قدیمی /inquiries/{id} هم همچنان کار می‌کند)
     const [slug, setSlug] = useState('');
     const [slugStatus, setSlugStatus] = useState<'taken' | 'reserved' | null>(null);
@@ -58,6 +61,8 @@ export default function SettingsTab({ detail, onSave, onOpenUnits, onToggleStatu
         setPaymentTerms(detail.paymentTerms || '');
         setVisibility(detail.visibility === 'private' ? 'private' : 'public');
         setAllowNonUrgent(detail.allowNonUrgentOffers !== false);
+        // بازوهای قدیمی (بدون فیلد) اجازه‌دار فرض می‌شوند — هماهنگ با گیت بک
+        setShowContactPhone(detail.showContactPhone !== false);
         setSlug(detail.slug || '');
         setSlugStatus(null);
     }, [detail?.id]); // eslint-disable-line react-hooks/exhaustive-deps
@@ -88,6 +93,7 @@ export default function SettingsTab({ detail, onSave, onOpenUnits, onToggleStatu
                 paymentTerms: paymentTerms.trim() || undefined,
                 visibility,
                 allowNonUrgentOffers,
+                showContactPhone,
                 ...(slug.trim() && slug.trim() !== (detail.slug || '') ? { slug: slug.trim() } : {}),
             });
             toast.success('تنظیمات ذخیره شد');
@@ -187,6 +193,19 @@ export default function SettingsTab({ detail, onSave, onOpenUnits, onToggleStatu
                             sub={allowNonUrgentOffers
                                 ? 'تامین‌کننده‌ها برای سایر کالاها هم قیمت می‌فرستند'
                                 : 'فقط روی اقلام با بازوی خرید فعال قیمت می‌گیرید'}
+                        />
+                    </div>
+
+                    {/* ☎️ نمایش شمارهٔ تماس من — خریدار خودش تصمیم می‌گیرد (خواستهٔ مالک: فرمان دست خودشون)
+                        خاموش = دکمهٔ تماس و ذخیرهٔ مخاطب از صفحهٔ عمومی حذف می‌شود */}
+                    <div className="rounded-2xl border border-stone-100 bg-stone-50 p-3.5 dark:border-gray-800 dark:bg-gray-950/60">
+                        <SwitchRow
+                            checked={showContactPhone}
+                            onChange={setShowContactPhone}
+                            label="نمایش شمارهٔ تماس من به تامین‌کننده‌ها"
+                            sub={showContactPhone
+                                ? 'می‌توانند شمارهٔ شما را ببینند، ذخیره کنند یا همان لحظه تماس بگیرند'
+                                : 'شمارهٔ شما پنهان می‌ماند — فقط پیشنهاد قیمت می‌گیرید'}
                         />
                     </div>
 
