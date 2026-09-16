@@ -40,6 +40,7 @@ import {
 } from 'lucide-react';
 import { faNum, faPrice, faTimeAgo, faDeadlineLeft, STATUS_FA, STATUS_CHIP } from '../utils';
 import OfferSheet from '@/app/components/OfferSheet';
+import OfferCallButton from '@/app/components/OfferCallButton';
 import ArmFooter from './ArmFooter';
 import { useMyInquiries } from '@/lib/api/apiHooks';
 
@@ -954,7 +955,7 @@ export default function InquiryPublicClient({ idOrSlug }: { idOrSlug: string }) 
                                                     <span className="rounded-full bg-brand-accent-soft px-2 py-0.5 text-amber-700 dark:text-amber-400">{o.itemName}</span>
                                                 )}
                                                 {o.deliveryDays != null && <span className="flex items-center gap-1"><Truck className="size-3" /> {faNum(o.deliveryDays)} روزه</span>}
-                                                {o.contactPhone && <span className="flex items-center gap-1" dir="ltr"><Phone className="size-3" /> {o.contactPhone}</span>}
+                                                {!!o.contactPhone && <OfferCallButton phone={o.contactPhone} />}
                                                 <span className={`rounded-full px-2 py-0.5 ${STATUS_CHIP[o.status] ?? ''}`}>{STATUS_FA[o.status]}</span>
                                             </div>
 

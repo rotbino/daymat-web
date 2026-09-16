@@ -183,7 +183,7 @@ export default function LeadsTab() {
                                         <ChevronDown className={cn('size-4 shrink-0 text-stone-400 transition-transform', open && 'rotate-180')} />
                                     </button>
 
-                                    {/* ✅ فرصت ارسال قیمت — ساعت باقی‌مانده (خواستهٔ مالک: «فرصت ارسال قیمت 23:30 ساعت دیگر») */}
+                                    {/* ✅ مهلت ارسال قیمت — قالب یکدست با پنل خریدار: «مهلت ارسال قیمت: ۱۲:۳۰ ساعت» (خواستهٔ مالک) */}
                                     {(() => {
                                         const dl = lead.inquiry.deadline ? new Date(lead.inquiry.deadline).getTime() : 0;
                                         if (!dl) return null;
@@ -198,12 +198,14 @@ export default function LeadsTab() {
                                         const totalMin = Math.max(1, Math.ceil(ms / 60e3));
                                         const h = Math.floor(totalMin / 60);
                                         const m = totalMin % 60;
-                                        const label = h > 0 ? `${faDigits(h)}:${faDigits(String(m).padStart(2, '0'))}` : `${faDigits(m)} دقیقه`;
+                                        const label = h > 0
+                                            ? `مهلت ارسال قیمت: ${faDigits(h)}:${faDigits(String(m).padStart(2, '0'))} ساعت`
+                                            : `مهلت ارسال قیمت: ${faDigits(m)} دقیقه`;
                                         return (
                                             <div className="border-t border-outline-variant/20 px-3.5 py-2 dark:border-gray-800">
                                                 <span className="flex items-center gap-1.5 text-[10.5px] font-extrabold text-amber-700 dark:text-amber-400">
                                                     <Clock className="size-3.5" />
-                                                    فرصت ارسال قیمت {label} ساعت دیگر
+                                                    {label}
                                                 </span>
                                             </div>
                                         );

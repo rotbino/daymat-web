@@ -6,8 +6,9 @@ import React from 'react';
 import Image from 'next/image';
 import { motion, AnimatePresence } from 'framer-motion';
 import {
-    MessageSquareText, Truck, Phone, Megaphone, Share2,
+    MessageSquareText, Truck, Megaphone, Share2,
 } from 'lucide-react';
+import OfferCallButton from '@/app/components/OfferCallButton';
 import { faNum, faPrice, faTimeAgo, STATUS_FA, STATUS_CHIP } from '../../inquiries/utils';
 import type { InquiryDetail, InquiryItem, InquiryOffer } from '@/lib/api/apiTypes';
 
@@ -93,11 +94,7 @@ export default function OffersTab({ detail, offers, loading, onDecide, onGoPubli
                                         </span>
                                     )}
                                     {o.deliveryDays != null && <span className="flex items-center gap-1"><Truck className="size-3" /> {faNum(o.deliveryDays)} روزه</span>}
-                                    {o.contactPhone && (
-                                        <a href={`tel:${o.contactPhone}`} className="flex items-center gap-1 hover:text-amber-600" dir="ltr">
-                                            <Phone className="size-3" /> {o.contactPhone}
-                                        </a>
-                                    )}
+                                    {!!o.contactPhone && <OfferCallButton phone={o.contactPhone} />}
                                     <span className={`rounded-full px-2 py-0.5 ${STATUS_CHIP[o.status] ?? ''}`}>{STATUS_FA[o.status]}</span>
                                 </div>
 

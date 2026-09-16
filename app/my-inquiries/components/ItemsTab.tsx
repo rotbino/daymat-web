@@ -39,16 +39,20 @@ interface Props {
 
 const MAX_DEADLINE_HOURS = 240;
 
-/** «۲۳:۳۰ ساعت دیگر» — ساعت:دقیقه تا مهلت */
-function remainingLabel(iso?: string | null): { h: string; expired: boolean } | null {
+/** «۱۲:۳۰ ساعت» / «۴۵ دقیقه» — برای چیپ «مهلت ارسال قیمت: …» (خواستهٔ مالک) */
+function remainingLabel(iso?: string | null): { text: string; hours: number | null; expired: boolean } | null {
     if (!iso) return null;
     const ms = new Date(iso).getTime() - Date.now();
     if (!isFinite(ms)) return null;
-    if (ms <= 0) return { h: '', expired: true };
+    if (ms <= 0) return { text: '', hours: null, expired: true };
     const totalMin = Math.max(1, Math.ceil(ms / 60e3));
     const h = Math.floor(totalMin / 60);
     const m = totalMin % 60;
-    return { h: h > 0 ? `${faDigits(h)}:${faDigits(String(m).padStart(2, '0'))}` : `${faDigits(m)} دقیقه`, expired: false };
+    return {
+        text: h > 0 ? `${faDigits(h)}:${faDigits(String(m).padStart(2, '0'))} ساعت` : `${faDigits(m)} دقیقه`,
+        hours: Math.max(1, Math.ceil(ms / 3600e3)),
+        expired: false,
+    };
 }
 
 function ItemRow({ item, offerCount, variant, busy, onEdit, onToggleUrgent, onDelete, onGoOffers }: {
@@ -183,12 +187,15 @@ export default function ItemsTab({ detail, offers, loading, onAdd, onEdit, onTog
         if (o.itemId) acc[o.itemId] = (acc[o.itemId] || 0) + 1;
         return acc;
     }, {});
-    // ✅ مهلت گروهی — نمایش باقی‌مانده + ویرایش عددی به ساعت (خواستهٔ مالک)
+    // ✅ مهلت گروهی — چیپ جمع‌وجور روبروی عنوان «اقلام در حال قیمت‌گیری» (خواستهٔ مالک) + ویرایش عددی به ساعت
     const remaining = remainingLabel(deadline);
     const deadlineActive = !!deadline && new Date(deadline).getTime() > Date.now();
-    const remHours = deadlineActive ? Math.max(1, Math.ceil((new Date(deadline!).getTime() - Date.now()) / 3600e3)) : null;
     const [deadlineOpen, setDeadlineOpen] = useState(false);
     const [deadlineHours, setDeadlineHours] = useState('');
+    const openDeadlineEditor = () => {
+        setDeadlineHours(remaining?.hours ? String(remaining.hours) : '');
+        setDeadlineOpen(true);
+    };
     const submitDeadline = () => {
         const h = parseInt((deadlineHours || '').replace(/[۰-۹]/g, (d) => String('۰۱۲۳۴۵۶۷۸۹'.indexOf(d))).replace(/[^\d]/g, ''), 10);
         if (!h || h < 1 || h > MAX_DEADLINE_HOURS) return;
@@ -248,70 +255,63 @@ export default function ItemsTab({ detail, offers, loading, onAdd, onEdit, onTog
                 </motion.div>
             ) : (
                 <>
-                    {/* ✅ مهلت گروهی ارسال قیمت — جلوی چشم خریدار، در لید تامین‌کننده هم می‌آید */}
-                    {urgentItems.length > 0 && (
-                        <div className="rounded-2xl border border-brand-contrast/30 bg-brand-contrast-soft/40 px-3.5 py-3 dark:bg-amber-500/5">
-                            <div className="flex flex-wrap items-center gap-2">
-                                <Clock className="size-4 shrink-0 text-amber-600 dark:text-amber-400" />
-                                {deadlineOpen ? (
-                                    <>
-                                        <input
-                                            value={deadlineHours}
-                                            onChange={(e) => setDeadlineHours(e.target.value.replace(/[^\d۰-۹]/g, ''))}
-                                            onKeyDown={(e) => e.key === 'Enter' && submitDeadline()}
-                                            inputMode="numeric"
-                                            autoFocus
-                                            placeholder={`مثلا ${faNum(24)}`}
-                                            className="h-9 w-24 rounded-lg border border-stone-200 bg-white px-2 text-center text-xs font-black outline-none focus:border-brand-contrast dark:border-gray-700 dark:bg-gray-950"
-                                        />
-                                        <span className="text-[10px] font-bold text-stone-400">ساعت (حداکثر {faNum(MAX_DEADLINE_HOURS)})</span>
-                                        <button onClick={submitDeadline} disabled={deadlineBusy}
-                                            className="h-8 rounded-lg bg-brand-contrast px-3 text-[11px] font-extrabold text-white disabled:opacity-50">
-                                            {deadlineBusy ? '...' : 'ثبت'}
-                                        </button>
-                                        <button onClick={() => setDeadlineOpen(false)}
-                                            className="h-8 rounded-lg border border-stone-200 px-3 text-[11px] font-bold text-stone-500 dark:border-gray-700">
-                                            بی‌خیال
-                                        </button>
-                                    </>
-                                ) : (
-                                    <>
-                                        {remaining ? (
-                                            remaining.expired
-                                                ? <span className="text-[12px] font-extrabold text-red-500">مهلت ارسال قیمت تمام شده — با ثبت مهلت جدید، قیمت‌گیری دوباره شروع می‌شود</span>
-                                                : <span className="text-[12px] font-extrabold text-amber-700 dark:text-amber-400">فرصت ارسال قیمت {remaining.h} ساعت دیگر</span>
-                                        ) : (
-                                            <span className="text-[12px] font-extrabold text-stone-500 dark:text-gray-400">اقلام در حال قیمت‌گیری — مهلتی ثبت نشده</span>
-                                        )}
-                                        <button onClick={() => {
-                                            setDeadlineHours(remHours ? String(remHours) : '');
-                                            setDeadlineOpen(true);
-                                        }}
-                                            className="ms-auto flex h-8 items-center gap-1 rounded-lg border border-brand-contrast/40 bg-white/70 px-2.5 text-[10.5px] font-extrabold text-amber-700 transition-colors hover:bg-white dark:bg-gray-950/60 dark:text-amber-400">
-                                            <Pencil className="size-3" />
-                                            {deadlineActive ? 'تغییر مهلت' : 'ثبت مهلت'}
-                                        </button>
-                                    </>
-                                )}
-                            </div>
-                            {!deadlineOpen && (
-                                <p className="mt-1.5 text-[9.5px] font-bold leading-4 text-stone-400 dark:text-gray-500">
-                                    با تمام‌شدن مهلت، اقلام خودکار از حالت قیمت‌گیری خارج می‌شوند.
-                                </p>
-                            )}
-                        </div>
-                    )}
-
-                    {/* اقلام در حال قیمت‌گیری */}
+                    {/* ✅ اقلام در حال قیمت‌گیری — مهلت گروهی روبروی عنوان (خواستهٔ مالک):
+                        چیپ «مهلت ارسال قیمت: ۱۲ ساعت» جمع‌وجور؛ لمسش ویرایش باز می‌کند */}
                     {urgentItems.length > 0 && (
                         <section>
-                            <h2 className="mb-2 flex items-center gap-2 px-1 text-[13px] font-black text-amber-700 dark:text-amber-400">
-                                <Megaphone className="size-4" />
-                                اقلام در حال قیمت‌گیری
-                                <span className="rounded-full bg-brand-contrast px-2 py-0.5 text-[9px] font-black text-white">
-                                    {faNum(urgentItems.length)}
-                                </span>
-                            </h2>
+                            <div className="mb-2 flex flex-wrap items-center gap-x-2 gap-y-1.5 px-1">
+                                <h2 className="flex items-center gap-1.5 text-[12px] font-black text-amber-700 dark:text-amber-400">
+                                    <Megaphone className="size-4" />
+                                    اقلام در حال قیمت‌گیری
+                                    <span className="rounded-full bg-brand-contrast px-1.5 py-0.5 text-[8.5px] font-black text-white">
+                                        {faNum(urgentItems.length)}
+                                    </span>
+                                </h2>
+                                {!deadlineOpen && (
+                                    <button onClick={openDeadlineEditor}
+                                        title={deadlineActive ? 'تغییر مهلت' : 'ثبت مهلت'}
+                                        className={cn(
+                                            'ms-auto inline-flex h-7 shrink-0 items-center gap-1 rounded-full px-2.5 text-[10px] font-extrabold transition-colors',
+                                            remaining?.expired
+                                                ? 'bg-red-50 text-red-500 dark:bg-red-500/10'
+                                                : deadlineActive
+                                                    ? 'bg-brand-contrast-soft text-amber-700 hover:bg-brand-contrast-tint dark:bg-amber-500/10 dark:text-amber-400'
+                                                    : 'bg-stone-100 text-stone-400 hover:bg-stone-200/70 dark:bg-gray-800 dark:text-gray-500',
+                                        )}>
+                                        <Clock className="size-3 shrink-0" />
+                                        {remaining?.expired
+                                            ? 'مهلت تمام شده — ثبت مهلت جدید'
+                                            : deadlineActive
+                                                ? `مهلت ارسال قیمت: ${remaining!.text}`
+                                                : 'مهلت ثبت نشده'}
+                                        <Pencil className="size-2.5 opacity-60" />
+                                    </button>
+                                )}
+                            </div>
+                            {deadlineOpen && (
+                                <div className="mb-2.5 flex flex-wrap items-center gap-2 rounded-xl border border-brand-contrast/30 bg-brand-contrast-soft/30 px-3 py-2 dark:bg-amber-500/5">
+                                    <Clock className="size-3.5 shrink-0 text-amber-600 dark:text-amber-400" />
+                                    <span className="text-[10.5px] font-extrabold text-stone-600 dark:text-gray-300">مهلت ارسال قیمت:</span>
+                                    <input
+                                        value={deadlineHours}
+                                        onChange={(e) => setDeadlineHours(e.target.value.replace(/[^\d۰-۹]/g, ''))}
+                                        onKeyDown={(e) => e.key === 'Enter' && submitDeadline()}
+                                        inputMode="numeric"
+                                        autoFocus
+                                        placeholder={`مثلا ${faNum(24)}`}
+                                        className="h-9 w-20 rounded-lg border border-stone-200 bg-white px-2 text-center text-xs font-black outline-none focus:border-brand-contrast dark:border-gray-700 dark:bg-gray-950"
+                                    />
+                                    <span className="text-[9.5px] font-bold text-stone-400">ساعت (حداکثر {faNum(MAX_DEADLINE_HOURS)})</span>
+                                    <button onClick={submitDeadline} disabled={deadlineBusy}
+                                        className="h-8 rounded-lg bg-brand-contrast px-3 text-[10.5px] font-extrabold text-white disabled:opacity-50">
+                                        {deadlineBusy ? '...' : 'ثبت'}
+                                    </button>
+                                    <button onClick={() => setDeadlineOpen(false)}
+                                        className="h-8 rounded-lg border border-stone-200 px-3 text-[10.5px] font-bold text-stone-500 dark:border-gray-700">
+                                        بی‌خیال
+                                    </button>
+                                </div>
+                            )}
                             <div className="space-y-2.5">
                                 <AnimatePresence mode="popLayout">
                                     {urgentItems.map((it) => (

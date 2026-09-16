@@ -1,12 +1,14 @@
 // app/components/OfferSheet.tsx
 // شیت مشترک ثبت پیشنهاد قیمت — هم صفحه عمومی بازوی خرید و هم تب «بازوی خرید»ی پنل فروش
-// برای یک قلم یا کل لیست؛ مبلغ + مبنا + تحویل + پیام + تلفن (همه حداقلی)
+// برای یک قلم یا کل لیست؛ مبلغ + مبنا + تحویل + پیام (همه حداقلی)
+// ✅ بدون ورود شماره (خواستهٔ مالک): شمارهٔ تماس خودکار از موبایل ثبت‌نام پیشنهاددهنده پر می‌شود —
+//    خریدار در سمت خودش دکمهٔ تماس کنار پیشنهاد می‌بیند (موبایل: تماس، دسکتاپ: نمایش شماره)
 'use client';
 
 import React, { useEffect, useState } from 'react';
 import { createPortal } from 'react-dom';
 import { motion, AnimatePresence } from 'framer-motion';
-import { Store, X, Loader2, Send } from 'lucide-react';
+import { Store, X, Loader2, Send, Phone } from 'lucide-react';
 import { toast } from 'sonner';
 import { useAddOffer } from '@/lib/api/apiHooks';
 import { faNum } from '@/app/inquiries/utils';
@@ -26,7 +28,6 @@ export default function OfferSheet({ inquiry, item, onClose }: {
     const [basis, setBasis] = useState('جمع کل');
     const [days, setDays] = useState('');
     const [message, setMessage] = useState('');
-    const [phone, setPhone] = useState('');
     const [sending, setSending] = useState(false);
     const [mounted, setMounted] = useState(false);
     useEffect(() => setMounted(true), []);
@@ -48,7 +49,6 @@ export default function OfferSheet({ inquiry, item, onClose }: {
                     priceBasis: basis || undefined,
                     deliveryDays: days ? Number(days.replace(/[^\d]/g, '')) : undefined,
                     message: message.trim() || undefined,
-                    contactPhone: phone.trim() || undefined,
                 },
             });
             toast.success('پیشنهادت ثبت شد — خریدار می‌بینتش');
@@ -122,11 +122,10 @@ export default function OfferSheet({ inquiry, item, onClose }: {
                                         placeholder="مثلاً: تحویل درب انبار، فاکتور رسمی داریم"
                                         className="w-full rounded-xl border border-stone-100 bg-stone-50 px-3 py-2 text-sm outline-none focus:border-brand-contrast dark:border-gray-800 dark:bg-gray-950/60 dark:text-gray-100" />
                                 </div>
-                                <div>
-                                    <label className={labelCls}>تلفن تماس (اختیاری)</label>
-                                    <input value={phone} onChange={(e) => setPhone(e.target.value)} inputMode="tel" dir="ltr" placeholder="۰۹۱۲…"
-                                        className={fieldCls} />
-                                </div>
+                                <p className="flex items-center gap-1.5 text-[9.5px] font-bold leading-4 text-stone-400 dark:text-gray-500">
+                                    <Phone className="size-3 shrink-0" />
+                                    شمارهٔ موبایل ثبت‌نامت خودکار همراه پیشنهاد ثبت می‌شود — لازم نیست واردش کنی.
+                                </p>
                                 <motion.button
                                     whileTap={{ scale: 0.97 }}
                                     disabled={sending}
