@@ -229,8 +229,9 @@ export default function InquiryPublicClient({ idOrSlug }: { idOrSlug: string }) 
         } catch { /* noop */ }
     };
 
-    // ☎️ تماس با خریدار — شمارهٔ کسب‌وکار
-    const bizPhone: string | undefined = inquiry?.business?.phone || undefined;
+    // ☎️ تماس با خریدار — contactPhone از بک: اول شمارهٔ کسب‌وکار؛ نبود؟ شمارهٔ خودِ مالک (کنترل‌شده)
+    //    (خواستهٔ مالک: دکمهٔ تماس «همیشه» جلوی چشم باشد — اگر خواست همان لحظه تماس بگیرد)
+    const bizPhone: string | undefined = (inquiry as any)?.contactPhone || inquiry?.business?.phone || undefined;
 
     // 💾 ذخیرهٔ مخاطب — vCard استاندارد؛ موبایل بازش می‌کند و به مخاطبین اضافه می‌شود
     //    (خواستهٔ مالک: کنار «تماس» بماند — کاربر اجازهٔ دسترسی مخاطبین را می‌دهد
@@ -527,19 +528,19 @@ export default function InquiryPublicClient({ idOrSlug }: { idOrSlug: string }) 
                                     </p>
                                 )}
                             </div>
-                            {/* ☎️ تماس + 💾 ذخیرهٔ مخاطب (vCard) — کنار هم برای غیرمالک
-                                (خواستهٔ مالک: ذخیرهٔ مخاطب بماند — مخاطب به لیست کانتکت‌ها اضافه می‌شود) */}
+                            {/* ☎️ تماس (پررنگ — سبز برند) + 💾 ذخیرهٔ مخاطب (کم‌نماتر — خواستهٔ مالک):
+                                هر دو همیشه برای غیرمالک — تماس با فال‌بک شمارهٔ مالک دیگر هرگز حذف نمی‌شود */}
                             {!isOwner && bizPhone && (
                                 <a href={`tel:${bizPhone}`} aria-label="تماس با خریدار" title="تماس با خریدار"
-                                    className="inline-flex h-9 shrink-0 items-center gap-1 rounded-lg bg-primary px-3.5 text-[11px] font-extrabold text-on-primary transition active:scale-95">
+                                    className="inline-flex h-9 shrink-0 items-center gap-1 rounded-lg bg-primary px-3.5 text-[11px] font-extrabold text-on-primary shadow-sm transition active:scale-95">
                                     <PhoneCall className="size-3.5" />
                                     تماس
                                 </a>
                             )}
                             {!isOwner && (
                                 <button onClick={saveContact} aria-label="ذخیرهٔ مخاطب" title="ذخیرهٔ مخاطب"
-                                    className="inline-flex h-9 shrink-0 items-center gap-1 rounded-lg border border-stone-200 bg-white px-3 text-[11px] font-extrabold text-stone-600 transition active:scale-95 dark:border-gray-700 dark:bg-gray-900 dark:text-gray-200">
-                                    <UserPlus className="size-3.5 text-primary" />
+                                    className="inline-flex h-9 shrink-0 items-center gap-1 rounded-lg border border-stone-200 bg-white px-3 text-[11px] font-bold text-stone-500 transition active:scale-95 dark:border-gray-700 dark:bg-gray-900 dark:text-gray-300">
+                                    <UserPlus className="size-3.5 text-brand-accent-strong" />
                                     ذخیره مخاطب
                                 </button>
                             )}
@@ -553,18 +554,18 @@ export default function InquiryPublicClient({ idOrSlug }: { idOrSlug: string }) 
 
                         <div className="mt-4 flex flex-wrap items-center gap-2">
                             {dl && (
-                                <span className={`flex items-center gap-1 rounded-full px-3 py-1 text-[11px] font-extrabold ${dl.urgent ? 'bg-red-50 text-red-600 dark:bg-red-500/10 dark:text-red-400' : 'bg-stone-100 text-stone-500 dark:bg-gray-800 dark:text-gray-400'}`}>
+                                <span className={`flex items-center gap-1 rounded-full px-3 py-1 text-[11px] font-extrabold ${dl.urgent ? 'bg-red-50 text-red-600 dark:bg-red-500/10 dark:text-red-400' : 'bg-brand-accent-soft text-brand-accent-strong'}`}>
                                     <Clock className="size-3.5" /> {dl.text}
                                 </span>
                             )}
                             {inquiry.deliveryNote && (
                                 <span className="flex items-center gap-1 rounded-full bg-stone-100 px-3 py-1 text-[11px] font-bold text-stone-500 dark:bg-gray-800 dark:text-gray-400">
-                                    <Truck className="size-3.5" /> {inquiry.deliveryNote}
+                                    <Truck className="size-3.5 text-brand-contrast" /> {inquiry.deliveryNote}
                                 </span>
                             )}
                             {inquiry.paymentTerms && (
                                 <span className="flex items-center gap-1 rounded-full bg-stone-100 px-3 py-1 text-[11px] font-bold text-stone-500 dark:bg-gray-800 dark:text-gray-400">
-                                    <Wallet className="size-3.5" /> {inquiry.paymentTerms}
+                                    <Wallet className="size-3.5 text-brand-contrast" /> {inquiry.paymentTerms}
                                 </span>
                             )}
                             {inquiry.tags.map((t) => (

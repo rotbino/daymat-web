@@ -859,6 +859,8 @@ export interface InquiryDetail extends InquiryBase {
     offers?: InquiryOffer[];
     /** ✅ سمت مالک بازو در کسب‌وکار (BusinessMember.position) — زیر اسم در باکس خریدار صفحهٔ عمومی */
     ownerPosition?: string | null;
+    /** ☎️ شمارهٔ تماس عمومی صفحه — اول کسب‌وکار، فال‌بک شمارهٔ مالک (کنترل‌شده در بک) */
+    contactPhone?: string | null;
 }
 
 export interface InquiryOffer {
