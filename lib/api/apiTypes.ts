@@ -859,8 +859,10 @@ export interface InquiryDetail extends InquiryBase {
     offers?: InquiryOffer[];
     /** ✅ سمت مالک بازو در کسب‌وکار (BusinessMember.position) — زیر اسم در باکس خریدار صفحهٔ عمومی */
     ownerPosition?: string | null;
-    /** ☎️ شمارهٔ تماس عمومی صفحه — اول کسب‌وکار، فال‌بک شمارهٔ مالک (کنترل‌شده در بک) */
+    /** ☎️ شمارهٔ تماس اصلی صفحه (ملاک: موبایل ثبت‌نام مالک — نبود؟ شمارهٔ کسب‌وکار) — گیت‌شده در بک */
     contactPhone?: string | null;
+    /** ☎️ شمارهٔ جداگانهٔ کسب‌وکار (ثانویه — دکمهٔ «تلفن کسب‌وکار») — گیت‌شده در بک */
+    businessPhone?: string | null;
     /** ⚙️ اجازهٔ خریدار برای دیدن/ذخیرهٔ شماره‌اش (تنظیمات بازو) — بک فقط با اجازه contactPhone می‌فرستد */
     showContactPhone?: boolean | null;
 }

@@ -230,10 +230,14 @@ export default function InquiryPublicClient({ idOrSlug }: { idOrSlug: string }) 
     };
 
     // ☎️ تماس با خریدار — فقط contactPhone کنترل‌شدهٔ بک (با اجازهٔ خریدار در تنظیمات بازو):
-    //    اجازه دارد؟ اول شمارهٔ کسب‌وکار، نبود؟ شمارهٔ خود مالک. دیگر هیچ فال‌بک محلی‌ای نیست تا
+    //    ✅ قاعدهٔ مالک: ملاک، موبایل ثبت‌نام خریدار است (همیشه هست)؛ شمارهٔ کسب‌وکار اگر جداگانه
+    //    داشته باشد، به‌عنوان دکمهٔ دوم «تلفن کسب‌وکار» می‌آید. دیگر هیچ فال‌بک محلی‌ای نیست تا
     //    خاموش‌کردن تنظیم، دکمه را واقعاً حذف کند (خواستهٔ مالک: فرمان دست خود خریدار باشد)
     const bizPhone: string | undefined = (inquiry as any)?.contactPhone || undefined;
-    // ⚙️ اجازهٔ نمایش شماره (تنظیمات بازو) — برای پیوضیت وضعیت در باکس خریدارِ مالک؛
+    // ☎️ ثانویه — شمارهٔ جداگانهٔ کسب‌وکار (فقط وقتی با موبایلِ اصلی فرق دارد دکمهٔ دوم می‌سازد)
+    const bizBusinessPhone: string | undefined = (inquiry as any)?.businessPhone || undefined;
+    const showBizPhone = !!bizBusinessPhone && bizBusinessPhone !== bizPhone;
+    // ⚙️ اجازهٔ نمایش شماره (تنظیمات بازو) — برای پیش‌نمایش وضعیت در باکس خریدارِ مالک؛
     //    بازوهای قدیمی (فیلد ندارند) اجازه‌دار فرض می‌شوند
     const showContactAllowed = (inquiry as any)?.showContactPhone !== false;
 
@@ -248,6 +252,7 @@ export default function InquiryPublicClient({ idOrSlug }: { idOrSlug: string }) 
             'VERSION:3.0',
             `FN:${name}`,
             bizPhone ? `TEL;TYPE=CELL:${bizPhone}` : null,
+            showBizPhone ? `TEL;TYPE=WORK:${bizBusinessPhone}` : null,
             inquiry.city ? `ADR;TYPE=WORK:;;${inquiry.city};;;;` : null,
             `NOTE:بازوی خرید «${inquiry.title}» — دیمت`,
             shareUrl ? `URL:${shareUrl}` : null,
@@ -511,61 +516,103 @@ export default function InquiryPublicClient({ idOrSlug }: { idOrSlug: string }) 
                         {!isOwner && <CoopAction className="mt-4" />}
 
                         {/* 👤 باکس خریدار — عکس پروفایل + تماس؛ برای همه رندر می‌شود (هویت صاحب بازو — خواستهٔ مالک) */}
-                        <div id="buyer-box" className="mt-3 flex items-center gap-2.5 rounded-2xl bg-stone-50 px-3.5 py-3 dark:bg-gray-950/60">
-                            {ownerAvatar ? (
-                                <Image src={ownerAvatar} alt={inquiry.owner?.fullName || ''} width={48} height={48}
-                                    className="size-11 shrink-0 rounded-full object-cover ring-2 ring-white dark:ring-gray-800" unoptimized />
-                            ) : (
-                                <span className="grid size-11 shrink-0 place-items-center rounded-full bg-white shadow-sm dark:bg-gray-900">
-                                    <User className="size-5 text-stone-300 dark:text-gray-600" />
-                                </span>
-                            )}
-                            <div className="min-w-0 flex-1">
-                                <p className="truncate text-xs font-black">{inquiry.owner?.fullName || inquiry.business?.name || 'خریدار'}</p>
-                                {/* نقش مالک در کسب‌وکار — بازدیدکننده بفهمد با چه نقشی طرف است
-                                    (خواستهٔ مالک: هر نقشی ممکن است برای خودش بازوی تامین جدا بسازد) */}
-                                {isOwner ? (
-                                    <>
-                                        <p className="mt-0.5 text-[10px] font-bold text-stone-400 dark:text-gray-500">این بازوی خرید مال توست</p>
-                                        {/* ⚙️ وضعیت «نمایش شمارهٔ من» — مالک بفهمد تامین‌کننده می‌تواند تماس بگیرد یا نه
-                                            (خواستهٔ مالک: فرمان تنظیم دست خود خریدار باشد) */}
-                                        <p className="mt-0.5 flex items-center gap-1 text-[10px] font-bold text-stone-400 dark:text-gray-500">
-                                            {showContactAllowed ? (
-                                                <>
-                                                    <PhoneCall className="size-3 text-primary" />
-                                                    شمارهٔ شما برای تامین‌کننده‌ها فعال است
-                                                </>
-                                            ) : (
-                                                <>
-                                                    <Lock className="size-3" />
-                                                    شمارهٔ شما پنهان است — در تنظیمات بازو روشنش کن
-                                                </>
-                                            )}
-                                        </p>
-                                    </>
+                        <div id="buyer-box" className="mt-3 rounded-2xl bg-stone-50 px-3.5 py-3 dark:bg-gray-950/60">
+                            <div className="flex items-center gap-2.5">
+                                {ownerAvatar ? (
+                                    <Image src={ownerAvatar} alt={inquiry.owner?.fullName || ''} width={48} height={48}
+                                        className="size-11 shrink-0 rounded-full object-cover ring-2 ring-white dark:ring-gray-800" unoptimized />
                                 ) : (
-                                    <p className="mt-0.5 text-[10px] font-bold text-primary">
-                                        {inquiry.ownerPosition || 'خریدار'}
-                                    </p>
+                                    <span className="grid size-11 shrink-0 place-items-center rounded-full bg-white shadow-sm dark:bg-gray-900">
+                                        <User className="size-5 text-stone-300 dark:text-gray-600" />
+                                    </span>
+                                )}
+                                <div className="min-w-0 flex-1">
+                                    <p className="truncate text-xs font-black">{inquiry.owner?.fullName || inquiry.business?.name || 'خریدار'}</p>
+                                    {/* نقش مالک در کسب‌وکار — بازدیدکننده بفهمد با چه نقشی طرف است
+                                        (خواستهٔ مالک: هر نقشی ممکن است برای خودش بازوی تامین جدا بسازد) */}
+                                    {isOwner ? (
+                                        <>
+                                            <p className="mt-0.5 text-[10px] font-bold text-stone-400 dark:text-gray-500">این بازوی خرید مال توست</p>
+                                            {/* ⚙️ وضعیت «نمایش شمارهٔ من» — مالک بفهمد تامین‌کننده می‌تواند تماس بگیرد یا نه
+                                                (خواستهٔ مالک: فرمان تنظیم دست خود خریدار باشد) */}
+                                            <p className="mt-0.5 flex items-center gap-1 text-[10px] font-bold text-stone-400 dark:text-gray-500">
+                                                {showContactAllowed ? (
+                                                    <>
+                                                        <PhoneCall className="size-3 shrink-0 text-primary" />
+                                                        {bizPhone
+                                                            ? 'شمارهٔ موبایل ثبت‌نامت برای تامین‌کننده‌ها فعال است'
+                                                            : 'شماره‌ای برای تماس پیدا نشد — موبایل ثبت‌نامت را در پروفایل چک کن'}
+                                                    </>
+                                                ) : (
+                                                    <>
+                                                        <Lock className="size-3 shrink-0" />
+                                                        شمارهٔ شما پنهان است — در تنظیمات بازو روشنش کن
+                                                    </>
+                                                )}
+                                            </p>
+                                        </>
+                                    ) : (
+                                        <p className="mt-0.5 text-[10px] font-bold text-primary">
+                                            {inquiry.ownerPosition || 'خریدار'}
+                                        </p>
+                                    )}
+                                </div>
+                                {/* ☎️ تماس (پررنگ — سبز برند، ملاک: موبایل ثبت‌نام خریدار) + 💾 ذخیرهٔ مخاطب (کم‌نماتر)
+                                    — کنار هم جلوی عکس و اسم خریدار (خواستهٔ مالک)؛ فقط تا وقتی خریدار اجازه داده */}
+                                {!isOwner && bizPhone && (
+                                    <a href={`tel:${bizPhone}`} aria-label="تماس با خریدار" title="تماس با خریدار"
+                                        className="inline-flex h-9 shrink-0 items-center gap-1 rounded-lg bg-primary px-3.5 text-[11px] font-extrabold text-on-primary shadow-sm transition active:scale-95">
+                                        <PhoneCall className="size-3.5" />
+                                        تماس
+                                    </a>
+                                )}
+                                {!isOwner && bizPhone && (
+                                    <button onClick={saveContact} aria-label="ذخیرهٔ مخاطب" title="ذخیرهٔ مخاطب"
+                                        className="inline-flex h-9 shrink-0 items-center gap-1 rounded-lg border border-stone-200 bg-white px-3 text-[11px] font-bold text-stone-500 transition active:scale-95 dark:border-gray-700 dark:bg-gray-900 dark:text-gray-300">
+                                        <UserPlus className="size-3.5 text-brand-accent-strong" />
+                                        ذخیره مخاطب
+                                    </button>
                                 )}
                             </div>
-                            {/* ☎️ تماس (پررنگ — سبز برند) + 💾 ذخیرهٔ مخاطب (کم‌نماتر) — کنار هم جلوی عکس و اسم
-                                خریدار (خواستهٔ مالک)؛ هر دو فقط تا وقتی خریدار اجازهٔ نمایش شماره داده (تنظیمات بازو) */}
-                            {!isOwner && bizPhone && (
-                                <a href={`tel:${bizPhone}`} aria-label="تماس با خریدار" title="تماس با خریدار"
-                                    className="inline-flex h-9 shrink-0 items-center gap-1 rounded-lg bg-primary px-3.5 text-[11px] font-extrabold text-on-primary shadow-sm transition active:scale-95">
-                                    <PhoneCall className="size-3.5" />
-                                    تماس
+                            {/* ☎️ ردیف دوم — تلفن جداگانهٔ کسب‌وکار (قاعدهٔ مالک: ملاک موبایل ثبت‌نام است؛
+                                شمارهٔ کسب‌وکار مکمل است و فقط وقتی واقعاً متفاوت باشد نشان داده می‌شود) */}
+                            {!isOwner && showBizPhone && (
+                                <a href={`tel:${bizBusinessPhone}`}
+                                    className="mt-2 flex w-fit items-center gap-1.5 border-t border-stone-200/70 pt-2 text-[11px] font-bold text-stone-500 transition-colors hover:text-stone-800 dark:border-gray-800 dark:text-gray-400 dark:hover:text-gray-200">
+                                    <Phone className="size-3 text-brand-contrast" />
+                                    تلفن کسب‌وکار:
+                                    <span dir="ltr" className="font-black">{bizBusinessPhone}</span>
                                 </a>
                             )}
-                            {!isOwner && bizPhone && (
-                                <button onClick={saveContact} aria-label="ذخیرهٔ مخاطب" title="ذخیرهٔ مخاطب"
-                                    className="inline-flex h-9 shrink-0 items-center gap-1 rounded-lg border border-stone-200 bg-white px-3 text-[11px] font-bold text-stone-500 transition active:scale-95 dark:border-gray-700 dark:bg-gray-900 dark:text-gray-300">
-                                    <UserPlus className="size-3.5 text-brand-accent-strong" />
-                                    ذخیره مخاطب
-                                </button>
-                            )}
                         </div>
+
+                        {/* 👁 پیش‌نمایش مالک — دقیقاً همان دکمه‌هایی که تامین‌کننده می‌بیند؛ با tel: واقعی
+                            خود مالک، تا خودش دکمه را ببیند و امتحان کند (فرمان نمایش هم دست خودش است) */}
+                        {isOwner && showContactAllowed && bizPhone && (
+                            <div className="mt-2 rounded-2xl border border-dashed border-stone-200 bg-white px-3.5 py-2.5 dark:border-gray-700 dark:bg-gray-900/40">
+                                <p className="text-[9.5px] font-bold text-stone-400 dark:text-gray-500">
+                                    نمایی که تامین‌کننده در این صفحه می‌بیند — خودت امتحانش کن:
+                                </p>
+                                <div className="mt-2 flex flex-wrap items-center gap-2">
+                                    <a href={`tel:${bizPhone}`}
+                                        className="inline-flex h-9 items-center gap-1.5 rounded-lg bg-primary px-4 text-[11px] font-extrabold text-on-primary shadow-sm transition active:scale-95">
+                                        <PhoneCall className="size-3.5" />
+                                        تماس با خریدار
+                                    </a>
+                                    <button onClick={saveContact}
+                                        className="inline-flex h-9 items-center gap-1 rounded-lg border border-stone-200 bg-white px-3 text-[11px] font-bold text-stone-500 transition active:scale-95 dark:border-gray-700 dark:bg-gray-900 dark:text-gray-300">
+                                        <UserPlus className="size-3.5 text-brand-accent-strong" />
+                                        ذخیره مخاطب
+                                    </button>
+                                    {showBizPhone && (
+                                        <span className="inline-flex h-9 items-center gap-1 rounded-lg border border-stone-200 bg-white px-3 text-[10.5px] font-bold text-stone-500 dark:border-gray-700 dark:bg-gray-900 dark:text-gray-400">
+                                            <Phone className="size-3 text-brand-contrast" />
+                                            تلفن کسب‌وکار
+                                        </span>
+                                    )}
+                                </div>
+                            </div>
+                        )}
 
                         {inquiry.description && (
                             <p className="mt-4 rounded-2xl bg-stone-50 px-4 py-3 text-sm leading-7 text-stone-600 dark:bg-gray-950/60 dark:text-gray-300">

@@ -48,7 +48,10 @@ export default function ArmFooter({ inquiry, showViral, bottomBar }: { inquiry: 
                 <div className="grid grid-cols-1 sm:grid-cols-3 gap-5 text-xs">
                     <div>
                         <h3 className="font-bold text-gray-800 dark:text-gray-200 text-[11px] mb-1.5">تماس</h3>
-                        {inquiry?.business?.phone && <a href={`tel:${inquiry.business.phone}`} className="block text-gray-500" dir="ltr">{inquiry.business.phone}</a>}
+                        {/* ☎️ فقط شماره‌های گیت‌شدهٔ بک (با اجازهٔ خریدار در تنظیمات بازو) — ملاک: موبایل
+                            ثبت‌نام خریدار؛ شمارهٔ خامِ business.phone دیگر از API نمی‌آید تا گیت دور زده نشود */}
+                        {inquiry?.contactPhone && <a href={`tel:${inquiry.contactPhone}`} className="block text-gray-500" dir="ltr">{inquiry.contactPhone}</a>}
+                        {!!inquiry?.businessPhone && inquiry.businessPhone !== inquiry.contactPhone && <a href={`tel:${inquiry.businessPhone}`} className="block text-gray-500" dir="ltr">{inquiry.businessPhone}</a>}
                         {inquiry?.owner?.fullName && <p className="flex items-center gap-1.5 text-gray-500 mt-1"><User className="w-3 h-3" />{inquiry.owner.fullName}</p>}
                     </div>
                     <div>
