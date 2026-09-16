@@ -185,6 +185,10 @@ export default function AddItemSheet({ open, onClose, inquiryId, catalogUnits, e
             e.product = 'این کالا قبلا در لیست هست — ویرایشش کن';
         }
         if (!st.brand.trim()) e.brand = 'برند انتخاب نشده';
+        // ✅ حجم خرید و واحد الزامی‌اند (خواستهٔ مالک: بدون انتخاب، الرت بدهد — قبلاً بی‌سوال ذخیره می‌شد)
+        const q = Number(st.quantity.replace(/[^\d.]/g, ''));
+        if (!st.quantity.trim() || !q || q <= 0) e.quantity = 'حجم خرید را وارد کن — مثلا ۲۵';
+        if (!st.unitId && !st.unitTitle.trim()) e.unit = 'واحد را انتخاب کن — مثلا کیلوگرم یا کارتن';
         const h = parseLatinInt(deadlineHours);
         if (showDeadlineInput && (!h || h < 1 || h > MAX_DEADLINE_HOURS)) {
             e.deadline = `مهلت ارسال قیمت را به ساعت وارد کن — عددی بین ۱ تا ${faNum(MAX_DEADLINE_HOURS)}`;
@@ -341,40 +345,47 @@ export default function AddItemSheet({ open, onClose, inquiryId, catalogUnits, e
                                 error={errors.product}
                             />
 
-                            {/* مقدار + واحد — سلکتور سرچ‌دار (خواستهٔ مالک: دراپ‌داون ساده بی‌سرچ نباشد) */}
+                            {/* حجم خرید + واحد — سلکتور سرچ‌دار (خواستهٔ مالک: دراپ‌داون ساده بی‌سرچ نباشد)
+                                ⚖️ هر دو الزامی — خطای CSS + الرت toast (toastFormErrors در save) */}
                             <div className="grid grid-cols-2 gap-2">
-                                <input
-                                    value={st.quantity}
-                                    onChange={(e) => patch({ quantity: e.target.value })}
-                                    inputMode="decimal"
-                                    placeholder="مقدار"
-                                    className={`${inp} w-full text-center`}
-                                />
-                                <Autocomplete
-                                    value={{ id: st.unitId || null, title: st.unitTitle }}
-                                    onChange={pickUnit}
-                                    fetchFn={async (q) => {
-                                        const t = (q || '').trim();
-                                        return orderedUnits
-                                            .filter((u: any) => !t || (u.title || '').includes(t))
-                                            .slice(0, 40);
-                                    }}
-                                    queryKey="units-autocomplete"
-                                    placeholder="واحد — جستجو کن"
-                                    allowCreate={false}
-                                    minChars={0}
-                                    className="h-10!"
-                                    renderOption={(u: any) => (
-                                        <span className="flex w-full items-center justify-between gap-2">
-                                            <span className="truncate">{u.title}</span>
-                                            {u.custom && (
-                                                <span className="shrink-0 rounded-full bg-brand-contrast-soft px-1.5 py-0.5 text-[8.5px] font-black text-amber-700 dark:bg-amber-500/10 dark:text-amber-400">
-                                                    واحدهای من
-                                                </span>
-                                            )}
-                                        </span>
-                                    )}
-                                />
+                                <div className="min-w-0">
+                                    <input
+                                        value={st.quantity}
+                                        onChange={(e) => { patch({ quantity: e.target.value }); setErrors((p) => ({ ...p, quantity: '' })); }}
+                                        inputMode="decimal"
+                                        placeholder="حجم خرید"
+                                        className={cn(inp, 'w-full text-center', errors.quantity && 'border-red-400')}
+                                    />
+                                    {errors.quantity && <p className="mt-1 px-1 text-[10px] font-bold text-red-500">{errors.quantity}</p>}
+                                </div>
+                                <div className="min-w-0">
+                                    <Autocomplete
+                                        value={{ id: st.unitId || null, title: st.unitTitle }}
+                                        onChange={pickUnit}
+                                        fetchFn={async (q) => {
+                                            const t = (q || '').trim();
+                                            return orderedUnits
+                                                .filter((u: any) => !t || (u.title || '').includes(t))
+                                                .slice(0, 40);
+                                        }}
+                                        queryKey="units-autocomplete"
+                                        placeholder="واحد — جستجو کن"
+                                        allowCreate={false}
+                                        minChars={0}
+                                        className="h-10!"
+                                        renderOption={(u: any) => (
+                                            <span className="flex w-full items-center justify-between gap-2">
+                                                <span className="truncate">{u.title}</span>
+                                                {u.custom && (
+                                                    <span className="shrink-0 rounded-full bg-brand-contrast-soft px-1.5 py-0.5 text-[8.5px] font-black text-amber-700 dark:bg-amber-500/10 dark:text-amber-400">
+                                                        واحدهای من
+                                                    </span>
+                                                )}
+                                            </span>
+                                        )}
+                                    />
+                                    {errors.unit && <p className="mt-1 px-1 text-[10px] font-bold text-red-500">{errors.unit}</p>}
+                                </div>
                             </div>
 
                             {/* ✅ تعداد در واحد تعداددار — «کارتن ۲۴ عددی» (خواستهٔ مالک) */}
@@ -424,8 +435,8 @@ export default function AddItemSheet({ open, onClose, inquiryId, catalogUnits, e
                                         }
                                         if (!v) setErrors((e) => ({ ...e, deadline: '' }));
                                     }}
-                                    label="همین الان از تامین‌کننده‌ها قیمت بگیرم؟"
-                                    sub="با فعال کردن، تامین‌کننده‌های عضو بازوی شما درخواست قیمت شما رو خواهند دید و قیمت می‌دهند."
+                                    label="اضافه به لیست در حال قیمت‌گیری"
+                                    sub="با این کار کالای شما، غیر از کاتالوگ، در لیست درخواست قیمت تامین‌کننده‌های همکار شما قرار می‌گیرد."
                                 />
 
                                 {/* ✅ مهلت ارسال قیمت — عددی به ساعت، حداکثر ۲۴۰ (خواستهٔ مالک) */}
@@ -456,13 +467,26 @@ export default function AddItemSheet({ open, onClose, inquiryId, catalogUnits, e
                                 )}
                             </div>
 
-                            {/* ویژگی‌ها (اختیاری) */}
+                            {/* ویژگی‌ها (اختیاری) — آکاردئون با هدر واضح سایه‌دار (خواستهٔ مالک:
+                                کاربر کم‌سواد هم بفهمد باید بزند تا باز شود — برچسب صریح «باز کردن/بستن») */}
                             <div>
                                 <button
                                     onClick={() => setAdvOpen((o) => !o)}
-                                    className="flex w-full items-center justify-between rounded-xl px-1 py-1.5 text-[12px] font-bold text-stone-400 transition-colors hover:text-amber-600 dark:hover:text-amber-400">
-                                    ویژگی‌ها (اختیاری)
-                                    <ChevronDown className={`size-4 transition-transform ${advOpen ? 'rotate-180' : ''}`} />
+                                    aria-expanded={advOpen}
+                                    className={cn('flex w-full items-center justify-between rounded-xl border px-3 py-2.5 shadow-sm transition-all',
+                                        advOpen
+                                            ? 'border-brand-contrast/50 bg-brand-contrast-soft/40 dark:border-amber-500/30 dark:bg-amber-500/10'
+                                            : 'border-stone-200 bg-white hover:border-brand-contrast/60 dark:border-gray-700 dark:bg-gray-900')}>
+                                    <span className="flex items-center gap-1.5 text-[12px] font-black text-stone-600 dark:text-gray-200">
+                                        ویژگی‌ها (اختیاری)
+                                        <ChevronDown className={cn('size-3.5 text-stone-500 transition-transform dark:text-gray-400', advOpen && 'rotate-180')} />
+                                    </span>
+                                    <span className={cn('rounded-full px-2 py-0.5 text-[9px] font-black',
+                                        advOpen
+                                            ? 'bg-brand-contrast text-white'
+                                            : 'bg-stone-100 text-stone-500 dark:bg-gray-800 dark:text-gray-400')}>
+                                        {advOpen ? 'بستن' : 'باز کردن'}
+                                    </span>
                                 </button>
                                 <p className="px-1 pb-1 text-[10px] font-bold leading-4 text-stone-400 dark:text-gray-500">
                                     اگر کالای سفارشی یا سفارش شما ویژگی‌های خاصی دارد مشخص کنید — مثل رنگ، تاریخ انقضا.
