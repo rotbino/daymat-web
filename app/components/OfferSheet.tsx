@@ -6,13 +6,14 @@
 // ✅ قیمت پیشنهادی/زمان تحویل — NumberInput حرفه‌ای (فرمت سه‌رقمی + واحد تومان/روز)
 // ✅ مزیت خرید از شما — مزیت رقابتی فروشنده برای این خریدار
 // ✅ ویرایش پیشنهاد ارسال‌شده — تا وقتی خریدار تصمیم نگرفته (پذیرش/رد) قابل ویرایش است
-// ☎️ بدون ورود شماره: شمارهٔ تماس خودکار از موبایل ثبت‌نام پیشنهاددهنده پر می‌شود (قاعدهٔ مالک)
+// ✅ برچسب قیمت = توضیح خودش: «قیمت پیشنهادی برای هر کارتن» — هیچ چیز تکراری در فرم نیست (خواستهٔ مالک)
+// ☎️ بدون ورود شماره: شمارهٔ تماس خودکار از موبایل ثبت‌نام پیشنهاددهنده پر می‌شود (قاعدهٔ مالک) — بدون جملهٔ راهنما
 'use client';
 
 import React, { useEffect, useState } from 'react';
 import { createPortal } from 'react-dom';
 import { motion, AnimatePresence } from 'framer-motion';
-import { Store, X, Loader2, Send, Phone, ListOrdered, Sparkles } from 'lucide-react';
+import { Store, X, Loader2, Send, Sparkles } from 'lucide-react';
 import { toast } from 'sonner';
 import { useAddOffer, useUpdateOfferContent } from '@/lib/api/apiHooks';
 import { faNum } from '@/app/inquiries/utils';
@@ -88,10 +89,10 @@ export default function OfferSheet({ inquiry, item, existingOffer, onClose }: {
 
     const isWholeList = !item?.id;
     const unitTitle = isWholeList ? WHOLE_LIST_TITLE : (unit.title || '');
-    // راهنمای معنای قیمت — «هر کارتن ۲۴ عددی» یا «کل لیست» (جای گنگ «جمع کل»)
-    const priceHint = isWholeList
+    // ✅ برچسب کاملِ قیمت — هم عنوان است هم توضیح (جای دو ردیف تکراری: label + hint)
+    const priceLabel = isWholeList
         ? 'قیمت پیشنهادی برای کل لیست خرید'
-        : unitTitle ? `قیمت پیشنهادی برای هر ${unitTitle}` : 'اول واحد را انتخاب کن';
+        : unitTitle ? `قیمت پیشنهادی برای هر ${unitTitle}` : 'قیمت پیشنهادی';
 
     const submit = async () => {
         if (!inquiry) return;
@@ -179,15 +180,8 @@ export default function OfferSheet({ inquiry, item, existingOffer, onClose }: {
 
                             <div className="mt-4 space-y-3">
                                 {/* ✅ واحد پیشنهاد — قبل از قیمت (خواستهٔ مالک)، پیش‌انتخاب واحد قلم */}
-                                {isWholeList ? (
-                                    <div>
-                                        <label className={labelCls}>واحد</label>
-                                        <div className="flex h-11 items-center gap-2 rounded-xl border border-stone-100 bg-stone-50 px-3 text-sm font-bold text-stone-600 dark:border-gray-800 dark:bg-gray-950/60 dark:text-gray-300">
-                                            <ListOrdered className="size-4 text-stone-400" />
-                                            {WHOLE_LIST_TITLE}
-                                        </div>
-                                    </div>
-                                ) : (
+                                {/*    کل لیست: فیلد واحدِ نمایشیِ غیرفعال حذف شد — برچسب خودِ قیمت گویاست (فرم خلوت‌تر) */}
+                                {!isWholeList && (
                                     <div>
                                         <label className={labelCls}>واحد پیشنهاد</label>
                                         <UnitPicker
@@ -199,11 +193,10 @@ export default function OfferSheet({ inquiry, item, existingOffer, onClose }: {
                                         />
                                     </div>
                                 )}
-                                <p className="-mt-1 px-1 text-[10px] font-bold text-stone-400 dark:text-gray-500">{priceHint}</p>
 
-                                {/* ✅ قیمت پیشنهادی — NumberInput با فرمت سه‌رقمی + واحد تومان */}
+                                {/* ✅ قیمت — برچسب کامل «قیمت پیشنهادی برای هر کارتن» (خواستهٔ مالک: بدون عنوان تکراری) */}
                                 <div>
-                                    <label className={labelCls}>قیمت پیشنهادی</label>
+                                    <label className={labelCls}>{priceLabel}</label>
                                     <NumberInput
                                         value={price}
                                         onChange={(v) => { setPrice(v || undefined); setErrors((p) => ({ ...p, price: '' })); }}
@@ -243,10 +236,6 @@ export default function OfferSheet({ inquiry, item, existingOffer, onClose }: {
                                         placeholder="مثلاً: تحویل درب انبار، فاکتور رسمی داریم"
                                         className="w-full rounded-xl border border-stone-100 bg-stone-50 px-3 py-2 text-sm outline-none focus:border-brand-contrast dark:border-gray-800 dark:bg-gray-950/60 dark:text-gray-100" />
                                 </div>
-                                <p className="flex items-center gap-1.5 text-[9.5px] font-bold leading-4 text-stone-400 dark:text-gray-500">
-                                    <Phone className="size-3 shrink-0" />
-                                    شمارهٔ موبایل ثبت‌نامت خودکار همراه پیشنهاد ثبت می‌شود — لازم نیست واردش کنی.
-                                </p>
                                 <motion.button
                                     whileTap={{ scale: 0.97 }}
                                     disabled={sending}
