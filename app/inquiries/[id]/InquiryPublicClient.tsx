@@ -38,7 +38,7 @@ import {
     Lock, Handshake, PhoneCall, UserPlus, Gift, Sparkles,
     Bookmark, ChevronDown, ArrowRight, Pause, Play,
 } from 'lucide-react';
-import { faNum, faPrice, faTimeAgo, faDeadlineLeft, STATUS_FA, STATUS_CHIP } from '../utils';
+import { faNum, faPrice, faTimeAgo, faDeadlineLeft, STATUS_FA, STATUS_CHIP, offerBasisLabel } from '../utils';
 import OfferSheet from '@/app/components/OfferSheet';
 import OfferCallButton from '@/app/components/OfferCallButton';
 import ArmFooter from './ArmFooter';
@@ -65,7 +65,7 @@ export default function InquiryPublicClient({ idOrSlug }: { idOrSlug: string }) 
     const updateInquiry = useUpdateInquiry();
 
     const [copied, setCopied] = useState(false);
-    const [offerTarget, setOfferTarget] = useState<{ id?: string; name: string; quantity?: number | null; unit?: string | null } | null>(null);
+    const [offerTarget, setOfferTarget] = useState<{ id?: string; name: string; quantity?: number | null; unit?: string | null; unitId?: string | null } | null>(null);
     // بعد از ثبت درخواست همکاری — بنر حالت «در انتظار تایید» می‌شود
     const [requestedSelf, setRequestedSelf] = useState(false);
     // 🛒 گیت پیشنهاد — مدال سناریومحور (خواستهٔ مالک: «وقتی روی پیشنهاد زد، همان‌جا سناریوها اجرا شود»):
@@ -211,7 +211,7 @@ export default function InquiryPublicClient({ idOrSlug }: { idOrSlug: string }) 
     // لمس دکمهٔ قیمت — کاربر فقط «پیشنهاد قیمت» می‌بیند؛ سیستم بنا به حالتش جواب می‌دهد:
     //   مهمان یا وصل‌نشده → مدال سناریو (ثبت‌نام / ساخت کاتالوگ / انتخاب کاتالوگ)
     //   تامین‌کنندهٔ متصل (یا بازوی عمومیِ قبلاً باز) → مستقیم شیت ثبت پیشنهاد
-    const handleOffer = (target: { id?: string; name: string; quantity?: number | null; unit?: string | null }) => {
+    const handleOffer = (target: { id?: string; name: string; quantity?: number | null; unit?: string | null; unitId?: string | null }) => {
         if (!inquiry) return;
         if (!isAuthenticated || accessState !== 'member') {
             setGateTarget(target);
@@ -791,7 +791,7 @@ export default function InquiryPublicClient({ idOrSlug }: { idOrSlug: string }) 
                                         {showItemOffer(it) && (
                                             <motion.button
                                                 whileTap={{ scale: 0.96 }}
-                                                onClick={() => handleOffer({ id: it.id, name: it.name, quantity: it.quantity, unit: it.unit })}
+                                                onClick={() => handleOffer({ id: it.id, name: it.name, quantity: it.quantity, unit: it.unit, unitId: it.unitId })}
                                                 className="flex h-9 items-center gap-1.5 rounded-full bg-primary px-4 text-xs font-extrabold text-on-primary shadow-md shadow-primary/25 transition-opacity hover:opacity-95">
                                                 <Send className="size-3.5" />
                                                 پیشنهاد قیمت
@@ -861,7 +861,7 @@ export default function InquiryPublicClient({ idOrSlug }: { idOrSlug: string }) 
                                         {showItemOffer(it) && (
                                             <motion.button
                                                 whileTap={{ scale: 0.96 }}
-                                                onClick={() => handleOffer({ id: it.id, name: it.name, quantity: it.quantity, unit: it.unit })}
+                                                onClick={() => handleOffer({ id: it.id, name: it.name, quantity: it.quantity, unit: it.unit, unitId: it.unitId })}
                                                 className="flex h-9 items-center gap-1.5 rounded-full border border-primary/40 px-4 text-xs font-extrabold text-primary transition-colors hover:bg-brand-primary-soft dark:text-emerald-300">
                                                 <Send className="size-3.5" />
                                                 پیشنهاد قیمت
@@ -946,7 +946,7 @@ export default function InquiryPublicClient({ idOrSlug }: { idOrSlug: string }) 
                                                 </div>
                                                 <div className="text-end">
                                                     <p className="text-base font-black text-primary dark:text-emerald-300">{faPrice(o.price)}</p>
-                                                    {o.priceBasis && <p className="text-[10px] font-bold text-stone-400">{o.priceBasis}</p>}
+                                                    {!!offerBasisLabel(o) && <p className="text-[10px] font-bold text-stone-400">{offerBasisLabel(o)}</p>}
                                                 </div>
                                             </div>
 
@@ -961,6 +961,14 @@ export default function InquiryPublicClient({ idOrSlug }: { idOrSlug: string }) 
 
                                             {o.message && (
                                                 <p className="mt-2 rounded-xl bg-stone-50 px-3 py-2 text-xs leading-6 text-stone-600 dark:bg-gray-950/60 dark:text-gray-300">{o.message}</p>
+                                            )}
+
+                                            {/* ✅ مزیت خرید از این فروشنده — فروشنده در فرم پیشنهاد وارد کرده */}
+                                            {o.advantages && (
+                                                <p className="mt-2 flex items-start gap-1.5 rounded-xl bg-emerald-50 px-3 py-2 text-xs font-bold leading-6 text-emerald-800 dark:bg-emerald-500/10 dark:text-emerald-300">
+                                                    <Sparkles className="mt-1 size-3.5 shrink-0" />
+                                                    <span>مزیت خرید از این فروشنده: {o.advantages}</span>
+                                                </p>
                                             )}
 
                                             {o.status === 'pending' && (

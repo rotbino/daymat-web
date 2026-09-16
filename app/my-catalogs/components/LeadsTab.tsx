@@ -11,15 +11,18 @@ import { motion } from 'framer-motion';
 import { useQueryClient } from '@tanstack/react-query';
 import {
     Megaphone, Check, X, Loader2, MapPin, Truck, Wallet, Clock,
-    ChevronDown, Handshake, ArrowLeft,
+    ChevronDown, Handshake, ArrowLeft, BadgeCheck, ShoppingBag,
 } from 'lucide-react';
 import Link from 'next/link';
 import { apiService } from '@/lib/api/apiService';
-import { useInquiryOpportunities, useDecideInquiryMember } from '@/lib/api/apiHooks';
+import {
+    useInquiryOpportunities, useDecideInquiryMember, useSetOfferSaleStatus,
+} from '@/lib/api/apiHooks';
 import { toast } from 'sonner';
 import { cn } from '@/lib/utils';
-import { faNum, faDigits } from '@/app/inquiries/utils';
+import { faNum, faDigits, faPrice, faTimeAgo } from '@/app/inquiries/utils';
 import OfferSheet from '@/app/components/OfferSheet';
+import OfferCallButton from '@/app/components/OfferCallButton';
 
 const CARD_CLS = 'rounded-2xl border border-outline-variant/30 bg-white dark:border-gray-800 dark:bg-gray-900';
 
@@ -27,14 +30,20 @@ export default function LeadsTab() {
     const qc = useQueryClient();
     const { data, isLoading } = useInquiryOpportunities();
     const decide = useDecideInquiryMember();
+    const setSale = useSetOfferSaleStatus();
 
     const [busyId, setBusyId] = useState<string | null>(null);
     const [openLead, setOpenLead] = useState<string | null>(null);
-    const [offerTarget, setOfferTarget] = useState<{ inquiry: any; item: any } | null>(null);
+    const [offerTarget, setOfferTarget] = useState<{
+        inquiry: { id: string; units?: { unitId: string; title?: string }[] };
+        item: any;
+        existing?: any;
+    } | null>(null);
 
     const invitations = (data?.invitations ?? []) as any[];
     const requests = (data?.requests ?? []) as any[];
     const leads = (data?.leads ?? []) as any[];
+    const accepted = (data?.accepted ?? []) as any[];
 
     const refresh = () => {
         qc.invalidateQueries({ queryKey: ['inquiry-opportunities'] });
@@ -54,6 +63,20 @@ export default function LeadsTab() {
         }
     };
 
+    /** ✅ ثبت نتیجهٔ معامله — فروش نهایی شد / نشد (خواستهٔ مالک، مبنای گزارش فروش آینده) */
+    const markSale = async (offerId: string, saleStatus: 'sold' | 'not_sold') => {
+        setBusyId(offerId);
+        try {
+            await setSale.mutateAsync({ offerId, saleStatus });
+            toast.success(saleStatus === 'sold' ? 'ثبت شد — فروش نهایی شد 🎉' : 'ثبت شد — این معامله به فروش نرسید');
+            refresh();
+        } catch (e: any) {
+            toast.error(e?.response?.data?.message || 'ثبت نتیجه ناموفق بود');
+        } finally {
+            setBusyId(null);
+        }
+    };
+
     if (isLoading) {
         return (
             <div className={cn(CARD_CLS, 'grid place-items-center py-12')}>
@@ -64,6 +87,93 @@ export default function LeadsTab() {
 
     return (
         <div className="space-y-3">
+            {/* ✅ پیشنهادهای پذیرفته‌شده — خیلی جلو چشم، شروع روند معامله (خواستهٔ مالک):
+                تماس با خریدار + ثبت نتیجهٔ فروش (فروش نهایی شد / نشد) */}
+            {accepted.length > 0 && (
+                <div className={cn(CARD_CLS, 'border-emerald-200 p-4 dark:border-emerald-500/30')}>
+                    <p className="mb-3 flex items-center gap-2 text-[13px] font-black text-emerald-700 dark:text-emerald-400">
+                        <BadgeCheck className="size-4" />
+                        پیشنهادهای پذیرفته‌شده — روند معامله
+                        <span className="rounded-full bg-emerald-600 px-1.5 py-0.5 text-[8.5px] font-black text-white">
+                            {faNum(accepted.length)}
+                        </span>
+                    </p>
+                    <div className="space-y-2">
+                        {accepted.map((a) => {
+                            const busy = busyId === a.id;
+                            return (
+                                <motion.div key={a.id} initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }}
+                                    className="rounded-xl border border-emerald-100 bg-emerald-50/60 p-3 dark:border-emerald-500/20 dark:bg-emerald-500/5">
+                                    <div className="flex items-center gap-2.5">
+                                        <span className="grid size-9 shrink-0 place-items-center overflow-hidden rounded-xl bg-white ring-1 ring-emerald-100 dark:bg-gray-900 dark:ring-emerald-500/20">
+                                            {a.buyer?.logoUrl
+                                                ? // eslint-disable-next-line @next/next/no-img-element
+                                                  <img src={a.buyer.logoUrl} alt="" className="size-full object-cover" />
+                                                : <ShoppingBag className="size-4 text-emerald-500" />}
+                                        </span>
+                                        <div className="min-w-0 flex-1">
+                                            <p className="truncate text-[12.5px] font-black text-stone-900 dark:text-gray-100">
+                                                {a.buyer?.name || a.buyerName || 'خریدار'}
+                                                {a.city ? <span className="font-bold text-stone-400 dark:text-gray-500"> · {a.city}</span> : null}
+                                            </p>
+                                            <p className="truncate text-[10px] font-bold text-stone-400 dark:text-gray-500">
+                                                {a.itemName ? `${a.itemName} — ` : ''}«{a.inquiryTitle}»
+                                            </p>
+                                        </div>
+                                        {!!a.buyerPhone && <OfferCallButton phone={a.buyerPhone} title="تماس با خریدار — معامله را نهایی کن" />}
+                                    </div>
+
+                                    <div className="mt-2 flex flex-wrap items-center gap-1.5 text-[10.5px] font-bold text-stone-500 dark:text-gray-400">
+                                        <span className="rounded-full bg-white px-2 py-0.5 text-[11px] font-black text-emerald-700 ring-1 ring-emerald-100 dark:bg-gray-900 dark:text-emerald-400 dark:ring-emerald-500/20">
+                                            {faPrice(a.price)}{a.unit && a.unit !== 'کل لیست' ? ` / هر ${a.unit}` : a.unit ? ` / ${a.unit}` : ''}
+                                        </span>
+                                        {a.deliveryDays != null && (
+                                            <span className="flex items-center gap-0.5"><Truck className="size-3" /> {faNum(a.deliveryDays)} روزه</span>
+                                        )}
+                                        <span className="text-stone-300 dark:text-gray-600">|</span>
+                                        <span>{faTimeAgo(a.createdAt)}</span>
+                                    </div>
+                                    {a.advantages && (
+                                        <p className="mt-1.5 rounded-lg bg-white/80 px-2 py-1 text-[10px] font-bold leading-4 text-emerald-800 dark:bg-gray-900/70 dark:text-emerald-300">
+                                            مزیت خرید از شما: {a.advantages}
+                                        </p>
+                                    )}
+
+                                    {/* ثبت نتیجهٔ معامله — وضعیت فعلی با پررنگی مشخص است */}
+                                    <div className="mt-2 flex items-center gap-1.5">
+                                        <button
+                                            disabled={busy}
+                                            onClick={() => markSale(a.id, 'sold')}
+                                            className={cn('flex h-8 flex-1 items-center justify-center gap-1 rounded-lg text-[11px] font-extrabold transition-colors disabled:opacity-50',
+                                                a.saleStatus === 'sold'
+                                                    ? 'bg-emerald-600 text-white'
+                                                    : 'border border-emerald-200 bg-white text-emerald-700 hover:bg-emerald-50 dark:border-emerald-500/30 dark:bg-transparent dark:text-emerald-400')}>
+                                            <Check className="size-3.5" /> فروش نهایی شد
+                                        </button>
+                                        <button
+                                            disabled={busy}
+                                            onClick={() => markSale(a.id, 'not_sold')}
+                                            className={cn('flex h-8 flex-1 items-center justify-center gap-1 rounded-lg text-[11px] font-extrabold transition-colors disabled:opacity-50',
+                                                a.saleStatus === 'not_sold'
+                                                    ? 'bg-stone-500 text-white dark:bg-gray-700'
+                                                    : 'border border-stone-200 bg-white text-stone-500 hover:bg-stone-50 dark:border-gray-700 dark:bg-transparent dark:text-gray-400')}>
+                                            <X className="size-3.5" /> فروش نهایی نشد
+                                        </button>
+                                    </div>
+                                    {a.saleStatus && (
+                                        <p className="mt-1 text-[9.5px] font-bold text-stone-400 dark:text-gray-500">
+                                            {a.saleStatus === 'sold' ? 'ثبت کردی: فروش نهایی شد' : 'ثبت کردی: فروش نهایی نشد'}
+                                            {a.saleStatusAt ? ` — ${faTimeAgo(a.saleStatusAt)}` : ''}
+                                            {' (برای تغییر، دکمهٔ دیگر را بزن)'}
+                                        </p>
+                                    )}
+                                </motion.div>
+                            );
+                        })}
+                    </div>
+                </div>
+            )}
+
             {/* دعوت‌های در انتظار پذیرش تو */}
             {invitations.length > 0 && (
                 <div className={cn(CARD_CLS, 'border-brand-contrast-tint p-4 dark:!border-amber-500/25')}>
@@ -242,12 +352,33 @@ export default function LeadsTab() {
                                                                 {it.note ? ` · ${it.note}` : ''}
                                                             </p>
                                                         </div>
-                                                        <button
-                                                            onClick={() => setOfferTarget({ inquiry: lead.inquiry, item: it })}
-                                                            className="shrink-0 rounded-full bg-brand-contrast px-3 py-1.5 text-[11px] font-extrabold text-white shadow-sm transition-colors hover:bg-brand-contrast-strong"
-                                                        >
-                                                            قیمت بده
-                                                        </button>
+                                                        {/* ✅ چرخهٔ وضعیت پیشنهاد (خواستهٔ مالک):
+                                                            دکمهٔ «پیشنهاد قیمت» ← لیبل ارسال شده (قابل ویرایش تا تصمیم خریدار) / تایید شده / رد شده */}
+                                                        {it.myOffer ? (
+                                                            it.myOffer.status === 'accepted' ? (
+                                                                <span className="flex shrink-0 items-center gap-1 rounded-full bg-emerald-50 px-2.5 py-1.5 text-[10.5px] font-extrabold text-emerald-700 ring-1 ring-emerald-200 dark:bg-emerald-500/10 dark:text-emerald-400 dark:ring-emerald-500/30">
+                                                                    <BadgeCheck className="size-3.5" /> تایید شده
+                                                                </span>
+                                                            ) : it.myOffer.status === 'rejected' ? (
+                                                                <span className="shrink-0 rounded-full bg-red-50 px-2.5 py-1.5 text-[10.5px] font-extrabold text-red-600 ring-1 ring-red-100 dark:bg-red-500/10 dark:text-red-400 dark:ring-red-500/30">
+                                                                    رد شده
+                                                                </span>
+                                                            ) : (
+                                                                <button
+                                                                    onClick={() => setOfferTarget({ inquiry: lead.inquiry, item: it, existing: it.myOffer })}
+                                                                    className="flex shrink-0 items-center gap-1 rounded-full bg-brand-contrast-soft px-2.5 py-1.5 text-[10.5px] font-extrabold text-amber-700 ring-1 ring-brand-contrast-tint transition-colors hover:bg-brand-contrast-soft/80 dark:bg-amber-500/10 dark:text-amber-400 dark:ring-amber-500/30">
+                                                                    <Check className="size-3.5" />
+                                                                    ارسال شده · ویرایش
+                                                                </button>
+                                                            )
+                                                        ) : (
+                                                            <button
+                                                                onClick={() => setOfferTarget({ inquiry: lead.inquiry, item: it })}
+                                                                className="shrink-0 rounded-full bg-brand-contrast px-3 py-1.5 text-[11px] font-extrabold text-white shadow-sm transition-colors hover:bg-brand-contrast-strong"
+                                                            >
+                                                                پیشنهاد قیمت
+                                                            </button>
+                                                        )}
                                                     </div>
                                                 ))}
                                                 <Link href={`/${lead.inquiry.slug || lead.inquiry.id}`}
@@ -265,10 +396,11 @@ export default function LeadsTab() {
                 )}
             </div>
 
-            {/* شیت پیشنهاد قیمت — مشترک با صفحه عمومی */}
+            {/* شیت پیشنهاد قیمت — مشترک با صفحه عمومی؛ حالت ویرایش برای پیشنهاد ارسال‌شده */}
             <OfferSheet
-                inquiry={offerTarget ? { id: offerTarget.inquiry.id } : null}
+                inquiry={offerTarget ? { id: offerTarget.inquiry.id, units: offerTarget.inquiry.units } : null}
                 item={offerTarget?.item ?? null}
+                existingOffer={offerTarget?.existing ?? null}
                 onClose={() => setOfferTarget(null)}
             />
         </div>

@@ -198,7 +198,7 @@ function InquiryCard({ inq }: { inq: any }) {
                 </span>
                 <span className="text-[11px] font-extrabold text-amber-700 dark:text-amber-400 flex items-center gap-1
                     group-hover:gap-1.5 transition-all">
-                    مشاهده و قیمت بده <ArrowLeft className="w-3.5 h-3.5" />
+                    مشاهده و پیشنهاد قیمت <ArrowLeft className="w-3.5 h-3.5" />
                 </span>
             </div>
         </Link>

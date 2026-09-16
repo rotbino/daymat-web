@@ -6,10 +6,10 @@ import React from 'react';
 import Image from 'next/image';
 import { motion, AnimatePresence } from 'framer-motion';
 import {
-    MessageSquareText, Truck, Megaphone, Share2,
+    MessageSquareText, Truck, Megaphone, Share2, Sparkles,
 } from 'lucide-react';
 import OfferCallButton from '@/app/components/OfferCallButton';
-import { faNum, faPrice, faTimeAgo, STATUS_FA, STATUS_CHIP } from '../../inquiries/utils';
+import { faNum, faPrice, faTimeAgo, STATUS_FA, STATUS_CHIP, offerBasisLabel } from '../../inquiries/utils';
 import type { InquiryDetail, InquiryItem, InquiryOffer } from '@/lib/api/apiTypes';
 
 interface Props {
@@ -83,7 +83,7 @@ export default function OffersTab({ detail, offers, loading, onDecide, onGoPubli
                                     </div>
                                     <div className="text-end">
                                         <p className="text-base font-black text-brand-contrast">{faPrice(o.price)}</p>
-                                        {o.priceBasis && <p className="text-[10px] font-bold text-stone-400">{o.priceBasis}</p>}
+                                        {!!offerBasisLabel(o) && <p className="text-[10px] font-bold text-stone-400">{offerBasisLabel(o)}</p>}
                                     </div>
                                 </div>
 
@@ -100,6 +100,14 @@ export default function OffersTab({ detail, offers, loading, onDecide, onGoPubli
 
                                 {o.message && (
                                     <p className="mt-2 rounded-xl bg-stone-50 px-3 py-2 text-xs leading-6 text-stone-600 dark:bg-gray-950/60 dark:text-gray-300">{o.message}</p>
+                                )}
+
+                                {/* ✅ مزیت خرید از این فروشنده — فروشنده در فرم پیشنهاد وارد کرده */}
+                                {o.advantages && (
+                                    <p className="mt-2 flex items-start gap-1.5 rounded-xl bg-emerald-50 px-3 py-2 text-xs font-bold leading-6 text-emerald-800 dark:bg-emerald-500/10 dark:text-emerald-300">
+                                        <Sparkles className="mt-1 size-3.5 shrink-0" />
+                                        <span>مزیت خرید از این فروشنده: {o.advantages}</span>
+                                    </p>
                                 )}
 
                                 {o.status === 'pending' && (

@@ -16,6 +16,7 @@ import {
     CreateInquiryPayload,
     CreateInquiryItemPayload,
     CreateOfferPayload,
+    UpdateOfferPayload,
 } from './apiTypes';
 import { toast } from 'sonner';
 import { useSelector } from "react-redux";
@@ -1806,6 +1807,8 @@ export const useAddOffer = () => {
         onSuccess: () => {
             qc.invalidateQueries({ queryKey: ['inquiries'] });
             qc.invalidateQueries({ queryKey: ['inquiries', 'my-offers'] });
+            // ✅ دکمهٔ «پیشنهاد قیمت» فوراً به لیبل «ارسال شده» تبدیل شود
+            qc.invalidateQueries({ queryKey: ['inquiry-opportunities'] });
         },
     });
 };
@@ -1814,9 +1817,38 @@ export const useUpdateOfferStatus = () => {
     const qc = useQueryClient();
     return useMutation({
         mutationFn: ({ offerId, status }: { offerId: string; status: 'accepted' | 'rejected' | 'withdrawn' }) =>
-            apiService.inquiry.updateOffer(offerId, status),
+            apiService.inquiry.updateOffer(offerId, { status }),
         onSuccess: () => {
             qc.invalidateQueries({ queryKey: ['inquiry'] });
+            qc.invalidateQueries({ queryKey: ['inquiries', 'my-offers'] });
+            // ✅ لیبل وضعیت در «سرنخ‌های فروش» تامین‌کننده هم به‌روز شود (ارسال شده → تایید/رد)
+            qc.invalidateQueries({ queryKey: ['inquiry-opportunities'] });
+        },
+    });
+};
+
+/** ✅ ویرایش پیشنهاد توسط تامین‌کننده — فقط تا وقتی خریدار تصمیم نگرفته */
+export const useUpdateOfferContent = () => {
+    const qc = useQueryClient();
+    return useMutation({
+        mutationFn: ({ offerId, data }: { offerId: string; data: UpdateOfferPayload }) =>
+            apiService.inquiry.updateOffer(offerId, data),
+        onSuccess: () => {
+            qc.invalidateQueries({ queryKey: ['inquiry-opportunities'] });
+            qc.invalidateQueries({ queryKey: ['inquiries', 'my-offers'] });
+            qc.invalidateQueries({ queryKey: ['inquiries'] });
+        },
+    });
+};
+
+/** ✅ ثبت نتیجهٔ معامله توسط تامین‌کننده — فروش نهایی شد / نشد (فقط پیشنهاد پذیرفته‌شده) */
+export const useSetOfferSaleStatus = () => {
+    const qc = useQueryClient();
+    return useMutation({
+        mutationFn: ({ offerId, saleStatus }: { offerId: string; saleStatus: 'sold' | 'not_sold' }) =>
+            apiService.inquiry.updateOffer(offerId, { saleStatus }),
+        onSuccess: () => {
+            qc.invalidateQueries({ queryKey: ['inquiry-opportunities'] });
             qc.invalidateQueries({ queryKey: ['inquiries', 'my-offers'] });
         },
     });

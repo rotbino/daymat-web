@@ -17,7 +17,7 @@ import {
     PurchaseCreditResponse,
     CreditBalance, User, BusinessEntity, BusinessTeamMember,
     InquiryListResponse, InquiryDetail, InquiryListItem, InquiryOffer, InquiryItem,
-    CreateInquiryPayload, CreateInquiryItemPayload, CreateOfferPayload,
+    CreateInquiryPayload, CreateInquiryItemPayload, CreateOfferPayload, UpdateOfferPayload,
 } from './apiTypes';
 
 // ─── پارامترهای کشفِ مخاطبِ مرتبط (درخواست ارتباط) ───
@@ -1447,9 +1447,9 @@ export const apiService = {
         getOffers: (inquiryId: string): Promise<InquiryOffer[]> =>
             apiRequest(`/inquiry/${inquiryId}/offers`),
 
-        /** تغییر وضعیت پیشنهاد — پذیرش/رد (مالک) یا انصراف (پیشنهاددهنده) */
-        updateOffer: (offerId: string, status: 'accepted' | 'rejected' | 'withdrawn'): Promise<InquiryOffer> =>
-            apiRequest(`/inquiry/offers/${offerId}`, { method: 'PATCH', data: { status } }),
+        /** تغییر پیشنهاد — پذیرش/رد (مالک) · ویرایش محتوا (پیشنهاددهنده، تا تصمیم خریدار) · نتیجهٔ فروش */
+        updateOffer: (offerId: string, data: UpdateOfferPayload): Promise<InquiryOffer> =>
+            apiRequest(`/inquiry/offers/${offerId}`, { method: 'PATCH', data }),
 
         /** پیشنهادهایی که من فرستاده‌ام */
         myOffers: (): Promise<InquiryOffer[]> =>
@@ -1496,7 +1496,7 @@ export const apiService = {
             apiRequest(`/inquiry/${inquiryId}/members/${memberId}`, { method: 'DELETE' }),
 
         /** فرصت‌های فروش تامین‌کننده — دعوت‌ها + اقلام فوریِ بازوهای خریدِ عضوش */
-        opportunities: (): Promise<{ catalogs: any[]; invitations: any[]; requests: any[]; leads: any[] }> =>
+        opportunities: (): Promise<{ catalogs: any[]; invitations: any[]; requests: any[]; leads: any[]; accepted: any[] }> =>
             apiRequest('/inquiry/opportunities'),
 
         // ─── 💾 بازوهای خرید ذخیره‌شده — سوییچر هدر صفحهٔ عمومی (قرینهٔ کاتالوگ) ───

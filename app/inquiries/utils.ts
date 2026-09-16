@@ -62,3 +62,9 @@ export const inpSm = 'h-9 rounded-xl border border-stone-200 bg-white px-3 text-
 
 // پیشنهادهای پرکاربرد واحد — اگر در مرجع واحد باشند اول لیست می‌آیند
 export const UNIT_SUGGESTIONS = ['کیلوگرم', 'کارتن', 'عدد', 'بسته', 'لیتر', 'متر', 'تان'];
+
+/** برچسب مبنای قیمت پیشنهاد — واحد جدید یا مبنی قدیمی («هر کارتن ۲۴ عددی» / «کل لیست») */
+export const offerBasisLabel = (o: { unit?: string | null; priceBasis?: string | null }): string => {
+    if (o.unit) return o.unit === 'کل لیست' ? 'کل لیست' : `هر ${o.unit}`;
+    return o.priceBasis || '';
+};

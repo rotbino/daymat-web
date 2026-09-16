@@ -879,12 +879,22 @@ export interface InquiryOffer {
     business?: InquiryBusinessBrief | null;
     price?: number | null;
     currency?: string;
+    /** ⛔️ منسوخ — جای خود را به unit داد (فقط پیشنهادهای قدیمی) */
     priceBasis?: string | null;
+    /** ✅ واحد پیشنهاد — قیمت برای «هر» این واحد است */
+    unitId?: string | null;
+    unit?: string | null;
+    /** ✅ مزیت خرید از شما — مزیت رقابتی فروشنده */
+    advantages?: string | null;
     deliveryDays?: number | null;
     message?: string | null;
     contactPhone?: string | null;
     status: 'pending' | 'accepted' | 'rejected' | 'withdrawn';
+    /** ✅ نتیجهٔ معامله — فقط روی پیشنهاد پذیرفته‌شده (sold | not_sold) */
+    saleStatus?: 'sold' | 'not_sold' | null;
+    saleStatusAt?: string | null;
     createdAt: string;
+    updatedAt?: string | null;
     inquiry?: { id: string; title: string; slug?: string | null; status: string; city?: string | null; deadline?: string | null };
 }
 
@@ -932,9 +942,28 @@ export interface CreateOfferPayload {
     itemId?: string;
     price: number;
     currency?: string;
+    /** ⛔️ منسوخ — به‌جای آن unit بفرست */
     priceBasis?: string;
+    /** ✅ واحد پیشنهاد — قیمت برای «هر» این واحد */
+    unitId?: string;
+    unit?: string;
+    /** ✅ مزیت خرید از شما */
+    advantages?: string;
     deliveryDays?: number;
     message?: string;
     contactPhone?: string;
     businessId?: string;
+}
+
+/** ویرایش پیشنهاد توسط پیشنهاددهنده (فقط تا تصمیم خریدار) یا ثبت نتیجهٔ فروش */
+export interface UpdateOfferPayload {
+    status?: 'accepted' | 'rejected' | 'withdrawn';
+    price?: number;
+    unitId?: string;
+    unit?: string;
+    advantages?: string;
+    deliveryDays?: number;
+    message?: string;
+    /** نتیجهٔ معامله — فقط روی پیشنهاد پذیرفته‌شده */
+    saleStatus?: 'sold' | 'not_sold';
 }

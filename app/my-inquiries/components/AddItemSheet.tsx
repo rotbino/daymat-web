@@ -8,16 +8,16 @@
 // ✅ گارد تکراری: هر کالا فقط یک‌بار در لیست (خواستهٔ مالک)
 'use client';
 
-import React, { useEffect, useMemo, useRef, useState } from 'react';
+import React, { useEffect, useRef, useState } from 'react';
 import { createPortal } from 'react-dom';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { motion, AnimatePresence } from 'framer-motion';
 import { apiService } from '@/lib/api/apiService';
 import { toast } from 'sonner';
 import ProductReferencePicker, { ProductValue } from '@/app/components/ProductReferencePicker';
-import Autocomplete from '@/app/components/Autocomplete';
+import UnitPicker from '@/app/components/UnitPicker';
 import SwitchRow from './SwitchRow';
-import { inp, inpSm, UNIT_SUGGESTIONS, faNum } from '../../inquiries/utils';
+import { inp, inpSm, faNum } from '../../inquiries/utils';
 import { toastFormErrors } from '@/lib/formAlerts';
 import { cn } from '@/lib/utils';
 import { X, ChevronDown, Plus, Loader2, Megaphone, Trash2, Clock } from 'lucide-react';
@@ -134,31 +134,8 @@ export default function AddItemSheet({ open, onClose, inquiryId, catalogUnits, e
     const activeRemaining = remainingHours(currentDeadline);
     const showDeadlineInput = st.urgent && !(editItem?.urgent) && !activeRemaining;
 
-    // گزینه‌های سلکت واحد: واحدهای من (با عنوان ترکیبی) + پرکاربرد + بقیهٔ مرجع
-    const unitOptions = useMemo(() => {
-        const list = allUnits as any[];
-        const refById = new Map<string, any>(list.map((u) => [u.id, u]));
-        // ✅ واحدهای من — با پشتیبانی عنوان ترکیبی («کارتن ۲۴ عددی»)
-        const mine: any[] = [];
-        for (const u of (catalogUnits as any[]) || []) {
-            const ref = refById.get(u.unitId);
-            const title = u.title || ref?.title || '';
-            if (!title && !ref) continue;
-            mine.push({ id: u.unitId, title, refTitle: ref?.title || title, custom: !!u.title });
-        }
-        const mineBaseIds = new Set(mine.map((u) => u.id));
-        const sug = UNIT_SUGGESTIONS
-            .map((t) => list.find((u) => u.title === t))
-            .filter((u): u is any => !!u && !mineBaseIds.has(u.id));
-        const sugIds = new Set(sug.map((u) => u.id));
-        const rest = list.filter((u) => !mineBaseIds.has(u.id) && !sugIds.has(u.id));
-        return { mine, sug, rest };
-    }, [allUnits, catalogUnits]);
-
-    const orderedUnits = useMemo(
-        () => [...unitOptions.mine, ...unitOptions.sug, ...unitOptions.rest],
-        [unitOptions],
-    );
+    // ✅ سلکت واحد — کامپوننت مشترک UnitPicker (سرچ + واحدهای من + کل مرجع)
+    //    ترتیب و بج «واحدهای من» داخل UnitPicker مدیریت می‌شود — همهٔ فرم‌ها یک رفتار
 
     const findUnit = (id: string): any => (allUnits as any[]).find((u) => u.id === id) || null;
 
@@ -359,32 +336,16 @@ export default function AddItemSheet({ open, onClose, inquiryId, catalogUnits, e
                                     {errors.quantity && <p className="mt-1 px-1 text-[10px] font-bold text-red-500">{errors.quantity}</p>}
                                 </div>
                                 <div className="min-w-0">
-                                    <Autocomplete
+                                    <UnitPicker
                                         value={{ id: st.unitId || null, title: st.unitTitle }}
                                         onChange={pickUnit}
-                                        fetchFn={async (q) => {
-                                            const t = (q || '').trim();
-                                            return orderedUnits
-                                                .filter((u: any) => !t || (u.title || '').includes(t))
-                                                .slice(0, 40);
-                                        }}
-                                        queryKey="units-autocomplete"
+                                        catalogUnits={catalogUnits as any}
                                         placeholder="واحد — جستجو کن"
-                                        allowCreate={false}
-                                        minChars={0}
-                                        className="h-10!"
-                                        renderOption={(u: any) => (
-                                            <span className="flex w-full items-center justify-between gap-2">
-                                                <span className="truncate">{u.title}</span>
-                                                {u.custom && (
-                                                    <span className="shrink-0 rounded-full bg-brand-contrast-soft px-1.5 py-0.5 text-[8.5px] font-black text-amber-700 dark:bg-amber-500/10 dark:text-amber-400">
-                                                        واحدهای من
-                                                    </span>
-                                                )}
-                                            </span>
-                                        )}
+                                        error={errors.unit}
+                                        favorite={favUnit}
+                                        onFavoriteChange={setFavUnit}
+                                        favoriteLabel="افزودن به واحدهای بازوی خرید — دفعه‌های بعد سرِ دستت باشد"
                                     />
-                                    {errors.unit && <p className="mt-1 px-1 text-[10px] font-bold text-red-500">{errors.unit}</p>}
                                 </div>
                             </div>
 
@@ -406,19 +367,7 @@ export default function AddItemSheet({ open, onClose, inquiryId, catalogUnits, e
                                 </div>
                             )}
 
-                            {/* ✅ تیک افزودن به واحدهای من — دفعات بعد سرِ دست (خواستهٔ مالک) */}
-                            {st.unitId && (
-                                <button type="button" onClick={() => setFavUnit((v) => !v)}
-                                    className="flex w-full items-center gap-2 rounded-xl px-1 py-1 text-right">
-                                    <span className={cn('grid size-5 place-items-center rounded-md border-2 transition-colors',
-                                        favUnit ? 'border-brand-contrast bg-brand-contrast text-white' : 'border-stone-300 dark:border-gray-600')}>
-                                        {favUnit && <span className="text-[10px] font-black leading-none">✓</span>}
-                                    </span>
-                                    <span className="text-[11px] font-bold text-stone-500 dark:text-gray-400">
-                                        افزودن به واحدهای بازوی خرید — دفعه‌های بعد سرِ دستت باشد
-                                    </span>
-                                </button>
-                            )}
+                            {/* ✅ تیک افزودن به واحدهای من — داخل UnitPicker رندر می‌شود (دفعات بعد سرِ دست) */}
 
                             {/* قیمت‌گیری — سؤالِ روشن (جای «بازوی خرید»ی بی‌معنی بعد از ریپلیس) */}
                             <div className={`rounded-2xl border p-3.5 transition-colors ${
