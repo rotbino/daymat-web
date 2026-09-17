@@ -213,10 +213,16 @@ export default function MyCatalogsContent() {
     );
 
     // ─── عضویت تازه (۴۸ ساعت اول) — بنر جشن ───
+    // ✅ فیکس بنر جشنِ کاذب: جشن فقط برای عضویتی است که مدیرِ بازار ادد کرده (owner_add)
+    //    یا درخواستِ عضویتش تایید شده (membership_request) — قبلاً عضویتِ خودکارِ
+    //    لحظهٔ ساختِ بازوی فروش (source=manual) هم جشن می‌گرفت در حالی که مدیر هنوز
+    //    کاربر را به بازار ادد نکرده بود.
+    const CELEBRATED_SOURCES = ['owner_add', 'membership_request', 'invitation'];
     const freshMembership = useMemo(
         () => (memberships ?? []).find((m: any) =>
             m.roleType === 'seller' &&
             m.status === 'active' &&
+            CELEBRATED_SOURCES.includes(m.source) &&
             (m.publishState ?? (m.status === 'active' ? 'published' : null)) === 'published' &&
             Date.now() - new Date(m.joinedAt).getTime() < 48 * 60 * 60 * 1000,
         ),

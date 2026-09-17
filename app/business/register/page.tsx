@@ -4,14 +4,13 @@
 import React, { useEffect, useMemo, useRef, useState } from 'react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
-import { useSelector, useDispatch } from 'react-redux';
+import { useDispatch } from 'react-redux';
 import { toast } from 'sonner';
 import {
     LibraryBig, Building2, Loader2, ArrowRight, AlertTriangle, Globe, Lock, BadgeCheck, ClipboardList,
 } from 'lucide-react';
 import { useCreateCatalog, useBusinessSearch, useCataloges, useMyBusinesses, useMyBusinessMembership } from '@/lib/api/apiHooks';
 import { USER_POSITIONS, getFirstCatalog, getBusinessRoleLabel } from '@/lib/api/data-types';
-import { RootState } from '@/lib/store/store';
 import { setCurrentCatalog } from '@/lib/store/slices/catalogSlice';
 import { clearStoredRef, readStoredRef } from '@/app/components/RefCapture';
 import BusinessSelector from '@/app/components/BusinessSelector';
@@ -37,7 +36,9 @@ function SectionTitle({ n, title }: { n: number; title: string }) {
 export default function RegisterCatalogPage() {
     const router = useRouter();
     const dispatch = useDispatch();
-    const { currentSlug: armSlug } = useSelector((state: RootState) => state.arm);
+    // ✅ فیکس بنر جشنِ کاذب: armSlug (آخرین بازاری که کاربر دیده بود) دیگر به بک فرستاده نمی‌شود —
+    //    ساختِ بازوی فروش نباید بی‌اجازهٔ مدیرِ بازار عضویتِ published بسازد. ورود به بازار فقط
+    //    از «انتشار در بازارها» یا اددِ مدیرِ بازار.
 
     // ─── کسب‌وکار انتخاب‌شده (کسب‌وکار مرجع مشترک است) ───
     const [bizId, setBizId] = useState<string | undefined>(() =>
@@ -186,7 +187,6 @@ export default function RegisterCatalogPage() {
                 salesType,
                 isPrivate,
                 refCode,
-                armSlug,
                 phone: '',
                 description: '',
                 position: effectivePosition,
