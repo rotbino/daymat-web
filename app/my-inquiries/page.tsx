@@ -1,5 +1,5 @@
 // app/my-inquiries/page.tsx
-// پنل مدیریت بازوی خرید — قرینهٔ کنسول بازوی فروش قیمت (/my-catalogs):
+// پنل مدیریت بازوی خرید — قرینهٔ کنسول بازوی فروش (/my-catalogs):
 //   انتخاب کسب‌وکار در /inquiries/new انجام می‌شود و کاربر مستقیم به همین پنل می‌آید؛
 //   اقلام قلم‌به‌قلم از همین‌جا اضافه می‌شوند (هر بار یک کالا + تیک بازوی خرید).
 //   تب‌ها: اقلام | پیشنهادها | تامین‌کنندگان | تنظیمات | انتشار — سوییچر دو-محصولی بالای پنل.
@@ -366,7 +366,7 @@ export default function MyInquiriesPage() {
                                         </span>
                                     </p>
                                     <p className="mt-1 text-[11px] font-bold text-stone-400 dark:text-gray-500">
-                                        از لیست‌های عمومی، بازار و سرنخ‌های فروش خارج شده — فقط تو می‌بینی‌اش.
+                                        از لیست‌های عمومی، بازار و درخواستهای قیمت خارج شده — فقط تو می‌بینی‌اش.
                                     </p>
                                     <button onClick={reopenFile}
                                         className="mt-2.5 h-9 rounded-full border border-stone-200 px-4 text-[11px] font-extrabold text-stone-600 transition-colors hover:border-brand-contrast hover:text-amber-700 dark:border-gray-700 dark:text-gray-300">

@@ -35,7 +35,7 @@ interface Props {
     catalogId: string;
     initialUnits: { unitId: string; containsQty?: number; qtyIsFixed?: boolean }[];
     onSaved: (units: { unitId: string; containsQty?: number; qtyIsFixed?: boolean }[]) => void;
-    /** ✅ عمومی‌شده: ذخیره‌ساز سفارشی (مثلاً بازوی خرید → PATCH استعلام) — پیش‌فرض: کانفیگ بازوی فروش قیمت */
+    /** ✅ عمومی‌شده: ذخیره‌ساز سفارشی (مثلاً بازوی خرید → PATCH استعلام) — پیش‌فرض: کانفیگ بازوی فروش */
     saveFn?: (units: { unitId: string; containsQty?: number; qtyIsFixed?: boolean }[]) => Promise<any>;
     /** ✅ عنوان مدال — پیش‌فرض: واحدهای اختصاصی بازوی فروش */
     title?: string;

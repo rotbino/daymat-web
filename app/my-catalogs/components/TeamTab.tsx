@@ -430,7 +430,7 @@ export default function TeamTab({ catalogId, slug }: Props) {
                 {teamRows.map((m: any) => <React.Fragment key={m.id}>{rowFor(m, 'seller')}</React.Fragment>)}
             </div>
 
-            {/* تامین‌کننده‌ها و خدمات — لِین بازوی فروش قیمت */}
+            {/* تامین‌کننده‌ها و خدمات — لِین بازوی فروش */}
             {supplyRows.length > 0 && (
                 <div className={cn(CARD_CLS, 'p-2')}>
                     <p className="flex items-center gap-1.5 px-2 pt-2 pb-1 text-[11px] font-black text-sky-700 dark:text-sky-400">

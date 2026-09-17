@@ -32,7 +32,7 @@ export const CATALOG_ROLES = [
 // ✅ sector بیشتر برای فیلتر و دسته‌بندی استفاده می‌شه
 //
 // ✅ firstCatalog — بعد از ثبت کسب‌وکار، پیشنهادِ «اولین ابزار»:
-//     true  → اول بازوی فروش قیمت بساز (جنسبَذَرها: تولیدی، پخش، عمده‌فروش، خدمات‌دهنده)
+//     true  → اول بازوی فروش بساز (جنسبَذَرها: تولیدی، پخش، عمده‌فروش، خدمات‌دهنده)
 //     false → اول بازوی خرید بساز (خریدبذَرها: خرده‌فروش، رستوران، آرایشگر و مشابه‌ها)
 //   ⚠️ فقط «پیشنهاد» است نه اجبار — هر دو ابزار همیشه در دسترس‌اند (کارت گام بعدی در /business/register)
 export const BUSINESS_TYPE = [
@@ -120,7 +120,7 @@ export function getBusinessSector(roleId: string | undefined | null): string {
 }
 
 // ✅ helper: پیشنهادِ اولین ابزار برای یک role —
-// true → اول بازوی فروش قیمت | false → اول بازوی خرید | undefined → role نامشخص/قدیمی (بدون پیشنهاد)
+// true → اول بازوی فروش | false → اول بازوی خرید | undefined → role نامشخص/قدیمی (بدون پیشنهاد)
 export function getFirstCatalog(roleId: string | undefined | null): boolean | undefined {
     if (!roleId) return undefined;
     for (const sector of BUSINESS_TYPE) {

@@ -443,7 +443,7 @@ export default function VisitCardModal({ open, onClose, catalogName, slug, logoU
         try {
             const spec = await buildSpec();
             if (!spec) throw new Error('spec');
-            // 📋 مقصد ذخیره — بازوی فروش قیمت یا بازوی خرید (هر دو در metadata.visitCard)
+            // 📋 مقصد ذخیره — بازوی فروش یا بازوی خرید (هر دو در metadata.visitCard)
             const res: any = inquiryId
                 ? await apiService.inquiry.updateVisitCard(inquiryId, spec)
                 : await apiService.catalog.updateVisitCard(catalogId!, spec);

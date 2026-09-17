@@ -273,7 +273,7 @@ function RequestCard({
                     ) : (
                         <>
                             <p className="text-[9.5px] font-bold text-on-surface-variant/70 mb-2 flex items-center gap-1">
-                                <BookOpen className="w-3 h-3" /> بازوی فروش قیمتنده
+                                <BookOpen className="w-3 h-3" /> بازوی فروشنده
                             </p>
                             {cat ? (
                                 <>

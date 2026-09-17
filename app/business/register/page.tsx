@@ -114,7 +114,7 @@ export default function RegisterCatalogPage() {
 
     // ─── ✅ پیشنهاد گام بعدی — بعد از ثبتِ «جدید»ِ کسب‌وکار، بر اساس نوع فعالیت (firstCatalog) ───
     // فقط برای خریدبذَرها (firstCatalog=false: خرده‌فروش، رستوران، آرایشگر…) کارت پیشنهاد بازوی خرید نشان داده می‌شود؛
-    // برای جنس‌بذَرها همین فرم بازوی فروش قیمت خودش مسیر پیشنهادی است — هیچ کاردی لازم نیست. پیشنهاد است، نه اجبار.
+    // برای جنس‌بذَرها همین فرم بازوی فروش خودش مسیر پیشنهادی است — هیچ کاردی لازم نیست. پیشنهاد است، نه اجبار.
     const [stepHint, setStepHint] = useState<{ bizId: string; bizName: string; roleLabel: string } | null>(null);
     const handleBusinessCreated = (biz: any) => {
         if (biz?.id && getFirstCatalog(biz.businessRole) === false) {
@@ -192,7 +192,7 @@ export default function RegisterCatalogPage() {
                 position: effectivePosition,
             });
 
-            toast.success(`بازوی فروش «${shortName(catalogName.trim(), 24)}» برای «${shortName(selectedBiz.name, 24)}» ساخته شد 🎉`, {
+            toast.success(`«${shortName(catalogName.trim(), 24)}» برای «${shortName(selectedBiz.name, 24)}» ساخته شد 🎉`, {
                 description: `آدرس: daymat.ir/${created?.slug || slug}`,
                 duration: 6000,
             });
@@ -407,11 +407,11 @@ export default function RegisterCatalogPage() {
 
                     {/* ═══ ۵) نوع فروش ═══ */}
                     <section className="space-y-2">
-                        <SectionTitle n={5} title="نوع فروش در این بازوی فروش" />
+                        <SectionTitle n={5} title="هدف این بازوی فروش " />
                         <div className="grid grid-cols-3 gap-2">
                             {[
-                                { v: 'wholesale', t: 'عمده', icon: '📦' },
-                                { v: 'retail', t: 'خرده', icon: '🛒' },
+                                { v: 'wholesale', t: 'فروش عمده', icon: '📦' },
+                                { v: 'retail', t: 'فروش خرده', icon: '🛒' },
                                 { v: 'service', t: 'خدمات', icon: '🔧' },
                             ].map((o) => (
                                 <button key={o.v} type="button"
@@ -481,7 +481,7 @@ export default function RegisterCatalogPage() {
             </main>
 
             {/* ═══ کارت گام بعدی — فقط بعد از ثبتِ جدیدِ کسب‌وکارِ خریدبذَر (firstCatalog=false) ═══
-                پیشنهاد دلیل‌دار با درِ باز: دکمهٔ بزرگ بازوی خرید + لینک کمرنگِ ادامهٔ بازوی فروش قیمت */}
+                پیشنهاد دلیل‌دار با درِ باز: دکمهٔ بزرگ بازوی خرید + لینک کمرنگِ ادامهٔ بازوی فروش */}
             {stepHint && (
                 <div className="fixed inset-0 z-[100] flex items-end sm:items-center sm:justify-center bg-black/50 animate-in fade-in duration-200 sm:p-4"
                      onClick={() => setStepHint(null)}>
@@ -497,7 +497,7 @@ export default function RegisterCatalogPage() {
                             چون گفتی <span className="font-black">{stepHint.roleLabel}</span>، و بیشتر خرید عمده داری تا فروش عمده می‌کنیم اول{' '}
                             <span className="font-black text-amber-600 dark:text-amber-400">بازوی خرید</span> بسازی —
                             لیست خریدت رو می‌نویسی، تامین‌کننده‌ها قیمت می‌دن و تو بهترین رو انتخاب می‌کنی.
-                            (بازوی فروش قیمت هم هر وقت خواستی می تونی از پنل خودت بسازی)
+                            (بازوی فروش هم هر وقت خواستی می تونی از پنل خودت بسازی)
                         </p>
                         <Link href={`/inquiries/new?bizId=${stepHint.bizId}`}
                               className="mt-5 flex h-12 w-full items-center justify-center gap-2 rounded-xl bg-brand-contrast text-sm font-extrabold text-white shadow-lg shadow-brand-contrast/30 transition-colors hover:bg-brand-contrast-strong">
@@ -506,7 +506,7 @@ export default function RegisterCatalogPage() {
                         </Link>
                         <button type="button" onClick={() => setStepHint(null)}
                                 className="mt-3 text-[12px] font-bold text-on-surface-variant/70 transition-colors hover:text-on-surface">
-                            نه، همین‌جا بازوی فروش قیمت می‌سازم
+                            نه، همین‌جا بازوی فروش می‌سازم
                         </button>
                     </div>
                 </div>

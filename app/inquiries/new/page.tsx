@@ -1,7 +1,7 @@
 // app/inquiries/new/page.tsx
 // ساخت بازوی خرید — نسخهٔ ۳ (جریان پنل‌محور بر اساس ایدهٔ مالک):
 //   کسب‌وکار را انتخاب کن → بازوی فروش ساخته می‌شود → مستقیم به پنل مدیریت می‌روی؛
-//   اقلام بعداً قلم‌به‌قلم از پنل اضافه می‌شوند (مثل بازوی فروش قیمت که اول بازوی فروش ساخته می‌شود).
+//   اقلام بعداً قلم‌به‌قلم از پنل اضافه می‌شوند (مثل بازوی فروش که اول بازوی فروش ساخته می‌شود).
 //   ذهن کاربر اولِ کار آمادهٔ واردکردن قلم نیست — پس هیچ قلمی اینجا خواسته نمی‌شود.
 'use client';
 
@@ -38,7 +38,7 @@ export default function NewInquiryPage() {
 
     const [biz, setBiz] = useState<any | null>(null);
     const [visibility, setVisibility] = useState<'public' | 'private'>('public');
-    // ✅ آدرس عمومی صفحه — مثل بازوی فروش قیمت کاربر خودش انتخاب می‌کند (daymat.ir/supey)
+    // ✅ آدرس عمومی صفحه — مثل بازوی فروش کاربر خودش انتخاب می‌کند (daymat.ir/supey)
     const [slug, setSlug] = useState('');
     const [slugStatus, setSlugStatus] = useState<'taken' | 'reserved' | null>(null);
     const [submitting, setSubmitting] = useState(false);
@@ -197,7 +197,7 @@ export default function NewInquiryPage() {
                                     </button>
                                 ))}
                             </div>
-                            {/* 📍 آدرس عمومی صفحه — کاربر خودش انتخاب می‌کند (مثل بازوی فروش قیمت) */}
+                            {/* 📍 آدرس عمومی صفحه — کاربر خودش انتخاب می‌کند (مثل بازوی فروش) */}
                             <div className="mb-3 rounded-2xl border border-stone-100 bg-white p-3 dark:border-gray-800 dark:bg-gray-900">
                                 <div className="mb-2 flex items-center gap-1.5">
                                     <Link2 className="size-3.5 text-amber-600 dark:text-amber-400" />

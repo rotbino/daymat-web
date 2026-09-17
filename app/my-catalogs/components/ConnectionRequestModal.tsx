@@ -367,7 +367,7 @@ export default function ConnectionRequestModal({ open, onClose, catalogId, mode,
                         }}
                         invite={{
                             label: 'دعوت به دیمت',
-                            getText: () => 'سلام! بازوی فروش قیمتی ما در دیمت را ببین:',
+                            getText: () => 'سلام! بازوی فروشی ما در دیمت را ببین:',
                             getUrl: () => (slug ? `${window.location.origin}/${slug}` : undefined),
                         }}
                     />
@@ -398,7 +398,7 @@ export default function ConnectionRequestModal({ open, onClose, catalogId, mode,
                         }}
                         invite={{
                             label: 'دعوت به دیمت',
-                            getText: () => 'سلام! بازوی فروش قیمتی ما در دیمت را ببین:',
+                            getText: () => 'سلام! بازوی فروشی ما در دیمت را ببین:',
                             getUrl: () => (slug ? `${window.location.origin}/${slug}` : undefined),
                         }}
                     />

@@ -215,7 +215,7 @@ export default function OffersTab({ detail, offers, loading, onDecide, onFinaliz
                                 معامله را با تامین‌کننده بستی؟
                             </p>
                             <p className="mt-1 text-[11px] font-bold leading-5 text-stone-400 dark:text-gray-500">
-                                پرونده را ببند: پیشنهادهای بدون تصمیم «رد می‌شوند» و بازو از سرنخ‌های فروش تامین‌کننده‌ها خارج می‌شود.
+                                پرونده را ببند: پیشنهادهای بدون تصمیم «رد می‌شوند» و بازو از درخواستهای قیمت تامین‌کننده‌ها خارج می‌شود.
                             </p>
                             <button onClick={() => setFinalizeOpen(true)} disabled={finalizing}
                                 className="mt-3 h-10 w-full rounded-full border-2 border-brand-contrast text-xs font-extrabold text-amber-700 transition-colors hover:bg-brand-contrast-soft disabled:opacity-50 dark:text-amber-400">

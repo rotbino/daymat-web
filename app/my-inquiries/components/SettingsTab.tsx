@@ -42,7 +42,7 @@ export default function SettingsTab({ detail, onSave, onOpenUnits, onToggleStatu
     // ☎️ نمایش شمارهٔ تماس من — فرمان دست خود خریدار (خواستهٔ مالک):
     //    روشن = تامین‌کننده می‌تواند شماره را ببیند/ذخیره کند/تماس بگیرد؛ خاموش = پنهان
     const [showContactPhone, setShowContactPhone] = useState(true);
-    // ✅ آدرس عمومی — قابل ویرایش مثل بازوی فروش قیمت (لینک قدیمی /inquiries/{id} هم همچنان کار می‌کند)
+    // ✅ آدرس عمومی — قابل ویرایش مثل بازوی فروش (لینک قدیمی /inquiries/{id} هم همچنان کار می‌کند)
     const [slug, setSlug] = useState('');
     const [slugStatus, setSlugStatus] = useState<'taken' | 'reserved' | null>(null);
 

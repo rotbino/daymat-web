@@ -118,7 +118,7 @@ export default function CatalogIdentityBar({ catalogs, inquiries = [], currentCa
                             {/* 📍 ساخت بازوی فروش جدید — هر دو محصول از همین منو (دسترسی راحت) */}
                             <button type="button" onClick={() => { setMenuOpen(false); onNewCatalog(); }}
                                     className="w-full flex items-center gap-2.5 h-10 px-3 rounded-md text-[13px] text-on-surface hover:bg-surface-container-high dark:hover:bg-gray-800 transition-colors">
-                                <Plus className="w-4 h-4 text-primary" /> بازوی فروش قیمت جدید
+                                <Plus className="w-4 h-4 text-primary" /> بازوی فروش جدید
                             </button>
                             {onNewInquiry && (
                                 <button type="button" onClick={() => { setMenuOpen(false); onNewInquiry(); }}
@@ -165,7 +165,7 @@ export default function CatalogIdentityBar({ catalogs, inquiries = [], currentCa
                                         <span className={cn('text-[13px] font-bold truncate', active ? 'text-primary' : 'text-on-surface')}>
                                             {c.name}
                                         </span>
-                                        <span className="text-[9px] font-bold text-primary/70 whitespace-nowrap flex-shrink-0">(بازوی فروش قیمت)</span>
+                                        <span className="text-[9px] font-bold text-primary/70 whitespace-nowrap flex-shrink-0">(بازوی فروش)</span>
                                     </span>
                                     {c.isTeamEntry && (
                                         <span className="text-[9px] font-extrabold text-sky-700 dark:text-sky-300
@@ -216,7 +216,7 @@ export default function CatalogIdentityBar({ catalogs, inquiries = [], currentCa
                                             className="w-full flex items-center gap-2.5 h-11 px-3 rounded-lg text-right text-[13px] font-extrabold
                                                 text-primary hover:bg-surface-container-high dark:hover:bg-gray-800 transition-colors">
                                         <Plus className="w-4 h-4" />
-                                        ساخت بازوی فروش قیمت
+                                        ساخت بازوی فروش
                                     </button>
                                 )}
                                 {missingInquiry && onNewInquiry && (

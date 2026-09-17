@@ -1463,7 +1463,7 @@ export const apiService = {
             apiRequest('/inquiry/my-offers'),
 
         // ─── اعضای بازوی خرید — تامین‌کننده‌های تاییدشده (شبکهٔ خرید↔فروش) ───
-        /** 🪪 ذخیره/حذف مشخصات کارت ویزیت بازوی خرید — قرینهٔ بازوی فروش قیمت */
+        /** 🪪 ذخیره/حذف مشخصات کارت ویزیت بازوی خرید — قرینهٔ بازوی فروش */
         updateVisitCard: (inquiryId: string, spec: Record<string, any> | null): Promise<any> =>
             apiRequest(`/inquiry/${inquiryId}/visit-card`, { method: 'PATCH', data: { spec } }),
 
@@ -1471,7 +1471,7 @@ export const apiService = {
         getMembers: (inquiryId: string): Promise<any[]> =>
             apiRequest(`/inquiry/${inquiryId}/members`),
 
-        /** جست‌وجوی بازوی فروش قیمت برای درخواست همکاری تامین‌کننده (مالک) — فیلتر استان/شهر/صنف */
+        /** جست‌وجوی بازوی فروش برای درخواست همکاری تامین‌کننده (مالک) — فیلتر استان/شهر/صنف */
         supplierCandidates: (inquiryId: string, f?: { q?: string; provinceCode?: string; cityCode?: string; industry?: string }): Promise<{ items: any[] }> => {
             const p = new URLSearchParams();
             if (f?.q?.trim()) p.set('q', f.q.trim());
@@ -1486,7 +1486,7 @@ export const apiService = {
         addMember: (inquiryId: string, data: { catalogId: string; note?: string }): Promise<any> =>
             apiRequest(`/inquiry/${inquiryId}/members`, { method: 'POST', data }),
 
-        /** درخواست عضویت تامین‌کننده با بازوی فروش قیمتش — تایید با خریدار */
+        /** درخواست عضویت تامین‌کننده با بازوی فروشش — تایید با خریدار */
         requestAccess: (inquiryId: string, data: { catalogId: string; note?: string }): Promise<any> =>
             apiRequest(`/inquiry/${inquiryId}/request-access`, { method: 'POST', data }),
 

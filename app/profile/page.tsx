@@ -202,7 +202,7 @@ export default function ProfilePage() {
                                             {[
                                                 b.city || b.province,
                                                 (b._count?.catalogs ?? 0) > 0
-                                                    ? `${(b._count?.catalogs ?? 0).toLocaleString('fa-IR')} بازوی فروش قیمت`
+                                                    ? `${(b._count?.catalogs ?? 0).toLocaleString('fa-IR')} بازوی فروش`
                                                     : null,
                                                 (inquiryCountByBiz[b.id] ?? 0) > 0
                                                     ? `${(inquiryCountByBiz[b.id] ?? 0).toLocaleString('fa-IR')} بازوی خرید`

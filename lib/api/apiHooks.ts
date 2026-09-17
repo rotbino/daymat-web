@@ -1841,7 +1841,7 @@ export const useUpdateOfferStatus = () => {
         onSuccess: () => {
             qc.invalidateQueries({ queryKey: ['inquiry'] });
             qc.invalidateQueries({ queryKey: ['inquiries', 'my-offers'] });
-            // ✅ لیبل وضعیت در «سرنخ‌های فروش» تامین‌کننده هم به‌روز شود (ارسال شده → تایید/رد)
+            // ✅ لیبل وضعیت در «درخواستهای قیمت» تامین‌کننده هم به‌روز شود (ارسال شده → تایید/رد)
             qc.invalidateQueries({ queryKey: ['inquiry-opportunities'] });
         },
     });
@@ -1951,7 +1951,7 @@ export const useAddInquiryMember = () => {
     });
 };
 
-/** درخواست عضویت تامین‌کننده با بازوی فروش قیمتش (از گیت صفحه عمومی) */
+/** درخواست عضویت تامین‌کننده با بازوی فروشش (از گیت صفحه عمومی) */
 export const useRequestInquiryAccess = () => {
     const qc = useQueryClient();
     return useMutation({

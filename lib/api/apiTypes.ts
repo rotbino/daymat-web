@@ -938,7 +938,7 @@ export interface CreateInquiryPayload {
     paymentTerms?: string;
     tags?: string[];
     businessId?: string;
-    units?: InquiryUnitPayload[];      // ✅ واحدهای اختصاصی بازوی خرید (مثل بازوی فروش قیمت)
+    units?: InquiryUnitPayload[];      // ✅ واحدهای اختصاصی بازوی خرید (مثل بازوی فروش)
     allowNonUrgentOffers?: boolean;    // ✅ امکان ارسال قیمت برای خریدهای غیر فوری
 }
 

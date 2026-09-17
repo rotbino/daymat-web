@@ -362,7 +362,7 @@ export default function MyCatalogsContent() {
               { key: 'products' as Tab, label: 'محصولات', icon: Package, count: products.length },
               { key: 'team' as Tab, label: 'تیم فروش', icon: Users, alert: teamPendingOther },
               { key: 'customers' as Tab, label: 'خریداران', icon: Handshake, alert: teamPendingBuyers },
-              { key: 'leads' as Tab, label: 'سرنخ‌های فروش', mobileLabel: 'سرنخ‌ها', icon: Megaphone, alert: pendingInvites },
+              { key: 'leads' as Tab, label: 'درخواستهای قیمت', mobileLabel: 'درخواست قیمت', icon: Megaphone, alert: pendingInvites },
               { key: 'profile' as Tab, label: 'مشخصات', icon: IdCard },
               { key: 'stats' as Tab, label: 'آمار', icon: BarChart3 },
               { key: 'publish' as Tab, label: 'انتشار', icon: Globe, count: memberships.length > 0 ? memberships.length : undefined },

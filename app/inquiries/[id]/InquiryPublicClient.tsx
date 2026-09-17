@@ -4,7 +4,7 @@
 //   ۲) «سایر کالاهایی که معمولا می‌خرد» — قیمت‌گیری‌شان بسته به تنظیمات خریدار
 //   پیشنهاد قیمت قلم‌به‌قلم در شیت ثبت می‌شود؛ مالک: مدیریت در پنل.
 // ✅ طراحی ۱۴۰۴ (بازطراحی به خواست مالک):
-//   - بستر سفید + کارت‌های سایه‌دار مثل بازوی فروش قیمت (پس‌زمینهٔ کهربایی حذف شد)
+//   - بستر سفید + کارت‌های سایه‌دار مثل بازوی فروش (پس‌زمینهٔ کهربایی حذف شد)
 //   - لیستِ لیستی حفظ شد؛ دکمهٔ قیمت برای «همه» فعال است
 //   - موبایل: CTA جمع‌وجور فوتر «پیشنهاد قیمت»؛ دسکتاپ: باکس «می‌تونی این لیست رو تامین کنی؟»
 //   - حذف از صفحهٔ مالک برداشته شد — بازوی فروش حذف نمی‌شود، فقط پذیرش قیمت متوقف/بسته می‌شود
@@ -51,7 +51,7 @@ const fadeUp = (delay = 0) => ({
     transition: { duration: 0.45, delay, ease: 'easeOut' as const },
 });
 
-// ✅ کارت سایه‌دار — هم‌خانوادهٔ بازوی فروش قیمت؛ بستر سفید، سایهٔ نرم، بوردر خنثی
+// ✅ کارت سایه‌دار — هم‌خانوادهٔ بازوی فروش؛ بستر سفید، سایهٔ نرم، بوردر خنثی
 const CARD = 'border border-outline-variant/30 bg-white shadow-[0_2px_12px_-6px_rgba(15,23,42,0.14)] dark:border-gray-800 dark:bg-gray-900 dark:shadow-[0_2px_12px_-6px_rgba(0,0,0,0.6)]';
 
 export default function InquiryPublicClient({ idOrSlug }: { idOrSlug: string }) {
@@ -346,7 +346,7 @@ export default function InquiryPublicClient({ idOrSlug }: { idOrSlug: string }) 
         );
         return (
             <button onClick={openCoop} aria-label="ارسال پیشنهاد تامین"
-                title="با بازوی فروش قیمتت به این خریدار پیشنهاد تامین بده"
+                title="با بازوی فروشت به این خریدار پیشنهاد تامین بده"
                 className={`flex h-11 w-full items-center justify-center gap-2 rounded-xl bg-primary text-sm font-extrabold text-on-primary shadow-lg shadow-primary/25 transition-all hover:scale-[1.01] hover:opacity-95 active:scale-95 ${className}`}>
                 <Handshake className="size-4" />
                 ارسال پیشنهاد تامین
@@ -469,7 +469,7 @@ export default function InquiryPublicClient({ idOrSlug }: { idOrSlug: string }) 
             </header>
 
             <main className="mx-auto max-w-2xl px-4 pb-32 pt-5">
-                {/* ═══ کارت هویت بازو — هم‌خانوادهٔ هدر بازوی فروش قیمت ═══ */}
+                {/* ═══ کارت هویت بازو — هم‌خانوادهٔ هدر بازوی فروش ═══ */}
                 <motion.section {...fadeUp()} className={`overflow-hidden ${CARD} rounded-3xl`}>
                     <div className="h-1 bg-gradient-to-l from-primary via-brand-accent to-brand-primary/50" />
                     <div className="p-5 sm:p-6">

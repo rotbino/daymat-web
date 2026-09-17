@@ -80,7 +80,7 @@ const remainingHours = (iso?: string | null): number | null => {
 
 export default function AddItemSheet({ open, onClose, inquiryId, catalogUnits, existingItems, currentDeadline, isFirstItem, editItem }: Props) {
     const qc = useQueryClient();
-    // مرجع واحد (کش مشترک با بازوی فروش قیمت)
+    // مرجع واحد (کش مشترک با بازوی فروش)
     const { data: allUnits = [] } = useQuery({
         queryKey: ['units-all'],
         queryFn: () => apiService.ad.getAllUnits(),

@@ -52,7 +52,7 @@ export function CatalogLinksCard({ catalogs, inquiries = [], businessId }: {
     const subtitle = salesCount + buyCount === 0
         ? 'هنوز بازوی فروشی نساخته‌اید'
         : [
-              salesCount > 0 ? `${salesCount.toLocaleString('fa-IR')} بازوی فروش قیمت` : null,
+              salesCount > 0 ? `${salesCount.toLocaleString('fa-IR')} بازوی فروش` : null,
               buyCount > 0 ? `${buyCount.toLocaleString('fa-IR')} بازوی خرید` : null,
           ].filter(Boolean).join(' · ');
 
@@ -74,7 +74,7 @@ export function CatalogLinksCard({ catalogs, inquiries = [], businessId }: {
                 <div className="rounded-xl border border-dashed border-outline-variant/50 p-4 flex flex-col items-center gap-2 text-center">
                     <Store className="w-6 h-6 text-on-surface-variant/40" />
                     <p className="text-[11px] text-on-surface-variant leading-4">
-                        بازوی فروش قیمت برای نمایش محصولات، بازوی خرید برای استعلام قیمت از تامین‌کننده‌ها.
+                        بازوی فروش برای نمایش محصولات، بازوی خرید برای استعلام قیمت از تامین‌کننده‌ها.
                     </p>
                 </div>
             ) : (
@@ -88,7 +88,7 @@ export function CatalogLinksCard({ catalogs, inquiries = [], businessId }: {
                             <div className="flex-1 min-w-0">
                                 <div className="flex items-center gap-1.5 min-w-0">
                                     <p className="text-xs font-bold text-on-surface truncate">{c.name}</p>
-                                    <span className="text-[9px] font-bold text-primary/80 whitespace-nowrap flex-shrink-0">(بازوی فروش قیمت)</span>
+                                    <span className="text-[9px] font-bold text-primary/80 whitespace-nowrap flex-shrink-0">(بازوی فروش)</span>
                                 </div>
                                 <div className="flex items-center gap-1.5 mt-0.5">
                                     {c.slug && (
@@ -200,7 +200,7 @@ export function CatalogLinksCard({ catalogs, inquiries = [], businessId }: {
                     href={businessId ? `/business/register?bizId=${businessId}` : '/business/register'}
                     className="h-9 rounded-lg border border-primary/30 text-primary text-[11px] font-extrabold flex items-center justify-center gap-1 hover:bg-primary/5 active:scale-95 transition-all"
                 >
-                    <Plus className="w-3.5 h-3.5" /> بازوی فروش قیمت
+                    <Plus className="w-3.5 h-3.5" /> بازوی فروش
                 </Link>
                 <Link
                     href={businessId ? `/inquiries/new?bizId=${businessId}` : '/inquiries/new'}
