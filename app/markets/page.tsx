@@ -5,15 +5,16 @@ import React, { useMemo, useState } from 'react';
 import Link from 'next/link';
 import { useQuery } from '@tanstack/react-query';
 import { apiService } from '@/lib/api/apiService';
-import { Store, Users, Package, ArrowLeft, Search, Compass, X } from 'lucide-react';
+import { Store, Users, Package, ArrowLeft, Search, Compass, X, UserRoundPlus, BadgeCheck, Eye, Info } from 'lucide-react';
 import NavTabs from '@/app/home/nav/NavTabs';
 import { cn } from '@/lib/utils';
 
 /**
  * ✅ صفحه لیست و جستجوی بازارها — «اکسپلور بازارها»
  *    این صفحه هیچ رفتار دیگری ندارد: همیشه لیست بازارهای عضو + سایر بازارها را نشان می‌دهد.
- *    نقطهٔ دسترسی: آیتم «سایر بازارها» در دراپ‌داون سوییچر بازار (هدر) — و تب «بازار» هنگامی که
- *    بازاری فعال روی redux نیست. دکمهٔ «ساخت بازار جدید» بعداً همین‌جا اضافه می‌شود.
+ *    نقطهٔ دسترسی: آیتم «بازارها» در ناو عمومی — کاربر از اینجا وارد بازار می‌شود.
+ *    بالای لیست توضیح کوتاه «بازارها در دیمت» آمده تا کاربر بداند بازار چیست و عضویت چطور کار می‌کند.
+ *    (در نهایت این صفحه محل دیدن و فیلتر بازارها بر حسب صنف/استان/شهر خواهد بود.)
  */
 
 function MarketRow({ arm, mine }: { arm: any; mine?: boolean }) {
@@ -54,6 +55,61 @@ function SectionTitle({ children }: { children: React.ReactNode }) {
     return <p className="text-[11px] font-bold text-on-surface-variant/70 px-1">{children}</p>;
 }
 
+// ═══ توضیح کوتاه بازارها — تا کاربر وارد لیست نشود گیج نشود ═══
+function MarketExplainer() {
+    const steps = [
+        { icon: UserRoundPlus, label: 'درخواست عضویت بده' },
+        { icon: BadgeCheck, label: 'مدیر بازار تایید می‌کنه' },
+        { icon: Eye, label: 'عضو می‌شی و بیشتر دیده می‌شی' },
+    ];
+
+    return (
+        <section aria-label="بازارها در دیمت چیست؟"
+                 className="rounded-2xl border border-primary/20 bg-primary/[0.04] dark:bg-primary/[0.07] p-4 sm:p-5">
+            <div className="flex items-start gap-3">
+                <span className="hidden sm:grid size-10 place-items-center rounded-xl bg-primary/10 text-primary flex-shrink-0">
+                    <Compass className="w-5 h-5" />
+                </span>
+
+                <div className="min-w-0">
+                    <h2 className="text-[13px] font-black text-on-surface">بازارهای تخصصی دیمت</h2>
+
+                    <p className="mt-2 text-xs leading-6 text-on-surface-variant">
+                        دیمت علاوه بر اینکه ساخت بازوهای خرید و فروش مستقل رو ممکن می‌کنه،
+                        یک سری <b className="font-extrabold text-on-surface">بازارهای تخصصی خرید و فروش</b> هم داره.
+                        کسب‌وکارها می‌تونن برای عضویت در بازارهایی که به کسب‌وکارشون یا شهر و استانشون مربوط می‌شه
+                        درخواست بدن و بعد از تایید مدیر بازار، عضو اون بازار بشن —
+                        اینطوری هم بیشتر دیده می‌شن و هم این بازارها به عضوگیری بازوهای خرید و فروششون کمک می‌کنن.
+                    </p>
+
+                    {/* مسیر عضویت — سه قدم */}
+                    <div className="mt-3 flex flex-col sm:flex-row sm:items-center gap-1.5 sm:gap-2">
+                        {steps.map((s, i) => (
+                            <React.Fragment key={s.label}>
+                                <span className="flex items-center gap-2 rounded-xl bg-white dark:bg-gray-900 border border-outline-variant/30 px-2.5 py-1.5">
+                                    <s.icon className="w-3.5 h-3.5 text-primary flex-shrink-0" />
+                                    <span className="text-[11px] font-bold text-on-surface whitespace-nowrap">
+                                        <span className="text-primary/60 font-black me-1">{(i + 1).toLocaleString('fa-IR')}.</span>
+                                        {s.label}
+                                    </span>
+                                </span>
+                                {i < steps.length - 1 && <ArrowLeft className="hidden sm:block w-3.5 h-3.5 text-on-surface-variant/30 flex-shrink-0" />}
+                            </React.Fragment>
+                        ))}
+                    </div>
+
+                    {/* یادداشت حد نصاب */}
+                    <p className="mt-3 flex items-start gap-1.5 text-[11px] leading-5 text-on-surface-variant/80">
+                        <Info className="w-3.5 h-3.5 mt-0.5 flex-shrink-0 text-primary/70" />
+                        دیمت تازه کارش رو در ایران شروع کرده و فعلاً تعداد این بازارها محدوده؛
+                        به تدریج و با به حد نصاب رسیدن تعداد بازوهای هر صنف، بازارهای جدید ساخته می‌شن.
+                    </p>
+                </div>
+            </div>
+        </section>
+    );
+}
+
 export default function MarketsPage() {
     const [q, setQ] = useState('');
 
@@ -90,9 +146,14 @@ export default function MarketsPage() {
                     <Compass className="w-5 h-5 text-primary" /> بازارها
                 </h1>
                 <p className="text-xs text-on-surface-variant mt-1">
-                    لیست و جستجوی بازارها — بازارهای عضو و بازارهای دیگر را اینجا ببینید.
+                    اینجا محل دیدن بازارهاست — بازارِ مرتبط با کسب‌وکارت رو پیدا کن و واردش شو.
                 </p>
             </header>
+
+            {/* توضیح بازارها — تا کاربر بداند بازار چیست و عضویت چطور کار می‌کند */}
+            <div className="max-w-3xl mx-auto px-4 pb-3">
+                <MarketExplainer />
+            </div>
 
             {/* جستجو */}
             <div className="max-w-3xl mx-auto px-4 pb-3">

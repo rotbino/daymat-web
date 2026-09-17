@@ -549,6 +549,96 @@ function LiveFromDaymat() {
 }
 
 /* -------------------------------------------------------------------------- */
+/*                          Specialized Markets Board                          */
+/* -------------------------------------------------------------------------- */
+
+/**
+ * تابلوی بازار — دو بازوی خرید و فروش داخل تابلوی بازار می‌افتند و کنار هم می‌نشینند.
+ * فقط گرافیک؛ متن ندارد.
+ */
+function MarketBoardIllustration() {
+  return (
+    <div className="relative mx-auto mt-10 max-w-md">
+      {/* قاب تابلو */}
+      <div className="rounded-3xl border border-stone-200 bg-white p-5 shadow-sm dark:border-gray-800 dark:bg-gray-900">
+
+        {/* سرِ تابلو */}
+        <div className="flex items-center justify-between rounded-2xl bg-stone-900 px-4 py-2.5 dark:bg-gray-800">
+          <span className="flex items-center gap-1.5 text-[11px] font-bold text-white">
+            <Store className="size-3.5" />
+            تابلوی بازار
+          </span>
+
+          <span className="text-[10px] text-stone-400">صنف × شهر</span>
+        </div>
+
+        {/* دو بازو که داخل تابلو می‌افتند */}
+        <div className="mt-5 flex items-center justify-center gap-3">
+          <motion.div
+              initial={{ opacity: 0, y: -44 }}
+              whileInView={{ opacity: 1, y: 0 }}
+              viewport={{ once: true, margin: '-60px' }}
+              transition={{ duration: 0.55, delay: 0.15, ease: 'easeOut' }}
+          >
+            <motion.div
+                animate={{ y: [0, -3, 0] }}
+                transition={{ duration: 2.4, repeat: Infinity, ease: 'easeInOut' }}
+                className="flex items-center gap-1.5 rounded-full bg-brand-primary-soft px-3.5 py-2 text-xs font-extrabold
+              text-brand-primary-strong ring-1 ring-brand-primary-tint
+              dark:bg-brand-primary/15 dark:text-brand-primary dark:ring-brand-primary/25"
+            >
+              <Store className="size-3.5" />
+              بازوی فروش
+            </motion.div>
+          </motion.div>
+
+          {/* گرهٔ اتصال */}
+          <motion.span
+              initial={{ scale: 0 }}
+              whileInView={{ scale: 1 }}
+              viewport={{ once: true, margin: '-60px' }}
+              transition={{ delay: 0.65, type: 'spring', stiffness: 260, damping: 14 }}
+              className="grid size-8 place-items-center rounded-full border border-stone-200 bg-white shadow-sm
+            dark:border-gray-700 dark:bg-gray-950"
+          >
+            <ArrowLeftRight className="size-3.5 text-stone-500 dark:text-gray-300" />
+          </motion.span>
+
+          <motion.div
+              initial={{ opacity: 0, y: -44 }}
+              whileInView={{ opacity: 1, y: 0 }}
+              viewport={{ once: true, margin: '-60px' }}
+              transition={{ duration: 0.55, delay: 0.35, ease: 'easeOut' }}
+          >
+            <motion.div
+                animate={{ y: [0, -3, 0] }}
+                transition={{ duration: 2.4, repeat: Infinity, ease: 'easeInOut', delay: 0.4 }}
+                className="flex items-center gap-1.5 rounded-full bg-brand-contrast-soft px-3.5 py-2 text-xs font-extrabold
+              text-brand-contrast-strong ring-1 ring-brand-contrast-tint
+              dark:bg-brand-contrast/15 dark:text-brand-contrast dark:ring-brand-contrast/25"
+            >
+              <ClipboardList className="size-3.5" />
+              بازوی خرید
+            </motion.div>
+          </motion.div>
+        </div>
+
+        {/* نتیجه: تشکیل بازار */}
+        <motion.p
+            initial={{ opacity: 0 }}
+            whileInView={{ opacity: 1 }}
+            viewport={{ once: true, margin: '-60px' }}
+            transition={{ delay: 0.9, duration: 0.5 }}
+            className="mt-4 text-center text-[11px] font-bold text-stone-500 dark:text-gray-400"
+        >
+          ← بازار تخصصی همون صنف، توی همون شهر تشکیل می‌شه
+        </motion.p>
+      </div>
+    </div>
+  );
+}
+
+/* -------------------------------------------------------------------------- */
 /*                                  Landing                                   */
 /* -------------------------------------------------------------------------- */
 
@@ -1232,6 +1322,37 @@ export default function Landing() {
             </section>
 
 
+
+            {/* ================================================================ */}
+            {/* SPECIALIZED MARKETS — اشاره به بازارهای تخصصی                      */}
+            {/* ================================================================ */}
+
+            <section
+                aria-label="بازارهای تخصصی"
+                className="mx-auto max-w-6xl px-4 py-14 sm:px-6"
+            >
+              <motion.div {...fadeUp()} className="mx-auto max-w-2xl text-center">
+                <span className="inline-flex items-center gap-1.5 rounded-full bg-brand-primary-soft px-3 py-1 text-xs font-bold text-brand-primary-strong dark:bg-brand-primary/15 dark:text-brand-primary">
+                  <Store className="size-3.5" />
+                  بازارهای تخصصی
+                </span>
+
+                <h2 className="mt-4 text-2xl font-black text-stone-900 dark:text-gray-100 sm:text-3xl">
+                  بازوها دور هم جمع می‌شن؛ بازار تشکیل می‌شه
+                </h2>
+
+                <p className="mt-3 leading-8 text-stone-600 dark:text-gray-400">
+                  با به حد نصاب رسیدن بازوهای خرید و فروش در هر صنف و شهر، بازار تخصصی همون
+                  صنف کم‌کم تشکیل می‌شه؛ کسب‌وکارها درخواست عضویت می‌دن و بعد از تایید مدیر
+                  بازار عضو می‌شن. اینطوری تامین‌کننده‌ها و خریدارها بیشتر دیده می‌شن و بازارها
+                  هم به جذب بازوهای جدید کمک می‌کنن.
+                </p>
+              </motion.div>
+
+              <motion.div {...fadeUp(0.15)}>
+                <MarketBoardIllustration />
+              </motion.div>
+            </section>
 
             {/* ================================================================ */}
             {/* LIVE                                                               */}

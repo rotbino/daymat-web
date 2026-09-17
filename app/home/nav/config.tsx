@@ -1,25 +1,26 @@
 // app/home/nav/config.tsx
 'use client';
 
-import { BookOpen, User, Tags, ShoppingCart, Bell } from 'lucide-react';
+import { BookOpen, User, Tags, ShoppingCart, Bell, Compass } from 'lucide-react';
 
-// ═══ معماری ناو دیمت — بدون «هوم» و بدون «بازار» ═══
-//   «هوم» دیگر وجود ندارد؛ هوم همان صفحهٔ فروشندگان است (تابلوی قیمت: ‎/{slug}).
-//   ترتیب قطعی ۵ آیتم: فروشندگان، خریداران، بازوی فروش من، اعلان، پروفایل
-//   خریداران صفحهٔ مستقل دارد: ‎/{slug}/buyers — هیچ سوییچری و هیچ ‎?board= وجود ندارد.
-//   اعلان همیشه بالای سایت دیده می‌شود (دسکتاپ: همین هدر | موبایل: MobileHeader).
+// ═══ معماری ناو دیمت — دو ناوِ متفاوت ═══
+//   ۱) ناو عمومی (بیرون از بازار): بازارها، بازوهای من، اعلان، پروفایل — هدر «بدون جستجو»
+//      «فروشندگان/خریداران» از ناو عمومی حذف شد؛ کاربر اول از صفحهٔ «بازارها» وارد بازار می‌شود.
+//   ۲) ناو اختصاصی بازار (داخل بازار): تامین کنندگان، خریداران، اعلان، بازوهای من — «با جستجو»
+//   اعلان: دسکتاپ در خودِ ناو | موبایلِ بازار: زنگولهٔ MobileHeader بالای سایت
+//          | موبایلِ عمومی: آیتم نوار پایین (صفحات عمومی هدرِ زنگوله ندارند)
 
 export type BoardKey = 'sellers' | 'buyers';
 export type BoardTab = 'price' | 'inquiry';
 
 export const BOARD_ITEMS: { key: BoardKey; label: string; icon: any; board: BoardTab }[] = [
-    { key: 'sellers', label: 'فروشندگان', icon: Tags, board: 'price' },
+    { key: 'sellers', label: 'تامین کنندگان', icon: Tags, board: 'price' },
     { key: 'buyers', label: 'خریداران', icon: ShoppingCart, board: 'inquiry' },
 ];
 
 /**
  * آدرس دو تابلوی بازار:
- *   فروشندگان (تابلوی قیمت) → ‎/{slug}  — همان «هوم»؛ ریشهٔ تابلو
+ *   تامین کنندگان (تابلوی قیمت) → ‎/{slug}  — ریشهٔ تابلو
  *   خریداران (بازوهای خرید) → ‎/{slug}/buyers — صفحهٔ مستقل
  * بدون بازارِ جاری → لیست بازارها (فال‌بک امن)
  */
@@ -44,23 +45,28 @@ export interface NavItemDef {
     href: string;
 }
 
-// ✅ ناو ۵تایی واحد — هر دو مود یکسان؛ ترتیب به تصمیم مالک قفل است.
-//    «href» آیتم‌های فروشندگان/خریداران در کامپوننت با boardHref(currentSlug) پویا می‌شود.
-const NAV_ITEMS: NavItemDef[] = [
-    { key: 'sellers', label: 'فروشندگان', icon: Tags, href: '/markets' },
-    { key: 'buyers', label: 'خریداران', icon: ShoppingCart, href: '/markets' },
+// ✅ ناو عمومی — بیرون از بازار؛ هدرِ عمومی باکس جستجو ندارد
+//    ترتیب به تصمیم مالک قفل است: بازارها، بازوهای من، اعلان، پروفایل
+export const GENERAL_NAV: NavItemDef[] = [
+    { key: 'markets', label: 'بازارها', icon: Compass, href: '/markets' },
     { key: 'catalogs', label: 'بازوهای من', icon: BookOpen, href: '/my-catalogs' },
     { key: 'notifications', label: 'اعلان', icon: Bell, href: '/notifications' },
     { key: 'profile', label: 'پروفایل', icon: User, href: '/profile' },
 ];
 
+// ✅ ناو اختصاصی بازار — داخل بازار؛ آدرس دو تابلو پویاست: ‎/{slug} و ‎/{slug}/buyers
+//    ترتیب به تصمیم مالک قفل است: تامین کنندگان، خریداران، اعلان، بازوهای من
+export const MARKET_NAV: NavItemDef[] = [
+    { key: 'sellers', label: 'تامین کنندگان', icon: Tags, href: '' },
+    { key: 'buyers', label: 'خریداران', icon: ShoppingCart, href: '' },
+    { key: 'notifications', label: 'اعلان', icon: Bell, href: '/notifications' },
+    { key: 'catalogs', label: 'بازوهای من', icon: BookOpen, href: '/my-catalogs' },
+];
+
 export type NavMode = 'catalog-owner' | 'member';
 
+// سازگاری با useNavMode — هر دو مود ناو عمومی می‌بینند؛ تفاوت فقط «داخل/بیرون بازار» است
 export const NAV: Record<NavMode, NavItemDef[]> = {
-    'catalog-owner': NAV_ITEMS,
-    member: NAV_ITEMS,
+    'catalog-owner': GENERAL_NAV,
+    member: GENERAL_NAV,
 };
-
-// ✅ فوتر موبایل — ۴ آیتم؛ «اعلان» نیست چون همیشه بالای سایت است (MobileHeader)
-//    دسکتاپ همان NAV است — زنگوله در هدر دسکتاپ سر جایش می‌ماند.
-export const MOBILE_NAV_ITEMS: NavItemDef[] = NAV_ITEMS.filter((i) => i.key !== 'notifications');

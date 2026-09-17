@@ -290,7 +290,7 @@ export default function MarketContent({ search: searchProp }: { search?: string 
             <div className="min-h-screen flex items-center justify-center bg-surface dark:bg-gray-950"><div className="text-center px-6">
                 <div className="w-24 h-24 bg-surface-container-high dark:bg-gray-800 rounded-2xl flex items-center justify-center mx-auto mb-6"><Store className="w-12 h-12 text-on-surface-variant/30" /></div>
                 <h2 className="text-2xl font-bold text-on-surface dark:text-gray-100 mb-3">این بازار فعلاً دیوار فعالی ندارد</h2>
-                <p className="text-sm text-on-surface-variant dark:text-gray-400 mx-auto leading-relaxed">مدیر بازار هنوز دیوار فروشندگان یا دیوار خریداران را فعال نکرده است.</p>
+                <p className="text-sm text-on-surface-variant dark:text-gray-400 mx-auto leading-relaxed">مدیر بازار هنوز دیوار تامین‌کنندگان یا دیوار خریداران را فعال نکرده است.</p>
             </div></div>
         );
     }

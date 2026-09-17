@@ -10,22 +10,24 @@ import { BookOpen, User, Tags, ShoppingCart, Bell } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { useNavMode } from './useNavMode';
 import { useUnreadNotifications } from './useUnreadNotifications';
-import { NAV, MOBILE_NAV_ITEMS, NavItemDef, boardHref, boardEnabled } from './config';
+import { GENERAL_NAV, MARKET_NAV, NavItemDef, boardHref, boardEnabled } from './config';
 import ArmSwitcher from '@/components/ArmSwitcher';
 import { LocationFilter } from '@/app/components/LocationFilter';
 import HeaderMenu from '@/app/components/HeaderMenu';
 import SearchBox from '@/components/home/SearchBox';
 
 /**
- * ناوبری دیمت (نسخهٔ ۶ — بدون «هوم»، دو تابلوی مستقل):
+ * ناوبری دیمت (نسخهٔ ۷ — ناو عمومی + ناو اختصاصی بازار):
  *
- *   «هوم» وجود ندارد — هوم همان صفحهٔ فروشندگان است (تابلوی قیمت: ‎/{slug}).
- *   خریداران صفحهٔ مستقل دارد: ‎/{slug}/buyers (تم کهربایی).
- *   ترتیب ۵ آیتم قفل است: فروشندگان، خریداران، بازوی فروش من، اعلان، پروفایل
+ *   ناو عمومی (بیرون از بازار): بازارها | بازوهای من | اعلان | پروفایل — هدر «بدون جستجو»
+ *     کاربر اول از صفحهٔ «بازارها» (‎/markets) وارد بازار می‌شود؛ دیگر خریداران/فروشندگانِ گنگ در ناو نیست.
  *
- *   دسکتاپ (لاگین):  [برند بازار ▾] [🔍 وسط] [۵ آیتم — عنوانِ ریز زیر هر آیکون] [⋯]
- *   موبایل (لاگین):   نوار پایین ۵تایی + زنگولهٔ اعلان همیشه بالا (MobileHeader)
- *   مهمان (روی بازار): همان ساختار با ۳ آیتم — فروشندگان | خریداران | بازوی فروش من
+ *   ناو اختصاصی بازار (داخل بازار): تامین کنندگان | خریداران | اعلان | بازوهای من — «با جستجو»
+ *     تامین کنندگان: تابلوی قیمت ‎/{slug} | خریداران: دیوار خریداران ‎/{slug}/buyers
+ *
+ *   دسکتاپ:  [برند بازار ▾] [(فقط بازار: 🔍 وسط)] [آیتم‌ها — عنوانِ ریز زیر آیکون] [⋯]
+ *   موبایل:  نوار پایین | بازار: تامین کنندگان، خریداران، بازوهای من (زنگوله بالا) | عمومی: بازارها، بازوهای من، اعلان، پروفایل
+ *   مهمان (روی بازار): همان ساختار با ۳ آیتم — تامین کنندگان | خریداران | بازوی فروش من
  */
 
 const NON_MARKET_SEGMENTS = new Set([
@@ -48,6 +50,17 @@ function NotifBadge({ count }: { count: number }) {
     );
 }
 
+// ═══ کاربر داخل بازار است؟ ‎/{slug} یا ‎/{slug}/... ═══
+//    currentSlug فقط برای بازار در redux است (useMarketInit) — بازوی فروش/اعلان خرید این را ست نمی‌کنند.
+function decodePath(pathname: string): string {
+    try { return decodeURIComponent(pathname); } catch { return pathname; }
+}
+function isInsideMarket(currentSlug: string | null | undefined, pathname: string): boolean {
+    if (!currentSlug) return false;
+    const p = decodePath(pathname.replace(/\/+$/, '') || '/');
+    return p === `/${currentSlug}` || p.startsWith(`/${currentSlug}/`);
+}
+
 // ═══ تشخیص آیتم فعال — مشترک بین دسکتاپ و موبایل ═══
 function navActive(key: string, pathname: string, currentSlug: string | null | undefined): boolean {
     const segs = pathname.split('/').filter(Boolean);
@@ -55,11 +68,14 @@ function navActive(key: string, pathname: string, currentSlug: string | null | u
     const onArmMarket = !!seg && !NON_MARKET_SEGMENTS.has(seg) && seg === currentSlug;
 
     switch (key) {
+        case 'markets':
+            // صفحهٔ اکسپلور بازارها
+            return pathname.startsWith('/markets');
         case 'sellers':
-            // صفحهٔ فروشندگان = خودِ تابلو (‎/{slug}) + فال‌بک لیست بازارها
-            return onArmMarket || pathname.startsWith('/markets');
+            // تابلوی تامین کنندگان = ریشهٔ بازار (‎/{slug})
+            return onArmMarket;
         case 'buyers':
-            // صفحهٔ مستقل خریداران: ‎/{slug}/buyers
+            // دیوار خریداران: ‎/{slug}/buyers
             return !!currentSlug && (pathname === `/${currentSlug}/buyers` || pathname.startsWith(`/${currentSlug}/buyers/`));
         case 'catalogs':
             return pathname.startsWith('/my-catalogs') ||
@@ -78,7 +94,7 @@ function navActive(key: string, pathname: string, currentSlug: string | null | u
 function NavItemLink({ item, href, active, compact, badge }: {
     item: NavItemDef; href: string; active: boolean; compact?: boolean; badge?: React.ReactNode;
 }) {
-    const amber = item.key === 'buyers'; // هویت کهربایی تابلوی خریداران
+    const amber = item.key === 'buyers'; // هویت کهربایی دیوار خریداران
     return (
         <Link href={href} scroll={false} aria-label={item.label} title={item.label}
               className={cn(
@@ -135,7 +151,7 @@ function GuestMarketNav({ slug, pathname }: { slug: string; pathname: string }) 
 
                 {/* سه آیتم مهمان — عنوان زیر آیکون (تابلوی خاموش حذف می‌شود) */}
                 {sellersOn && (
-                    <NavItemLink item={{ key: 'sellers', label: 'فروشندگان', icon: Tags, href: `/${slug}` }}
+                    <NavItemLink item={{ key: 'sellers', label: 'تامین کنندگان', icon: Tags, href: `/${slug}` }}
                                  href={`/${slug}`} active={onSellers} />
                 )}
                 {buyersOn && (
@@ -156,7 +172,7 @@ function GuestMarketNav({ slug, pathname }: { slug: string; pathname: string }) 
             border-t border-outline-variant/20 dark:border-gray-800 pb-[env(safe-area-inset-bottom)]
             shadow-[0_-2px_12px_rgba(0,0,0,0.06)] dark:shadow-[0_-2px_12px_rgba(0,0,0,0.4)]">
             <div className={cn('grid max-w-lg mx-auto', sellersOn && buyersOn ? 'grid-cols-3' : 'grid-cols-2')}>
-                {sellersOn && <FooterItem href={`/${slug}`} label="فروشندگان" icon={Tags} active={onSellers} />}
+                {sellersOn && <FooterItem href={`/${slug}`} label="تامین کنندگان" icon={Tags} active={onSellers} />}
                 {buyersOn && <FooterItem href={`/${slug}/buyers`} label="خریداران" icon={ShoppingCart} active={onBuyers} amber />}
                 <FooterItem href={`/login?redirect=${encodeURIComponent('/business/register?intent=catalog')}`}
                             label="بازوی فروش من" icon={BookOpen} />
@@ -204,14 +220,16 @@ export default function NavTabs({ guestMarketSlug }: { guestMarketSlug?: string 
     if (loading) return null;
 
     const p = pathname ?? '';
-    // ✅ ماژول‌های بازار — تابلوی خاموش از ناو حذف می‌شود (تنظیمات بازار ← ماژول‌ها)
+    // ✅ دو ناو — داخل بازار و بیرون از بازار
+    const inside = isInsideMarket(currentSlug, p);
+    // ماژول‌های بازار — تابلوی خاموش از ناو حذف می‌شود (تنظیمات بازار ← ماژول‌ها)
     const sellersOn = boardEnabled(currentArm, 'price');
     const buyersOn = boardEnabled(currentArm, 'inquiry');
-    const items = NAV.member.filter((i) =>
+    const items = (inside ? MARKET_NAV : GENERAL_NAV).filter((i) =>
         (i.key !== 'sellers' || sellersOn) && (i.key !== 'buyers' || buyersOn),
     );
 
-    // آدرس پویا: فروشندگان → ‎/{slug} (هوم) | خریداران → ‎/{slug}/buyers
+    // آدرس پویا: تامین کنندگان → ‎/{slug} | خریداران → ‎/{slug}/buyers | بقیه → href ثابت
     const itemHref = (item: NavItemDef) =>
         item.key === 'sellers' ? boardHref(currentSlug, 'price')
         : item.key === 'buyers' ? boardHref(currentSlug, 'inquiry')
@@ -227,17 +245,21 @@ export default function NavTabs({ guestMarketSlug }: { guestMarketSlug?: string 
                     {/* برند فرزند — لوگو + نام + شعار بازار فعلی */}
                     <ArmSwitcher variant="desktop" />
 
-                    {/* سرچ وسط — دو فنر دو طرف تا لوگو و شعار جا باز کنند */}
-                    <div className="flex-1" />
-                    <React.Suspense fallback={<div className="w-full max-w-xl h-10 rounded-xl bg-surface-container-high/70 animate-pulse" />}>
-                        <div className="w-full max-w-xl min-w-0 flex gap-1">
-                            <SearchBox compact className="w-full" />
-                            <div className="flex-shrink-0"><LocationFilter /></div>
-                        </div>
-                    </React.Suspense>
-                    <div className="flex-1" />
+                    {/* جستجو فقط داخل بازار — ناو عمومی بی‌جستجو است */}
+                    {inside && (
+                        <>
+                            <div className="flex-1" />
+                            <React.Suspense fallback={<div className="w-full max-w-xl h-10 rounded-xl bg-surface-container-high/70 animate-pulse" />}>
+                                <div className="w-full max-w-xl min-w-0 flex gap-1">
+                                    <SearchBox compact className="w-full" />
+                                    <div className="flex-shrink-0"><LocationFilter /></div>
+                                </div>
+                            </React.Suspense>
+                            <div className="flex-1" />
+                        </>
+                    )}
 
-                    {/* ✅ ۵ آیتم ناو — عنوانِ ریز زیر هر آیکون (خوانا برای کاربر) */}
+                    {/* ✅ آیتم‌های ناو — عنوانِ ریز زیر هر آیکون (خوانا برای کاربر) */}
                     {items.map((item) => (
                         <NavItemLink
                             key={item.key}
@@ -252,24 +274,24 @@ export default function NavTabs({ guestMarketSlug }: { guestMarketSlug?: string 
                 </div>
             </nav>
 
-            {/* ═══ موبایل — نوار پایین ۴تایی (اعلان بالای سایت است، اینجا نیست) ═══ */}
-            <MobileBottomNav currentSlug={currentSlug} pathname={p} />
+            {/* ═══ موبایل — نوار پایین ═══ */}
+            <MobileBottomNav currentSlug={currentSlug} pathname={p} inside={inside}
+                             sellersOn={sellersOn} buyersOn={buyersOn} />
         </>
     );
 }
 
-// ─── نوار پایین موبایل (۴ آیتم — اعلان بالای سایت است و اینجا تکرار نمی‌شود) ───
-function MobileBottomNav({ currentSlug, pathname }: {
-    currentSlug: string | null; pathname: string;
+// ─── نوار پایین موبایل ───
+//    داخل بازار: تامین کنندگان، خریداران، بازوهای من — اعلان بالا است (MobileHeader با زنگوله)
+//    بیرون از بازار: بازارها، بازوهای من، اعلان، پروفایل — صفحات عمومی هدرِ زنگوله ندارند
+function MobileBottomNav({ currentSlug, pathname, inside, sellersOn, buyersOn }: {
+    currentSlug: string | null; pathname: string; inside: boolean; sellersOn: boolean; buyersOn: boolean;
 }) {
     const { loading } = useNavMode();
-    const currentArm = useSelector((s: RootState) => s.arm.currentArm);
     if (loading) return null;
-    // ✅ ماژول‌های بازار — تابلوی خاموش از فوتر هم حذف می‌شود
-    const sellersOn = boardEnabled(currentArm, 'price');
-    const buyersOn = boardEnabled(currentArm, 'inquiry');
-    const items = MOBILE_NAV_ITEMS.filter((i) =>
-        (i.key !== 'sellers' || sellersOn) && (i.key !== 'buyers' || buyersOn),
+    const items = (inside ? MARKET_NAV : GENERAL_NAV).filter((i) =>
+        (i.key !== 'sellers' || sellersOn) && (i.key !== 'buyers' || buyersOn)
+        && (i.key !== 'notifications' || !inside),
     );
     const gridCls = items.length <= 3 ? 'grid-cols-3' : 'grid-cols-4';
 
