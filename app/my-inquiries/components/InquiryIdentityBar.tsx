@@ -40,7 +40,7 @@ export default function InquiryIdentityBar({ inquiries, catalogs, currentInquiry
         <div className="relative flex items-center justify-between gap-1.5">
             {/* هویت — کلیک = باز شدن سوییچر */}
             <button type="button" onClick={() => { if (canOpen) setOpen((o) => !o); }} aria-expanded={open}
-                    aria-label="سوییچ بین بازوهای خرید و بازوی فروش‌های قیمت"
+                    aria-label="سوییچ بین بازوهای خرید و بازوهای فروشی قیمت"
                     className={cn('flex min-w-0 flex-1 items-center gap-3 rounded-3xl border-2 bg-white p-3 text-right shadow-sm transition-all dark:bg-gray-900',
                         open
                             ? 'border-brand-contrast/70 ring-2 ring-brand-contrast/10 dark:border-amber-500/60'
@@ -159,7 +159,7 @@ export default function InquiryIdentityBar({ inquiries, catalogs, currentInquiry
                             <>
                                 <div className="my-1 border-t border-stone-100 dark:border-gray-800" />
                                 <p className="px-3 pt-1 pb-1 text-[10px] font-bold text-stone-400 dark:text-gray-500">
-                                    بازوی فروش‌های قیمت
+                                    بازوهای فروشی قیمت
                                 </p>
                                 {catalogs.map((c) => (
                                     <button key={c.id} type="button" role="menuitem"

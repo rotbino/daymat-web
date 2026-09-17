@@ -101,7 +101,7 @@ export default function NotificationsPage() {
                         </span>
                     )}
                 </h1>
-                <p className="text-xs text-on-surface-variant mt-1">درخواست‌های ارتباط تجاری، تاییدها و وضعیت بازوی فروش‌ها — همه اینجا.</p>
+                <p className="text-xs text-on-surface-variant mt-1">درخواست‌های ارتباط تجاری، تاییدها و وضعیت بازوهای فروش — همه اینجا.</p>
             </header>
 
             <main className="max-w-3xl mx-auto px-4 space-y-2.5">

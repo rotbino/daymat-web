@@ -53,7 +53,7 @@ type ModuleDef = {
     icon: React.ComponentType<{ className?: string }>;
     accent: Accent;
     configKey: string;     // کلید واقعی در config.modules
-    alwaysOn?: boolean;    // بازوی فروش‌ها همیشه فعال‌اند و سوییچ ندارند
+    alwaysOn?: boolean;    // بازوهای فروش همیشه فعال‌اند و سوییچ ندارند
     groups: RuleGroup[];
 };
 
@@ -141,13 +141,13 @@ const MODULES: ModuleDef[] = [
                     {
                         key: 'connectionRequest',
                         label: 'سهمیه و هزینهٔ درخواست ارتباط',
-                        hint: 'سهمیهٔ رایگان به ازای هر شخص است و روی همهٔ بازوی فروش‌ها و کسب‌وکارهایش شمرده می‌شود — پس از پایان سهمیه، هر درخواست اعتبار مصرف می‌کند',
+                        hint: 'سهمیهٔ رایگان به ازای هر شخص است و روی همهٔ بازوهای فروش و کسب‌وکارهایش شمرده می‌شود — پس از پایان سهمیه، هر درخواست اعتبار مصرف می‌کند',
                         icon: 'CreditCard',
                         children: [
                             {
                                 key: 'freeRequestQuota',
                                 label: 'درخواست رایگان هر شخص',
-                                hint: 'روی همهٔ بازوی فروش‌های او',
+                                hint: 'روی همهٔ بازوهای فروشی او',
                                 icon: 'Handshake',
                                 isNumber: true,
                                 min: 0,
@@ -184,7 +184,7 @@ const MODULES: ModuleDef[] = [
                     {
                         key: 'multiSeller',
                         label: 'چندفروشندگی',
-                        hint: 'امکان تعریف چند فروشنده برای یک بازوی فروش — همه بازوی فروش‌ها از بازار به ارث می‌برند (مالک بازار می‌تواند برای بازوی فروش خاص اورایت کند)',
+                        hint: 'امکان تعریف چند فروشنده برای یک بازوی فروش — همه بازوهای فروش از بازار به ارث می‌برند (مالک بازار می‌تواند برای بازوی فروش خاص اورایت کند)',
                         icon: 'Shield',
                         defaultValue: true,
                     },
@@ -774,7 +774,7 @@ export function MarketModulesSection({
                 <div>
                     <h3 className="text-base font-extrabold text-on-surface">ماژول‌های بازار</h3>
                     <p className="text-xs text-on-surface-variant/75 mt-1 leading-5">
-                        چهار ماژولِ همیشگیِ هر بازار — بازوی فروش‌ها همیشه فعال‌اند و فقط تنظیم می‌خواهند؛
+                        چهار ماژولِ همیشگیِ هر بازار — بازوهای فروش همیشه فعال‌اند و فقط تنظیم می‌خواهند؛
                         دیوارها را می‌توانی روشن یا خاموش کنی. برای باز کردن تنظیمات هر ماژول روی کارتش بزن.
                     </p>
                     <div className="flex flex-wrap items-center gap-2 mt-2.5">

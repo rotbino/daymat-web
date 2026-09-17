@@ -8,9 +8,9 @@ import { cn } from '@/lib/utils';
 
 // انواع بازوی فروش پذیرفته‌شدهٔ بازار — هم‌راستا با فیلد درجه‌یک Arm.acceptedCatalogTypes در بک
 const CATALOG_TYPE_OPTIONS = [
-    { value: 'retail', label: 'تک‌فروشی', hint: 'بازوی فروش‌های خرده‌فروشی' },
-    { value: 'wholesale', label: 'عمده‌فروشی', hint: 'بازوی فروش‌های عمده و پخش' },
-    { value: 'service', label: 'خدماتی', hint: 'بازوی فروش‌های خدمات' },
+    { value: 'retail', label: 'تک‌فروشی', hint: 'بازوهای فروشی خرده‌فروشی' },
+    { value: 'wholesale', label: 'عمده‌فروشی', hint: 'بازوهای فروشی عمده و پخش' },
+    { value: 'service', label: 'خدماتی', hint: 'بازوهای فروشی خدمات' },
 ] as const;
 
 interface AccessRulesSectionProps {
@@ -170,7 +170,7 @@ export function AccessRulesSection({ watch, setValue, onSave, isSaving, isAdmin 
                     )}
                 </div>
                 <p className="text-[10px] text-on-surface-variant mb-4 leading-5">
-                    مشخص می‌کند چه نوع بازوی فروش‌هایی می‌توانند در این بازار عضو شوند و آگهی بگذارند.
+                    مشخص می‌کند چه نوع بازوهای فروشیی می‌توانند در این بازار عضو شوند و آگهی بگذارند.
                     اگر هیچ نوعی انتخاب نشود، بازار همهٔ انواع را می‌پذیرد.
                 </p>
                 <div className="grid grid-cols-1 sm:grid-cols-3 gap-2">
@@ -209,7 +209,7 @@ export function AccessRulesSection({ watch, setValue, onSave, isSaving, isAdmin 
                 {acceptedTypes.length === 0 && (
                     <p className="text-[10px] text-amber-600 dark:text-amber-400 mt-3 flex items-center gap-1">
                         <AlertTriangle className="w-3 h-3" />
-                        هیچ نوعی انتخاب نشده — بازار بدون محدودیت است و همهٔ بازوی فروش‌ها می‌توانند عضو شوند.
+                        هیچ نوعی انتخاب نشده — بازار بدون محدودیت است و همهٔ بازوهای فروش می‌توانند عضو شوند.
                     </p>
                 )}
             </div>

@@ -135,7 +135,7 @@ export default function RegisterCatalogPage() {
         // eslint-disable-next-line react-hooks/exhaustive-deps
     }, [selectedBiz?.id]);
 
-    // ─── هشدار نام تکراری برای بازوی فروش‌های خود کاربر (خطای دیرهنگام بک را پیش‌بینی می‌کند) ───
+    // ─── هشدار نام تکراری برای بازوهای فروشی خود کاربر (خطای دیرهنگام بک را پیش‌بینی می‌کند) ───
     const catQ = useCataloges();
     const myCatalogs: any[] = Array.isArray(catQ.data) ? catQ.data : (catQ.data as any)?.items ?? [];
     const catalogNameDup = useMemo(() => {
@@ -176,7 +176,7 @@ export default function RegisterCatalogPage() {
         submittingRef.current = true;
         try {
             // ✅ صنف، لوگو و مشخصات اصلی هدر از کسب‌وکار ارث می‌رسد
-            // ✅ نام بازوی فروش قابل ویرایش است تا بازوی فروش‌های هم‌نام اشتباه نشوند
+            // ✅ نام بازوی فروش قابل ویرایش است تا بازوهای فروشی هم‌نام اشتباه نشوند
             const created = await createCatalogMutation.mutateAsync({
                 name: catalogName.trim(),
                 slug,
@@ -372,7 +372,7 @@ export default function RegisterCatalogPage() {
                         ) : (
                             !nameDirty && catalogName && (
                                 <p className="text-[10px] text-on-surface-variant/60 px-1">
-                                    پیشنهاد ما همون نام کسب‌وکاره؛ اگه می‌خوای توی لیست بازوی فروش‌هات متمایز باشه، تغییرش بده.
+                                    پیشنهاد ما همون نام کسب‌وکاره؛ اگه می‌خوای توی لیست بازوهای فروشت متمایز باشه، تغییرش بده.
                                 </p>
                             )
                         )}

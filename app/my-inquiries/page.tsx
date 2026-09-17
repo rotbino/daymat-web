@@ -252,7 +252,7 @@ export default function MyInquiriesPage() {
         await updateInquiry.mutateAsync({ id: currentInquiryId, data }).then(() => refetchDetail());
     };
 
-    // سوییچر دو-محصولی — بازوی فروش‌های قیمت با کش مشترک کنسول فروش
+    // سوییچر دو-محصولی — بازوهای فروشی قیمت با کش مشترک کنسول فروش
     const { data: catalogsRaw } = useQuery({
         queryKey: ['catalogs'],
         queryFn: () => apiService.catalog.getAll(),

@@ -1,7 +1,7 @@
 // app/my-catalogs/components/CatalogIdentityBar.tsx
 // نوار هویت بازوی فروش — سوییچر سبک اینستاگرام (لوگو + نام + فلش پایین)
 // شیر + چشم (مشاهدهٔ بازوی فروش عمومی) + ⋯
-// ✅ سوییچر دو-محصولی: بازوی فروش‌های قیمت و صفحه‌های بازوی خرید با برچسب پرانتزی
+// ✅ سوییچر دو-محصولی: بازوهای فروشی قیمت و صفحه‌های بازوی خرید با برچسب پرانتزی
 //    کنار نام — انتخاب بازوی خرید به مدیریت آن پرش می‌کند (درخواست کاربر)
 // ✅ پایینِ سوییچر: لینک ساخت فقط برای نوعی که هنوز ندارد (ایدهٔ مالک:
 //    هر کاربر از هر نوع یکی — سیستم پر از بازوی فروش سرگردان نشود؛ دومی‌ها از زیر ⋯ یا پروفایل کسب‌وکار)
@@ -17,7 +17,7 @@ import { cn } from '@/lib/utils';
 
 export default function CatalogIdentityBar({ catalogs, inquiries = [], currentCatalog, canShare, onSelect, onSelectInquiry, onShare, onPreview, onNewCatalog, onNewInquiry, onChangePassword }: {
     catalogs: any[];
-    /** بازوهای خرید من — در همان سوییچر کنار بازوی فروش‌های قیمت (درخواست کاربر) */
+    /** بازوهای خرید من — در همان سوییچر کنار بازوهای فروشی قیمت (درخواست کاربر) */
     inquiries?: any[];
     currentCatalog: any;
     canShare: boolean;
@@ -69,7 +69,7 @@ export default function CatalogIdentityBar({ catalogs, inquiries = [], currentCa
             {/* سوییچر / نمایش هویت */}
             {canOpen ? (
                 <button type="button" onClick={() => setOpen((o) => !o)} aria-expanded={open}
-                        aria-label="سوییچ بین بازوی فروش‌ها و بازوهای خرید"
+                        aria-label="سوییچ بین بازوهای فروش و بازوهای خرید"
                         className={cn('flex min-w-0 flex-1 items-center gap-2 rounded-2xl border-2 bg-white p-2 ps-2.5 text-right shadow-sm transition-all dark:bg-gray-900',
                             open ? 'border-primary/60 ring-2 ring-primary/10'
                                  : 'border-outline-variant/40 dark:border-gray-700 hover:border-primary/40 active:scale-[0.99]')}>
@@ -144,7 +144,7 @@ export default function CatalogIdentityBar({ catalogs, inquiries = [], currentCa
                             shadow-xl animate-in fade-in zoom-in-95 duration-150 max-h-[70vh] overflow-y-auto">
                         {catalogs.length > 0 && (
                             <p className="px-3 pt-1.5 pb-1 text-[10px] font-bold text-on-surface-variant/70">
-                                بازوی فروش‌های قیمت
+                                بازوهای فروشی قیمت
                             </p>
                         )}
                         {catalogs.map((c) => {
@@ -205,7 +205,7 @@ export default function CatalogIdentityBar({ catalogs, inquiries = [], currentCa
                             </>
                         )}
 
-                        {/* ساخت — فقط برای نوعِ غایب (ایدهٔ مالک: جلوگیری از بازوی فروش‌های سرگردان؛
+                        {/* ساخت — فقط برای نوعِ غایب (ایدهٔ مالک: جلوگیری از بازوهای فروشی سرگردان؛
                             دومی‌ها از زیر ⋯ یا پروفایل کسب‌وکار پیدا می‌شوند) */}
                         {(missingCatalog || missingInquiry) && (
                             <>

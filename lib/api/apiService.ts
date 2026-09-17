@@ -271,11 +271,11 @@ export const apiService = {
             getMyPendingApprovals: (): Promise<{ items: any[]; total: number }> =>
                 apiRequest('/catalog/team/my-pending-approvals'),
 
-            // ✅ شمارندهٔ درخواست‌های در انتظارِ بازوی فروش‌های مدیریتی من — بج قرمز برگهٔ اعضا
+            // ✅ شمارندهٔ درخواست‌های در انتظارِ بازوهای فروشی مدیریتی من — بج قرمز برگهٔ اعضا
             getMyPendingSummary: (): Promise<{ total: number; items: { catalogId: string; count: number }[] }> =>
                 apiRequest('/catalog/team/my-pending-summary'),
 
-            // ✅ پیشنهاد/جستجوی بازوی فروش‌ها — سورتِ مرتبط‌سازی (هم‌شهری/هم‌استان/مکمل) + فیلترها
+            // ✅ پیشنهاد/جستجوی بازوهای فروش — سورتِ مرتبط‌سازی (هم‌شهری/هم‌استان/مکمل) + فیلترها
             partnerCatalogs: (catalogId: string, params: ConnCandidateParams & { salesType?: string } = {}): Promise<{ items: any[]; suggested?: boolean }> =>
                 apiRequest(`/catalog/${catalogId}/team/partner-catalogs${connCandidateQuery(params)}`),
 
@@ -1284,10 +1284,10 @@ export const apiService = {
                 apiRequest(`/arm-admin/${slug}/members/${userId}/remove`, { method: 'POST' }),
         },
         // ============================================================
-        // مدیریت بازوی فروش‌های بازار (اتصال بازوی فروش به تابلو)
+        // مدیریت بازوهای فروشی بازار (اتصال بازوی فروش به تابلو)
         // ============================================================
         catalogs: {
-            // بازوی فروش‌های عضو بازار + آمار تابلو
+            // بازوهای فروشی عضو بازار + آمار تابلو
             getList: (slug: string, params?: {
                 search?: string;
                 ownerStatus?: string;
@@ -1309,7 +1309,7 @@ export const apiService = {
             getNeedsCategory: (slug: string): Promise<any> =>
                 apiRequest(`/arm-admin/${slug}/memberships/needs-category`),
 
-            // آمار جذب مالک بازار (دعوت‌شدگان + بازوی فروش‌ها)
+            // آمار جذب مالک بازار (دعوت‌شدگان + بازوهای فروش)
             getReferralStats: (slug: string): Promise<any> =>
                 apiRequest(`/arm-admin/${slug}/memberships/referral-stats`),
 

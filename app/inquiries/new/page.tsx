@@ -52,7 +52,7 @@ export default function NewInquiryPage() {
     );
     const { data: myInquiries } = useMyInquiries();
 
-    // دیپ‌لینک ?bizId= (از کارت بازوی فروش‌ها در مدیریت کسب‌وکار)
+    // دیپ‌لینک ?bizId= (از کارت بازوهای فروش در مدیریت کسب‌وکار)
     const [bizParam] = useState(() =>
         typeof window !== 'undefined' ? new URLSearchParams(window.location.search).get('bizId') || '' : '',
     );

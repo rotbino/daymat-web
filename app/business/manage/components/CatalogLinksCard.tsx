@@ -1,6 +1,6 @@
 // app/business/manage/components/CatalogLinksCard.tsx
-// 🔗 بازوی فروش‌های این کسب‌وکار — فروش و خرید کنار هم (محصول دوم دیمت)
-// ✅ بازوهای خرید (استعلام) با برچسب کهربایی کنار بازوی فروش‌های قیمت
+// 🔗 بازوهای فروشی این کسب‌وکار — فروش و خرید کنار هم (محصول دوم دیمت)
+// ✅ بازوهای خرید (استعلام) با برچسب کهربایی کنار بازوهای فروشی قیمت
 // ✅ دو دکمهٔ ساخت جدا برای هر نوع — بازوی خرید با bizId دیپ‌لینک می‌شود
 // ✅ جای کارت در صفحه بالاتر آمده (درخواست کاربر: دسترسی راحت از کسب‌وکار)
 'use client';
@@ -64,7 +64,7 @@ export function CatalogLinksCard({ catalogs, inquiries = [], businessId }: {
                     <BookOpen className="w-4 h-4 text-primary" />
                 </span>
                 <div className="flex-1 min-w-0">
-                    <p className="text-[13px] font-extrabold text-on-surface">بازوی فروش‌های این کسب‌وکار</p>
+                    <p className="text-[13px] font-extrabold text-on-surface">بازوهای فروشی این کسب‌وکار</p>
                     <p className="text-[10px] text-on-surface-variant/70">{subtitle}</p>
                 </div>
             </div>

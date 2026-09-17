@@ -1086,7 +1086,7 @@ function SupplierConnectModal({ inquiry, target, onClose, onConnected, onRequest
     const [mounted, setMounted] = useState(false);
     const [catalogId, setCatalogId] = useState<string>('');
 
-    // بازوی فروش‌های من — فقط برای عضو لود شود (⚠️ همهٔ هوک‌ها پیش از return شرطی)
+    // بازوهای فروشی من — فقط برای عضو لود شود (⚠️ همهٔ هوک‌ها پیش از return شرطی)
     const { data: catalogsRaw, isLoading: catsLoading } = useQuery({
         queryKey: ['catalogs'],
         queryFn: () => apiService.catalog.getAll(),
@@ -1221,7 +1221,7 @@ function SupplierConnectModal({ inquiry, target, onClose, onConnected, onRequest
                     <>
                         <p className="mx-auto mt-3 max-w-xs text-[12px] font-bold leading-6 text-stone-500 dark:text-gray-400">
                             {isPrivate
-                                ? 'این بازوی خرید خصوصیه — با یکی از بازوی فروش‌هات پیشنهاد تامین بده؛ بعد از تایید خریدار می تونی پیشنهاد بدی.'
+                                ? 'این بازوی خرید خصوصیه — با یکی از بازوهای فروشت پیشنهاد تامین بده؛ بعد از تایید خریدار می تونی پیشنهاد بدی.'
                                 : 'بازوی فروشت را انتخاب کن تا همین حالا به‌عنوان تامین‌کنندهٔ این خریدار پیشنهادت را ثبت کنی.'}
                         </p>
                         <div className="mt-4 max-h-44 space-y-1.5 overflow-y-auto pl-1 text-right">
@@ -1251,7 +1251,7 @@ function SupplierConnectModal({ inquiry, target, onClose, onConnected, onRequest
                     </>
                 )}
 
-                {/* ── لودینگ بازوی فروش‌ها ── */}
+                {/* ── لودینگ بازوهای فروش ── */}
                 {isAuthenticated && catsLoading && <Loader2 className="mx-auto mt-5 size-5 animate-spin text-stone-300" />}
             </motion.div>
         </div>,

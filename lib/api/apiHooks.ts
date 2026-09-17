@@ -826,7 +826,7 @@ export const useLocationTree = () => {
 };
 
 // ============================================================
-// ARM-ADMIN: CATALOGS — مدیریت بازوی فروش‌های بازار (پنل مالک)
+// ARM-ADMIN: CATALOGS — مدیریت بازوهای فروشی بازار (پنل مالک)
 // ============================================================
 
 /** کلیدهای کش — صرفاً از اینجا مصرف شوند تا invalidation متقاطع همیشه درست کار کند */
@@ -1037,7 +1037,7 @@ export const useUpdateBusinessEntity = () => {
     });
 };
 
-// ✅ جزئیات کامل کسب‌وکار — صفحه مدیریت کسب‌وکار (با بازوی فروش‌ها، تیم و زمینه‌های فعالیت)
+// ✅ جزئیات کامل کسب‌وکار — صفحه مدیریت کسب‌وکار (با بازوهای فروش، تیم و زمینه‌های فعالیت)
 export const useBusinessDetail = (id?: string | null) => {
     return useQuery({
         queryKey: ['business-detail', id],
@@ -1643,7 +1643,7 @@ export const useCatalogTeam = (catalogId?: string | null, enabled = true) => {
     });
 };
 
-// ✅ شمارندهٔ بج قرمز برگهٔ اعضا — درخواست‌های در انتظارِ بازوی فروش‌های مدیریتی من
+// ✅ شمارندهٔ بج قرمز برگهٔ اعضا — درخواست‌های در انتظارِ بازوهای فروشی مدیریتی من
 export const useCatalogPendingSummary = (enabled = true) => {
     return useQuery({
         queryKey: ['catalog-pending-summary'],

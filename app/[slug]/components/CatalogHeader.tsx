@@ -178,7 +178,7 @@ export default function CatalogHeader({
                     </button>
 
 
-                    {/* ═══ سوئیچر بازوی فروش‌های ذخیره شده — وسط؛ برای همه کاربران لاگین‌شده (مالک و بازدیدکننده — خواستهٔ مالک) ═══ */}
+                    {/* ═══ سوئیچر بازوهای فروشی ذخیره شده — وسط؛ برای همه کاربران لاگین‌شده (مالک و بازدیدکننده — خواستهٔ مالک) ═══ */}
                     {isAuthenticated && (
                         <div className="flex justify-center items-center mb-1" ref={dropdownRef}>
                             <button
@@ -189,7 +189,7 @@ export default function CatalogHeader({
                                 <Bookmark className="w-3.5 h-3.5 hidden sm:inline-block" />
 
                                 {/* ✅ تغییر متن در موبایل و دسکتاپ */}
-                                <span className="hidden sm:inline ">بازوی فروش‌های ذخیره شده</span>
+                                <span className="hidden sm:inline ">بازوهای فروشی ذخیره شده</span>
                                 <span className="sm:hidden">ذخیره‌ها</span>
 
                                 <span className="text-[12px] bg-gray-100 dark:bg-gray-800 px-1 py-0.5 rounded-full">

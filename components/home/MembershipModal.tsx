@@ -58,7 +58,7 @@ export default function MembershipModal({ open, onClose, slug, arm, initialRole 
     const [pendingLeave, setPendingLeave] = useState<any>(null);
     const [pendingSince, setPendingSince] = useState<string | null>(null);
 
-    // کسب‌وکارها و بازوی فروش‌های کاربر — فقط وقتی مودال باز است
+    // کسب‌وکارها و بازوهای فروشی کاربر — فقط وقتی مودال باز است
     const { data: bizData, isLoading: bizLoading } = useMyBusinesses(open && isAuthenticated);
     const { data: catalogsRaw, isLoading: catLoading } = useQuery({
         queryKey: ['my-catalogs-for-membership'],

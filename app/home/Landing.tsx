@@ -484,7 +484,7 @@ function LiveFromDaymat() {
 
   return (
       <section
-          aria-label="بازوی فروش‌های دیمت"
+          aria-label="بازوهای فروشی دیمت"
           className="mx-auto max-w-6xl px-4 py-14 sm:px-6"
       >
         <motion.div {...fadeUp()} className="mx-auto max-w-2xl text-center">
@@ -498,7 +498,7 @@ function LiveFromDaymat() {
           </h2>
 
           <p className="mt-3 leading-7 text-stone-600 dark:text-gray-400">
-            بازوی فروش‌های واقعی فروشنده‌ها را ببین؛ مشتری‌ها هم دقیقاً از همین
+            بازوهای فروشی واقعی فروشنده‌ها را ببین؛ مشتری‌ها هم دقیقاً از همین
             مسیر به فروشنده‌های موردنیازشان وصل می‌شوند.
           </p>
         </motion.div>

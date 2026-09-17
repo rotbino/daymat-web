@@ -95,7 +95,7 @@ export default function BusinessManageContent() {
     // ── جهش‌ها ──
     const setActivitiesMutation = useSetBusinessActivities();
 
-    // ✅ بازوهای خرید — برای نمایش کنار بازوی فروش‌های قیمت این کسب‌وکار (محصول دوم)
+    // ✅ بازوهای خرید — برای نمایش کنار بازوهای فروشی قیمت این کسب‌وکار (محصول دوم)
     const { data: myInqData } = useMyInquiries();
 
     // ── مودال‌ها و پرش ──
@@ -246,7 +246,7 @@ export default function BusinessManageContent() {
                         </span>
                         <p className="text-sm font-extrabold text-on-surface">هنوز کسب‌وکاری ثبت نکرده‌ای</p>
                         <p className="text-[11px] text-on-surface-variant/70 leading-5">
-                            اول کسب‌وکارت را ثبت کن؛ بعد می‌توانی مشخصات، بازوی فروش‌ها و تیک اعتمادش را از همین‌جا
+                            اول کسب‌وکارت را ثبت کن؛ بعد می‌توانی مشخصات، بازوهای فروش و تیک اعتمادش را از همین‌جا
                             مدیریت کنی.
                         </p>
                         <button
@@ -450,7 +450,7 @@ export default function BusinessManageContent() {
                                 </div>
                             </div>
 
-                            {/* ── بازوی فروش‌ها — بلافاصله بعد از هویت (بالاتر آمده: دسترسی راحت — درخواست کاربر) ── */}
+                            {/* ── بازوهای فروش — بلافاصله بعد از هویت (بالاتر آمده: دسترسی راحت — درخواست کاربر) ── */}
                             <div className="lg:hidden">{catalogsCard}</div>
 
                             {/* ── کامل‌بودن — فقط موبایل (دسکتاپ در ستون کنار) ── */}

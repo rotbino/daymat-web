@@ -51,7 +51,7 @@ interface ReferralData {
 type TabId = 'members' | 'add' | 'uncategorized' | 'referrals';
 
 const TABS: { id: TabId; label: string; icon: any }[] = [
-    { id: 'members', label: 'بازوی فروش‌های بازار', icon: BookOpen },
+    { id: 'members', label: 'بازوهای فروشی بازار', icon: BookOpen },
     { id: 'add', label: 'افزودن', icon: PlusCircle },
     { id: 'uncategorized', label: 'بی‌دسته', icon: Layers },
     { id: 'referrals', label: 'جذب من', icon: UserPlus },
@@ -278,9 +278,9 @@ export default function ArmAdminCatalogsPage() {
             {/* ─── هدر ─── */}
             <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
                 <div>
-                    <h1 className="text-xl sm:text-2xl font-bold text-on-surface">مدیریت بازوی فروش‌ها</h1>
+                    <h1 className="text-xl sm:text-2xl font-bold text-on-surface">مدیریت بازوهای فروش</h1>
                     <p className="text-sm text-on-surface-variant mt-0.5">
-                        اتصال بازوی فروش‌ها به تابلوی {currentArm?.name || currentSlug}
+                        اتصال بازوهای فروش به تابلوی {currentArm?.name || currentSlug}
                     </p>
                 </div>
                 <div className="flex items-center gap-2 flex-wrap">
@@ -325,7 +325,7 @@ export default function ArmAdminCatalogsPage() {
                 })}
             </div>
 
-            {/* ═══ تب ۱ — بازوی فروش‌های عضو ═══ */}
+            {/* ═══ تب ۱ — بازوهای فروشی عضو ═══ */}
             {tab === 'members' && (
                 <div className="space-y-3">
                     {catalogsQ.isPending ? (
@@ -335,7 +335,7 @@ export default function ArmAdminCatalogsPage() {
                             <BookOpen className="w-12 h-12 text-on-surface-variant/20 mx-auto mb-3" />
                             <h3 className="text-sm font-extrabold text-on-surface">هنوز بازوی فروشی عضو بازار نشده</h3>
                             <p className="text-xs text-on-surface-variant mt-1.5 leading-6 max-w-sm mx-auto">
-                                بازوی فروش‌های مناسب را پیدا کن و به تابلوی قیمت اضافه کن —
+                                بازوهای فروشی مناسب را پیدا کن و به تابلوی قیمت اضافه کن —
                                 کالاهایشان بلافاصله کنار بقیه نمایش داده می‌شود.
                             </p>
                             <button onClick={() => changeTab('add')}
@@ -527,7 +527,7 @@ export default function ArmAdminCatalogsPage() {
                 </button>
                 <span className="text-xs font-bold text-on-surface flex items-center gap-1.5">
                                 <UserPlus className="w-3.5 h-3.5 text-primary/70" />
-                                فقط بازوی فروش‌های جذب‌شدهٔ من
+                                فقط بازوهای فروشی جذب‌شدهٔ من
                             </span>
                 <span className="text-[10px] text-on-surface-variant/60 hidden sm:inline">
                                 (کاربرانی که با لینک دعوت تو آمده‌اند)
@@ -544,7 +544,7 @@ export default function ArmAdminCatalogsPage() {
                     {q || onlyMine ? 'بازوی فروشی با این مشخصات پیدا نشد' : 'بازوی فروشی برای افزودن نیست'}
                 </p>
                 <p className="text-xs text-on-surface-variant mt-1.5">
-                    {q || onlyMine ? 'فیلترها را تغییر بده' : 'بازوی فروش‌های تازه در اینجا ظاهر می‌شوند'}
+                    {q || onlyMine ? 'فیلترها را تغییر بده' : 'بازوهای فروشی تازه در اینجا ظاهر می‌شوند'}
                 </p>
             </div>
         ) : (
@@ -720,7 +720,7 @@ export default function ArmAdminCatalogsPage() {
                             <div className="bg-white dark:bg-gray-900 rounded-2xl border border-outline-variant/40 overflow-hidden">
                                 <div className="px-4 py-3 border-b border-outline-variant/20 flex items-center justify-between">
                                     <h3 className="text-xs font-extrabold text-on-surface flex items-center gap-1.5">
-                                        <BookOpen className="w-3.5 h-3.5 text-primary" /> بازوی فروش‌های جذب‌شده
+                                        <BookOpen className="w-3.5 h-3.5 text-primary" /> بازوهای فروشی جذب‌شده
                                     </h3>
                                     <button onClick={() => changeTab('add')}
                                             className="text-[10px] font-bold text-primary hover:underline">

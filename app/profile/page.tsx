@@ -44,7 +44,7 @@ export default function ProfilePage() {
     const { data: myBizData, isLoading: myBizLoading } = useMyBusinesses();
     const myBusinesses: any[] = (myBizData?.items ?? []).filter((b: any) => b.canEdit);
 
-    // بازوهای خرید هر کسب‌وکار — شمارش کنار بازوی فروش‌های قیمت (محصول دوم)
+    // بازوهای خرید هر کسب‌وکار — شمارش کنار بازوهای فروشی قیمت (محصول دوم)
     const { data: myInqData } = useMyInquiries();
     const inquiryCountByBiz = useMemo(() => {
         // ⚠️ useMyInquiries آرایه را مستقیم برمی‌گرداند (نه {items}) — قبلاً myInqData?.items می‌گرفتیم → همیشه صفر
@@ -179,7 +179,7 @@ export default function ProfilePage() {
                         <div className="flex-1 min-w-0">
                             <p className="text-sm font-extrabold text-on-surface">کسب‌وکار من</p>
                             <p className="text-[10px] text-on-surface-variant/70 mt-0.5">
-                                مشخصات، بازوی فروش‌ها و تیک اعتماد کسب‌وکارت را از یک‌جا مدیریت کن.
+                                مشخصات، بازوهای فروش و تیک اعتماد کسب‌وکارت را از یک‌جا مدیریت کن.
                             </p>
                         </div>
                     </div>

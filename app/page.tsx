@@ -24,7 +24,7 @@ export default function HomePage() {
     const { data: cataloges, isLoading: bizLoading } = useCataloges();
     const hasCatalog = (cataloges ?? []).length > 0;
 
-    // عضویت‌ها — هم‌زمان با بازوی فروش‌ها لود می‌شود تا تصمیم تک‌مرحله‌ای باشد
+    // عضویت‌ها — هم‌زمان با بازوهای فروش لود می‌شود تا تصمیم تک‌مرحله‌ای باشد
     const { data: userArms, isLoading: armsLoading } = useArms();
     const loading = bizLoading || armsLoading;
 

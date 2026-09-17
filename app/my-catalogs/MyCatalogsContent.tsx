@@ -89,7 +89,7 @@ export default function MyCatalogsContent() {
     // ✅ بج قرمز برگهٔ اعضا + کارت «در انتظار تایید شما» — چرخهٔ عضویت
     const { data: pendingApprovals } = useMyPendingApprovals();
     const approvals: any[] = pendingApprovals?.items || [];
-    // ✅ بازوهای خرید من — در همان سوییچر کنار بازوی فروش‌های قیمت (محصول دوم دیمت)
+    // ✅ بازوهای خرید من — در همان سوییچر کنار بازوهای فروشی قیمت (محصول دوم دیمت)
     const { data: myInquiriesRaw } = useMyInquiries();
     const myInquiries: any[] = useMemo(() => myInquiriesRaw ?? [], [myInquiriesRaw]);
     const catalogs = useMemo(
@@ -97,7 +97,7 @@ export default function MyCatalogsContent() {
         [catalogsRaw],
     );
 
-    // بازوی فروش‌های فعالِ من — کنسول با همین‌ها کار می‌کند (بازوی فروش‌های تیمی داخل پاسخِ getAll ادغام شده‌اند)
+    // بازوهای فروشی فعالِ من — کنسول با همین‌ها کار می‌کند (بازوهای فروشی تیمی داخل پاسخِ getAll ادغام شده‌اند)
     const allCatalogs = catalogs;
 
     const [currentId, setCurrentId] = useState<string | null>(null);
@@ -135,7 +135,7 @@ export default function MyCatalogsContent() {
         [allCatalogs, currentId],
     );
     // ✅ حالت اعضای بازوی فروش — عضوِ فروش/مدیر بازوی فروش دیگری (سناریوی بازار پخش)
-    //    بازوی فروش‌های تیمی از قبل داخل پاسخِ getAll ادغام شده‌اند (isTeamEntry) و جزو catalogs هستند
+    //    بازوهای فروشی تیمی از قبل داخل پاسخِ getAll ادغام شده‌اند (isTeamEntry) و جزو catalogs هستند
     const teamMode = (currentCatalog as any)?.teamMode as string | undefined;
     const isTeamEntry = !!(currentCatalog as any)?.isTeamEntry;
 

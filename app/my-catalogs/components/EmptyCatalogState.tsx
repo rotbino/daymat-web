@@ -36,7 +36,7 @@ export default function EmptyCatalogState({ hasTemporaryPassword, user, inquirie
         <div className="space-y-3">
             <div className="flex items-center justify-between mb-2.5">
                 <h1 className="text-lg font-black text-on-surface flex items-center gap-1.5">
-                    <BookOpen className="w-4.5 h-4.5 text-primary" /> بازوی فروش‌ها و بازوهای من
+                    <BookOpen className="w-4.5 h-4.5 text-primary" /> بازوهای فروش و بازوهای من
                 </h1>
             </div>
 

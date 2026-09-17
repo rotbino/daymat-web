@@ -1,5 +1,5 @@
 // app/my-catalogs/constants.ts
-// ثابت‌ها و هلپرهای مشترک صفحه «بازوی فروش‌های من»
+// ثابت‌ها و هلپرهای مشترک صفحه «بازوهای فروشی من»
 
 import { BadgeCheck, Hourglass, PauseCircle, Store, Package, Wrench, XCircle } from 'lucide-react';
 
