@@ -4,7 +4,7 @@
 // ⚠️ قانون: حالت تاریک همیشه چک شده (این فایل UI ندارد — فقط منطق تصویر)
 
 export const CANVAS_FONT = '"Vazirmatn", "Noto Sans Arabic", Tahoma, sans-serif';
-export const DEFAULT_CAPTION = 'برای دیدن کاتالوگ ما اسکن کنید';
+export const DEFAULT_CAPTION = 'برای دیدن بازوی فروش ما اسکن کنید';
 
 /** آیکون برند دیمت (نشان dm با گوشه‌های شفاف) — برای امضای برند پایین کارت */
 export const DAYMAT_BADGE_SRC = '/icons/icon-512.png';
@@ -14,7 +14,7 @@ export const BG_TEMPLATE_COUNT = 3;
 export const buildBgTemplates = () =>
     Array.from({ length: BG_TEMPLATE_COUNT }, (_, i) => `/visit-card/${i + 1}.jpg`);
 
-/* ─── کارت ویزیت ذخیره‌شده — spec JSON روی کاتالوگ (زحمت کاربر گم نشود) ─── */
+/* ─── کارت ویزیت ذخیره‌شده — spec JSON روی بازوی فروش (زحمت کاربر گم نشود) ─── */
 export interface VisitCardSpec {
     v: 1;
     bgIdx: number;              // 0..2 یا -1 (بدون عکس)
@@ -57,7 +57,7 @@ export const sanitizeSpec = (raw: any): VisitCardSpec | null => {
 };
 
 /**
- * فشرده‌سازی تصویر dataURL — برای جا شدن در JSON کاتالوگ
+ * فشرده‌سازی تصویر dataURL — برای جا شدن در JSON بازوی فروش
  * (پس‌زمینه: JPEG ۱۰۵۰px | لوگو: PNG تا ۵۱۲px با شفافیت)
  */
 export const compressDataUrl = (
@@ -129,7 +129,7 @@ export const buildCustomTheme = (hex: string) => {
 };
 export type CardTheme = ReturnType<typeof buildCustomTheme> | (typeof CARD_THEMES)[number];
 
-/** شعار پیش‌فرض از معرفی کوتاه کاتالوگ */
+/** شعار پیش‌فرض از معرفی کوتاه بازوی فروش */
 export const deriveSlogan = (desc?: string) => {
     const first = (desc || '').trim().split('\n')[0].trim();
     return first ? first.slice(0, 80) : 'تازه‌ترین قیمت محصولات ما را آنلاین ببینید';

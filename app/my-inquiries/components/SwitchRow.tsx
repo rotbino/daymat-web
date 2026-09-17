@@ -1,5 +1,5 @@
 // app/my-inquiries/components/SwitchRow.tsx
-// ردیف سوییچ RTL — مشترک بین شیت قلم و تنظیمات (هماهنگ با تاگل سفارشی کاتالوگ قیمت)
+// ردیف سوییچ RTL — مشترک بین شیت قلم و تنظیمات (هماهنگ با تاگل سفارشی بازوی فروش قیمت)
 'use client';
 
 import React from 'react';

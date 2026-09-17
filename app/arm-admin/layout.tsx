@@ -32,7 +32,7 @@ import { useQuery } from '@tanstack/react-query';
 
 const menuItems: { href: string; label: string; icon: any; exact?: boolean; ownerOnly?: boolean }[] = [
     { href: '/arm-admin', label: 'داشبورد', icon: LayoutDashboard, exact: true },
-    { href: '/arm-admin/catalogs', label: 'کاتالوگ‌ها', icon: BookOpen },
+    { href: '/arm-admin/catalogs', label: 'بازوی فروش‌ها', icon: BookOpen },
     { href: '/arm-admin/ads', label: 'آگهی‌ها', icon: Package },
     { href: '/arm-admin/sellers', label: 'فروشندگان', icon: Store },
     { href: '/arm-admin/buyers', label: 'خریداران', icon: ShoppingCart },

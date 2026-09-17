@@ -16,7 +16,7 @@ import Link from 'next/link';
 
 /**
  * درخواست‌های عضویت در بازار خصوصی — پنل مالک/ادمین بازار:
- *   مشخصات درخواست‌دهنده + کسب‌وکار/کاتالوگ + تایید یا رد با دلیل.
+ *   مشخصات درخواست‌دهنده + کسب‌وکار/بازوی فروش + تایید یا رد با دلیل.
  *   نتیجه به‌صورت اعلان برای کاربر می‌رود.
  */
 
@@ -250,7 +250,7 @@ function RequestCard({
                     )}
                 </div>
 
-                {/* کسب‌وکار (خریدار) یا کاتالوگ (فروشنده) */}
+                {/* کسب‌وکار (خریدار) یا بازوی فروش (فروشنده) */}
                 <div className="rounded-xl bg-surface-container-low/70 border border-outline-variant/20 p-3">
                     {isBuyer ? (
                         <>
@@ -273,7 +273,7 @@ function RequestCard({
                     ) : (
                         <>
                             <p className="text-[9.5px] font-bold text-on-surface-variant/70 mb-2 flex items-center gap-1">
-                                <BookOpen className="w-3 h-3" /> کاتالوگ قیمتنده
+                                <BookOpen className="w-3 h-3" /> بازوی فروش قیمتنده
                             </p>
                             {cat ? (
                                 <>
@@ -283,12 +283,12 @@ function RequestCard({
                                         {cat.slug && (
                                             <Link href={`/${cat.slug}`} target="_blank"
                                                   className="inline-flex items-center gap-0.5 text-primary hover:underline">
-                                                دیدن کاتالوگ <ExternalLink className="w-3 h-3" />
+                                                دیدن بازوی فروش <ExternalLink className="w-3 h-3" />
                                             </Link>
                                         )}
                                     </div>
                                 </>
-                            ) : <p className="text-[11px] text-on-surface-variant">بدون کاتالوگ</p>}
+                            ) : <p className="text-[11px] text-on-surface-variant">بدون بازوی فروش</p>}
                         </>
                     )}
                 </div>
@@ -330,7 +330,7 @@ function RequestCard({
                                 rows={2}
                                 maxLength={500}
                                 autoFocus
-                                placeholder="چرا رد می‌کنی؟ مثلاً: «اول کسب‌وکارت را ثبت کن» یا «کاتالوگت کامل نیست» یا «خیاطی‌ها در این بازار عضو نمی‌شوند»"
+                                placeholder="چرا رد می‌کنی؟ مثلاً: «اول کسب‌وکارت را ثبت کن» یا «بازوی فروشت کامل نیست» یا «خیاطی‌ها در این بازار عضو نمی‌شوند»"
                                 className="w-full rounded-xl border border-outline-variant/40 bg-surface-container-lowest
                                     p-3 text-xs text-on-surface leading-6 outline-none focus:border-primary/50 resize-y"
                             />

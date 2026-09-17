@@ -32,22 +32,22 @@ interface Props {
     mode: 'team' | 'buyers';
     canAssign: boolean; // مالک/مدیر — می‌تواند مسئول فروش را هم انتخاب کند
     sellers: any[]; // اعضای فروش فعال (برای انتساب خریدار)
-    /** اسلاگ کاتالوگ — لینک دعوت در تب مخاطبین */
+    /** اسلاگ بازوی فروش — لینک دعوت در تب مخاطبین */
     slug?: string | null;
 }
 
 type Scope = 'businesses' | 'people' | 'contacts';
 
-// ✅ تب‌های هر مود — خواستهٔ مالک: تیم فقط «افراد + مخاطبین» (کاتالوگ و بیزینس حذف)؛
+// ✅ تب‌های هر مود — خواستهٔ مالک: تیم فقط «افراد + مخاطبین» (بازوی فروش و بیزینس حذف)؛
 //    خریداران فقط «کسب‌وکارها + مخاطبین» (مقصدها همیشه بیزینس + بازوی خریدش است)
 const SCOPES: Record<'team' | 'buyers', { key: Scope; label: string; icon: React.ElementType; hint: string }[]> = {
     team: [
-        { key: 'people', label: 'افراد', icon: User, hint: 'فروشندگان و بازاریابان دیمت را به فروش کاتالوگ دعوت کن' },
-        { key: 'contacts', label: 'مخاطبین', icon: Smartphone, hint: 'از دفترچهٔ تلفنت: اعضای دیمت دعوت همکاری می‌گیرند، غیراعضا با لینک کاتالوگ دعوت می‌شوند' },
+        { key: 'people', label: 'افراد', icon: User, hint: 'فروشندگان و بازاریابان دیمت را به فروش بازوی فروش دعوت کن' },
+        { key: 'contacts', label: 'مخاطبین', icon: Smartphone, hint: 'از دفترچهٔ تلفنت: اعضای دیمت دعوت همکاری می‌گیرند، غیراعضا با لینک بازوی فروش دعوت می‌شوند' },
     ],
     buyers: [
         { key: 'businesses', label: 'کسب‌وکارها', icon: Store, hint: 'کسب‌وکارها را به‌عنوان خریدار ثبت کن تا تماس‌شان به شما برسد' },
-        { key: 'contacts', label: 'مخاطبین', icon: Smartphone, hint: 'از دفترچهٔ تلفنت: کسب‌وکار اعضای دیمت به‌عنوان خریدار ثبت می‌شود، غیراعضا با لینک کاتالوگ دعوت می‌شوند' },
+        { key: 'contacts', label: 'مخاطبین', icon: Smartphone, hint: 'از دفترچهٔ تلفنت: کسب‌وکار اعضای دیمت به‌عنوان خریدار ثبت می‌شود، غیراعضا با لینک بازوی فروش دعوت می‌شوند' },
     ],
 };
 
@@ -339,13 +339,13 @@ export default function ConnectionRequestModal({ open, onClose, catalogId, mode,
                 )}
 
                 {/* 📱 تب مخاطبین:
-                      مود team   → لیست عمومی مخاطبین: اعضای دیمت دعوت همکاری در فروش می‌گیرند، غیراعضا لینک کاتالوگ
+                      مود team   → لیست عمومی مخاطبین: اعضای دیمت دعوت همکاری در فروش می‌گیرند، غیراعضا لینک بازوی فروش
                       مود buyers → ✅ پنل تخصصی خریداران: کسب‌وکارها + بازوهای خریدِ هر عضو؛ بی‌کسب‌وکار قابل افزودن نیست */}
                 {scope === 'contacts' && mode === 'team' && (
                     <PhoneContactsPanel
                         title="دفترچهٔ مخاطبین تلفن تو"
                         membersTitle="اعضای دیمت — دعوت همکاری در فروش می‌گیرند"
-                        inviteTitle="دعوت به دیمت — لینک کاتالوگ را می‌گیرند"
+                        inviteTitle="دعوت به دیمت — لینک بازوی فروش را می‌گیرند"
                         memberSend={{
                             label: 'دعوت',
                             doneLabel: 'دعوت رفت',
@@ -367,7 +367,7 @@ export default function ConnectionRequestModal({ open, onClose, catalogId, mode,
                         }}
                         invite={{
                             label: 'دعوت به دیمت',
-                            getText: () => 'سلام! کاتالوگ قیمتی ما در دیمت را ببین:',
+                            getText: () => 'سلام! بازوی فروش قیمتی ما در دیمت را ببین:',
                             getUrl: () => (slug ? `${window.location.origin}/${slug}` : undefined),
                         }}
                     />
@@ -377,7 +377,7 @@ export default function ConnectionRequestModal({ open, onClose, catalogId, mode,
                     <BuyerContactsPanel
                         title="دفترچهٔ مخاطبین تلفن تو"
                         membersTitle="اعضای دیمت — کسب‌وکارشان را خریدار ثبت کن"
-                        inviteTitle="دعوت به دیمت — لینک کاتالوگ را می‌گیرند"
+                        inviteTitle="دعوت به دیمت — لینک بازوی فروش را می‌گیرند"
                         doneLabel="درخواست رفت"
                         onAddBusiness={async (businessId) => {
                             try {
@@ -398,7 +398,7 @@ export default function ConnectionRequestModal({ open, onClose, catalogId, mode,
                         }}
                         invite={{
                             label: 'دعوت به دیمت',
-                            getText: () => 'سلام! کاتالوگ قیمتی ما در دیمت را ببین:',
+                            getText: () => 'سلام! بازوی فروش قیمتی ما در دیمت را ببین:',
                             getUrl: () => (slug ? `${window.location.origin}/${slug}` : undefined),
                         }}
                     />

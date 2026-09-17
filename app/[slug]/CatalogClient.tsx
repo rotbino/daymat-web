@@ -40,7 +40,7 @@ export default function CatalogClient({ slug, initialCatalog, initialSearch = ''
     const [localSaved, setLocalSaved] = useState<boolean | null>(null);
     const [showLogin, setShowLogin] = useState(false);
     const [pendingSave, setPendingSave] = useState(false);
-    // ✅ درخواست ارتباط تجاری — وضعیت من در کاتالوگ + مودال
+    // ✅ درخواست ارتباط تجاری — وضعیت من در بازوی فروش + مودال
     const [coopOpen, setCoopOpen] = useState(false);
     const [pendingCoopAfterLogin, setPendingCoopAfterLogin] = useState(false);
     // ✅ ویرایش درجا: مدال پروفایل شخصی
@@ -58,7 +58,7 @@ export default function CatalogClient({ slug, initialCatalog, initialSearch = ''
     const { refetch: refetchSavedList } = useSavedCatalogs();
 
     const isSaved = localSaved !== null ? localSaved : (savedData?.isSaved || false);
-    // ✅ وضعیت همکاری من با این کاتالوگ — برای دکمهٔ هدر (none | pending | member)
+    // ✅ وضعیت همکاری من با این بازوی فروش — برای دکمهٔ هدر (none | pending | member)
     const [coopState, setCoopState] = useState<'none' | 'pending' | 'member'>('none');
     const refetchMyMembershipRef = React.useRef<(() => void) | null>(null);
     React.useEffect(() => {
@@ -82,7 +82,7 @@ export default function CatalogClient({ slug, initialCatalog, initialSearch = ''
         if (!user?.id || !displayCatalog?.owner?.id) return false;
         return user.id === displayCatalog.owner.id;
     }, [user?.id, displayCatalog?.owner?.id]);
-    // ✅ گیت قیمت کاتالوگ خصوصی — فقط مالک و اعضای پذیرفته‌شده (درخواست ارتباط تجاری) قیمت می‌بینند
+    // ✅ گیت قیمت بازوی فروش خصوصی — فقط مالک و اعضای پذیرفته‌شده (درخواست ارتباط تجاری) قیمت می‌بینند
     const hidePrices = !!displayCatalog?.isPrivate && !isOwner && coopState !== 'member';
     const [catalogEditOpen, setCatalogEditOpen] = useState(false)
     // const router = useRouter(); از قبل هست. اضافه:
@@ -92,7 +92,7 @@ export default function CatalogClient({ slug, initialCatalog, initialSearch = ''
     const isEditMode = searchParams.get('edit') === '1' && isOwner;
     const exitEditMode = () => router.replace(`/${slug}`);
 
-    // ✅ ویرایش درجا: وقتی مالک از صفحه ویرایش برمی‌گردد (remount)، دیتای کاتالوگ تازه شود
+    // ✅ ویرایش درجا: وقتی مالک از صفحه ویرایش برمی‌گردد (remount)، دیتای بازوی فروش تازه شود
     useEffect(() => {
         if (!isOwner || !slug) return;
         queryClient.invalidateQueries({ queryKey: ['catalog', 'by-slug', slug] });
@@ -149,7 +149,7 @@ export default function CatalogClient({ slug, initialCatalog, initialSearch = ''
     const activeCount = allAds.filter(ad => ad.status === 'active').length;
 
     // ═══════════════════════════════════════════
-    // ✅ ذخیره کاتالوگ
+    // ✅ ذخیره بازوی فروش
     // ═══════════════════════════════════════════
     const handleSaveToggle = useCallback(async () => {
         if (!displayCatalog?.id) return;
@@ -169,7 +169,7 @@ export default function CatalogClient({ slug, initialCatalog, initialSearch = ''
             } else {
                 await apiService.catalog.save(displayCatalog.id);
                 setLocalSaved(true);
-                toast.success('کاتالوگ ذخیره شد');
+                toast.success('بازوی فروش ذخیره شد');
             }
             refetchSaved();
             refetchStats();
@@ -210,7 +210,7 @@ export default function CatalogClient({ slug, initialCatalog, initialSearch = ''
                     } else {
                         await apiService.catalog.save(displayCatalog.id);
                         setLocalSaved(true);
-                        toast.success('کاتالوگ ذخیره شد');
+                        toast.success('بازوی فروش ذخیره شد');
                     }
                     refetchSaved();
                     refetchStats();
@@ -232,8 +232,8 @@ export default function CatalogClient({ slug, initialCatalog, initialSearch = ''
     const handleShare = async () => {
         try {
             const url = window.location.href;
-            if (navigator.share) await navigator.share({ title: `کاتالوگ ${displayCatalog?.name}`, url });
-            else { await navigator.clipboard.writeText(url); toast.success('لینک کاتالوگ کپی شد'); }
+            if (navigator.share) await navigator.share({ title: `بازوی فروش ${displayCatalog?.name}`, url });
+            else { await navigator.clipboard.writeText(url); toast.success('لینک بازوی فروش کپی شد'); }
         } catch {}
     };
 
@@ -256,7 +256,7 @@ export default function CatalogClient({ slug, initialCatalog, initialSearch = ''
     }, []);
 
 
-// در CatalogClient (کاتالوگ عمومی)، handler را به این تغییر بده:
+// در CatalogClient (بازوی فروش عمومی)، handler را به این تغییر بده:
     const handleAddProduct = useCallback(() => {
         router.push(`/ad/create?catalog=${displayCatalog.id}`);
     }, [displayCatalog?.id, router]);
@@ -298,8 +298,8 @@ export default function CatalogClient({ slug, initialCatalog, initialSearch = ''
                     onEditProfile={() => setProfileEditOpen(true)} // ✅ مداد باکس پروفایل شخصی
                 />
 
-                {/* ✅ مدیریت اعضا جای اصلی‌اش تب اعضا در پنل مدیریت کاتالوگ است؛
-                    روی خود کاتالوگ فقط دکمهٔ «ارتباط تجاری» در هدر (مثل کانکت لینکدین) */}
+                {/* ✅ مدیریت اعضا جای اصلی‌اش تب اعضا در پنل مدیریت بازوی فروش است؛
+                    روی خود بازوی فروش فقط دکمهٔ «ارتباط تجاری» در هدر (مثل کانکت لینکدین) */}
                 <CatalogProductList
                     ads={allAds}
                     total={total}
@@ -315,8 +315,8 @@ export default function CatalogClient({ slug, initialCatalog, initialSearch = ''
                     loadMoreRef={loadMoreRef}
                     isLoadingMore={isLoadingMore}
                     isOwner={isOwner}              // ✅
-                    onAddProduct={handleAddProduct} // ✅ افزودن محصول از خود کاتالوگ
-                    hidePrices={hidePrices}         // ✅ کاتالوگ خصوصی — قیمت فقط برای اعضا
+                    onAddProduct={handleAddProduct} // ✅ افزودن محصول از خود بازوی فروش
+                    hidePrices={hidePrices}         // ✅ بازوی فروش خصوصی — قیمت فقط برای اعضا
                     onCoopRequest={handleCoopRequest} // ✅ CTA درخواست ارتباط تجاری
                 />
 

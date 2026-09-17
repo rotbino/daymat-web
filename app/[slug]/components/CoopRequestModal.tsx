@@ -1,6 +1,6 @@
 // app/[slug]/components/CoopRequestModal.tsx
-// مودال «درخواست ارتباط تجاری» با کاتالوگ — یک در برای هر سه نقش بیزینسی:
-//   خریدار (انتخاب کسب‌وکار) | تامین‌کننده (انتخاب کاتالوگِ خود) | همکار فروش (فروشنده/ویزیتور)
+// مودال «درخواست ارتباط تجاری» با بازوی فروش — یک در برای هر سه نقش بیزینسی:
+//   خریدار (انتخاب کسب‌وکار) | تامین‌کننده (انتخاب بازوی فروشِ خود) | همکار فروش (فروشنده/ویزیتور)
 // الگوی تعاملی: همان «پیوستن به بازار» — انتخاب نوع → گام شرطی → ارسال → در انتظار تایید مدیر
 'use client';
 
@@ -27,9 +27,9 @@ interface CoopRequestModalProps {
 
 const TYPE_CARDS: { type: CoopType; icon: React.ElementType; title: string; desc: string; requiresServiceCatalog?: boolean }[] = [
     { type: 'buyer', icon: ShoppingBasket, title: 'درخواست تامین‌شوندگی (خرید)', desc: 'از این کسب‌وکار خرید می‌کنید و در لیست مشتریانش قرار می‌گیرید' },
-    { type: 'supplier', icon: Truck, title: 'پیشنهاد تامین', desc: 'کالاهای کاتالوگ شما را اینجا عرضه می‌کنند' },
-    { type: 'seller', icon: Handshake, title: 'درخواست همکاری در فروش', desc: 'به‌عنوان فروشنده یا بازاریاب، کالاهای این کاتالوگ را می‌فروشید' },
-    { type: 'service', icon: Wrench, title: 'درخواست تامین خدمات', desc: 'خدمات کاتالوگ شما (مشاوره، حمل، نصب و…) به این کسب‌وکار ارائه می‌شود', requiresServiceCatalog: true },
+    { type: 'supplier', icon: Truck, title: 'پیشنهاد تامین', desc: 'کالاهای بازوی فروش شما را اینجا عرضه می‌کنند' },
+    { type: 'seller', icon: Handshake, title: 'درخواست همکاری در فروش', desc: 'به‌عنوان فروشنده یا بازاریاب، کالاهای این بازوی فروش را می‌فروشید' },
+    { type: 'service', icon: Wrench, title: 'درخواست تامین خدمات', desc: 'خدمات بازوی فروش شما (مشاوره، حمل، نصب و…) به این کسب‌وکار ارائه می‌شود', requiresServiceCatalog: true },
 ];
 
 export default function CoopRequestModal({ open, onClose, catalogId, catalogName, onSuccess }: CoopRequestModalProps) {
@@ -58,7 +58,7 @@ export default function CoopRequestModal({ open, onClose, catalogId, catalogName
         return (list as any[]).filter((c) => c?.id && c.id !== catalogId);
     }, [myCatalogsRaw, catalogId]);
 
-    // ✅ گیت خدمات — فقط با کاتالوگِ خدماتیِ خود (salesType=service)
+    // ✅ گیت خدمات — فقط با بازوی فروشِ خدماتیِ خود (salesType=service)
     const hasServiceCatalog = myCatalogs.some((c: any) => c.salesType === 'service');
 
     if (!open) return null;
@@ -79,8 +79,8 @@ export default function CoopRequestModal({ open, onClose, catalogId, catalogName
     const submit = async () => {
         if (!type) return;
         if (type === 'buyer' && !businessId) { toast.error('ابتدا کسب‌وکارت را انتخاب کن'); return; }
-        if (type === 'supplier' && !supplierCatalogId) { toast.error('ابتدا کاتالوگت را انتخاب کن'); return; }
-        if (type === 'service' && !supplierCatalogId) { toast.error('ابتدا کاتالوگ خدماتی‌ات را انتخاب کن'); return; }
+        if (type === 'supplier' && !supplierCatalogId) { toast.error('ابتدا بازوی فروشت را انتخاب کن'); return; }
+        if (type === 'service' && !supplierCatalogId) { toast.error('ابتدا بازوی فروش خدماتی‌ات را انتخاب کن'); return; }
         setSubmitting(true);
         try {
             const res = await apiService.catalog.team.joinCoop(catalogId, {
@@ -90,7 +90,7 @@ export default function CoopRequestModal({ open, onClose, catalogId, catalogName
                 supplierCatalogId: type === 'supplier' ? supplierCatalogId : undefined,
                 serviceCatalogId: type === 'service' ? supplierCatalogId : undefined,
             });
-            toast.success(res?.message || 'درخواست ثبت شد — در انتظار تایید مدیر کاتالوگ');
+            toast.success(res?.message || 'درخواست ثبت شد — در انتظار تایید مدیر بازوی فروش');
             onSuccess?.();
             close();
         } catch (error: any) {
@@ -126,14 +126,14 @@ export default function CoopRequestModal({ open, onClose, catalogId, catalogName
                 {step === 'type' && (
                     <div className="space-y-2.5">
                         {TYPE_CARDS.map(({ type: t, icon: Icon, title, desc, requiresServiceCatalog }) => {
-                            // گیت خدمات — بدون کاتالوگ خدماتی، کارت ناتوان با راهنما
+                            // گیت خدمات — بدون بازوی فروش خدماتی، کارت ناتوان با راهنما
                             const locked = !!requiresServiceCatalog && !hasServiceCatalog;
                             return (
                                 <button
                                     key={t}
                                     onClick={() => {
                                         if (locked) {
-                                            toast.error('اول کاتالوگ خدماتی بساز — بعد درخواست تامین خدمات بده');
+                                            toast.error('اول بازوی فروش خدماتی بساز — بعد درخواست تامین خدمات بده');
                                             return;
                                         }
                                         setType(t);
@@ -153,7 +153,7 @@ export default function CoopRequestModal({ open, onClose, catalogId, catalogName
                                     <span className="flex-1 min-w-0">
                                         <span className="block text-sm font-bold text-gray-900 dark:text-gray-100">{title}</span>
                                         <span className="block text-[11px] text-gray-500 dark:text-gray-400 mt-0.5 leading-5">
-                                            {locked ? 'نیاز به کاتالوگ خدمات — اول بسازش' : desc}
+                                            {locked ? 'نیاز به بازوی فروش خدمات — اول بسازش' : desc}
                                         </span>
                                     </span>
                                     <ChevronLeft className="w-4 h-4 text-gray-300 mt-3 flex-shrink-0" />
@@ -211,14 +211,14 @@ export default function CoopRequestModal({ open, onClose, catalogId, catalogName
                             </>
                         )}
 
-                        {/* تامین‌کننده / سرویس‌دهنده — انتخاب کاتالوگ خود */}
+                        {/* تامین‌کننده / سرویس‌دهنده — انتخاب بازوی فروش خود */}
                         {(type === 'supplier' || type === 'service') && (
                             <>
                                 <div className="flex items-center gap-2 text-xs font-bold text-gray-700 dark:text-gray-300">
                                     <BookOpen className="w-4 h-4 text-primary" />
                                     {type === 'service'
-                                        ? 'کدام کاتالوگ خدماتی‌ات را به این کسب‌وکار ارائه می‌کنی؟'
-                                        : 'کالاهای کدام کاتالوگت به درد این خریدار می‌خورد؟'}
+                                        ? 'کدام بازوی فروش خدماتی‌ات را به این کسب‌وکار ارائه می‌کنی؟'
+                                        : 'کالاهای کدام بازوی فروشت به درد این خریدار می‌خورد؟'}
                                 </div>
                                 {(() => {
                                     const pool = type === 'service' ? myCatalogs.filter((c: any) => c.salesType === 'service') : myCatalogs;
@@ -226,7 +226,7 @@ export default function CoopRequestModal({ open, onClose, catalogId, catalogName
                                         <>
                                             {pool.length === 0 && (
                                                 <p className="text-[11px] text-gray-400">
-                                                    {type === 'service' ? 'هنوز کاتالوگ خدماتی نداری.' : 'هنوز کاتالوگی نداری.'}
+                                                    {type === 'service' ? 'هنوز بازوی فروش خدماتی نداری.' : 'هنوز بازوی فروشی نداری.'}
                                                 </p>
                                             )}
                                             <div className="space-y-2">
@@ -259,7 +259,7 @@ export default function CoopRequestModal({ open, onClose, catalogId, catalogName
                                                 className="flex items-center justify-center gap-1.5 w-full py-2.5 rounded-xl border border-dashed border-outline-variant/40 text-xs font-bold text-primary hover:bg-primary/5"
                                             >
                                                 <Plus className="w-4 h-4" />
-                                                کاتالوگ نداری؟ بسازش
+                                                بازوی فروش نداری؟ بسازش
                                             </Link>
                                         </>
                                     );
@@ -291,7 +291,7 @@ export default function CoopRequestModal({ open, onClose, catalogId, catalogName
                                     ))}
                                 </div>
                                 <p className="text-[11px] text-gray-400 leading-5">
-                                    شما با نقش فروشنده یا بازاریاب کالاهای این کاتالوگ ، مشتریان خاصی را مدیریت می کنید.
+                                    شما با نقش فروشنده یا بازاریاب کالاهای این بازوی فروش ، مشتریان خاصی را مدیریت می کنید.
                                 </p>
                             </>
                         )}

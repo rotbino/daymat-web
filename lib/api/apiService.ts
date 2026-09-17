@@ -61,7 +61,7 @@ export const apiService = {
     },
 
     notification:{
-        // ✅ اعلان‌های مشتق از دیتا (قیمت‌های در حال انقضا، کاتالوگ ناقص)
+        // ✅ اعلان‌های مشتق از دیتا (قیمت‌های در حال انقضا، بازوی فروش ناقص)
         getDerived: (): Promise<{ items: any[]; unread: number }> =>
             apiRequest('/ad/notifications'),
 
@@ -164,7 +164,7 @@ export const apiService = {
 
         // ─── تیم کاری کسب‌وکار — دو سطح نقش (سیستمی admin/member + نقش شرکتی) ───
 
-        // ✅ عضویت من در این کسب‌وکار — فرم کاتالوگ: اگر نقش شرکتی قبلاً مشخص شده، دیگر پرسیده نمی‌شود
+        // ✅ عضویت من در این کسب‌وکار — فرم بازوی فروش: اگر نقش شرکتی قبلاً مشخص شده، دیگر پرسیده نمی‌شود
         getMyMembership: (id: string): Promise<{ isMember: boolean; role: string | null; position: string | null; canManageTeam: boolean }> =>
             apiRequest(`/business/${id}/my-membership`),
 
@@ -218,7 +218,7 @@ export const apiService = {
         updateConfig: (id: string, dto: { units?: any[]; categoryTree?: any[] }): Promise<any> =>
             apiRequest(`/catalog/${id}/config`, { method: 'PATCH', data: dto }),
 
-        // 💾 کارت ویزیت — ذخیرهٔ مشخصات (JSON) روی کاتالوگ تا زحمت کاربر از بین نرود
+        // 💾 کارت ویزیت — ذخیرهٔ مشخصات (JSON) روی بازوی فروش تا زحمت کاربر از بین نرود
         updateVisitCard: (id: string, spec: any): Promise<any> =>
             apiRequest(`/catalog/${id}/visit-card`, { method: 'PATCH', data: { spec } }),
 
@@ -253,7 +253,7 @@ export const apiService = {
         getCatalogAds: (catalogId: string, page: number = 1, limit: number = 24, search?: string) =>
             apiRequest(`/ad/catalog/${catalogId}?page=${page}&limit=${limit}${search ? `&search=${encodeURIComponent(search)}` : ''}`),
 
-        // ─── تیم کاتالوگ (مالک/مدیر/عضوِ فروش/مشتری) ───
+        // ─── تیم بازوی فروش (مالک/مدیر/عضوِ فروش/مشتری) ───
         team: {
             getTeam: (catalogId: string): Promise<any> =>
                 apiRequest(`/catalog/${catalogId}/team`),
@@ -271,11 +271,11 @@ export const apiService = {
             getMyPendingApprovals: (): Promise<{ items: any[]; total: number }> =>
                 apiRequest('/catalog/team/my-pending-approvals'),
 
-            // ✅ شمارندهٔ درخواست‌های در انتظارِ کاتالوگ‌های مدیریتی من — بج قرمز برگهٔ اعضا
+            // ✅ شمارندهٔ درخواست‌های در انتظارِ بازوی فروش‌های مدیریتی من — بج قرمز برگهٔ اعضا
             getMyPendingSummary: (): Promise<{ total: number; items: { catalogId: string; count: number }[] }> =>
                 apiRequest('/catalog/team/my-pending-summary'),
 
-            // ✅ پیشنهاد/جستجوی کاتالوگ‌ها — سورتِ مرتبط‌سازی (هم‌شهری/هم‌استان/مکمل) + فیلترها
+            // ✅ پیشنهاد/جستجوی بازوی فروش‌ها — سورتِ مرتبط‌سازی (هم‌شهری/هم‌استان/مکمل) + فیلترها
             partnerCatalogs: (catalogId: string, params: ConnCandidateParams & { salesType?: string } = {}): Promise<{ items: any[]; suggested?: boolean }> =>
                 apiRequest(`/catalog/${catalogId}/team/partner-catalogs${connCandidateQuery(params)}`),
 
@@ -544,7 +544,7 @@ export const apiService = {
         join: (slug: string, body?: { roleType?: 'seller' | 'buyer'; catalogId?: string }): Promise<any> =>
             apiRequest(`/arm/${slug}/join`, { method: 'POST', data: body }),
 
-        // ✅ درخواست عضویت در بازار خصوصی — ویزارد شرایط → نقش → کسب‌وکار/کاتالوگ
+        // ✅ درخواست عضویت در بازار خصوصی — ویزارد شرایط → نقش → کسب‌وکار/بازوی فروش
         requestMembership: (
             slug: string,
             body: { roleType: 'buyer' | 'seller'; businessId?: string; catalogId?: string; termsAccepted?: boolean },
@@ -581,7 +581,7 @@ export const apiService = {
         getMyMembership: (slug: string): Promise<any> =>
             apiRequest(`/arm/${slug}/my-membership`),
 
-        // ✅ درخواست لغو عضویت فروشنده — از پنل کاتالوگ؛ به پنل مالک می‌رود (خروجِ آنی حذف شد)
+        // ✅ درخواست لغو عضویت فروشنده — از پنل بازوی فروش؛ به پنل مالک می‌رود (خروجِ آنی حذف شد)
         // (مستقیم از requestLeave با roleType:'seller' استفاده کنید)
 
         getUserArms: (): Promise<any[]> =>
@@ -628,11 +628,11 @@ export const apiService = {
 
         // جدید: دریافت بازار با id
         findById: (id: string): Promise<Arm> => apiRequest(`/arm/${id}`),   // بک‌اند باید این route را پشتیبانی کند
-        // ✅ روشن/خاموش کردن انتشار کاتالوگ در بازار
+        // ✅ روشن/خاموش کردن انتشار بازوی فروش در بازار
         toggleCatalogPublish: (slug: string, data: { catalogId: string; published: boolean }): Promise<any> =>
             apiRequest(`/arm/${slug}/catalog-publish`, { method: 'PATCH', data }),
         // ✅ بازارهای فعال پیشنهادی — بدون catalogId: همهٔ بازارهای فعال عمومی
-        //    با catalogId: همان، منهای بازاری که این کاتالوگ عضو/درخواستِ آن است (دوسویه: کشف + پیشنهاد)
+        //    با catalogId: همان، منهای بازاری که این بازوی فروش عضو/درخواستِ آن است (دوسویه: کشف + پیشنهاد)
         getSuggestedArms: (catalogId?: string, limit: number = 6): Promise<{ items: any[] }> =>
             apiRequest('/arm/suggested', {
                 method: 'GET',
@@ -649,7 +649,7 @@ export const apiService = {
         create: (data: CreateAdDto): Promise<Ad> =>
             apiRequest('/ad', { method: 'POST', data }),
 
-        // ✅ همهٔ واحدها (عمومی — برای فرم کاتالوگ)
+        // ✅ همهٔ واحدها (عمومی — برای فرم بازوی فروش)
         getAllUnits: (ids?: string[]): Promise<any[]> =>
             apiRequest(`/unit/all${ids?.length ? `?ids=${ids.join(',')}` : ''}`),
 
@@ -1284,10 +1284,10 @@ export const apiService = {
                 apiRequest(`/arm-admin/${slug}/members/${userId}/remove`, { method: 'POST' }),
         },
         // ============================================================
-        // مدیریت کاتالوگ‌های بازار (اتصال کاتالوگ به تابلو)
+        // مدیریت بازوی فروش‌های بازار (اتصال بازوی فروش به تابلو)
         // ============================================================
         catalogs: {
-            // کاتالوگ‌های عضو بازار + آمار تابلو
+            // بازوی فروش‌های عضو بازار + آمار تابلو
             getList: (slug: string, params?: {
                 search?: string;
                 ownerStatus?: string;
@@ -1296,7 +1296,7 @@ export const apiService = {
             }): Promise<any> =>
                 apiRequest(`/arm-admin/${slug}/memberships/sellers`, { params }),
 
-            // جستجوی کاتالوگ برای افزودن (myReferrals: فقط جذب‌شده‌های من)
+            // جستجوی بازوی فروش برای افزودن (myReferrals: فقط جذب‌شده‌های من)
             getCandidates: (slug: string, q?: string, onlyMyReferrals?: boolean): Promise<any> =>
                 apiRequest(`/arm-admin/${slug}/memberships/sellers/candidates`, {
                     params: {
@@ -1309,11 +1309,11 @@ export const apiService = {
             getNeedsCategory: (slug: string): Promise<any> =>
                 apiRequest(`/arm-admin/${slug}/memberships/needs-category`),
 
-            // آمار جذب مالک بازار (دعوت‌شدگان + کاتالوگ‌ها)
+            // آمار جذب مالک بازار (دعوت‌شدگان + بازوی فروش‌ها)
             getReferralStats: (slug: string): Promise<any> =>
                 apiRequest(`/arm-admin/${slug}/memberships/referral-stats`),
 
-            // افزودن کاتالوگ به بازار + مهر انتشار
+            // افزودن بازوی فروش به بازار + مهر انتشار
             addCatalog: (slug: string, catalogId: string): Promise<any> =>
                 apiRequest(`/arm-admin/${slug}/memberships/sellers`, { method: 'POST', data: { catalogId } }),
 
@@ -1321,7 +1321,7 @@ export const apiService = {
             setPaused: (slug: string, catalogId: string, paused: boolean): Promise<any> =>
                 apiRequest(`/arm-admin/${slug}/memberships/sellers/${catalogId}`, { method: 'PATCH', data: { paused } }),
 
-            // حذف کاتالوگ از بازار
+            // حذف بازوی فروش از بازار
             remove: (slug: string, catalogId: string): Promise<any> =>
                 apiRequest(`/arm-admin/${slug}/memberships/sellers/${catalogId}`, { method: 'DELETE' }),
 
@@ -1329,7 +1329,7 @@ export const apiService = {
             setAdCategory: (slug: string, adId: string, categoryId: string): Promise<any> =>
                 apiRequest(`/arm-admin/${slug}/memberships/sellers/ads/${adId}/category`, { method: 'PATCH', data: { categoryId } }),
 
-            // تنظیمات اختصاصی کاتالوگ (ارث‌بری از بازار + اورایت مالک بازار)
+            // تنظیمات اختصاصی بازوی فروش (ارث‌بری از بازار + اورایت مالک بازار)
             getCatalogSettings: (slug: string, catalogId: string): Promise<any> =>
                 apiRequest(`/arm-admin/${slug}/memberships/sellers/${catalogId}/settings`),
 
@@ -1377,7 +1377,7 @@ export const apiService = {
     },
 
     // ============================================================
-    // بازارِ من — برای صاحب کاتالوگ (داشبورد)
+    // بازارِ من — برای صاحب بازوی فروش (داشبورد)
     // ============================================================
     userMarket: {
         getMyNeedsCategory: (): Promise<any> =>
@@ -1410,7 +1410,7 @@ export const apiService = {
         resolveSlug: (slug: string): Promise<InquiryDetail> =>
             apiRequest(`/inquiry/slug-resolve?slug=${encodeURIComponent(slug)}`),
 
-        /** چک زندهٔ آدرس عمومی — فضای سراسری (کاتالوگ + بازار + صفحهٔ اعلان خرید) */
+        /** چک زندهٔ آدرس عمومی — فضای سراسری (بازوی فروش + بازار + صفحهٔ اعلان خرید) */
         checkSlug: (slug: string, excludeId?: string): Promise<{ available: boolean; reason?: string; slug?: string }> =>
             apiRequest(`/inquiry/check-slug?slug=${encodeURIComponent(slug)}${excludeId ? `&excludeId=${excludeId}` : ''}`),
 
@@ -1463,7 +1463,7 @@ export const apiService = {
             apiRequest('/inquiry/my-offers'),
 
         // ─── اعضای بازوی خرید — تامین‌کننده‌های تاییدشده (شبکهٔ خرید↔فروش) ───
-        /** 🪪 ذخیره/حذف مشخصات کارت ویزیت بازوی خرید — قرینهٔ کاتالوگ قیمت */
+        /** 🪪 ذخیره/حذف مشخصات کارت ویزیت بازوی خرید — قرینهٔ بازوی فروش قیمت */
         updateVisitCard: (inquiryId: string, spec: Record<string, any> | null): Promise<any> =>
             apiRequest(`/inquiry/${inquiryId}/visit-card`, { method: 'PATCH', data: { spec } }),
 
@@ -1471,7 +1471,7 @@ export const apiService = {
         getMembers: (inquiryId: string): Promise<any[]> =>
             apiRequest(`/inquiry/${inquiryId}/members`),
 
-        /** جست‌وجوی کاتالوگ قیمت برای درخواست همکاری تامین‌کننده (مالک) — فیلتر استان/شهر/صنف */
+        /** جست‌وجوی بازوی فروش قیمت برای درخواست همکاری تامین‌کننده (مالک) — فیلتر استان/شهر/صنف */
         supplierCandidates: (inquiryId: string, f?: { q?: string; provinceCode?: string; cityCode?: string; industry?: string }): Promise<{ items: any[] }> => {
             const p = new URLSearchParams();
             if (f?.q?.trim()) p.set('q', f.q.trim());
@@ -1486,7 +1486,7 @@ export const apiService = {
         addMember: (inquiryId: string, data: { catalogId: string; note?: string }): Promise<any> =>
             apiRequest(`/inquiry/${inquiryId}/members`, { method: 'POST', data }),
 
-        /** درخواست عضویت تامین‌کننده با کاتالوگ قیمتش — تایید با خریدار */
+        /** درخواست عضویت تامین‌کننده با بازوی فروش قیمتش — تایید با خریدار */
         requestAccess: (inquiryId: string, data: { catalogId: string; note?: string }): Promise<any> =>
             apiRequest(`/inquiry/${inquiryId}/request-access`, { method: 'POST', data }),
 
@@ -1506,7 +1506,7 @@ export const apiService = {
         opportunities: (): Promise<{ catalogs: any[]; invitations: any[]; requests: any[]; leads: any[]; accepted: any[] }> =>
             apiRequest('/inquiry/opportunities'),
 
-        // ─── 💾 بازوهای خرید ذخیره‌شده — سوییچر هدر صفحهٔ عمومی (قرینهٔ کاتالوگ) ───
+        // ─── 💾 بازوهای خرید ذخیره‌شده — سوییچر هدر صفحهٔ عمومی (قرینهٔ بازوی فروش) ───
         /** لیست بازوهای خرید ذخیره‌شدهٔ من */
         getSavedList: (): Promise<any[]> =>
             apiRequest('/inquiry/saved/list'),

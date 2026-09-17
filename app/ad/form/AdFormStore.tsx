@@ -148,7 +148,7 @@ export function AdFormProvider({ adId, onSuccess, children }: { adId?: string; o
 
     const isEditMode = !!adId;
 
-    // ═══ کاتالوگ مقصد — از سه منبع (URL / آگهی موجود / کش) ═══
+    // ═══ بازوی فروش مقصد — از سه منبع (URL / آگهی موجود / کش) ═══
     const catalogFromUrl = searchParams.get('catalog');
     const catalogId = catalogFromUrl || ((existingAd as any)?.catalogId as string) || '';
     const hasCatalogId = !!catalogId;
@@ -172,7 +172,7 @@ export function AdFormProvider({ adId, onSuccess, children }: { adId?: string; o
 
     const catalogLoading = !selectedCatalog && (isEditMode ? adLoading : cachedLoading);
 
-    // ✅ نوع فروش کاتالوگ — عمده/تک
+    // ✅ نوع فروش بازوی فروش — عمده/تک
     const salesType: 'wholesale' | 'retail' = useMemo(() => {
         const st = selectedCatalog?.salesType;
         if (st === 'retail' || st === 'wholesale') return st;
@@ -180,7 +180,7 @@ export function AdFormProvider({ adId, onSuccess, children }: { adId?: string; o
     }, [selectedCatalog]);
     const isWholesale = salesType === 'wholesale';
 
-    // ✅ تنظیمات اختصاصی کاتالوگ
+    // ✅ تنظیمات اختصاصی بازوی فروش
     const catalogConfig = (selectedCatalog?.config as any) || {};
     const catalogUnitSettings: UnitSettingEntry[] = catalogConfig.units || [];
     const catalogCategoryTree: any[] = catalogConfig.categoryTree || [];

@@ -6,11 +6,11 @@ import { UseFormWatch, UseFormSetValue } from 'react-hook-form';
 import { Save, Loader2, Check, Users, Lock, AlertTriangle, Layers, UserPlus } from 'lucide-react';
 import { cn } from '@/lib/utils';
 
-// انواع کاتالوگ پذیرفته‌شدهٔ بازار — هم‌راستا با فیلد درجه‌یک Arm.acceptedCatalogTypes در بک
+// انواع بازوی فروش پذیرفته‌شدهٔ بازار — هم‌راستا با فیلد درجه‌یک Arm.acceptedCatalogTypes در بک
 const CATALOG_TYPE_OPTIONS = [
-    { value: 'retail', label: 'تک‌فروشی', hint: 'کاتالوگ‌های خرده‌فروشی' },
-    { value: 'wholesale', label: 'عمده‌فروشی', hint: 'کاتالوگ‌های عمده و پخش' },
-    { value: 'service', label: 'خدماتی', hint: 'کاتالوگ‌های خدمات' },
+    { value: 'retail', label: 'تک‌فروشی', hint: 'بازوی فروش‌های خرده‌فروشی' },
+    { value: 'wholesale', label: 'عمده‌فروشی', hint: 'بازوی فروش‌های عمده و پخش' },
+    { value: 'service', label: 'خدماتی', hint: 'بازوی فروش‌های خدمات' },
 ] as const;
 
 interface AccessRulesSectionProps {
@@ -30,7 +30,7 @@ export function AccessRulesSection({ watch, setValue, onSave, isSaving, isAdmin 
     const canEdit = isAdmin || accessRulesAccess.canEdit === true;
     const isOwnerWithNoAccess = !isAdmin && !canEdit;
 
-    // انواع کاتالوگ پذیرفته‌شده — فیلد روت بازار (نه داخل config)
+    // انواع بازوی فروش پذیرفته‌شده — فیلد روت بازار (نه داخل config)
     const acceptedTypes: string[] = watch('acceptedCatalogTypes') || [];
     const toggleAcceptedType = (value: string) => {
         if (!canEdit) return;
@@ -94,7 +94,7 @@ export function AccessRulesSection({ watch, setValue, onSave, isSaving, isAdmin 
                     <p className="font-semibold mb-1">عضویت در بازار همیشه از مسیر کسب‌وکار است</p>
                     <p className="text-on-surface-variant">
                         هر کاربر برای عضویت، «فروشنده» یا «خریدار» بودن خود را انتخاب می‌کند؛
-                        خریدار با ثبت کسب‌وکار و فروشنده با ساخت کاتالوگ به بازار می‌پیوندد.
+                        خریدار با ثبت کسب‌وکار و فروشنده با ساخت بازوی فروش به بازار می‌پیوندد.
                         اگر بازار خصوصی باشد، ابتدا شرایط عضویت را می‌پذیرد و درخواستش برای تاییدِ شما می‌آید.
                     </p>
                 </div>
@@ -146,7 +146,7 @@ export function AccessRulesSection({ watch, setValue, onSave, isSaving, isAdmin 
                             disabled={!canEdit}
                             rows={5}
                             maxLength={2000}
-                            placeholder={'مثلاً:\n• عضویت به‌عنوان خریدار: فقط سوپرمارکت‌ها و فروشگاه‌های زنجیره‌ای شهر همدان\n• عضویت به‌عنوان فروشنده: شرکت‌های پخش و عمده‌فروشی با کاتالوگ کامل\n• درخواست‌ها ابتدا بررسی و توسط مدیر تایید می‌شود'}
+                            placeholder={'مثلاً:\n• عضویت به‌عنوان خریدار: فقط سوپرمارکت‌ها و فروشگاه‌های زنجیره‌ای شهر همدان\n• عضویت به‌عنوان فروشنده: شرکت‌های پخش و عمده‌فروشی با بازوی فروش کامل\n• درخواست‌ها ابتدا بررسی و توسط مدیر تایید می‌شود'}
                             className={cn(
                                 'w-full rounded-xl border bg-surface-container-lowest p-3 text-xs text-on-surface leading-6',
                                 'border-outline-variant/40 focus:border-primary/50 focus:ring-1 focus:ring-primary/20 outline-none',
@@ -160,17 +160,17 @@ export function AccessRulesSection({ watch, setValue, onSave, isSaving, isAdmin 
                 )}
             </div>
 
-            {/* ✅ انواع کاتالوگ پذیرفته‌شده — ملاک گارد عضویت و فیلتر تابلوی بازار */}
+            {/* ✅ انواع بازوی فروش پذیرفته‌شده — ملاک گارد عضویت و فیلتر تابلوی بازار */}
             <div className="bg-surface-container-low p-5 border border-outline-variant rounded-xl">
                 <div className="flex items-center gap-2 mb-1">
                     <Layers className="w-4 h-4 text-primary" />
-                    <h4 className="text-sm font-semibold">انواع کاتالوگ پذیرفته‌شده</h4>
+                    <h4 className="text-sm font-semibold">انواع بازوی فروش پذیرفته‌شده</h4>
                     {isOwnerWithNoAccess && (
                         <span className="text-[9px] text-on-surface-variant/40 mr-auto">فقط مشاهده</span>
                     )}
                 </div>
                 <p className="text-[10px] text-on-surface-variant mb-4 leading-5">
-                    مشخص می‌کند چه نوع کاتالوگ‌هایی می‌توانند در این بازار عضو شوند و آگهی بگذارند.
+                    مشخص می‌کند چه نوع بازوی فروش‌هایی می‌توانند در این بازار عضو شوند و آگهی بگذارند.
                     اگر هیچ نوعی انتخاب نشود، بازار همهٔ انواع را می‌پذیرد.
                 </p>
                 <div className="grid grid-cols-1 sm:grid-cols-3 gap-2">
@@ -209,7 +209,7 @@ export function AccessRulesSection({ watch, setValue, onSave, isSaving, isAdmin 
                 {acceptedTypes.length === 0 && (
                     <p className="text-[10px] text-amber-600 dark:text-amber-400 mt-3 flex items-center gap-1">
                         <AlertTriangle className="w-3 h-3" />
-                        هیچ نوعی انتخاب نشده — بازار بدون محدودیت است و همهٔ کاتالوگ‌ها می‌توانند عضو شوند.
+                        هیچ نوعی انتخاب نشده — بازار بدون محدودیت است و همهٔ بازوی فروش‌ها می‌توانند عضو شوند.
                     </p>
                 )}
             </div>

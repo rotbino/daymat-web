@@ -1,5 +1,5 @@
 // app/my-catalogs/components/CustomersTab.tsx
-// 🤝 تب «خریداران» کاتالوگ — مدیریت خریدارها (مقایسِ تب «تامین‌کنندگان» در بازوی خرید)
+// 🤝 تب «خریداران» بازوی فروش — مدیریت خریدارها (مقایسِ تب «تامین‌کنندگان» در بازوی خرید)
 //    فقط مسایل خریدار: ثبت خریدار، تایید درخواست، تغییر مسئول، حذف
 //    ✅ ارتقا به مدیر / تغییر نقش / منطقهٔ فروش اینجا وجود ندارد — آن‌ها مالِ تب «تیم فروش» است
 'use client';
@@ -22,7 +22,7 @@ import { Avatar, BuyerMainInfo, personalSlugOf, REQUEST_LABEL, InviteStateChip }
 
 interface Props {
     catalogId: string;
-    /** اسلاگ کاتالوگ — لینک دعوت در ماژول مخاطبین مودال درخواست ارتباط */
+    /** اسلاگ بازوی فروش — لینک دعوت در ماژول مخاطبین مودال درخواست ارتباط */
     slug?: string | null;
 }
 
@@ -105,7 +105,7 @@ export default function CustomersTab({ catalogId, slug }: Props) {
                 <Hourglass className="w-10 h-10 text-amber-500 mx-auto mb-3" />
                 <p className="font-bold text-gray-900 dark:text-gray-100">درخواست همکاری در فروش شما در انتظار تایید است</p>
                 <p className="text-sm text-gray-500 dark:text-gray-400 mt-1">
-                    بعد از تایید مدیر کاتالوگ، می‌توانید از همین برگه برای خریدارهای خودتان خریدار ثبت کنید
+                    بعد از تایید مدیر بازوی فروش، می‌توانید از همین برگه برای خریدارهای خودتان خریدار ثبت کنید
                 </p>
             </div>
         );
@@ -271,7 +271,7 @@ export default function CustomersTab({ catalogId, slug }: Props) {
                     <Handshake className="w-5 h-5 text-primary" />
                 </span>
                 <div className="flex-1 min-w-0">
-                    <p className="font-bold text-gray-900 dark:text-gray-100">خریدارهای کاتالوگ</p>
+                    <p className="font-bold text-gray-900 dark:text-gray-100">خریدارهای بازوی فروش</p>
                     <p className="text-xs text-gray-500 dark:text-gray-400">
                         {activeCustomers.length.toLocaleString('fa-IR')} خریدار فعال
                         {canManage && pendingBuyers.length > 0 && ` · ${pendingBuyers.length.toLocaleString('fa-IR')} درخواست جدید`}

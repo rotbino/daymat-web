@@ -1,10 +1,10 @@
 // app/my-inquiries/components/InquiryIdentityBar.tsx
 // نوار هویت بازوی خرید — قرینهٔ CatalogIdentityBar (سوییچر دو-محصولی)
-// هر دو نوع کاتالوگ در منو با برچسب پرانتزی؛ انتخاب فروش → مدیریت کاتالوگ قیمت
+// هر دو نوع بازوی فروش در منو با برچسب پرانتزی؛ انتخاب فروش → مدیریت بازوی فروش قیمت
 // ✅ پایینِ سوییچر: لینک ساخت فقط برای نوعی که هنوز ندارد (ایدهٔ مالک:
-//    هر کاربر از هر نوع یکی — سیستم پر از کاتالوگ سرگردان نشود)
+//    هر کاربر از هر نوع یکی — سیستم پر از بازوی فروش سرگردان نشود)
 // ✅ شیر + چشم + ⋯ کنار هویت — دسترسی سریع بدون رفتن به تبها (بنا بر خواستهٔ کاربر)
-//    «ساخت صفحه جدید» هم داخل همین ⋯ است؛ قرینهٔ منوی ⋯ کاتالوگ قیمت
+//    «ساخت صفحه جدید» هم داخل همین ⋯ است؛ قرینهٔ منوی ⋯ بازوی فروش قیمت
 // پالت بازوی خرید: سنگی/کهربایی (هماهنگ با کارت‌های همین صفحه)
 'use client';
 
@@ -19,7 +19,7 @@ export default function InquiryIdentityBar({ inquiries, catalogs, currentInquiry
     onSelectInquiry: (id: string) => void;
     onSelectCatalog: (id: string) => void;
     onNew: () => void;
-    /** ساخت کاتالوگ قیمت — از مدال «کاتالوگ جدید» (درخواست کاربر) */
+    /** ساخت بازوی فروش قیمت — از مدال «بازوی فروش جدید» (درخواست کاربر) */
     onNewCatalog: () => void;
     /** اشتراک‌گذاری سریع — یک لمس، بدون رفتن به تب انتشار (خواستهٔ کاربر) */
     onShare: () => void;
@@ -40,7 +40,7 @@ export default function InquiryIdentityBar({ inquiries, catalogs, currentInquiry
         <div className="relative flex items-center justify-between gap-1.5">
             {/* هویت — کلیک = باز شدن سوییچر */}
             <button type="button" onClick={() => { if (canOpen) setOpen((o) => !o); }} aria-expanded={open}
-                    aria-label="سوییچ بین بازوهای خرید و کاتالوگ‌های قیمت"
+                    aria-label="سوییچ بین بازوهای خرید و بازوی فروش‌های قیمت"
                     className={cn('flex min-w-0 flex-1 items-center gap-3 rounded-3xl border-2 bg-white p-3 text-right shadow-sm transition-all dark:bg-gray-900',
                         open
                             ? 'border-brand-contrast/70 ring-2 ring-brand-contrast/10 dark:border-amber-500/60'
@@ -104,7 +104,7 @@ export default function InquiryIdentityBar({ inquiries, catalogs, currentInquiry
                             </button>
                             <button type="button" onClick={() => { setMenuOpen(false); onNewCatalog(); }}
                                     className="flex h-10 w-full items-center gap-2.5 rounded-lg px-3 text-[13px] text-stone-800 transition-colors hover:bg-stone-50 dark:text-gray-200 dark:hover:bg-gray-800">
-                                <LibraryBig className="size-4 text-primary" /> کاتالوگ قیمت جدید
+                                <LibraryBig className="size-4 text-primary" /> بازوی فروش قیمت جدید
                             </button>
                         </div>
                     </>
@@ -159,7 +159,7 @@ export default function InquiryIdentityBar({ inquiries, catalogs, currentInquiry
                             <>
                                 <div className="my-1 border-t border-stone-100 dark:border-gray-800" />
                                 <p className="px-3 pt-1 pb-1 text-[10px] font-bold text-stone-400 dark:text-gray-500">
-                                    کاتالوگ‌های قیمت
+                                    بازوی فروش‌های قیمت
                                 </p>
                                 {catalogs.map((c) => (
                                     <button key={c.id} type="button" role="menuitem"
@@ -170,7 +170,7 @@ export default function InquiryIdentityBar({ inquiries, catalogs, currentInquiry
                                         </span>
                                         <span className="flex min-w-0 flex-1 items-center gap-1">
                                             <span className="truncate text-[13px] font-bold text-stone-800 dark:text-gray-200">{c.name}</span>
-                                            <span className="shrink-0 whitespace-nowrap text-[9px] font-bold text-stone-400">(کاتالوگ قیمت)</span>
+                                            <span className="shrink-0 whitespace-nowrap text-[9px] font-bold text-stone-400">(بازوی فروش قیمت)</span>
                                         </span>
                                     </button>
                                 ))}
@@ -191,7 +191,7 @@ export default function InquiryIdentityBar({ inquiries, catalogs, currentInquiry
                                     <button type="button" role="menuitem" onClick={() => { setOpen(false); onNewCatalog(); }}
                                             className="flex h-11 w-full items-center gap-2.5 rounded-xl px-3 text-right text-[13px] font-extrabold text-primary transition-colors hover:bg-stone-50 dark:hover:bg-gray-800">
                                         <Plus className="size-4" />
-                                        ساخت کاتالوگ قیمت
+                                        ساخت بازوی فروش قیمت
                                     </button>
                                 )}
                             </>

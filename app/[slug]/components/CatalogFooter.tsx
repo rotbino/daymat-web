@@ -18,11 +18,11 @@ export default function CatalogFooter({ catalog }: { catalog: any; onGoHome?: ()
     const router = useRouter();
     const { isAuthenticated } = useSelector((state: RootState) => state.auth);
 
-    // ✅ قیف ویروسی با انتساب رفرال صاحب کاتالوگ:
-    //    لینک ساخت کاتالوگ همیشه کد دعوتِ مالکِ همین کاتالوگ را حمل می‌کند
-    //    → هر کس از این کاتالوگ وارد شود، «دعوت‌شدهٔ» او ثبت می‌شود
+    // ✅ قیف ویروسی با انتساب رفرال صاحب بازوی فروش:
+    //    لینک ساخت بازوی فروش همیشه کد دعوتِ مالکِ همین بازوی فروش را حمل می‌کند
+    //    → هر کس از این بازوی فروش وارد شود، «دعوت‌شدهٔ» او ثبت می‌شود
     const refCode: string | undefined = catalog?.owner?.referralCode;
-    // ✅ مسیر واقعی ساخت کاتالوگ — /business/register (مسیر قدیمی /catalog/register وجود ندارد)
+    // ✅ مسیر واقعی ساخت بازوی فروش — /business/register (مسیر قدیمی /catalog/register وجود ندارد)
     const registerPath = refCode
         ? `/business/register?ref=${refCode}`
         : '/business/register';
@@ -60,7 +60,7 @@ export default function CatalogFooter({ catalog }: { catalog: any; onGoHome?: ()
                     </button>
                 </div>
 
-                {/* ✅ دکمهٔ ویروسی شناور — با کد دعوت صاحب کاتالوگ */}
+                {/* ✅ دکمهٔ ویروسی شناور — با کد دعوت صاحب بازوی فروش */}
                 <div className="bottom-0 left-0 right-0 z-50 py-2">
                     <div className={cn(WRAP, 'flex justify-center')}>
                         <button
@@ -76,7 +76,7 @@ export default function CatalogFooter({ catalog }: { catalog: any; onGoHome?: ()
                             <span className="hidden sm:inline text-gray-500 dark:text-gray-400">ساخته شده با</span>
                             <span className="font-extrabold text-primary/80 group-hover:text-primary transition-colors">دیمت</span>
                             <span className="hidden sm:inline text-gray-400">·</span>
-                            <span className="hidden sm:inline text-gray-500 group-hover:text-primary/80 transition-colors">تو هم کاتالوگ خودت را بساز</span>
+                            <span className="hidden sm:inline text-gray-500 group-hover:text-primary/80 transition-colors">تو هم بازوی فروش خودت را بساز</span>
                         </button>
                     </div>
                 </div>

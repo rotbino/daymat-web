@@ -22,7 +22,7 @@ import SlugEditor from './SlugEditor';
 import { SALES_ICON, SALES_LABEL } from './constants';
 
 // ═══════════════════════════════════════════════════════════
-// CatalogEditModal — ویرایش کاتالوگ (salesType-aware)
+// CatalogEditModal — ویرایش بازوی فروش (salesType-aware)
 // ✅ با key در والد remount می‌شود → همیشه با دادهٔ تازه initialize
 // ✅ فیکس باگ لوگو: مقدار آپلود از خروجیِ تابع خوانده می‌شود نه state
 //    (قبلاً closure مقدار قدیمی '' را ذخیره می‌کرد و لوگو پاک می‌شد)
@@ -59,7 +59,7 @@ export default function CatalogEditModal({ isOpen, onClose, catalog, salesTypeLo
     const [shortDescription, setShortDescription] = useState(catalog?.shortDescription || '');
     const [phone, setPhone] = useState(catalog?.phone || bizPhone);
     const [website, setWebsite] = useState(catalog?.website || '');
-    // ✅ لوگوی اولیه: فایل کاتالوگ → business.logoUrl → catalog.logoUrl
+    // ✅ لوگوی اولیه: فایل بازوی فروش → business.logoUrl → catalog.logoUrl
     const [logoUrl, setLogoUrl] = useState(catalog?.logoFile?.path || biz?.logoUrl || catalog?.logoUrl || '');
 
     const [bizType, setBizType] = useState<string>(biz?.type || 'wholesaler');
@@ -73,7 +73,7 @@ export default function CatalogEditModal({ isOpen, onClose, catalog, salesTypeLo
     const [description, setDescription] = useState<string>(biz?.description || catalog?.description || '');
 
     const [slugEditing, setSlugEditing] = useState(false);
-    // ✅ دسترسی کاتالوگ — خصوصی: قیمت‌ها فقط برای اعضای پذیرفته‌شده
+    // ✅ دسترسی بازوی فروش — خصوصی: قیمت‌ها فقط برای اعضای پذیرفته‌شده
     const [isPrivate, setIsPrivate] = useState<boolean>(!!catalog?.isPrivate);
     const [errors, setErrors] = useState<Record<string, string>>({});
     const [saving, setSaving] = useState(false);
@@ -116,7 +116,7 @@ export default function CatalogEditModal({ isOpen, onClose, catalog, salesTypeLo
         if (!pendingLogoFile) return undefined;
         if (uploadedLogoRef.current) return uploadedLogoRef.current;
         try {
-            // ✅ ویرایشگرِ کسب‌وکار → لوگوی Business | غیر ویرایشگر → لوگوی خودِ کاتالوگ
+            // ✅ ویرایشگرِ کسب‌وکار → لوگوی Business | غیر ویرایشگر → لوگوی خودِ بازوی فروش
             const editBiz = canEditBiz && !!bizId;
             const result = await uploadMutation.mutateAsync({
                 file: pendingLogoFile,
@@ -137,7 +137,7 @@ export default function CatalogEditModal({ isOpen, onClose, catalog, salesTypeLo
 
     const handleSave = async () => {
         const e: Record<string, string> = {};
-        if (!name.trim()) e.name = 'نام کاتالوگ الزامی است';
+        if (!name.trim()) e.name = 'نام بازوی فروش الزامی است';
         if (slug && slug.length < 3) e.slug = 'لینک حداقل ۳ حرف است';
         if (slug && slug !== catalog.slug) {
             const check = await apiService.catalog.checkSlug(slug, catalog.id);
@@ -147,7 +147,7 @@ export default function CatalogEditModal({ isOpen, onClose, catalog, salesTypeLo
         if (Object.keys(e).length > 0) {
             // ⚖️ قانون دیمت: الرتِ واضح کنار خطای CSS فیلدها — سکوت ممنوع
             toastFormErrors({
-                name: e.name ? 'نام کاتالوگ وارد نشده' : '',
+                name: e.name ? 'نام بازوی فروش وارد نشده' : '',
                 slug: e.slug === 'taken' ? 'این لینک آزاد نیست — کمی عوضش کن'
                     : e.slug === 'reserved' ? 'این لینک قابل انتخاب نیست'
                     : e.slug || '',
@@ -242,7 +242,7 @@ export default function CatalogEditModal({ isOpen, onClose, catalog, salesTypeLo
                             <BookOpen className="w-4.5 h-4.5 text-amber-600 dark:text-amber-400" />
                         </span>
                         <div>
-                            <h3 className="text-sm font-extrabold text-on-surface">ویرایش کاتالوگ</h3>
+                            <h3 className="text-sm font-extrabold text-on-surface">ویرایش بازوی فروش</h3>
                             <p className="text-[10px] text-on-surface-variant/70 flex items-center gap-1">
                                 <SalesIcon className="w-3 h-3" /> {typeLabel}
                             </p>
@@ -261,7 +261,7 @@ export default function CatalogEditModal({ isOpen, onClose, catalog, salesTypeLo
                         <div className="rounded-xl bg-surface-container-high/50 border border-outline-variant/30 px-3 py-2.5 flex items-start gap-2">
                             <Info className="w-3.5 h-3.5 text-primary/70 flex-shrink-0 mt-0.5" />
                             <p className="text-[10px] leading-5 text-on-surface-variant">
-                                این کاتالوگ روی کسب‌وکارِ مشترک ساخته شده — مشخصاتِ کسب‌وکار (صنف، موقعیت، آدرس و توضیحات) توسط ثبت‌کنندهٔ آن مدیریت می‌شود. نام، لینک، تماس و لوگوی کاتالوگِ خودت را همین‌جا ویرایش کن.
+                                این بازوی فروش روی کسب‌وکارِ مشترک ساخته شده — مشخصاتِ کسب‌وکار (صنف، موقعیت، آدرس و توضیحات) توسط ثبت‌کنندهٔ آن مدیریت می‌شود. نام، لینک، تماس و لوگوی بازوی فروشِ خودت را همین‌جا ویرایش کن.
                             </p>
                         </div>
                     )}
@@ -299,7 +299,7 @@ export default function CatalogEditModal({ isOpen, onClose, catalog, salesTypeLo
                             </label>
                             <div className="flex-1 space-y-1.5">
                                 <label className="text-xs font-medium text-on-surface block">
-                                    نام کاتالوگ <span className="text-primary">*</span>
+                                    نام بازوی فروش <span className="text-primary">*</span>
                                 </label>
                                 <input type="text" value={name}
                                        onChange={(e) => { setName(e.target.value); setErrors((p) => ({ ...p, name: '' })); }}
@@ -314,13 +314,13 @@ export default function CatalogEditModal({ isOpen, onClose, catalog, salesTypeLo
                             {salesTypeLocked && <span className="text-[9px] text-on-surface-variant/60">قابل تغییر نیست</span>}
                         </div>
 
-                        {/* ✅ دسترسی کاتالوگ — خصوصی / عمومی */}
+                        {/* ✅ دسترسی بازوی فروش — خصوصی / عمومی */}
                         <div className="flex items-center gap-2 rounded bg-surface-container-high/50 px-3 py-2.5">
                             {isPrivate
                                 ? <Lock className="w-3.5 h-3.5 text-primary flex-shrink-0" />
                                 : <Globe className="w-3.5 h-3.5 text-on-surface-variant/60 flex-shrink-0" />}
                             <div className="flex-1 min-w-0">
-                                <p className="text-[11px] font-bold text-on-surface">کاتالوگ خصوصی</p>
+                                <p className="text-[11px] font-bold text-on-surface">بازوی فروش خصوصی</p>
                                 <p className="text-[9px] text-on-surface-variant/60">قیمت‌ها فقط برای اعضای پذیرفته‌شده نمایش داده می‌شود</p>
                             </div>
                             <button type="button" role="switch" aria-checked={isPrivate}
@@ -427,9 +427,9 @@ export default function CatalogEditModal({ isOpen, onClose, catalog, salesTypeLo
                         </div>
                     </section>
 
-                    {/* لینک کاتالوگ */}
+                    {/* لینک بازوی فروش */}
                     <section className="rounded-2xl bg-surface-container-low/60 border border-outline-variant/30 p-4">
-                        <SectionTitle icon={Globe} text="لینک کاتالوگ" />
+                        <SectionTitle icon={Globe} text="لینک بازوی فروش" />
                         {!slugEditing ? (
                             <div className="flex items-center justify-between gap-2">
                                 {catalog.slug ? (
@@ -439,7 +439,7 @@ export default function CatalogEditModal({ isOpen, onClose, catalog, salesTypeLo
                                 ) : (
                                     <span className="text-[11px] text-amber-600 dark:text-amber-400">لینک تنظیم نشده</span>
                                 )}
-                                <button type="button" onClick={() => setSlugEditing(true)} aria-label="ویرایش لینک کاتالوگ"
+                                <button type="button" onClick={() => setSlugEditing(true)} aria-label="ویرایش لینک بازوی فروش"
                                         className="w-8 h-8 rounded-full bg-surface-container-high/50 grid place-items-center
                                             text-on-surface-variant hover:text-amber-600 dark:hover:text-amber-400 hover:bg-amber-500/10 transition-colors flex-shrink-0">
                                     <Pencil className="w-3.5 h-3.5" />
@@ -452,7 +452,7 @@ export default function CatalogEditModal({ isOpen, onClose, catalog, salesTypeLo
                                     <div className="rounded bg-amber-50 dark:bg-amber-900/15 border border-amber-200/70 dark:border-amber-800/50 p-2.5 flex items-start gap-2">
                                         <AlertTriangle className="w-3.5 h-3.5 text-amber-600 dark:text-amber-400 mt-0.5 flex-shrink-0" />
                                         <p className="text-[10px] text-amber-800 dark:text-amber-200 leading-5">
-                                            اگر لینک کاتالوگ را عوض کنی، کسانی که آدرس قبلی را دارند و ذخیره‌اش نکرده‌اند دیگر پیدایت نمی‌کنند.
+                                            اگر لینک بازوی فروش را عوض کنی، کسانی که آدرس قبلی را دارند و ذخیره‌اش نکرده‌اند دیگر پیدایت نمی‌کنند.
                                         </p>
                                     </div>
                                 )}

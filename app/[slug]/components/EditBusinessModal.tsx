@@ -137,7 +137,7 @@ export default function EditBusinessModal({ isOpen, onClose, catalog, onSaved }:
 
     const validate = (): boolean => {
         const e: Record<string, string> = {};
-        if (!name.trim()) e.name = 'نام کاتالوگ الزامی است';
+        if (!name.trim()) e.name = 'نام بازوی فروش الزامی است';
         if (phone && !/^[0-9+\-\s()]{8,15}$/.test(phone.trim())) e.phone = 'شماره تلفن معتبر وارد کنید';
         if (website && !/^(https?:\/\/)?[\w-]+(\.[\w-]+)+/.test(website.trim())) e.website = 'آدرس وب‌سایت معتبر نیست';
         setErrors(e);
@@ -214,19 +214,19 @@ export default function EditBusinessModal({ isOpen, onClose, catalog, onSaved }:
                 ...(logoFileId ? { logoFileId } : {}),
             });
 
-            // ۳) کاتالوگ تازه شود
+            // ۳) بازوی فروش تازه شود
             queryClient.invalidateQueries({ queryKey: ['catalog', 'by-slug'] });
             queryClient.invalidateQueries({ queryKey: ['catalog'] });
             queryClient.invalidateQueries({ queryKey: ['cataloges'] });
             onSaved?.();
 
             setSavedTick(true);
-            // ✅ بازخورد کوتاه، بعد بستن — کاربر تغییرات را روی کاتالوگ تازه می‌بیند
+            // ✅ بازخورد کوتاه، بعد بستن — کاربر تغییرات را روی بازوی فروش تازه می‌بیند
             setTimeout(() => onClose(), 450);
         } catch (e: any) {
             if (e?.data?.errorCode === 'SLUG_TAKEN') toast.error('این آدرس قبلاً گرفته شده — یک کمی عوضش کن');
             else if (e?.data?.errorCode === 'SLUG_RESERVED') toast.error('این آدرس قابل انتخاب نیست');
-            else if (e?.data?.errorCode === 'INVALID_SLUG') toast.error(e?.data?.message || 'آدرس کاتالوگ معتبر نیست');
+            else if (e?.data?.errorCode === 'INVALID_SLUG') toast.error(e?.data?.message || 'آدرس بازوی فروش معتبر نیست');
             else toast.error(e?.message || 'خطا در ذخیره اطلاعات');
         } finally {
             setSaving(false);
@@ -264,8 +264,8 @@ export default function EditBusinessModal({ isOpen, onClose, catalog, onSaved }:
                             <Store className="w-4.5 h-4.5 text-amber-600 dark:text-amber-400" />
                         </span>
                         <div>
-                            <h3 className="text-sm font-extrabold text-on-surface">ویرایش کاتالوگ</h3>
-                            <p className="text-[10px] text-on-surface-variant/70">مشخصات کاتالوگ و اطلاعات تماس</p>
+                            <h3 className="text-sm font-extrabold text-on-surface">ویرایش بازوی فروش</h3>
+                            <p className="text-[10px] text-on-surface-variant/70">مشخصات بازوی فروش و اطلاعات تماس</p>
                         </div>
                     </div>
                     <button onClick={handleClose} aria-label="بستن"
@@ -310,7 +310,7 @@ export default function EditBusinessModal({ isOpen, onClose, catalog, onSaved }:
                                 )}
                             </button>
                             <div className="flex-1 min-w-0">
-                                <p className="text-xs font-bold text-on-surface">لوگوی کاتالوگ</p>
+                                <p className="text-xs font-bold text-on-surface">لوگوی بازوی فروش</p>
                                 <p className="text-[10px] text-on-surface-variant/60 mt-1 leading-5">
                                     {isUploadingLogo
                                         ? 'در حال آپلود تصویر...'
@@ -333,7 +333,7 @@ export default function EditBusinessModal({ isOpen, onClose, catalog, onSaved }:
 
                         <div className="space-y-1.5">
                             <label className="text-xs font-medium text-on-surface block">
-                                نام کاتالوگ <span className="text-primary">*</span>
+                                نام بازوی فروش <span className="text-primary">*</span>
                             </label>
                             <input type="text" value={name}
                                    onChange={(e) => { setName(e.target.value); setErrors((p) => ({ ...p, name: '' })); }}
@@ -344,7 +344,7 @@ export default function EditBusinessModal({ isOpen, onClose, catalog, onSaved }:
                         {/* ✅ نوع فروش — دکمهٔ دوگانه برجسته (فیلد کلیدی) */}
                         <div className="space-y-1.5">
                             <label className="text-xs font-medium text-on-surface block flex items-center gap-1.5">
-                                <Sparkles className="w-3.5 h-3.5 text-amber-500/70" /> نوع فروش کاتالوگ
+                                <Sparkles className="w-3.5 h-3.5 text-amber-500/70" /> نوع فروش بازوی فروش
                             </label>
                             <div className="grid grid-cols-2 gap-2">
                                 {[
@@ -382,8 +382,8 @@ export default function EditBusinessModal({ isOpen, onClose, catalog, onSaved }:
                         />
                         <div className="space-y-1.5">
                             <label className="text-xs font-medium text-on-surface block flex items-center gap-1.5">
-                                <IdCard className="w-3.5 h-3.5 text-primary/60" /> نقش من در این کاتالوگ
-                                <span className="text-on-surface-variant/50 text-[10px]">(در کاتالوگ نمایش داده می‌شود)</span>
+                                <IdCard className="w-3.5 h-3.5 text-primary/60" /> نقش من در این بازوی فروش
+                                <span className="text-on-surface-variant/50 text-[10px]">(در بازوی فروش نمایش داده می‌شود)</span>
                             </label>
                             <select
                                 value={position}
@@ -400,7 +400,7 @@ export default function EditBusinessModal({ isOpen, onClose, catalog, onSaved }:
 
                     {/* ═══ باکس ۳: آدرس اختصاصی (لِیبل + مداد) ═══ */}
                     <section className="rounded-2xl bg-surface-container-low/60 border border-outline-variant/30 p-4">
-                        <SectionTitle icon={Globe2} text="آدرس اختصاصی کاتالوگ" />
+                        <SectionTitle icon={Globe2} text="آدرس اختصاصی بازوی فروش" />
                         <SlugEditor
                             value={slug}
                             onChange={setSlug}
@@ -413,7 +413,7 @@ export default function EditBusinessModal({ isOpen, onClose, catalog, onSaved }:
                     <section className="rounded-2xl bg-surface-container-low/60 border border-outline-variant/30 p-4 space-y-3">
                         <SectionTitle icon={FileText} text="معرفی" />
                         <div className="space-y-1.5">
-                            <label className="text-xs font-medium text-on-surface block">توضیح کوتاه (بالای کاتالوگ نمایش داده می‌شود)</label>
+                            <label className="text-xs font-medium text-on-surface block">توضیح کوتاه (بالای بازوی فروش نمایش داده می‌شود)</label>
                             <input type="text" value={shortDescription} onChange={(e) => setShortDescription(e.target.value)}
                                    placeholder="مثال: تولید و پخش انواع بلوک سیمانی" className={inputCls()} maxLength={120} />
                         </div>

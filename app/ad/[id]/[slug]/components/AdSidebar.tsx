@@ -53,7 +53,7 @@ export default function AdSidebar({ ad, isOwner, isSaved, onSaveToggle }: AdSide
 
         try {
             const info = await apiService.ad.getContact(ad.id);
-            // ✅ مسیریابی تیم کاتالوگ: شمارهٔ مسئولِ فروشِ منتسبِ مشتری، اولویت دارد
+            // ✅ مسیریابی تیم بازوی فروش: شمارهٔ مسئولِ فروشِ منتسبِ مشتری، اولویت دارد
             const phoneToUse = info.seller?.phone || info.ownerPhone || info.phone;
             if (!phoneToUse) {
                 toast.error('شماره تماس برای این آگهی ثبت نشده است.');
@@ -259,7 +259,7 @@ export default function AdSidebar({ ad, isOwner, isSaved, onSaveToggle }: AdSide
                     <Share2 className="w-5 h-5 text-gray-500" />
                 </button>
 
-                {/* ✅ دکمه کاتالوگ - اگر اسلاگ وجود دارد */}
+                {/* ✅ دکمه بازوی فروش - اگر اسلاگ وجود دارد */}
 
 
                 <button

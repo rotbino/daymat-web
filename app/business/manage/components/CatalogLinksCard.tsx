@@ -1,6 +1,6 @@
 // app/business/manage/components/CatalogLinksCard.tsx
-// 🔗 کاتالوگ‌های این کسب‌وکار — فروش و خرید کنار هم (محصول دوم دیمت)
-// ✅ بازوهای خرید (استعلام) با برچسب کهربایی کنار کاتالوگ‌های قیمت
+// 🔗 بازوی فروش‌های این کسب‌وکار — فروش و خرید کنار هم (محصول دوم دیمت)
+// ✅ بازوهای خرید (استعلام) با برچسب کهربایی کنار بازوی فروش‌های قیمت
 // ✅ دو دکمهٔ ساخت جدا برای هر نوع — بازوی خرید با bizId دیپ‌لینک می‌شود
 // ✅ جای کارت در صفحه بالاتر آمده (درخواست کاربر: دسترسی راحت از کسب‌وکار)
 'use client';
@@ -50,9 +50,9 @@ export function CatalogLinksCard({ catalogs, inquiries = [], businessId }: {
     };
 
     const subtitle = salesCount + buyCount === 0
-        ? 'هنوز کاتالوگی نساخته‌اید'
+        ? 'هنوز بازوی فروشی نساخته‌اید'
         : [
-              salesCount > 0 ? `${salesCount.toLocaleString('fa-IR')} کاتالوگ قیمت` : null,
+              salesCount > 0 ? `${salesCount.toLocaleString('fa-IR')} بازوی فروش قیمت` : null,
               buyCount > 0 ? `${buyCount.toLocaleString('fa-IR')} بازوی خرید` : null,
           ].filter(Boolean).join(' · ');
 
@@ -64,7 +64,7 @@ export function CatalogLinksCard({ catalogs, inquiries = [], businessId }: {
                     <BookOpen className="w-4 h-4 text-primary" />
                 </span>
                 <div className="flex-1 min-w-0">
-                    <p className="text-[13px] font-extrabold text-on-surface">کاتالوگ‌های این کسب‌وکار</p>
+                    <p className="text-[13px] font-extrabold text-on-surface">بازوی فروش‌های این کسب‌وکار</p>
                     <p className="text-[10px] text-on-surface-variant/70">{subtitle}</p>
                 </div>
             </div>
@@ -74,7 +74,7 @@ export function CatalogLinksCard({ catalogs, inquiries = [], businessId }: {
                 <div className="rounded-xl border border-dashed border-outline-variant/50 p-4 flex flex-col items-center gap-2 text-center">
                     <Store className="w-6 h-6 text-on-surface-variant/40" />
                     <p className="text-[11px] text-on-surface-variant leading-4">
-                        کاتالوگ قیمت برای نمایش محصولات، بازوی خرید برای استعلام قیمت از تامین‌کننده‌ها.
+                        بازوی فروش قیمت برای نمایش محصولات، بازوی خرید برای استعلام قیمت از تامین‌کننده‌ها.
                     </p>
                 </div>
             ) : (
@@ -88,7 +88,7 @@ export function CatalogLinksCard({ catalogs, inquiries = [], businessId }: {
                             <div className="flex-1 min-w-0">
                                 <div className="flex items-center gap-1.5 min-w-0">
                                     <p className="text-xs font-bold text-on-surface truncate">{c.name}</p>
-                                    <span className="text-[9px] font-bold text-primary/80 whitespace-nowrap flex-shrink-0">(کاتالوگ قیمت)</span>
+                                    <span className="text-[9px] font-bold text-primary/80 whitespace-nowrap flex-shrink-0">(بازوی فروش قیمت)</span>
                                 </div>
                                 <div className="flex items-center gap-1.5 mt-0.5">
                                     {c.slug && (
@@ -106,7 +106,7 @@ export function CatalogLinksCard({ catalogs, inquiries = [], businessId }: {
                             {/* ✅ ورودی پنل مدیریت — فقط مشاهدهٔ عمومی نبود (درخواست مالک) */}
                             <Link
                                 href={`/my-catalogs?catalog=${c.id}`}
-                                aria-label="مدیریت کاتالوگ"
+                                aria-label="مدیریت بازوی فروش"
                                 className="h-8 px-2.5 rounded-lg bg-primary text-on-primary text-[10px] font-extrabold flex items-center gap-1 hover:bg-primary/90 active:scale-95 transition-all flex-shrink-0 shadow-sm"
                             >
                                 <Settings2 className="w-3.5 h-3.5" /> مدیریت
@@ -125,7 +125,7 @@ export function CatalogLinksCard({ catalogs, inquiries = [], businessId }: {
                                         href={`/${c.slug}`}
                                         target="_blank"
                                         rel="noopener noreferrer"
-                                        aria-label="مشاهده کاتالوگ"
+                                        aria-label="مشاهده بازوی فروش"
                                         className="w-8 h-8 rounded-lg grid place-items-center text-on-surface-variant/60 hover:text-primary hover:bg-primary/10 active:scale-90 transition-all flex-shrink-0"
                                     >
                                         <ExternalLink className="w-3.5 h-3.5" />
@@ -200,7 +200,7 @@ export function CatalogLinksCard({ catalogs, inquiries = [], businessId }: {
                     href={businessId ? `/business/register?bizId=${businessId}` : '/business/register'}
                     className="h-9 rounded-lg border border-primary/30 text-primary text-[11px] font-extrabold flex items-center justify-center gap-1 hover:bg-primary/5 active:scale-95 transition-all"
                 >
-                    <Plus className="w-3.5 h-3.5" /> کاتالوگ قیمت
+                    <Plus className="w-3.5 h-3.5" /> بازوی فروش قیمت
                 </Link>
                 <Link
                     href={businessId ? `/inquiries/new?bizId=${businessId}` : '/inquiries/new'}

@@ -35,7 +35,7 @@ interface CatalogHeaderProps {
     isSaved: boolean;
     isOwner: boolean;
     shares: number;
-    /** ✅ درخواست ارتباط تجاری — وضعیت من با این کاتالوگ */
+    /** ✅ درخواست ارتباط تجاری — وضعیت من با این بازوی فروش */
     coopState?: 'none' | 'pending' | 'member';
     onCoopRequest?: () => void;
     onContact: () => void;
@@ -62,7 +62,7 @@ export default function CatalogHeader({
     const { isAuthenticated } = useSelector((state: RootState) => state.auth);
     const tier = catalog.verificationTier;
     const ownerAvatar = catalog.owner?.avatarUrl || catalog.owner?.avatarFile?.thumbnailPath;
-    // ✅ لوگوی کاتالوگ در نبودِ خودش از کسب‌وکار ارث می‌برد — هویتِ شرکت همیشه دیده شود
+    // ✅ لوگوی بازوی فروش در نبودِ خودش از کسب‌وکار ارث می‌برد — هویتِ شرکت همیشه دیده شود
     const catalogLogoSrc = catalog.logoUrl || catalog.business?.logoUrl || null;
 
     const [showSavedDropdown, setShowSavedDropdown] = useState(false);
@@ -101,20 +101,20 @@ export default function CatalogHeader({
         </button>
     );
 
-    // ✅ دکمهٔ «ارتباط تجاری» — تنها دکمهٔ رابطه روی خود کاتالوگ (مثل کانکتِ لینکدین):
+    // ✅ دکمهٔ «ارتباط تجاری» — تنها دکمهٔ رابطه روی خود بازوی فروش (مثل کانکتِ لینکدین):
     //     none → دکمه | pending → چیپ «در انتظار تایید» | member → چیپ «متصل»
     //     compact: باکس هویتِ دسکتاپ | full: تمام‌عرضِ موبایل
     const CoopAction = ({ className, compact = false }: { className?: string; compact?: boolean }) => {
         if (isOwner || !onCoopRequest) return null;
         if (coopState === 'member') return (
-            <span aria-label="ارتباط تجاری شما با این کاتالوگ برقرار است"
+            <span aria-label="ارتباط تجاری شما با این بازوی فروش برقرار است"
                   className={cn(
                       'inline-flex items-center justify-center gap-1.5 bg-emerald-50 dark:bg-emerald-950/40 border border-emerald-200/70 dark:border-emerald-800/50 text-emerald-700 dark:text-emerald-300',
                       compact ? 'h-8 px-3 rounded-lg text-[11px]' : 'w-full h-11 rounded-xl text-sm font-bold',
                       className,
                   )}>
                 <Check className={compact ? 'w-3.5 h-3.5' : 'w-4 h-4'} />
-                {compact ? 'متصل' : 'متصل به این کاتالوگ'}
+                {compact ? 'متصل' : 'متصل به این بازوی فروش'}
             </span>
         );
         if (coopState === 'pending') return (
@@ -130,7 +130,7 @@ export default function CatalogHeader({
         );
         return (
             <button onClick={onCoopRequest} aria-label="درخواست ارتباط تجاری"
-                    title="ارسال درخواست ارتباط تجاری با این کاتالوگ"
+                    title="ارسال درخواست ارتباط تجاری با این بازوی فروش"
                     className={cn(
                         'font-bold transition-all',
                         compact
@@ -153,7 +153,7 @@ export default function CatalogHeader({
                         dark:border-amber-800/50 dark:bg-amber-900/10 px-3 py-2 shadow-sm">
                         <PenLine className="w-3.5 h-3.5 text-amber-600 dark:text-amber-400 flex-shrink-0" />
                         <span className="flex-1 text-[11px] font-bold text-amber-800 dark:text-amber-300 truncate">
-                            حالت ویرایش — هر تغییری فوراً روی کاتالوگت اعمال می‌شود
+                            حالت ویرایش — هر تغییری فوراً روی بازوی فروشت اعمال می‌شود
                         </span>
 
                         {onExitEditMode && (
@@ -178,7 +178,7 @@ export default function CatalogHeader({
                     </button>
 
 
-                    {/* ═══ سوئیچر کاتالوگ‌های ذخیره شده — وسط؛ برای همه کاربران لاگین‌شده (مالک و بازدیدکننده — خواستهٔ مالک) ═══ */}
+                    {/* ═══ سوئیچر بازوی فروش‌های ذخیره شده — وسط؛ برای همه کاربران لاگین‌شده (مالک و بازدیدکننده — خواستهٔ مالک) ═══ */}
                     {isAuthenticated && (
                         <div className="flex justify-center items-center mb-1" ref={dropdownRef}>
                             <button
@@ -189,7 +189,7 @@ export default function CatalogHeader({
                                 <Bookmark className="w-3.5 h-3.5 hidden sm:inline-block" />
 
                                 {/* ✅ تغییر متن در موبایل و دسکتاپ */}
-                                <span className="hidden sm:inline ">کاتالوگ‌های ذخیره شده</span>
+                                <span className="hidden sm:inline ">بازوی فروش‌های ذخیره شده</span>
                                 <span className="sm:hidden">ذخیره‌ها</span>
 
                                 <span className="text-[12px] bg-gray-100 dark:bg-gray-800 px-1 py-0.5 rounded-full">
@@ -203,7 +203,7 @@ export default function CatalogHeader({
                                     <div className="max-h-72 overflow-y-auto py-1">
                                         {savedCatalogs.length === 0 ? (
                                             <p className="px-4 py-6 text-center text-[11px] font-bold leading-5 text-gray-400 dark:text-gray-500">
-                                                هنوز کاتالوگی ذخیره نکردی —<br />با آیکون نشانکِ بالای همین صفحه ذخیره کن
+                                                هنوز بازوی فروشی ذخیره نکردی —<br />با آیکون نشانکِ بالای همین صفحه ذخیره کن
                                             </p>
                                         ) : savedCatalogs.map((cat: any) => (
                                             <button
@@ -246,13 +246,13 @@ export default function CatalogHeader({
                     <div className="flex items-center gap-2">
                         {/* چرخ‌دنده - فقط مالک */}
                         {isOwner && (
-                            <button onClick={onOpenDashboard} aria-label="مدیریت کاتالوگ"
+                            <button onClick={onOpenDashboard} aria-label="مدیریت بازوی فروش"
                                     className="p-2.5 rounded-full bg-white/80 dark:bg-gray-900/70 backdrop-blur border border-gray-200/70 dark:border-white/10 shadow-md hover:scale-105 active:scale-95 transition-transform">
                                 <Settings className="w-5 h-5 text-gray-700 dark:text-gray-200" />
                             </button>
                         )}
 
-                        {/* ✅ دکمهٔ «ارتباط تجاری» حذف شد از ردیف شناور — تنها و زیبا در باکس هویت کاتالوگ رندر می‌شود (مثل کانکتِ لینکدین) */}
+                        {/* ✅ دکمهٔ «ارتباط تجاری» حذف شد از ردیف شناور — تنها و زیبا در باکس هویت بازوی فروش رندر می‌شود (مثل کانکتِ لینکدین) */}
 
                         {/* ✅ ذخیره */}
                         <button onClick={onSaveToggle}
@@ -310,7 +310,7 @@ export default function CatalogHeader({
                                     <div className="flex items-center gap-1.5">
                                         <h1 className="text-xl font-extrabold truncate">{catalog.name}</h1>
                                         {isOwner && (
-                                            <EditPencil onClick={onEditCatalog} label="ویرایش مشخصات کاتالوگ" className="flex-shrink-0" />
+                                            <EditPencil onClick={onEditCatalog} label="ویرایش مشخصات بازوی فروش" className="flex-shrink-0" />
                                         )}
                                     </div>
                                     <p className="mt-1 text-xs text-gray-500">
@@ -416,7 +416,7 @@ export default function CatalogHeader({
                                     <div className="flex items-center gap-1.5">
                                         <h1 className="text-base font-extrabold truncate">{catalog.name}</h1>
                                         {isOwner && (
-                                            <EditPencil onClick={onEditCatalog} label="ویرایش مشخصات کاتالوگ" className="flex-shrink-0" />
+                                            <EditPencil onClick={onEditCatalog} label="ویرایش مشخصات بازوی فروش" className="flex-shrink-0" />
                                         )}
                                     </div>
                                     <p className="text-[10px] text-gray-400 mt-0.5">
@@ -444,7 +444,7 @@ export default function CatalogHeader({
                                 </div>
                             </div>
 
-                            {/* ✅ ارتباط تجاری — تنها دکمهٔ رابطه روی خود کاتالوگ؛ تمام‌عرض و در جای درست (زیر آمار، بالای باکس فروشنده) */}
+                            {/* ✅ ارتباط تجاری — تنها دکمهٔ رابطه روی خود بازوی فروش؛ تمام‌عرض و در جای درست (زیر آمار، بالای باکس فروشنده) */}
                             <CoopAction className="mt-3" />
 
                             {/* ✅ موبایل: باکس فروشنده — همیشه رندر؛ مداد amber جلوی نام کاربر */}

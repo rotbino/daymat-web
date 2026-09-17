@@ -157,7 +157,7 @@ export default function EditCatalogPage() {
         });
         setSlug(newSlug);
         refetch();
-        toast.success('آدرس کاتالوگ ذخیره شد — لینک جدیدت آماده است');
+        toast.success('آدرس بازوی فروش ذخیره شد — لینک جدیدت آماده است');
     };
     const resetChanges = () => {
         if (catalog) {

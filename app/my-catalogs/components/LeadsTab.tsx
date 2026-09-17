@@ -1,5 +1,5 @@
 // app/my-catalogs/components/LeadsTab.tsx
-// ✅ تب «سرنخ‌های فروش» پنل کاتالوگ قیمت — قلب شبکهٔ خرید↔فروش از سمت تامین‌کننده:
+// ✅ تب «سرنخ‌های فروش» پنل بازوی فروش قیمت — قلب شبکهٔ خرید↔فروش از سمت تامین‌کننده:
 //    ۱) دعوت‌های در انتظار — بازوهای خریدی که تو را تامین‌کننده دعوت کرده‌اند (پذیرش/رد)
 //    ۲) درخواست‌های قیمتِ بازوهای خریدی که تامین‌کنندهٔ تاییدشده‌شان هستی
 //       روی هر قلم مستقیم قیمت می‌دهی (شیت مشترک پیشنهاد قیمت)
@@ -297,7 +297,7 @@ export default function LeadsTab() {
                 {leads.length === 0 ? (
                     <div className={cn(CARD_CLS, 'px-6 py-10 text-center')}>
                         <Megaphone className="mx-auto size-9 text-stone-200 dark:text-gray-700" />
-                        <p className="mt-2 text-[13px] font-black text-stone-500 dark:text-gray-400">هنوز بازوی خریدی از طرف خریدارهات به کاتالوگت وصل نشده. از برگه اعضا درخواست همکاریهای بیشتری بفرست</p>
+                        <p className="mt-2 text-[13px] font-black text-stone-500 dark:text-gray-400">هنوز بازوی خریدی از طرف خریدارهات به بازوی فروشت وصل نشده. از برگه اعضا درخواست همکاریهای بیشتری بفرست</p>
                         <p className="mx-auto mt-1 max-w-xs text-[11px] font-bold leading-5 text-stone-400 dark:text-gray-500">
                             وقتی تامین‌کنندهٔ بازوی خرید کسی باشی، اقلام فوریش اینجا می‌آید
                         </p>

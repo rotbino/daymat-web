@@ -195,7 +195,7 @@ export default function BusinessSetupModal({ isOpen, onClose, business, onSaved,
             if (pendingLogoFile && isEdit) await uploadLogo();
             const payload: any = {
                 name: name.trim(),
-                // ✅ فیلدهای اصلی جدید — درخت دو سطحی BUSINESS_TYPE (همسان با فرم ویرایش کاتالوگ)
+                // ✅ فیلدهای اصلی جدید — درخت دو سطحی BUSINESS_TYPE (همسان با فرم ویرایش بازوی فروش)
                 businessSector: businessSector || undefined,
                 businessRole: businessRole || undefined,
                 // پل سازگاری: نمایش‌هایی که هنوز type قدیمی را می‌خوانند
@@ -256,7 +256,7 @@ export default function BusinessSetupModal({ isOpen, onClose, business, onSaved,
         err ? 'border-error' : 'border-outline-variant/40 dark:border-gray-700',
     );
 
-    // عنوان بخش — همسان با فرم ویرایش کاتالوگ
+    // عنوان بخش — همسان با فرم ویرایش بازوی فروش
     const SectionTitle = ({ icon: Icon, text }: any) => (
         <p className="text-[11px] font-bold text-on-surface-variant flex items-center gap-1.5">
             <Icon className="w-3.5 h-3.5 text-primary/70" /> {text}
@@ -369,7 +369,7 @@ export default function BusinessSetupModal({ isOpen, onClose, business, onSaved,
                             </button>
                             <div className="min-w-0">
                                 <p className="text-xs font-medium text-on-surface">لوگوی کسب‌وکار</p>
-                                <p className="text-[10px] text-on-surface-variant/70 mt-0.5">کاتالوگ با لوگو اعتماد بیشتری می‌گیرد — مربع و واضح بهترین است</p>
+                                <p className="text-[10px] text-on-surface-variant/70 mt-0.5">بازوی فروش با لوگو اعتماد بیشتری می‌گیرد — مربع و واضح بهترین است</p>
                             </div>
                             <input ref={logoInputRef} type="file" accept="image/*" onChange={handleLogoPick} className="hidden" />
                         </div>
@@ -455,7 +455,7 @@ export default function BusinessSetupModal({ isOpen, onClose, business, onSaved,
                     {/* نکته */}
                     {isEdit && (
                         <p className="text-[10px] text-on-surface-variant/60 leading-5 pt-2">
-                            برای تلفن، معرفی کوتاه و جزئیات بیشتر، مشخصات کاتالوگ را ویرایش کنید.
+                            برای تلفن، معرفی کوتاه و جزئیات بیشتر، مشخصات بازوی فروش را ویرایش کنید.
                         </p>
                     )}
                 </div>

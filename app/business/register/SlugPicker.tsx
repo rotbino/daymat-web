@@ -22,7 +22,7 @@ interface Props {
 }
 
 /**
- * آدرس کاتالوگ — تک‌خطی یکپارچه:
+ * آدرس بازوی فروش — تک‌خطی یکپارچه:
  *   [ daymat.ir /  ┃  this-input  ]   چک زنده · بدون دکمهٔ تایید · مقدار همان لحظه در state والد
  * ورودی: فقط a-z، 0-9، خط‌تیره (regex) · چیدمان LTR داخل RTL
  */
@@ -123,7 +123,7 @@ export default function SlugPicker({ value, onChange, onStatus, disabled, exclud
             default:
                 return {
                     icon: <Check className="w-3.5 h-3.5 text-on-surface-variant/40" />,
-                    text: 'لینک اختصاصی کاتالوگت رو وارد کن',
+                    text: 'لینک اختصاصی بازوی فروشت رو وارد کن',
                     cls: 'text-on-surface-variant/60',
                     border: 'border-outline-variant/40 dark:border-gray-700',
                 };

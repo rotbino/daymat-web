@@ -2,7 +2,7 @@
 // 🔔 اعلان‌ها — سه بخش:
 //   ۱) یادآوری تکمیل پروفایل (تصویر/نام) — مشتق از پروفایلِ خود کاربر
 //   ۲) اعلان‌های واقعی چرخهٔ عضویت/ارتباط تجاری (درخواست/تایید/رد/دعوت) — کلیک → مقصد
-//   ۳) یادآوری‌های مشتق از دیتا (قیمت منقضی‌شونده، کاتالوگ ناقص)
+//   ۳) یادآوری‌های مشتق از دیتا (قیمت منقضی‌شونده، بازوی فروش ناقص)
 'use client';
 
 import React, { useEffect, useState } from 'react';
@@ -101,7 +101,7 @@ export default function NotificationsPage() {
                         </span>
                     )}
                 </h1>
-                <p className="text-xs text-on-surface-variant mt-1">درخواست‌های ارتباط تجاری، تاییدها و وضعیت کاتالوگ‌ها — همه اینجا.</p>
+                <p className="text-xs text-on-surface-variant mt-1">درخواست‌های ارتباط تجاری، تاییدها و وضعیت بازوی فروش‌ها — همه اینجا.</p>
             </header>
 
             <main className="max-w-3xl mx-auto px-4 space-y-2.5">
@@ -212,7 +212,7 @@ export default function NotificationsPage() {
                 {/* ─── یادآوری‌های مشتق ─── */}
                 {items.length > 0 && (
                     <>
-                        <p className="text-[11px] font-extrabold text-on-surface-variant pt-4 pb-1">یادآوری‌های کاتالوگ</p>
+                        <p className="text-[11px] font-extrabold text-on-surface-variant pt-4 pb-1">یادآوری‌های بازوی فروش</p>
                         {items.map((n: any) => {
                             const s = SEV[n.severity] ?? SEV.info;
                             return (

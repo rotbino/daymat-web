@@ -1,5 +1,5 @@
 // app/my-catalogs/components/TeamTab.tsx
-// 👥 تب «تیم فروش» کاتالوگ — مالک، مدیر کاتالوگ، همکار فروش/بازاریاب + تامین‌کننده‌ها و خدمات
+// 👥 تب «تیم فروش» بازوی فروش — مالک، مدیر بازوی فروش، همکار فروش/بازاریاب + تامین‌کننده‌ها و خدمات
 //    ارتقا به مدیر/سلب مدیریت، تغییر نقش فروش/بازاریاب، منطقهٔ فروش، دعوت همکار
 //    ✂️ خریدارها به تب جداگانهٔ «خریداران» (CustomersTab) منتقل شدند — تا ادمین برای خریدار معنا نداشته باشد
 'use client';
@@ -22,7 +22,7 @@ import { Avatar, MemberMainInfo, personalSlugOf, bizBadge, sysBadge, badgeBase, 
 
 interface Props {
     catalogId: string;
-    /** اسلاگ کاتالوگ — لینک دعوت در ماژول مخاطبین مودال درخواست ارتباط */
+    /** اسلاگ بازوی فروش — لینک دعوت در ماژول مخاطبین مودال درخواست ارتباط */
     slug?: string | null;
 }
 
@@ -80,7 +80,7 @@ export default function TeamTab({ catalogId, slug }: Props) {
                 <Hourglass className="w-10 h-10 text-amber-500 mx-auto mb-3" />
                 {isInvite ? (
                     <>
-                        <p className="font-bold text-gray-900 dark:text-gray-100">به همکاری در فروش این کاتالوگ دعوت شده‌اید</p>
+                        <p className="font-bold text-gray-900 dark:text-gray-100">به همکاری در فروش این بازوی فروش دعوت شده‌اید</p>
                         <p className="text-sm text-gray-500 dark:text-gray-400 mt-1">
                             با پذیرش، به‌عنوان فروشنده به اعضا اضافه می‌شوید و می‌توانید مشتری ثبت کنید
                         </p>
@@ -105,7 +105,7 @@ export default function TeamTab({ catalogId, slug }: Props) {
                     <>
                         <p className="font-bold text-gray-900 dark:text-gray-100">درخواست همکاری در فروش شما ثبت شد</p>
                         <p className="text-sm text-gray-500 dark:text-gray-400 mt-1">
-                            در انتظار تایید مدیر کاتالوگ — بعد از تایید، می‌توانید مشتری‌های خودتان را ثبت کنید
+                            در انتظار تایید مدیر بازوی فروش — بعد از تایید، می‌توانید مشتری‌های خودتان را ثبت کنید
                         </p>
                     </>
                 )}
@@ -205,7 +205,7 @@ export default function TeamTab({ catalogId, slug }: Props) {
                 label: 'حذف تامین‌کننده',
                 danger: true,
                 onClick: () => {
-                    if (window.confirm(`«${m.fullName}» از تامین‌کننده‌های کاتالوگ حذف شود؟`)) {
+                    if (window.confirm(`«${m.fullName}» از تامین‌کننده‌های بازوی فروش حذف شود؟`)) {
                         run(`rm-${m.id}`, () => apiService.catalog.team.removeSupplier(catalogId, m.id), 'تامین‌کننده حذف شد');
                     }
                 },
@@ -298,7 +298,7 @@ export default function TeamTab({ catalogId, slug }: Props) {
                     <Users className="w-5 h-5 text-emerald-600 dark:text-emerald-400" />
                 </span>
                 <div className="flex-1 min-w-0">
-                    <p className="font-bold text-gray-900 dark:text-gray-100">تیم فروش کاتالوگ</p>
+                    <p className="font-bold text-gray-900 dark:text-gray-100">تیم فروش بازوی فروش</p>
                     <p className="text-xs text-gray-500 dark:text-gray-400">
                         {teamRows.length.toLocaleString('fa-IR')} عضو — مالک، مدیر و همکاران فروش
                         {canManage && pendingRequests.length > 0 && ` · ${pendingRequests.length.toLocaleString('fa-IR')} درخواست جدید`}
@@ -430,7 +430,7 @@ export default function TeamTab({ catalogId, slug }: Props) {
                 {teamRows.map((m: any) => <React.Fragment key={m.id}>{rowFor(m, 'seller')}</React.Fragment>)}
             </div>
 
-            {/* تامین‌کننده‌ها و خدمات — لِین کاتالوگ قیمت */}
+            {/* تامین‌کننده‌ها و خدمات — لِین بازوی فروش قیمت */}
             {supplyRows.length > 0 && (
                 <div className={cn(CARD_CLS, 'p-2')}>
                     <p className="flex items-center gap-1.5 px-2 pt-2 pb-1 text-[11px] font-black text-sky-700 dark:text-sky-400">
@@ -445,14 +445,14 @@ export default function TeamTab({ catalogId, slug }: Props) {
             {team.myRole?.isSeller && !isOwner && (
                 <button
                     onClick={() => {
-                        if (window.confirm('از اعضای فروش این کاتالوگ خارج شوید؟ مشتری‌هایتان بی‌مسئول می‌شوند.')) {
+                        if (window.confirm('از اعضای فروش این بازوی فروش خارج شوید؟ مشتری‌هایتان بی‌مسئول می‌شوند.')) {
                             run('leave', () => apiService.catalog.team.leaveAsSeller(catalogId), 'از اعضا خارج شدید');
                         }
                     }}
                     className="w-full py-3 rounded-xl border border-red-300/50 dark:border-red-800/50 text-red-600 dark:text-red-400 text-sm font-bold hover:bg-red-500/5 flex items-center justify-center gap-2"
                 >
                     <LogOut className="w-4 h-4" />
-                    خروج از اعضای فروش این کاتالوگ
+                    خروج از اعضای فروش این بازوی فروش
                 </button>
             )}
 

@@ -3,7 +3,7 @@
 //   ۱) اطلاعات خریدار (تماس/موقعیت/اطلاعات)
 //   ۲) برندینگ دیمت با پرش به ساخت بازوی خرید
 //   ۳) 🦠 قیف ویروسی: لینک‌ها کد دعوتِ مالکِ همین بازو را حمل می‌کنند
-//      «تو هم بازوی خریدت را بساز» + «تامین‌کننده هستی؟ کاتالوگ بساز»
+//      «تو هم بازوی خریدت را بساز» + «تامین‌کننده هستی؟ بازوی فروش بساز»
 //   ⚠️ بلوک‌های ویروسی فقط برای کسانی که بازو ندارند رندر می‌شود (showViral از پدر) —
 //      مالک/ادمین بازو و کسی که قبلاً بازو ساخته هرگز نبینند (خواستهٔ مالک)
 'use client';
@@ -22,14 +22,14 @@ export default function ArmFooter({ inquiry, showViral, bottomBar }: { inquiry: 
     const router = useRouter();
     const { isAuthenticated } = useSelector((state: RootState) => state.auth);
 
-    // ✅ قیف ویروسی با انتساب رفرال صاحب بازو — مثل فوتر کاتالوگ:
+    // ✅ قیف ویروسی با انتساب رفرال صاحب بازو — مثل فوتر بازوی فروش:
     //    هر کس از این بازو وارد دیمت شود، «دعوت‌شدهٔ» صاحب بازو ثبت می‌شود
     //    (RefCapture سراسری ref داخلِ redirect را هم می‌گیرد → انتساب در ثبت‌نام)
     const refCode: string | undefined = inquiry?.owner?.referralCode;
     const q = refCode ? `?ref=${refCode}` : '';
 
     const armPath = `/inquiries/new${q}`;               // ساخت بازوی خرید
-    const catalogPath = `/business/register${q}`;       // ساخت کاتالوگ تامین (مسیر تامین‌کننده)
+    const catalogPath = `/business/register${q}`;       // ساخت بازوی فروش تامین (مسیر تامین‌کننده)
     const armHref = isAuthenticated
         ? armPath
         : `/login?redirect=${encodeURIComponent(armPath)}`;
@@ -84,7 +84,7 @@ export default function ArmFooter({ inquiry, showViral, bottomBar }: { inquiry: 
                             <span className="shrink-0 rounded-full bg-primary px-3.5 py-2 text-[11px] font-extrabold text-on-primary shadow-sm group-hover:opacity-90 transition-opacity">ساخت بازو</span>
                         </button>
 
-                        {/* مسیر تامین‌کننده — بازو برای تامین‌کننده‌ها فرستاده می‌شود؛ آن‌ها به کاتالوگ نیاز دارند */}
+                        {/* مسیر تامین‌کننده — بازو برای تامین‌کننده‌ها فرستاده می‌شود؛ آن‌ها به بازوی فروش نیاز دارند */}
                         <button onClick={() => router.push(catalogHref)}
                             className="w-full rounded-2xl border border-brand-accent/30 bg-brand-accent-soft/50 dark:bg-amber-500/5 px-4 py-3
                             flex items-center gap-3 text-right hover:border-brand-accent/50 active:scale-[0.99] transition-all group">
@@ -94,7 +94,7 @@ export default function ArmFooter({ inquiry, showViral, bottomBar }: { inquiry: 
                             <span className="min-w-0 flex-1">
                                 <span className="block text-[12px] font-black text-amber-800 dark:text-amber-300">تامین‌کننده هستی؟</span>
                                 <span className="block mt-0.5 text-[10.5px] font-bold leading-4 text-amber-700/80 dark:text-amber-400/80">
-                                    در یک دقیقه کاتالوگ محصولاتت را بساز و تامین‌کنندهٔ صدها بازوی خرید شو
+                                    در یک دقیقه بازوی فروش محصولاتت را بساز و تامین‌کنندهٔ صدها بازوی خرید شو
                                 </span>
                             </span>
                         </button>
@@ -109,7 +109,7 @@ export default function ArmFooter({ inquiry, showViral, bottomBar }: { inquiry: 
                     </button>
                 </div>
 
-                {/* ✅ دکمهٔ ویروسی شناور — با کد دعوت صاحب بازو (قرینهٔ کاتالوگ) */}
+                {/* ✅ دکمهٔ ویروسی شناور — با کد دعوت صاحب بازو (قرینهٔ بازوی فروش) */}
                 {showViral && (
                     <div className="bottom-0 left-0 right-0 z-50 py-2">
                         <div className={cn(WRAP, 'flex justify-center')}>

@@ -87,7 +87,7 @@ export default function AdDetailClient({ adId, initialData }: Props) {
 
         try {
             const info = await apiService.ad.getContact(adId);
-            // ✅ مسیریابی تیم کاتالوگ: اگر مشتریِ کاتالوگ با مسئولِ فروشِ منتسب باشیم، شمارهٔ او می‌آید
+            // ✅ مسیریابی تیم بازوی فروش: اگر مشتریِ بازوی فروش با مسئولِ فروشِ منتسب باشیم، شمارهٔ او می‌آید
             const phone = info.seller?.phone || info.ownerPhone || info.phone;
 
             if (!phone) {

@@ -129,7 +129,7 @@ export default function CategorySettingsModal({ isOpen, onClose, catalogId, init
         try {
             const res = await apiService.catalog.updateConfig(catalogId, { categoryTree: tree });
             onSaved(res.config?.categoryTree ?? tree);
-            toast.success('دسته‌بندی کاتالوگ ذخیره شد');
+            toast.success('دسته‌بندی بازوی فروش ذخیره شد');
             onClose();
         } catch (e: any) {
             toast.error(e?.message || 'خطا در ذخیره');
@@ -246,7 +246,7 @@ export default function CategorySettingsModal({ isOpen, onClose, catalogId, init
                             <Layers className="w-4.5 h-4.5 text-amber-600 dark:text-amber-400" />
                         </span>
                         <div>
-                            <h3 className="text-sm font-extrabold text-on-surface">دسته‌بندی کاتالوگ</h3>
+                            <h3 className="text-sm font-extrabold text-on-surface">دسته‌بندی بازوی فروش</h3>
                             <p className="text-[10px] text-on-surface-variant/70">
                                 {countAll(tree) > 0
                                     ? `${countAll(tree).toLocaleString('fa-IR')} دسته — ساخت، ویرایش، حذف`
@@ -321,7 +321,7 @@ export default function CategorySettingsModal({ isOpen, onClose, catalogId, init
                 <div className="flex-shrink-0 px-4 py-3 border-t border-outline-variant/20 flex items-center gap-2.5
                     pb-[max(0.75rem,env(safe-area-inset-bottom))] sm:pb-3">
                     <span className="flex-1 text-[11px] text-on-surface-variant">
-                        این دسته‌ها فقط در فرم ثبت کالایِ این کاتالوگ دیده می‌شوند
+                        این دسته‌ها فقط در فرم ثبت کالایِ این بازوی فروش دیده می‌شوند
                     </span>
                     <button onClick={handleSave} disabled={saving}
                             className="h-10 px-5 rounded-xl bg-amber-500 text-white text-xs font-extrabold

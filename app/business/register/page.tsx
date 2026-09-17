@@ -19,7 +19,7 @@ import SlugPicker from '@/app/business/register/SlugPicker';
 import { toastFormErrors } from '@/lib/formAlerts';
 import { cn } from '@/lib/utils';
 
-/* ─── فارسی ← لاتین (حذف شد) — لینک کاتالوگ را کاربر خودش پر می‌کند ─── */
+/* ─── فارسی ← لاتین (حذف شد) — لینک بازوی فروش را کاربر خودش پر می‌کند ─── */
 
 function shortName(n: string, max = 20) {
     return (n || '').length > max ? n.slice(0, max) + '…' : n;
@@ -105,7 +105,7 @@ export default function RegisterCatalogPage() {
     const [nameDirty, setNameDirty] = useState(false);
     const [slug, setSlug] = useState('');          // ✅ کاربر خودش پر می‌کند — پیش‌فرض خالی
     const [salesType, setSalesType] = useState<'wholesale' | 'retail' | 'service'>('wholesale');
-    // ✅ دسترسی کاتالوگ — خصوصی: قیمت‌ها فقط برای اعضای پذیرفته‌شده
+    // ✅ دسترسی بازوی فروش — خصوصی: قیمت‌ها فقط برای اعضای پذیرفته‌شده
     const [isPrivate, setIsPrivate] = useState(false);
     const [errors, setErrors] = useState<Record<string, string>>({});
     const createCatalogMutation = useCreateCatalog();
@@ -114,7 +114,7 @@ export default function RegisterCatalogPage() {
 
     // ─── ✅ پیشنهاد گام بعدی — بعد از ثبتِ «جدید»ِ کسب‌وکار، بر اساس نوع فعالیت (firstCatalog) ───
     // فقط برای خریدبذَرها (firstCatalog=false: خرده‌فروش، رستوران، آرایشگر…) کارت پیشنهاد بازوی خرید نشان داده می‌شود؛
-    // برای جنس‌بذَرها همین فرم کاتالوگ قیمت خودش مسیر پیشنهادی است — هیچ کاردی لازم نیست. پیشنهاد است، نه اجبار.
+    // برای جنس‌بذَرها همین فرم بازوی فروش قیمت خودش مسیر پیشنهادی است — هیچ کاردی لازم نیست. پیشنهاد است، نه اجبار.
     const [stepHint, setStepHint] = useState<{ bizId: string; bizName: string; roleLabel: string } | null>(null);
     const handleBusinessCreated = (biz: any) => {
         if (biz?.id && getFirstCatalog(biz.businessRole) === false) {
@@ -135,7 +135,7 @@ export default function RegisterCatalogPage() {
         // eslint-disable-next-line react-hooks/exhaustive-deps
     }, [selectedBiz?.id]);
 
-    // ─── هشدار نام تکراری برای کاتالوگ‌های خود کاربر (خطای دیرهنگام بک را پیش‌بینی می‌کند) ───
+    // ─── هشدار نام تکراری برای بازوی فروش‌های خود کاربر (خطای دیرهنگام بک را پیش‌بینی می‌کند) ───
     const catQ = useCataloges();
     const myCatalogs: any[] = Array.isArray(catQ.data) ? catQ.data : (catQ.data as any)?.items ?? [];
     const catalogNameDup = useMemo(() => {
@@ -149,8 +149,8 @@ export default function RegisterCatalogPage() {
         if (!bizId) e.biz = 'کسب‌وکار انتخاب نشده';
         if (!positionRole) e.position = 'نقش شما در کسب‌وکار انتخاب نشده';
         else if (positionRole === POSITION_OTHER_VALUE && !positionOther.trim()) e.position = 'نقشت در شرکت را بنویس';
-        if (!catalogName.trim()) e.name = 'نام کاتالوگ وارد نشده';
-        if (!slug || slug.length < 3) e.slug = 'لینک اختصاصی کاتالوگ وارد نشده (حداقل ۳ حرف انگلیسی)';
+        if (!catalogName.trim()) e.name = 'نام بازوی فروش وارد نشده';
+        if (!slug || slug.length < 3) e.slug = 'لینک اختصاصی بازوی فروش وارد نشده (حداقل ۳ حرف انگلیسی)';
         else if (errors.slug === 'taken' || errors.slug === 'reserved') e.slug = errors.slug === 'reserved' ? 'این لینک قابل انتخاب نیست' : 'این لینک آزاد نیست — کمی عوضش کن';
         setErrors(e);
         return Object.keys(e).length ? e : null;
@@ -160,7 +160,7 @@ export default function RegisterCatalogPage() {
         ev.preventDefault();
         if (submittingRef.current) return; // ✅ ضد دابل‌کال — وسطِ یک submitِ درجریان هستیم
         if (catalogNameDup) {
-            toast.error('یه کاتالوگ با همین نام داری — برای تشخیص راحت‌تر کمی عوضش کن');
+            toast.error('یه بازوی فروش با همین نام داری — برای تشخیص راحت‌تر کمی عوضش کن');
             return;
         }
         const validationErrors = validate();
@@ -176,7 +176,7 @@ export default function RegisterCatalogPage() {
         submittingRef.current = true;
         try {
             // ✅ صنف، لوگو و مشخصات اصلی هدر از کسب‌وکار ارث می‌رسد
-            // ✅ نام کاتالوگ قابل ویرایش است تا کاتالوگ‌های هم‌نام اشتباه نشوند
+            // ✅ نام بازوی فروش قابل ویرایش است تا بازوی فروش‌های هم‌نام اشتباه نشوند
             const created = await createCatalogMutation.mutateAsync({
                 name: catalogName.trim(),
                 slug,
@@ -191,12 +191,12 @@ export default function RegisterCatalogPage() {
                 position: effectivePosition,
             });
 
-            toast.success(`کاتالوگ «${shortName(catalogName.trim(), 24)}» برای «${shortName(selectedBiz.name, 24)}» ساخته شد 🎉`, {
+            toast.success(`بازوی فروش «${shortName(catalogName.trim(), 24)}» برای «${shortName(selectedBiz.name, 24)}» ساخته شد 🎉`, {
                 description: `آدرس: daymat.ir/${created?.slug || slug}`,
                 duration: 6000,
             });
             clearStoredRef();
-            // ✅ کاتالوگ کارنت پرسیست — برگشت به «مدیریت کاتالوگ» همین کاتالوگ تازه را باز می‌کند
+            // ✅ بازوی فروش کارنت پرسیست — برگشت به «مدیریت بازوی فروش» همین بازوی فروش تازه را باز می‌کند
             // تا کاربر مستقیم بتواند کالاهایش را اضافه کند (الگوی بازار کارنت)
             if (created?.id) {
                 dispatch(setCurrentCatalog({
@@ -218,9 +218,9 @@ export default function RegisterCatalogPage() {
                 setErrors((p) => ({ ...p, name: 'dup' }));
             } else if (error?.data?.errorCode === 'BUSINESS_HAS_OTHER_CATALOG') {
                 // ✅ تعارض عضویت بازار — پیامِ روشنِ خودِ سرور (با رفعِ ارجاعِ یتیم دیگر رخ نمی‌دهد مگر تعارض واقعی)
-                toast.error(error?.data?.message || 'شما در این بازار با کاتالوگ دیگری فعال هستید');
+                toast.error(error?.data?.message || 'شما در این بازار با بازوی فروش دیگری فعال هستید');
             } else {
-                toast.error(error?.data?.message || error?.message || 'خطا در ساخت کاتالوگ');
+                toast.error(error?.data?.message || error?.message || 'خطا در ساخت بازوی فروش');
             }
         } finally {
             submittingRef.current = false;
@@ -258,7 +258,7 @@ export default function RegisterCatalogPage() {
                     <button onClick={() => router.push(bizId ? `/business/manage?id=${bizId}` : '/')} className="flex items-center gap-1 text-sm text-on-surface-variant hover:text-primary">
                         <ArrowRight className="w-4 h-4" /> بازگشت
                     </button>
-                    <h1 className="text-sm font-bold text-on-surface">ساخت کاتالوگ</h1>
+                    <h1 className="text-sm font-bold text-on-surface">ساخت بازوی فروش</h1>
                     <div className="w-16" />
                 </div>
             </header>
@@ -275,7 +275,7 @@ export default function RegisterCatalogPage() {
                     ) : (
                         <>
                             <BusinessSelector value={selectedBiz} onChange={handleBizChange} error={errors.biz} onBusinessCreated={handleBusinessCreated}
-                                              selectedLabel={selectedBiz ? `ساخت کاتالوگ برای «${shortName(selectedBiz.name || '', 24)}»` : undefined} />
+                                              selectedLabel={selectedBiz ? `ساخت بازوی فروش برای «${shortName(selectedBiz.name || '', 24)}»` : undefined} />
                             {deepLinkMiss && (
                                 <p className="mt-2 text-[11px] text-amber-600 dark:text-amber-400 flex items-center gap-1.5 px-1">
                                     <AlertTriangle className="w-3.5 h-3.5 flex-shrink-0" />
@@ -301,7 +301,7 @@ export default function RegisterCatalogPage() {
                     )}
                 </section>
 
-                {/* ═══ سایر آیتم‌های کاتالوگ — فقط بعد از انتخاب/ثبت کسب‌وکار ═══ */}
+                {/* ═══ سایر آیتم‌های بازوی فروش — فقط بعد از انتخاب/ثبت کسب‌وکار ═══ */}
                 {selectedBiz && (
                 <form onSubmit={handleSubmit} className="space-y-5">
                     {/* ═══ ۲) نقش شما در کسب‌وکار — اگر در تیم کسب‌وکار قبلاً مشخص شده، فقط نمایش داده می‌شود ═══ */}
@@ -353,9 +353,9 @@ export default function RegisterCatalogPage() {
                         )}
                     </section>
 
-                    {/* ═══ ۳) نام کاتالوگ — پیش‌فرض نام کسب‌وکار، قابل ویرایش ═══ */}
+                    {/* ═══ ۳) نام بازوی فروش — پیش‌فرض نام کسب‌وکار، قابل ویرایش ═══ */}
                     <section className="space-y-1.5">
-                        <SectionTitle n={3} title="نام کاتالوگ" />
+                        <SectionTitle n={3} title="نام بازوی فروش" />
                         <input type="text" value={catalogName} maxLength={60}
                                onChange={(e) => { setCatalogName(e.target.value); setNameDirty(true); setErrors((p) => ({ ...p, name: '' })); }}
                                placeholder="مثلا: پخش مصالح نارین — شعبه تهران"
@@ -367,12 +367,12 @@ export default function RegisterCatalogPage() {
                         {catalogNameDup ? (
                             <p className="text-[10px] text-error flex items-center gap-1.5 px-1">
                                 <AlertTriangle className="w-3 h-3 flex-shrink-0" />
-                                یه کاتالوگ با همین نام داری — برای تشخیص راحت‌تر کمی عوضش کن
+                                یه بازوی فروش با همین نام داری — برای تشخیص راحت‌تر کمی عوضش کن
                             </p>
                         ) : (
                             !nameDirty && catalogName && (
                                 <p className="text-[10px] text-on-surface-variant/60 px-1">
-                                    پیشنهاد ما همون نام کسب‌وکاره؛ اگه می‌خوای توی لیست کاتالوگ‌هات متمایز باشه، تغییرش بده.
+                                    پیشنهاد ما همون نام کسب‌وکاره؛ اگه می‌خوای توی لیست بازوی فروش‌هات متمایز باشه، تغییرش بده.
                                 </p>
                             )
                         )}
@@ -383,9 +383,9 @@ export default function RegisterCatalogPage() {
                         )}
                     </section>
 
-                    {/* ═══ ۴) لینک کاتالوگ — کاربر خودش انتخاب می‌کند ═══ */}
+                    {/* ═══ ۴) لینک بازوی فروش — کاربر خودش انتخاب می‌کند ═══ */}
                     <section className="space-y-1.5">
-                        <SectionTitle n={4} title="لینک اختصاصی کاتالوگ" />
+                        <SectionTitle n={4} title="لینک اختصاصی بازوی فروش" />
                         <SlugPicker
                             value={slug}
                             onChange={(s: string) => { setSlug(s); setErrors((p) => ({ ...p, slug: '' })); }}
@@ -406,7 +406,7 @@ export default function RegisterCatalogPage() {
 
                     {/* ═══ ۵) نوع فروش ═══ */}
                     <section className="space-y-2">
-                        <SectionTitle n={5} title="نوع فروش در این کاتالوگ" />
+                        <SectionTitle n={5} title="نوع فروش در این بازوی فروش" />
                         <div className="grid grid-cols-3 gap-2">
                             {[
                                 { v: 'wholesale', t: 'عمده', icon: '📦' },
@@ -431,9 +431,9 @@ export default function RegisterCatalogPage() {
                         </div>
                     </section>
 
-                    {/* ═══ ۶) دسترسی کاتالوگ — عمومی / خصوصی ═══ */}
+                    {/* ═══ ۶) دسترسی بازوی فروش — عمومی / خصوصی ═══ */}
                     <section className="space-y-2">
-                        <SectionTitle n={6} title="دسترسی کاتالوگ" />
+                        <SectionTitle n={6} title="دسترسی بازوی فروش" />
                         <div className="grid grid-cols-2 gap-2">
                             <button type="button" onClick={() => setIsPrivate(false)}
                                     className={cn(
@@ -471,16 +471,16 @@ export default function RegisterCatalogPage() {
                                     ? 'bg-outline-variant text-on-surface-variant cursor-not-allowed'
                                     : 'bg-primary text-on-primary shadow-lg shadow-primary/25 active:scale-[0.99]',
                             )}>
-                        {busy ? <><Loader2 className="w-5 h-5 animate-spin" /> در حال ساخت کاتالوگ…</>
-                            : catalogNameDup ? <><AlertTriangle className="w-4 h-4" /> نام کاتالوگ تکراری است</>
-                            : <><LibraryBig className="w-4.5 h-4.5" /> ساخت کاتالوگ برای «{shortName(selectedBiz?.name || '')}»</>}
+                        {busy ? <><Loader2 className="w-5 h-5 animate-spin" /> در حال ساخت بازوی فروش…</>
+                            : catalogNameDup ? <><AlertTriangle className="w-4 h-4" /> نام بازوی فروش تکراری است</>
+                            : <><LibraryBig className="w-4.5 h-4.5" /> ساخت بازوی فروش برای «{shortName(selectedBiz?.name || '')}»</>}
                     </button>
                 </form>
                 )}
             </main>
 
             {/* ═══ کارت گام بعدی — فقط بعد از ثبتِ جدیدِ کسب‌وکارِ خریدبذَر (firstCatalog=false) ═══
-                پیشنهاد دلیل‌دار با درِ باز: دکمهٔ بزرگ بازوی خرید + لینک کمرنگِ ادامهٔ کاتالوگ قیمت */}
+                پیشنهاد دلیل‌دار با درِ باز: دکمهٔ بزرگ بازوی خرید + لینک کمرنگِ ادامهٔ بازوی فروش قیمت */}
             {stepHint && (
                 <div className="fixed inset-0 z-[100] flex items-end sm:items-center sm:justify-center bg-black/50 animate-in fade-in duration-200 sm:p-4"
                      onClick={() => setStepHint(null)}>
@@ -496,7 +496,7 @@ export default function RegisterCatalogPage() {
                             چون گفتی <span className="font-black">{stepHint.roleLabel}</span>، و بیشتر خرید عمده داری تا فروش عمده می‌کنیم اول{' '}
                             <span className="font-black text-amber-600 dark:text-amber-400">بازوی خرید</span> بسازی —
                             لیست خریدت رو می‌نویسی، تامین‌کننده‌ها قیمت می‌دن و تو بهترین رو انتخاب می‌کنی.
-                            (کاتالوگ قیمت هم هر وقت خواستی می تونی از پنل خودت بسازی)
+                            (بازوی فروش قیمت هم هر وقت خواستی می تونی از پنل خودت بسازی)
                         </p>
                         <Link href={`/inquiries/new?bizId=${stepHint.bizId}`}
                               className="mt-5 flex h-12 w-full items-center justify-center gap-2 rounded-xl bg-brand-contrast text-sm font-extrabold text-white shadow-lg shadow-brand-contrast/30 transition-colors hover:bg-brand-contrast-strong">
@@ -505,7 +505,7 @@ export default function RegisterCatalogPage() {
                         </Link>
                         <button type="button" onClick={() => setStepHint(null)}
                                 className="mt-3 text-[12px] font-bold text-on-surface-variant/70 transition-colors hover:text-on-surface">
-                            نه، همین‌جا کاتالوگ قیمت می‌سازم
+                            نه، همین‌جا بازوی فروش قیمت می‌سازم
                         </button>
                     </div>
                 </div>

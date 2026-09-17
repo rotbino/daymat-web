@@ -93,7 +93,7 @@ export default function AdPriceCard({ ad, isOwner, isSaved, onSaveToggle, onCont
 
             {/* ═══ کارت قیمت اصلی (بدون عنوان) ═══ */}
             <div className="bg-white dark:bg-gray-900 rounded-2xl border border-gray-200/80 dark:border-gray-800 p-5 shadow-sm">
-                {/* ✅ گیت قیمت — کاتالوگ خصوصی: درخواست ارتباط تجاری | بازار خصوصی: عضویت */}
+                {/* ✅ گیت قیمت — بازوی فروش خصوصی: درخواست ارتباط تجاری | بازار خصوصی: عضویت */}
                 {ad.unitPrice == null ? (
                     ad.priceGate === 'catalog_private' ? (
                         <div>
@@ -102,7 +102,7 @@ export default function AdPriceCard({ ad, isOwner, isSaved, onSaveToggle, onCont
                                 قیمت مخفی است
                             </p>
                             <p className="text-[11px] text-gray-500 dark:text-gray-400 leading-5 mt-1">
-                                این کاتالوگ خصوصی است — قیمت‌ها فقط برای اعضای پذیرفته‌شده نمایش داده می‌شود.
+                                این بازوی فروش خصوصی است — قیمت‌ها فقط برای اعضای پذیرفته‌شده نمایش داده می‌شود.
                             </p>
                             {ad.catalog?.slug && (
                                 <button type="button" onClick={() => router.push(`/${ad.catalog.slug}`)}
@@ -366,7 +366,7 @@ export default function AdPriceCard({ ad, isOwner, isSaved, onSaveToggle, onCont
                                 onClick={() => router.push(`/${ad.catalog.slug}`)}
                                 className="h-12 px-4 rounded border border-primary/30 dark:border-primary/40 text-primary hover:bg-primary/10 active:scale-[0.98] font-bold text-sm flex items-center justify-center gap-1.5 transition-all duration-200 shrink-0"
                             >
-                                کاتالوگ
+                                بازوی فروش
                             </button>
                         )}
                     </div>

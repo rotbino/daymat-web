@@ -6,7 +6,7 @@
 //   • لوگوی بزرگ بدون پدینگ + امکان تعویض لوگو
 //   • ویرایش عنوان/شعار/تماس/نوشتهٔ زیر QR + تم‌های آماده + کالر‌سلکتور آزاد
 //   • امضای برند: آیکون dm دیمت چسبیده زیر QR (مارجین ~۳px) + اسلاگ — زیرنویس QR زیر آن
-//   • 💾 ذخیرهٔ مشخصات کارت (JSON) روی کاتالوگ → زحمت کاربر گم نمی‌شود + پیش‌نمایش در تب انتشار
+//   • 💾 ذخیرهٔ مشخصات کارت (JSON) روی بازوی فروش → زحمت کاربر گم نمی‌شود + پیش‌نمایش در تب انتشار
 // ⚠️ قانون: حالت تاریک همیشه چک شده
 'use client';
 import React, { useState, useEffect, useRef, useCallback } from 'react';
@@ -31,21 +31,21 @@ interface Props {
     onClose: () => void;
     catalogName: string;
     slug?: string;
-    /** لوگوی کاتالوگ — نبودش حرف اول نام می‌نشیند */
+    /** لوگوی بازوی فروش — نبودش حرف اول نام می‌نشیند */
     logoUrl?: string;
     /** شمارهٔ تماس کسب‌وکار — پیش‌فرض کارت */
     phone?: string;
-    /** معرفی کوتاه کاتالوگ — پیش‌فرض شعار */
+    /** معرفی کوتاه بازوی فروش — پیش‌فرض شعار */
     description?: string;
-    /** شناسهٔ کاتالوگ — با بودنش دکمهٔ ذخیره فعال می‌شود */
+    /** شناسهٔ بازوی فروش — با بودنش دکمهٔ ذخیره فعال می‌شود */
     catalogId?: string;
-    /** 📋 شناسهٔ بازوی خرید — ذخیره در metadata بازوی خرید (قرینهٔ کاتالوگ) */
+    /** 📋 شناسهٔ بازوی خرید — ذخیره در metadata بازوی خرید (قرینهٔ بازوی فروش) */
     inquiryId?: string;
     /** مسیر پایهٔ صفحهٔ عمومی روی QR/کارت — پیش‌فرض ریشه؛ بازوی خرید: /inquiries */
     basePath?: string;
     /** کارت ذخیره‌شدهٔ قبلی (metadata.visitCard) — با باز شدن، کارت کاربر برمی‌گردد */
     savedSpec?: any;
-    /** بعد از ذخیرهٔ موفق — برای تازه‌سازی لیست کاتالوگ‌ها */
+    /** بعد از ذخیرهٔ موفق — برای تازه‌سازی لیست بازوی فروش‌ها */
     onSaved?: () => void;
 }
 
@@ -70,7 +70,7 @@ export default function VisitCardModal({ open, onClose, catalogName, slug, logoU
     const [cardPhone, setCardPhone] = useState('');
     const [cardCaption, setCardCaption] = useState(DEFAULT_CAPTION);
     const [fontsReady, setFontsReady] = useState(false);
-    const [saving, setSaving] = useState(false);      // 💾 ذخیرهٔ spec روی کاتالوگ
+    const [saving, setSaving] = useState(false);      // 💾 ذخیرهٔ spec روی بازوی فروش
     const [savedAt, setSavedAt] = useState<string | null>(null); // آخرین ذخیره (از spec یا همین الان)
     const cardCanvasRef = useRef<HTMLCanvasElement | null>(null);
     const bgFileRef = useRef<HTMLInputElement | null>(null);
@@ -397,7 +397,7 @@ export default function VisitCardModal({ open, onClose, catalogName, slug, logoU
         e.target.value = '';
     };
 
-    /** بازگرداندن همه‌چیز به پیش‌فرض کاتالوگ */
+    /** بازگرداندن همه‌چیز به پیش‌فرض بازوی فروش */
     const resetCard = () => {
         setThemeIdx(0);
         setCustomColor(null);
@@ -443,7 +443,7 @@ export default function VisitCardModal({ open, onClose, catalogName, slug, logoU
         try {
             const spec = await buildSpec();
             if (!spec) throw new Error('spec');
-            // 📋 مقصد ذخیره — کاتالوگ قیمت یا بازوی خرید (هر دو در metadata.visitCard)
+            // 📋 مقصد ذخیره — بازوی فروش قیمت یا بازوی خرید (هر دو در metadata.visitCard)
             const res: any = inquiryId
                 ? await apiService.inquiry.updateVisitCard(inquiryId, spec)
                 : await apiService.catalog.updateVisitCard(catalogId!, spec);
@@ -587,7 +587,7 @@ export default function VisitCardModal({ open, onClose, catalogName, slug, logoU
                         )}
                     </div>
 
-                    {/* 🪪 لوگو — تعویض یا برگشت به لوگوی کاتالوگ */}
+                    {/* 🪪 لوگو — تعویض یا برگشت به لوگوی بازوی فروش */}
                     <div className="flex items-center gap-2 flex-wrap">
                         <span className="text-[10px] font-bold text-on-surface-variant">لوگو:</span>
                         <button type="button" onClick={() => logoFileRef.current?.click()}
@@ -600,7 +600,7 @@ export default function VisitCardModal({ open, onClose, catalogName, slug, logoU
                             <button type="button" onClick={() => setCustomLogo(null)}
                                     className="h-8 px-3 rounded-lg text-[10px] font-bold text-red-600 dark:text-red-400
                                         hover:bg-red-500/10 active:scale-95 flex items-center gap-1.5 transition-all">
-                                <XCircle className="w-3.5 h-3.5" /> برگشت به لوگوی کاتالوگ
+                                <XCircle className="w-3.5 h-3.5" /> برگشت به لوگوی بازوی فروش
                             </button>
                         )}
                         <input ref={logoFileRef} type="file" accept="image/*" hidden onChange={onPickLogoFile} />
@@ -645,9 +645,9 @@ export default function VisitCardModal({ open, onClose, catalogName, slug, logoU
                     </div>
 
                     <div className="grid grid-cols-2 gap-2">
-                        {/* 💾 ذخیره — مشخصات کارت روی کاتالوگ/بازوی خرید می‌ماند و در تب انتشار دیده می‌شود */}
+                        {/* 💾 ذخیره — مشخصات کارت روی بازوی فروش/بازوی خرید می‌ماند و در تب انتشار دیده می‌شود */}
                         <button type="button" onClick={saveSpec} disabled={(!catalogId && !inquiryId) || saving}
-                                title={inquiryId ? 'ذخیرهٔ طرح روی بازوی خرید' : catalogId ? 'ذخیرهٔ طرح روی کاتالوگ' : 'شناسه ندارد'}
+                                title={inquiryId ? 'ذخیرهٔ طرح روی بازوی خرید' : catalogId ? 'ذخیرهٔ طرح روی بازوی فروش' : 'شناسه ندارد'}
                                 className="h-10 rounded-lg border border-primary/40 bg-primary/5 dark:bg-primary/10 text-primary text-[11px] font-extrabold
                                     flex items-center justify-center gap-1.5 hover:bg-primary/10 active:scale-[0.98]
                                     disabled:opacity-60 transition-all">
@@ -674,7 +674,7 @@ export default function VisitCardModal({ open, onClose, catalogName, slug, logoU
                             </p>
                         ) : (
                             <p className="text-[10px] text-on-surface-variant/60 leading-5 text-left">
-                                با ذخیره، طرح کارت روی کاتالوگ می‌ماند.
+                                با ذخیره، طرح کارت روی بازوی فروش می‌ماند.
                             </p>
                         )}
                     </div>

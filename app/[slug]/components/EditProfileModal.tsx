@@ -16,7 +16,7 @@ import PersianDate from '@/components/common/PersianDate';
 interface Props {
     isOpen: boolean;
     onClose: () => void;
-    /** بعد از ذخیرهٔ موفق — CatalogClient با آن owner کاتالوگ را تازه می‌کند */
+    /** بعد از ذخیرهٔ موفق — CatalogClient با آن owner بازوی فروش را تازه می‌کند */
     onSaved?: () => void;
 }
 

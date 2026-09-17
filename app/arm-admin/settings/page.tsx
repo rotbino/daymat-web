@@ -124,7 +124,7 @@ export default function ArmAdminSettings() {
                 logoFileId: cfg.general?.logoFileId || arm.logoUrl || undefined,
                 mission: arm.mission || '',
                 config: cfg,
-                // ✅ انواع کاتالوگ پذیرفته‌شده (فیلد روت بازار)
+                // ✅ انواع بازوی فروش پذیرفته‌شده (فیلد روت بازار)
                 acceptedCatalogTypes: Array.isArray(arm.acceptedCatalogTypes) ? arm.acceptedCatalogTypes : [],
                 // ✅ درخت‌ها
                 categoryTree: arm.categoryTree || [],

@@ -22,7 +22,7 @@ export function StepReview() {
                 </span>
                 <div>
                     <h3 className="font-bold text-sm text-emerald-800 dark:text-emerald-300">بررسی نهایی</h3>
-                    <p className="text-[11px] text-emerald-700/70 dark:text-emerald-400/70">پس از تأیید، کالا روی کاتالوگت منتشر می‌شود.</p>
+                    <p className="text-[11px] text-emerald-700/70 dark:text-emerald-400/70">پس از تأیید، کالا روی بازوی فروشت منتشر می‌شود.</p>
                 </div>
             </div>
 
@@ -52,7 +52,7 @@ export function StepReview() {
                     </div>
                 </div>
                 <div className="px-4 pb-4 pt-3 space-y-2.5">
-                    <div className="flex justify-between text-xs"><span className="text-on-surface-variant">کاتالوگ</span><span className="font-medium text-on-surface">{selectedCatalog.name}</span></div>
+                    <div className="flex justify-between text-xs"><span className="text-on-surface-variant">بازوی فروش</span><span className="font-medium text-on-surface">{selectedCatalog.name}</span></div>
                     <div className="flex justify-between text-xs"><span className="text-on-surface-variant">تصاویر</span><span className="font-medium text-on-surface">{uploadedCount.toLocaleString('fa-IR')} عدد</span></div>
                     <div className="flex justify-between text-xs">
                         <span className="text-on-surface-variant">{isWholesale ? 'حداقل حجم' : 'موجودی'}</span>

@@ -26,7 +26,7 @@ interface Props {
     onPriceUpdate: (ad: any) => void;
 }
 
-/** تب محصولات — قلب پنل مدیریت کاتالوگ */
+/** تب محصولات — قلب پنل مدیریت بازوی فروش */
 export default function ProductsTab({
     products, adsLoading, statusFilter, onFilterChange, currentCatalog,
     onOpenCategorySettings, onOpenUnitSettings, onCategory, onRefresh, onPublish, onPriceUpdate,
@@ -54,7 +54,7 @@ export default function ProductsTab({
     const filters: readonly (readonly [StatusFilter, string])[] = [
         ['all', `همه (${fmt(counts.all)})`],
         ['table', `روی تابلو (${fmt(counts.table)})`],
-        ['catalog', `فقط کاتالوگ (${fmt(counts.catalog)})`],
+        ['catalog', `فقط بازوی فروش (${fmt(counts.catalog)})`],
         ['stale', `نیازمند قیمت تازه (${fmt(counts.stale)})`],
         ...(counts.uncat > 0 ? ([['uncat', `بی‌دسته در بازار (${fmt(counts.uncat)})`]] as const) : []),
     ];
@@ -66,12 +66,12 @@ export default function ProductsTab({
             <div className="flex items-center gap-1 my-3">
                 {!isService && (
                     <>
-                        <button onClick={onOpenCategorySettings} title="دسته‌بندی‌های کاتالوگ — گروه‌بندی کالاها" aria-label="دسته‌بندی‌های کاتالوگ"
+                        <button onClick={onOpenCategorySettings} title="دسته‌بندی‌های بازوی فروش — گروه‌بندی کالاها" aria-label="دسته‌بندی‌های بازوی فروش"
                                 className="w-9 h-9 -ms-1.5 grid place-items-center rounded-lg text-on-surface-variant
                                     hover:text-primary hover:bg-primary/5 active:scale-90 transition-all flex-shrink-0">
                             <BookOpen className="w-[21px] h-[21px]" />
                         </button>
-                        <button onClick={onOpenUnitSettings} title="واحدهای کاتالوگ — کارتن، بسته و..." aria-label="واحدهای کاتالوگ"
+                        <button onClick={onOpenUnitSettings} title="واحدهای بازوی فروش — کارتن، بسته و..." aria-label="واحدهای بازوی فروش"
                                 className="w-9 h-9 grid place-items-center rounded-lg text-on-surface-variant
                                     hover:text-primary hover:bg-primary/5 active:scale-90 transition-all flex-shrink-0">
                             <Layers className="w-[21px] h-[21px]" />

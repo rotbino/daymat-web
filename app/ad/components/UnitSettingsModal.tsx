@@ -1,5 +1,5 @@
 // app/ad/components/UnitSettingsModal.tsx
-// ✅ مدال واحدهای کاتالوگ — با تفکیک عمده/خرده + ثبت واحد جدید توسط خود کاربر
+// ✅ مدال واحدهای بازوی فروش — با تفکیک عمده/خرده + ثبت واحد جدید توسط خود کاربر
 //    ۱) فیلتر دسته‌بندی: همه / عمده‌فروشی / خرده‌فروشی — فروشندهٔ عمده سریع واحدش را پیدا می‌کند
 //    ۲) ثبت واحد جدید: عنوان بدون تکرار (نرمال‌سازی ی/ک/نیم‌فاصله) + تکلیف صریح عمده/خرده
 //       + برای عمده: تعداد داخل واحد (مثل ۲۴ عدد در هر کارتن) و ثابت/قابل‌تغییر
@@ -35,9 +35,9 @@ interface Props {
     catalogId: string;
     initialUnits: { unitId: string; containsQty?: number; qtyIsFixed?: boolean }[];
     onSaved: (units: { unitId: string; containsQty?: number; qtyIsFixed?: boolean }[]) => void;
-    /** ✅ عمومی‌شده: ذخیره‌ساز سفارشی (مثلاً بازوی خرید → PATCH استعلام) — پیش‌فرض: کانفیگ کاتالوگ قیمت */
+    /** ✅ عمومی‌شده: ذخیره‌ساز سفارشی (مثلاً بازوی خرید → PATCH استعلام) — پیش‌فرض: کانفیگ بازوی فروش قیمت */
     saveFn?: (units: { unitId: string; containsQty?: number; qtyIsFixed?: boolean }[]) => Promise<any>;
-    /** ✅ عنوان مدال — پیش‌فرض: واحدهای اختصاصی کاتالوگ */
+    /** ✅ عنوان مدال — پیش‌فرض: واحدهای اختصاصی بازوی فروش */
     title?: string;
     /** ✅ نمایش فیلدهای بسته‌بندی (تعداد داخلش / ثابت) — بازوی خرید اینها را ندارد */
     showQtyFields?: boolean;
@@ -150,13 +150,13 @@ export default function UnitSettingsModal({ isOpen, onClose, catalogId, initialU
                 qtyIsFixed: newScope === 'wholesale' && newQty && newQty >= 2 ? newFixed : false,
             });
             await queryClient.invalidateQueries({ queryKey: ['units-all'] });
-            // ✅ واحد تازه‌ساخت فوری به کاتالوگ اضافه می‌شود
+            // ✅ واحد تازه‌ساخت فوری به بازوی فروش اضافه می‌شود
             setSelected((prev) => {
                 const next = new Map(prev);
                 next.set(created.id, { containsQty: created.containsQty ?? null, qtyIsFixed: !!created.qtyIsFixed });
                 return next;
             });
-            toast.success(`واحد «${created.title}» ثبت شد و به کاتالوگت اضافه شد`);
+            toast.success(`واحد «${created.title}» ثبت شد و به بازوی فروشت اضافه شد`);
             setNewTitle('');
             setNewScope(null);
             setNewQty(undefined);
@@ -234,7 +234,7 @@ export default function UnitSettingsModal({ isOpen, onClose, catalogId, initialU
                             <Package className="w-4.5 h-4.5 text-amber-600 dark:text-amber-400" />
                         </span>
                         <div>
-                            <h3 className="text-sm font-extrabold text-on-surface">{title || 'واحدهای اختصاصی کاتالوگ'}</h3>
+                            <h3 className="text-sm font-extrabold text-on-surface">{title || 'واحدهای اختصاصی بازوی فروش'}</h3>
                             <p className="text-[10px] text-on-surface-variant/70">
                                 {selected.size > 0
                                     ? `${selected.size.toLocaleString('fa-IR')} واحد انتخاب شده`
@@ -291,7 +291,7 @@ export default function UnitSettingsModal({ isOpen, onClose, catalogId, initialU
                         <div className="mb-4">
                             <p className="text-[11px] font-bold text-on-surface-variant flex items-center gap-1.5 mb-2">
                                 <Check className="w-3.5 h-3.5 text-emerald-500" />
-                                واحدهای کاتالوگ تو
+                                واحدهای بازوی فروش تو
                             </p>
                             <div className="space-y-1.5">
                                 {[...selected.entries()].map(([unitId, conf]) => {
@@ -307,7 +307,7 @@ export default function UnitSettingsModal({ isOpen, onClose, catalogId, initialU
                                                 <span className="text-sm font-bold text-on-surface flex-1 truncate">{title}</span>
                                                 {scopeBadge(u?.scope)}
                                                 <button type="button" onClick={() => toggleUnit(unitId)}
-                                                        aria-label={`حذف ${title} از کاتالوگ`}
+                                                        aria-label={`حذف ${title} از بازوی فروش`}
                                                         className="w-6 h-6 rounded-full text-error hover:bg-error/10 grid place-items-center flex-shrink-0 transition-colors">
                                                     <X className="w-3.5 h-3.5" />
                                                 </button>

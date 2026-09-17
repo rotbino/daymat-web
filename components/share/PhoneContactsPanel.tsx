@@ -7,9 +7,9 @@
 //   • جایی که Contact Picker نیست (آیفون/دسکتاپ): افزودن دستی شماره + راهنمای شیت سیستم
 // ── حالت زمینه‌ای (موتور رشد) ──
 //   با memberSend و/یا invite لیست دوگروه می‌شود:
-//     • اعضای دیمت → دکمهٔ «ارسال» زمینه‌ای (مثلاً درخواست تامین به کاتالوگش، یا درخواست خریدار به کسب‌وکارش)
+//     • اعضای دیمت → دکمهٔ «ارسال» زمینه‌ای (مثلاً درخواست تامین به بازوی فروشش، یا درخواست خریدار به کسب‌وکارش)
 //     • غیراعضا   → دکمهٔ «دعوت به دیمت» — نوار کانال‌ها: واتساپ/تلگرام/پیامک/سایر با متن و لینکِ زمینه‌ای
-//   کپشن‌ها و اکشن‌ها را جایِ استفاده تعیین می‌کند — در بازو لینک بازو می‌رود، در اعضای کاتالوگ لینک کاتالوگ.
+//   کپشن‌ها و اکشن‌ها را جایِ استفاده تعیین می‌کند — در بازو لینک بازو می‌رود، در اعضای بازوی فروش لینک بازوی فروش.
 'use client';
 import React, { useState, useEffect } from 'react';
 import {
@@ -48,7 +48,7 @@ export interface PhoneContactItem {
         businesses?: ContactBusinessItem[];
         /** اولین کسب‌وکار (سازگاری با کدهای قبلی) */
         business?: (Pick<ContactBusinessItem, 'id' | 'name' | 'logoUrl' | 'city'> & Partial<ContactBusinessItem>) | null;
-        /** کاتالوگ فعالِ عضو — مقصد «درخواست تامین» در بازوی خرید */
+        /** بازوی فروش فعالِ عضو — مقصد «درخواست تامین» در بازوی خرید */
         catalog?: { id: string; name: string; slug: string | null; logoUrl: string | null; city: string | null; salesType: string | null } | null;
     } | null;
 }
@@ -78,7 +78,7 @@ export interface ContactInviteAction {
 interface PhoneContactsPanelProps {
     /** لینک اشتراک‌گذاری — در متن پیامک می‌نشیند (در حالت onPick لازم نیست) */
     url?: string;
-    /** متن پیام کنار لینک — مثلاً «کاتالوگ ما را ببین:» */
+    /** متن پیام کنار لینک — مثلاً «بازوی فروش ما را ببین:» */
     message?: string;
     /** اگر بدهی، تپ روی مخاطب به‌جای پیامک به این‌جا می‌رود (مثلاً افزودن به تیم) */
     onPick?: (contact: PhoneContactItem) => void;
@@ -251,7 +251,7 @@ export default function PhoneContactsPanel({
         const catName = mu?.catalog?.name || '';
         const bizName = mu?.business?.name || '';
         const parts: string[] = [];
-        if (catName) parts.push(`کاتالوگ: ${catName}`);
+        if (catName) parts.push(`بازوی فروش: ${catName}`);
         else if (bizName) parts.push(bizName);
         if (catName && bizName && bizName !== catName) parts.push(bizName);
         const city = mu?.catalog?.city || mu?.business?.city || '';

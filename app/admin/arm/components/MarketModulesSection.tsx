@@ -15,7 +15,7 @@ import { cn } from '@/lib/utils';
 /**
  * ✅ «ماژول‌های بازار» — نسخهٔ تمیز و مرتب تب ماژول‌ها (درخواست مالک):
  *    از بالا به پایین، همیشه با همین ترتیب:
- *      ۱. ماژول کاتالوگ قیمت      (همیشه فعال — فقط تنظیم دارد)
+ *      ۱. ماژول بازوی فروش قیمت      (همیشه فعال — فقط تنظیم دارد)
  *      ۲. ماژول بازوی خرید      (همیشه فعال — همان «تابلوی خریدِ» هر خریدار)
  *      ۳. ماژول دیوار فروشندگان   (قابل خاموش‌کردن — تابلوی قیمت)
  *      ۴. ماژول دیوار خریداران    (قابل خاموش‌کردن — بازوی خرید بازار)
@@ -53,7 +53,7 @@ type ModuleDef = {
     icon: React.ComponentType<{ className?: string }>;
     accent: Accent;
     configKey: string;     // کلید واقعی در config.modules
-    alwaysOn?: boolean;    // کاتالوگ‌ها همیشه فعال‌اند و سوییچ ندارند
+    alwaysOn?: boolean;    // بازوی فروش‌ها همیشه فعال‌اند و سوییچ ندارند
     groups: RuleGroup[];
 };
 
@@ -88,24 +88,24 @@ const ACCENTS: Record<Accent, {
 
 // ─────────────────────────────── تعریف ۴ ماژول (ترتیب ثابت) ───────────────────────────────
 const MODULES: ModuleDef[] = [
-    // ۱ ── ماژول کاتالوگ قیمت (همیشه فعال)
+    // ۱ ── ماژول بازوی فروش قیمت (همیشه فعال)
     {
         key: 'catalog',
-        title: 'کاتالوگ قیمت',
-        sub: 'کاتالوگ هر فروشنده — سقف‌ها، عضوگیری و چندفروشندگی',
+        title: 'بازوی فروش قیمت',
+        sub: 'بازوی فروش هر فروشنده — سقف‌ها، عضوگیری و چندفروشندگی',
         icon: BookOpen,
         accent: 'primary',
         configKey: 'catalog',
         alwaysOn: true,
         groups: [
             {
-                groupTitle: 'سقف‌های کاتالوگ',
+                groupTitle: 'سقف‌های بازوی فروش',
                 groupIcon: 'Layers',
                 rules: [
                     {
                         key: 'freeAdLimit',
                         label: 'حداکثر تعداد آگهی رایگان',
-                        hint: 'سهمیه آگهی رایگان هر کاتالوگ در این بازار',
+                        hint: 'سهمیه آگهی رایگان هر بازوی فروش در این بازار',
                         icon: 'Star',
                         isNumber: true,
                         min: 0,
@@ -114,8 +114,8 @@ const MODULES: ModuleDef[] = [
                     },
                     {
                         key: 'maxAdsPerCatalog',
-                        label: 'حداکثر آگهی روی هر کاتالوگ',
-                        hint: 'سقف آگهی همزمان برای هر کاتالوگ',
+                        label: 'حداکثر آگهی روی هر بازوی فروش',
+                        hint: 'سقف آگهی همزمان برای هر بازوی فروش',
                         icon: 'Package',
                         isNumber: true,
                         min: 0,
@@ -124,8 +124,8 @@ const MODULES: ModuleDef[] = [
                     },
                     {
                         key: 'maxFreeCatalogs',
-                        label: 'حداکثر کاتالوگ رایگان هر کاربر',
-                        hint: 'بیش از این تعداد، ایجاد کاتالوگ اعتباری می‌شود',
+                        label: 'حداکثر بازوی فروش رایگان هر کاربر',
+                        hint: 'بیش از این تعداد، ایجاد بازوی فروش اعتباری می‌شود',
                         icon: 'BookOpen',
                         isNumber: true,
                         min: 0,
@@ -141,13 +141,13 @@ const MODULES: ModuleDef[] = [
                     {
                         key: 'connectionRequest',
                         label: 'سهمیه و هزینهٔ درخواست ارتباط',
-                        hint: 'سهمیهٔ رایگان به ازای هر شخص است و روی همهٔ کاتالوگ‌ها و کسب‌وکارهایش شمرده می‌شود — پس از پایان سهمیه، هر درخواست اعتبار مصرف می‌کند',
+                        hint: 'سهمیهٔ رایگان به ازای هر شخص است و روی همهٔ بازوی فروش‌ها و کسب‌وکارهایش شمرده می‌شود — پس از پایان سهمیه، هر درخواست اعتبار مصرف می‌کند',
                         icon: 'CreditCard',
                         children: [
                             {
                                 key: 'freeRequestQuota',
                                 label: 'درخواست رایگان هر شخص',
-                                hint: 'روی همهٔ کاتالوگ‌های او',
+                                hint: 'روی همهٔ بازوی فروش‌های او',
                                 icon: 'Handshake',
                                 isNumber: true,
                                 min: 0,
@@ -178,13 +178,13 @@ const MODULES: ModuleDef[] = [
                 ],
             },
             {
-                groupTitle: 'تنظیمات کاتالوگ',
+                groupTitle: 'تنظیمات بازوی فروش',
                 groupIcon: 'Shield',
                 rules: [
                     {
                         key: 'multiSeller',
                         label: 'چندفروشندگی',
-                        hint: 'امکان تعریف چند فروشنده برای یک کاتالوگ — همه کاتالوگ‌ها از بازار به ارث می‌برند (مالک بازار می‌تواند برای کاتالوگ خاص اورایت کند)',
+                        hint: 'امکان تعریف چند فروشنده برای یک بازوی فروش — همه بازوی فروش‌ها از بازار به ارث می‌برند (مالک بازار می‌تواند برای بازوی فروش خاص اورایت کند)',
                         icon: 'Shield',
                         defaultValue: true,
                     },
@@ -774,7 +774,7 @@ export function MarketModulesSection({
                 <div>
                     <h3 className="text-base font-extrabold text-on-surface">ماژول‌های بازار</h3>
                     <p className="text-xs text-on-surface-variant/75 mt-1 leading-5">
-                        چهار ماژولِ همیشگیِ هر بازار — کاتالوگ‌ها همیشه فعال‌اند و فقط تنظیم می‌خواهند؛
+                        چهار ماژولِ همیشگیِ هر بازار — بازوی فروش‌ها همیشه فعال‌اند و فقط تنظیم می‌خواهند؛
                         دیوارها را می‌توانی روشن یا خاموش کنی. برای باز کردن تنظیمات هر ماژول روی کارتش بزن.
                     </p>
                     <div className="flex flex-wrap items-center gap-2 mt-2.5">
@@ -784,7 +784,7 @@ export function MarketModulesSection({
                         </span>
                         <span className="inline-flex items-center gap-1.5 rounded-full bg-surface-container-high/60 px-2.5 py-1 text-[10px] font-bold text-on-surface-variant">
                             <BookOpen className="w-3 h-3 text-amber-600 dark:text-amber-400" />
-                            ۲ کاتالوگ همیشه فعال
+                            ۲ بازوی فروش همیشه فعال
                         </span>
                     </div>
                 </div>

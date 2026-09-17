@@ -1,5 +1,5 @@
 // app/ad/form/StepProduct.tsx
-// ✅ مرحله ۱: کالا — کاتالوگ، دسته، مرجع کالا، عنوان، عکس، واحد فروش
+// ✅ مرحله ۱: کالا — بازوی فروش، دسته، مرجع کالا، عنوان، عکس، واحد فروش
 // بدون برچسب زائد — خود سلکتورها گویا هستند
 
 'use client';
@@ -33,7 +33,7 @@ export function StepProduct() {
 
     return (
         <div className="space-y-4 animate-in fade-in duration-200">
-            {/* ✅ کاتالوگ اول لیست — بدون برچسب زائد، خود کارت گویاست */}
+            {/* ✅ بازوی فروش اول لیست — بدون برچسب زائد، خود کارت گویاست */}
             <section className="rounded-2xl bg-surface-container-low/60 border border-outline-variant/30 p-4 space-y-3">
                 <div className="flex items-center gap-3 rounded-xl bg-primary/[0.04] border border-primary/15 px-3 py-2.5">
                     <span className="w-9 h-9 rounded-xl bg-primary/10 grid place-items-center flex-shrink-0">
@@ -137,7 +137,7 @@ export function StepProduct() {
                     <button type="button" onClick={() => setUnitModalOpen(true)}
                             className="text-[10px] font-bold text-primary
                                 flex items-center gap-1 hover:gap-1.5 transition-all">
-                        <Plus className="w-3 h-3" /> واحدهای اختصاصی کاتالوگ
+                        <Plus className="w-3 h-3" /> واحدهای اختصاصی بازوی فروش
                     </button>
                 </div>
 

@@ -21,11 +21,11 @@ import SearchBox from '@/components/home/SearchBox';
  *
  *   «هوم» وجود ندارد — هوم همان صفحهٔ فروشندگان است (تابلوی قیمت: ‎/{slug}).
  *   خریداران صفحهٔ مستقل دارد: ‎/{slug}/buyers (تم کهربایی).
- *   ترتیب ۵ آیتم قفل است: فروشندگان، خریداران، کاتالوگ من، اعلان، پروفایل
+ *   ترتیب ۵ آیتم قفل است: فروشندگان، خریداران، بازوی فروش من، اعلان، پروفایل
  *
  *   دسکتاپ (لاگین):  [برند بازار ▾] [🔍 وسط] [۵ آیتم — عنوانِ ریز زیر هر آیکون] [⋯]
  *   موبایل (لاگین):   نوار پایین ۵تایی + زنگولهٔ اعلان همیشه بالا (MobileHeader)
- *   مهمان (روی بازار): همان ساختار با ۳ آیتم — فروشندگان | خریداران | کاتالوگ من
+ *   مهمان (روی بازار): همان ساختار با ۳ آیتم — فروشندگان | خریداران | بازوی فروش من
  */
 
 const NON_MARKET_SEGMENTS = new Set([
@@ -146,7 +146,7 @@ function GuestMarketNav({ slug, pathname }: { slug: string; pathname: string }) 
                       className="h-14 w-[72px] flex flex-col items-center justify-center gap-1 rounded-lg text-on-surface-variant
                           hover:text-on-surface hover:bg-surface-container-high transition-colors flex-shrink-0">
                     <BookOpen className="w-[21px] h-[21px]" />
-                    <span className="text-[10px] font-bold leading-none whitespace-nowrap">کاتالوگ من</span>
+                    <span className="text-[10px] font-bold leading-none whitespace-nowrap">بازوی فروش من</span>
                 </Link>
             </div>
         </nav>
@@ -159,7 +159,7 @@ function GuestMarketNav({ slug, pathname }: { slug: string; pathname: string }) 
                 {sellersOn && <FooterItem href={`/${slug}`} label="فروشندگان" icon={Tags} active={onSellers} />}
                 {buyersOn && <FooterItem href={`/${slug}/buyers`} label="خریداران" icon={ShoppingCart} active={onBuyers} amber />}
                 <FooterItem href={`/login?redirect=${encodeURIComponent('/business/register?intent=catalog')}`}
-                            label="کاتالوگ من" icon={BookOpen} />
+                            label="بازوی فروش من" icon={BookOpen} />
             </div>
         </nav>
         </>

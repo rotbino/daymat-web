@@ -51,7 +51,7 @@ export interface PaymentState {
     installmentDescription: string;
 }
 
-/** تنظیمات واحد کاتالوگ */
+/** تنظیمات واحد بازوی فروش */
 export interface UnitSettingEntry {
     unitId: string;
     containsQty?: number;

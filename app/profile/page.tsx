@@ -44,7 +44,7 @@ export default function ProfilePage() {
     const { data: myBizData, isLoading: myBizLoading } = useMyBusinesses();
     const myBusinesses: any[] = (myBizData?.items ?? []).filter((b: any) => b.canEdit);
 
-    // بازوهای خرید هر کسب‌وکار — شمارش کنار کاتالوگ‌های قیمت (محصول دوم)
+    // بازوهای خرید هر کسب‌وکار — شمارش کنار بازوی فروش‌های قیمت (محصول دوم)
     const { data: myInqData } = useMyInquiries();
     const inquiryCountByBiz = useMemo(() => {
         // ⚠️ useMyInquiries آرایه را مستقیم برمی‌گرداند (نه {items}) — قبلاً myInqData?.items می‌گرفتیم → همیشه صفر
@@ -179,7 +179,7 @@ export default function ProfilePage() {
                         <div className="flex-1 min-w-0">
                             <p className="text-sm font-extrabold text-on-surface">کسب‌وکار من</p>
                             <p className="text-[10px] text-on-surface-variant/70 mt-0.5">
-                                مشخصات، کاتالوگ‌ها و تیک اعتماد کسب‌وکارت را از یک‌جا مدیریت کن.
+                                مشخصات، بازوی فروش‌ها و تیک اعتماد کسب‌وکارت را از یک‌جا مدیریت کن.
                             </p>
                         </div>
                     </div>
@@ -202,7 +202,7 @@ export default function ProfilePage() {
                                             {[
                                                 b.city || b.province,
                                                 (b._count?.catalogs ?? 0) > 0
-                                                    ? `${(b._count?.catalogs ?? 0).toLocaleString('fa-IR')} کاتالوگ قیمت`
+                                                    ? `${(b._count?.catalogs ?? 0).toLocaleString('fa-IR')} بازوی فروش قیمت`
                                                     : null,
                                                 (inquiryCountByBiz[b.id] ?? 0) > 0
                                                     ? `${(inquiryCountByBiz[b.id] ?? 0).toLocaleString('fa-IR')} بازوی خرید`
@@ -247,7 +247,7 @@ export default function ProfilePage() {
                             <div className="flex-1">
                                 <p className="text-sm font-extrabold text-on-surface">دعوت دوستان</p>
                                 <p className="text-[10px] text-on-surface-variant/70 mt-0.5">
-                                    لینک دعوتت رو برای کسانی که کاتالوگ دیمت به دردشون می‌خوره ارسال کن.
+                                    لینک دعوتت رو برای کسانی که بازوی فروش دیمت به دردشون می‌خوره ارسال کن.
                                 </p>
                             </div>
                         </div>

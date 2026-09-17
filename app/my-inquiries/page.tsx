@@ -1,5 +1,5 @@
 // app/my-inquiries/page.tsx
-// پنل مدیریت بازوی خرید — قرینهٔ کنسول کاتالوگ قیمت (/my-catalogs):
+// پنل مدیریت بازوی خرید — قرینهٔ کنسول بازوی فروش قیمت (/my-catalogs):
 //   انتخاب کسب‌وکار در /inquiries/new انجام می‌شود و کاربر مستقیم به همین پنل می‌آید؛
 //   اقلام قلم‌به‌قلم از همین‌جا اضافه می‌شوند (هر بار یک کالا + تیک بازوی خرید).
 //   تب‌ها: اقلام | پیشنهادها | تامین‌کنندگان | تنظیمات | انتشار — سوییچر دو-محصولی بالای پنل.
@@ -67,7 +67,7 @@ export default function MyInquiriesPage() {
         [list, archivedList, currentInquiryId],
     );
 
-    // جزئیات کاتالوگ کارنت (اقلام + isOwner)
+    // جزئیات بازوی فروش کارنت (اقلام + isOwner)
     const { data: detail, isLoading: detailLoading, refetch: refetchDetail } = useInquiry(currentInquiryId ?? undefined);
     const isOwner = !!detail?.isOwner;
 
@@ -85,7 +85,7 @@ export default function MyInquiriesPage() {
         // eslint-disable-next-line react-hooks/exhaustive-deps
     }, [isLoading, list, currentInquiryId]);
 
-    // لینک عمیق تب + ?add=1 (بعد از ساخت کاتالوگ جدید مستقیم شیت افزودن باز می‌شود)
+    // لینک عمیق تب + ?add=1 (بعد از ساخت بازوی فروش جدید مستقیم شیت افزودن باز می‌شود)
     useEffect(() => {
         const sp = new URLSearchParams(window.location.search);
         const t = sp.get('tab');
@@ -252,7 +252,7 @@ export default function MyInquiriesPage() {
         await updateInquiry.mutateAsync({ id: currentInquiryId, data }).then(() => refetchDetail());
     };
 
-    // سوییچر دو-محصولی — کاتالوگ‌های قیمت با کش مشترک کنسول فروش
+    // سوییچر دو-محصولی — بازوی فروش‌های قیمت با کش مشترک کنسول فروش
     const { data: catalogsRaw } = useQuery({
         queryKey: ['catalogs'],
         queryFn: () => apiService.catalog.getAll(),

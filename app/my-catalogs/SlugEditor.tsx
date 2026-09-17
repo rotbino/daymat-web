@@ -78,7 +78,7 @@ export default function SlugEditor({ value, onChange, excludeId, initialError, i
             case 'reserved': return { icon: <AlertTriangle className="w-3.5 h-3.5 text-error" />, text: 'این آدرس قابل انتخاب نیست', cls: 'text-error font-bold', border: 'border-error' };
             case 'short': return { icon: <AlertTriangle className="w-3.5 h-3.5 text-amber-500" />, text: 'حداقل ۳ حرف انگلیسی', cls: 'text-amber-600 dark:text-amber-400', border: 'border-outline-variant/40 dark:border-gray-700' };
             case 'empty': return { icon: <AlertTriangle className="w-3.5 h-3.5 text-amber-500" />, text: 'آدرس را بنویس', cls: 'text-amber-600 dark:text-amber-400', border: 'border-outline-variant/40 dark:border-gray-700' };
-            case 'own': return { icon: <CheckCircle2 className="w-3.5 h-3.5 text-primary" />, text: 'آدرس فعلی کاتالوگت', cls: 'text-primary', border: 'border-primary/40' };
+            case 'own': return { icon: <CheckCircle2 className="w-3.5 h-3.5 text-primary" />, text: 'آدرس فعلی بازوی فروشت', cls: 'text-primary', border: 'border-primary/40' };
             default: return { icon: <Check className="w-3.5 h-3.5 text-on-surface-variant/40" />, text: 'آدرس انگلیسی', cls: 'text-on-surface-variant/60', border: 'border-outline-variant/40 dark:border-gray-700' };
         }
     })();

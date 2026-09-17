@@ -1,5 +1,5 @@
 // app/my-catalogs/components/ProfileTab.tsx
-// تب مشخصات کاتالوگ — هویت + حلقهٔ تکمیل (سبک قدیمی افقی و تشویق‌کننده) + ویرایش با مداد
+// تب مشخصات بازوی فروش — هویت + حلقهٔ تکمیل (سبک قدیمی افقی و تشویق‌کننده) + ویرایش با مداد
 // ⚠️ قانون: حالت تاریک همیشه چک شده
 'use client';
 
@@ -43,16 +43,16 @@ export default function ProfileTab({ catalog, completion, canShare, onShare, onE
         try {
             await navigator.clipboard.writeText(`${window.location.origin}/${catalog.slug}`);
             setCopied(true);
-            toast.success('لینک کاتالوگ کپی شد');
+            toast.success('لینک بازوی فروش کپی شد');
             setTimeout(() => setCopied(false), 1600);
         } catch { /* لینک خودش قابل کلیک است */ }
     };
 
     return (
         <div className="space-y-3">
-            {/* ── هویت کاتالوگ — فلت، بدون قاب کارتی ── */}
+            {/* ── هویت بازوی فروش — فلت، بدون قاب کارتی ── */}
             <div className="flex items-start gap-3.5">
-                <button type="button" onClick={onEdit} aria-label="ویرایش لوگو و اطلاعات کاتالوگ"
+                <button type="button" onClick={onEdit} aria-label="ویرایش لوگو و اطلاعات بازوی فروش"
                         className="relative w-16 h-16 rounded-lg overflow-hidden flex-shrink-0
                             ring-1 ring-outline-variant/50 dark:ring-gray-700 hover:ring-amber-500/40
                             transition-all bg-surface-container-high dark:bg-gray-800 grid place-items-center group">
@@ -84,13 +84,13 @@ export default function ProfileTab({ catalog, completion, canShare, onShare, onE
 
                     {catalog.slug ? (
                         <div className="flex items-center gap-1 mt-1.5">
-                            <Link href={`/${catalog.slug}`} target="_blank" title="مشاهده کاتالوگ"
+                            <Link href={`/${catalog.slug}`} target="_blank" title="مشاهده بازوی فروش"
                                   className="inline-flex items-center gap-1 h-6 px-2 rounded border border-amber-500/25 bg-amber-500/5 dark:border-amber-500/25 dark:bg-amber-500/10
                                       text-[10px] font-bold text-amber-600 dark:text-amber-400 hover:border-amber-500/50
                                       transition-colors max-w-[240px]" dir="ltr">
                                 <span className="truncate">{host}/{catalog.slug}</span>
                             </Link>
-                            <button type="button" onClick={copyLink} aria-label="کپی لینک کاتالوگ" title="کپی لینک"
+                            <button type="button" onClick={copyLink} aria-label="کپی لینک بازوی فروش" title="کپی لینک"
                                     className="w-6 h-6 rounded grid place-items-center text-on-surface-variant/50
                                         hover:text-amber-600 dark:hover:text-amber-400 hover:bg-amber-500/5 transition-colors flex-shrink-0">
                                 {copied ? <Check className="w-3.5 h-3.5 text-emerald-500" /> : <Copy className="w-3.5 h-3.5" />}
@@ -99,7 +99,7 @@ export default function ProfileTab({ catalog, completion, canShare, onShare, onE
                     ) : (
                         <button type="button" onClick={onEdit}
                                 className="mt-1.5 inline-flex items-center gap-1 text-[10px] font-bold text-amber-600 dark:text-amber-400 hover:underline">
-                            آدرس کاتالوگ تنظیم نشده — همین حالا تنظیم کن
+                            آدرس بازوی فروش تنظیم نشده — همین حالا تنظیم کن
                         </button>
                     )}
                 </div>
@@ -120,7 +120,7 @@ export default function ProfileTab({ catalog, completion, canShare, onShare, onE
                 </div>
             )}
 
-            {/* ── تکمیل کاتالوگ — حلقهٔ درصد همیشه جلوی چشم (حتی ۱۰۰٪) + جملهٔ مشوق ── */}
+            {/* ── تکمیل بازوی فروش — حلقهٔ درصد همیشه جلوی چشم (حتی ۱۰۰٪) + جملهٔ مشوق ── */}
             <div className={cn('rounded-xl border bg-white dark:bg-gray-900 overflow-hidden',
                 percent === 100
                     ? 'border-emerald-300/50 dark:border-emerald-800/50'
@@ -138,14 +138,14 @@ export default function ProfileTab({ catalog, completion, canShare, onShare, onE
                         </span>
                         <p className="flex-1 min-w-0">
                             <span className="block text-sm font-extrabold text-emerald-800 dark:text-emerald-300">
-                                کاتالوگت کامل است ✓
+                                بازوی فروشت کامل است ✓
                             </span>
                             <span className="block text-[11px] text-on-surface-variant/70 mt-0.5 leading-4">
-                                آمادهٔ دیده‌شدن و اعتماد گرفتن — کاتالوگ کامل = اعتماد بیشتر مشتری
+                                آمادهٔ دیده‌شدن و اعتماد گرفتن — بازوی فروش کامل = اعتماد بیشتر مشتری
                             </span>
                         </p>
                         {canShare && (
-                            <button type="button" onClick={onShare} aria-label="اشتراک‌گذاری کاتالوگ"
+                            <button type="button" onClick={onShare} aria-label="اشتراک‌گذاری بازوی فروش"
                                     className="h-9 px-3.5 rounded-lg bg-emerald-600 text-white text-[11px] font-extrabold
                                         flex items-center gap-1.5 flex-shrink-0 shadow-sm shadow-emerald-600/30
                                         hover:bg-emerald-700 active:scale-95 transition-all">
@@ -167,9 +167,9 @@ export default function ProfileTab({ catalog, completion, canShare, onShare, onE
                                 <span className={cn('absolute text-[11px] font-black', ringColor)}>{percent.toLocaleString('fa-IR')}٪</span>
                             </span>
                             <span className="flex-1 min-w-0">
-                                <span className="block text-sm font-extrabold text-on-surface">کاتالوگت را کامل کن</span>
+                                <span className="block text-sm font-extrabold text-on-surface">بازوی فروشت را کامل کن</span>
                                 <span className="block text-[11px] text-on-surface-variant/70 mt-0.5">
-                                    {missing.toLocaleString('fa-IR')} مورد مانده — کاتالوگ کامل = اعتماد بیشتر مشتری
+                                    {missing.toLocaleString('fa-IR')} مورد مانده — بازوی فروش کامل = اعتماد بیشتر مشتری
                                     <span className="text-primary font-bold"> · {expanded ? 'بستن' : 'ببین چی کم است'}</span>
                                 </span>
                             </span>
@@ -205,7 +205,7 @@ export default function ProfileTab({ catalog, completion, canShare, onShare, onE
                 )}
             </div>
 
-            {/* ویرایش کاتالوگ — مداد، طبق خواستهٔ کاربر */}
+            {/* ویرایش بازوی فروش — مداد، طبق خواستهٔ کاربر */}
             <button onClick={onEdit}
                     className="w-full bg-white dark:bg-gray-900 rounded-xl border border-outline-variant/50 dark:border-gray-700
                         p-4 flex items-center gap-3.5 text-right hover:border-amber-500/40 transition-colors">
@@ -213,12 +213,12 @@ export default function ProfileTab({ catalog, completion, canShare, onShare, onE
                     <Pencil className="w-5 h-5 text-on-surface-variant" />
                 </span>
                 <span className="flex-1">
-                    <span className="block text-sm font-bold text-on-surface">ویرایش اطلاعات کاتالوگ</span>
+                    <span className="block text-sm font-bold text-on-surface">ویرایش اطلاعات بازوی فروش</span>
                     <span className="block text-[11px] text-on-surface-variant mt-0.5">نام، لوگو، آدرس، صنف و تماس</span>
                 </span>
             </button>
 
-            {/* 🛡️ نماد اعتماد — جزو مشخصات کاتالوگ است، نه انتشار (بنا بر بازخورد) */}
+            {/* 🛡️ نماد اعتماد — جزو مشخصات بازوی فروش است، نه انتشار (بنا بر بازخورد) */}
             <button onClick={onVerify}
                     className="w-full bg-white dark:bg-gray-900 rounded-xl border border-outline-variant/50 dark:border-gray-700
                         p-4 flex items-center gap-3.5 text-right hover:border-amber-500/40 transition-colors">
@@ -233,14 +233,14 @@ export default function ProfileTab({ catalog, completion, canShare, onShare, onE
                     <span className={cn('block text-[11px] mt-0.5 leading-5',
                         verified ? 'text-emerald-700 dark:text-emerald-300 font-bold' : 'text-on-surface-variant')}>
                         {verified
-                            ? 'کاتالوگ شما نماد اعتماد دارد ✓'
-                            : 'با ارسال مدارک هویت شخصی و کسب و کاری برای کاتالوگت نماد اعتماد بگیر.'}
+                            ? 'بازوی فروش شما نماد اعتماد دارد ✓'
+                            : 'با ارسال مدارک هویت شخصی و کسب و کاری برای بازوی فروشت نماد اعتماد بگیر.'}
                     </span>
                 </span>
                 {!verified && <ChevronLeft className="w-4 h-4 text-on-surface-variant/40 flex-shrink-0" />}
             </button>
 
-            {/* 👤 نکتهٔ پروفایل کاربر — کم‌اهمیت‌تر از کار کاتالوگ */}
+            {/* 👤 نکتهٔ پروفایل کاربر — کم‌اهمیت‌تر از کار بازوی فروش */}
             {(!userHasName || !userAvatar) && (
                 <ProfileBanner avatarUrl={userAvatar} hasName={userHasName} onClick={onProfile} />
             )}

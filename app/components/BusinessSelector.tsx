@@ -26,9 +26,9 @@ interface Props {
     onChange: (biz: any | null) => void;  // انتخاب / پاک کردن
     error?: string;
     disabled?: boolean;
-    /** ✅ برچسب وقتی هنوز کسب‌وکاری انتخاب نشده — پیش‌فرض: متن کاتالوگ قیمت */
+    /** ✅ برچسب وقتی هنوز کسب‌وکاری انتخاب نشده — پیش‌فرض: متن بازوی فروش قیمت */
     label?: string;
-    /** ✅ برچسب وقتی کسب‌وکار انتخاب شد — مثلا «ساخت کاتالوگ برای «فلان»»؛ اگر ندهی هیچی نشان داده نمی‌شود */
+    /** ✅ برچسب وقتی کسب‌وکار انتخاب شد — مثلا «ساخت بازوی فروش برای «فلان»»؛ اگر ندهی هیچی نشان داده نمی‌شود */
     selectedLabel?: string;
     /** ✅ فقط وقتی کسب‌وکار «جدید» واقعاً ثبت شد (نه انتخاب از مشابه‌ها) — برای پیشنهاد گام بعدی */
     onBusinessCreated?: (biz: any) => void;
@@ -266,7 +266,7 @@ function BusinessPickerModal({ onPick, onClose, onBusinessCreated }: {
                                     </span>
                                     <span className="block text-[9.5px] text-on-surface-variant/60 truncate">
                                         {[b.industryName, b.city].filter(Boolean).join(' · ')}
-                                        {b._count?.catalogs ? ` · ${b._count.catalogs} کاتالوگ` : ''}
+                                        {b._count?.catalogs ? ` · ${b._count.catalogs} بازوی فروش` : ''}
                                     </span>
                                 </span>
                                 <span className="text-[10px] font-bold text-primary flex-shrink-0">انتخاب</span>

@@ -279,7 +279,7 @@ function LeaveRequestCard({
                     )}
                 </div>
 
-                {/* کسب‌وکار (خریدار) یا کاتالوگ (فروشنده) */}
+                {/* کسب‌وکار (خریدار) یا بازوی فروش (فروشنده) */}
                 <div className="rounded-xl bg-surface-container-low/70 border border-outline-variant/20 p-3">
                     {isBuyer ? (
                         <>
@@ -299,7 +299,7 @@ function LeaveRequestCard({
                     ) : (
                         <>
                             <p className="text-[9.5px] font-bold text-on-surface-variant/70 mb-2 flex items-center gap-1">
-                                <BookOpen className="w-3 h-3" /> کاتالوگِ درخواستِ خروج
+                                <BookOpen className="w-3 h-3" /> بازوی فروشِ درخواستِ خروج
                             </p>
                             {cat ? (
                                 <>
@@ -309,12 +309,12 @@ function LeaveRequestCard({
                                         {cat.slug && (
                                             <Link href={`/${cat.slug}`} target="_blank"
                                                   className="inline-flex items-center gap-0.5 text-primary hover:underline">
-                                                دیدن کاتالوگ <ExternalLink className="w-3 h-3" />
+                                                دیدن بازوی فروش <ExternalLink className="w-3 h-3" />
                                             </Link>
                                         )}
                                     </div>
                                 </>
-                            ) : <p className="text-[11px] text-on-surface-variant">بدون کاتالوگ</p>}
+                            ) : <p className="text-[11px] text-on-surface-variant">بدون بازوی فروش</p>}
                         </>
                     )}
                 </div>
@@ -370,7 +370,7 @@ function LeaveRequestCard({
                         <div className="space-y-2 p-3 rounded-xl bg-rose-50 dark:bg-rose-900/20 border border-rose-200/60 dark:border-rose-800/50">
                             <p className="text-[11.5px] text-rose-700 dark:text-rose-300 leading-5">
                                 با تایید، عضویت این عضو لغو می‌شود و تاریخِ دقیق لغو در پرونده‌اش ثبت می‌شود.
-                                {r.roleType === 'seller' && ' کاتالوگش از بازار خارج و آگهی‌هایش از تابلو برداشته می‌شود و «خروجِ اختیاری» علامت می‌خورد تا اشتباهی دوباره اددش نکنید.'}
+                                {r.roleType === 'seller' && ' بازوی فروشش از بازار خارج و آگهی‌هایش از تابلو برداشته می‌شود و «خروجِ اختیاری» علامت می‌خورد تا اشتباهی دوباره اددش نکنید.'}
                             </p>
                             <div className="flex gap-2">
                                 <button type="button" onClick={onCancel} disabled={busy}

@@ -65,7 +65,7 @@ function ProductRowBase({ ad, onEdit, onCategory, onRefresh, onPublish, onPriceU
                             ))
                         ) : !market ? (
                             <span className="inline-flex items-center gap-1 text-[9px] font-bold px-2 py-0.5 rounded-full bg-gray-100 text-gray-500 dark:bg-gray-800 dark:text-gray-400">
-                                <EyeOff className="w-2.5 h-2.5" /> فقط کاتالوگ
+                                <EyeOff className="w-2.5 h-2.5" /> فقط بازوی فروش
                             </span>
                         ) : expired ? (
                             <span className="inline-flex items-center gap-1 text-[9px] font-bold px-2 py-0.5 rounded-full bg-amber-100 text-amber-700 dark:bg-amber-900/40 dark:text-amber-300">

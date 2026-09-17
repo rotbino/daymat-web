@@ -1,5 +1,5 @@
 // app/my-catalogs/MyCatalogsContent.tsx
-// ارکستراتور صفحه «مدیریت کاتالوگ» — نسخهٔ تب‌محور (ترند روز):
+// ارکستراتور صفحه «مدیریت بازوی فروش» — نسخهٔ تب‌محور (ترند روز):
 //   مشخصات | محصولات | آمار | انتشار — هر بخش در تب خودش، خلوت و متمرکز
 // توسعه‌پذیر: امکان جدید (مثل سفارشات) = فقط یک آیتم جدید در tabItems
 // ⚠️ قانون: حالت تاریک همیشه چک شده
@@ -54,7 +54,7 @@ export default function MyCatalogsContent() {
     const queryClient = useQueryClient();
     const dispatch = useDispatch();
     const { user } = useSelector((s: RootState) => s.auth);
-    // «کاتالوگ کارنت» پرسیست — همان الگوی بازار کارنت (فقط id اشتراک می‌شود تا snapshot نبود re-render اضافه بسازد)
+    // «بازوی فروش کارنت» پرسیست — همان الگوی بازار کارنت (فقط id اشتراک می‌شود تا snapshot نبود re-render اضافه بسازد)
     const persistedCatalogId = useSelector((s: RootState) => s.catalog.currentCatalogId);
 
     // ─── UI state ───
@@ -89,7 +89,7 @@ export default function MyCatalogsContent() {
     // ✅ بج قرمز برگهٔ اعضا + کارت «در انتظار تایید شما» — چرخهٔ عضویت
     const { data: pendingApprovals } = useMyPendingApprovals();
     const approvals: any[] = pendingApprovals?.items || [];
-    // ✅ بازوهای خرید من — در همان سوییچر کنار کاتالوگ‌های قیمت (محصول دوم دیمت)
+    // ✅ بازوهای خرید من — در همان سوییچر کنار بازوی فروش‌های قیمت (محصول دوم دیمت)
     const { data: myInquiriesRaw } = useMyInquiries();
     const myInquiries: any[] = useMemo(() => myInquiriesRaw ?? [], [myInquiriesRaw]);
     const catalogs = useMemo(
@@ -97,13 +97,13 @@ export default function MyCatalogsContent() {
         [catalogsRaw],
     );
 
-    // کاتالوگ‌های فعالِ من — کنسول با همین‌ها کار می‌کند (کاتالوگ‌های تیمی داخل پاسخِ getAll ادغام شده‌اند)
+    // بازوی فروش‌های فعالِ من — کنسول با همین‌ها کار می‌کند (بازوی فروش‌های تیمی داخل پاسخِ getAll ادغام شده‌اند)
     const allCatalogs = catalogs;
 
     const [currentId, setCurrentId] = useState<string | null>(null);
-    // ── انتخاب اولیه با اولویت: ۱) لینک عمیق ?catalog= (مثلاً بعد از ساخت کاتالوگ جدید)
-    // ۲) کاتالوگ کارنت پرسیست  ۳) اولین کاتالوگ
-    // نکته: کش ممکن است کهنه باشد و کاتالوگ جدید هنوز در آن نباشد → قبل از fallback
+    // ── انتخاب اولیه با اولویت: ۱) لینک عمیق ?catalog= (مثلاً بعد از ساخت بازوی فروش جدید)
+    // ۲) بازوی فروش کارنت پرسیست  ۳) اولین بازوی فروش
+    // نکته: کش ممکن است کهنه باشد و بازوی فروش جدید هنوز در آن نباشد → قبل از fallback
     // صبر می‌کنیم رفetch تازه برسد (همان باگی که کاربر گزارش کرد)
     useEffect(() => {
         if (currentId && allCatalogs.some((c) => c.id === currentId)) return; // انتخاب معتبر — کاری نکن
@@ -111,7 +111,7 @@ export default function MyCatalogsContent() {
         const fromUrl = params.get('catalog');
         const updatePriceParam = params.get('updatePrice'); // ✅ دیپ‌لینک اعلان «آپدیت قیمت» — با پاک‌سازی URL از بین نمی‌رود
 
-        // ۱) لینک عمیق صریح — ارادهٔ کاربر/مسیرِ فرستنده (کاتالوگ خودم)
+        // ۱) لینک عمیق صریح — ارادهٔ کاربر/مسیرِ فرستنده (بازوی فروش خودم)
         if (fromUrl && allCatalogs.some((c) => c.id === fromUrl)) {
             setCurrentId(fromUrl);
             // انتخاب ماندگار شد (پرسیست پایین‌تر می‌نویسد) → پارامتر تمیز شود
@@ -119,14 +119,14 @@ export default function MyCatalogsContent() {
             window.history.replaceState({}, '', '/my-catalogs' + (updatePriceParam ? `?updatePrice=${updatePriceParam}` : ''));
             return;
         }
-        // ۲) کاتالوگ کارنت پرسیست — ادامهٔ کارِ قبلی (فقط کاتالوگِ خودم)
+        // ۲) بازوی فروش کارنت پرسیست — ادامهٔ کارِ قبلی (فقط بازوی فروشِ خودم)
         if (!fromUrl && persistedCatalogId && catalogs.some((c) => c.id === persistedCatalogId)) {
             setCurrentId(persistedCatalogId);
             return;
         }
         // هنوز درخواست در جریان است (کش کهنه + رفetch) → قبل از تصمیم، دادهٔ تازه را ببین
         if (isFetching) return;
-        // ۳) fallback نهایی: اولین کاتالوگ
+        // ۳) fallback نهایی: اولین بازوی فروش
         if (allCatalogs.length > 0) setCurrentId(allCatalogs[0].id);
     }, [allCatalogs, catalogs, currentId, persistedCatalogId, isFetching]);
 
@@ -134,17 +134,17 @@ export default function MyCatalogsContent() {
         () => allCatalogs.find((c) => c.id === currentId) ?? null,
         [allCatalogs, currentId],
     );
-    // ✅ حالت اعضای کاتالوگ — عضوِ فروش/مدیر کاتالوگ دیگری (سناریوی بازار پخش)
-    //    کاتالوگ‌های تیمی از قبل داخل پاسخِ getAll ادغام شده‌اند (isTeamEntry) و جزو catalogs هستند
+    // ✅ حالت اعضای بازوی فروش — عضوِ فروش/مدیر بازوی فروش دیگری (سناریوی بازار پخش)
+    //    بازوی فروش‌های تیمی از قبل داخل پاسخِ getAll ادغام شده‌اند (isTeamEntry) و جزو catalogs هستند
     const teamMode = (currentCatalog as any)?.teamMode as string | undefined;
     const isTeamEntry = !!(currentCatalog as any)?.isTeamEntry;
 
-    // ✅ دادهٔ تیم کاتالوگ — برای بج قرمز جدا‌گانهٔ تب «تیم فروش» و «خریداران» (کش مشترک با خود تب‌ها)
+    // ✅ دادهٔ تیم بازوی فروش — برای بج قرمز جدا‌گانهٔ تب «تیم فروش» و «خریداران» (کش مشترک با خود تب‌ها)
     const { data: teamData } = useCatalogTeam(currentId);
     const teamPendingOther = ((teamData as any)?.pendingRequests ?? []).filter((r: any) => r.requestType !== 'buyer').length;
     const teamPendingBuyers = ((teamData as any)?.pendingRequests ?? []).filter((r: any) => r.requestType === 'buyer').length;
 
-    // ── نگه‌داری snapshot «کاتالوگ کارنت» همیشه تازه — برای مصرف در جای دیگر برنامه ──
+    // ── نگه‌داری snapshot «بازوی فروش کارنت» همیشه تازه — برای مصرف در جای دیگر برنامه ──
     useEffect(() => {
         if (!currentCatalog) return;
         const cc = currentCatalog as any;
@@ -271,7 +271,7 @@ export default function MyCatalogsContent() {
 
     const completion = useMemo(() => {
         const items = [
-            { key: 'name', label: 'نام کاتالوگ', ok: checklist.hasName, action: () => setCatalogEditOpen(true) },
+            { key: 'name', label: 'نام بازوی فروش', ok: checklist.hasName, action: () => setCatalogEditOpen(true) },
             { key: 'slug', label: 'آدرس اختصاصی', ok: checklist.hasSlug, action: () => setCatalogEditOpen(true) },
             { key: 'logo', label: 'لوگو', ok: checklist.hasLogo, action: () => setCatalogEditOpen(true) },
             { key: 'desc', label: 'معرفی کوتاه', ok: checklist.hasDescription, action: () => setCatalogEditOpen(true) },
@@ -302,7 +302,7 @@ export default function MyCatalogsContent() {
         dispatch(setCurrentInquiry(id));
         router.push(`/my-inquiries?catalog=${id}`);
     };
-    // 👁 مشاهدهٔ کاتالوگ عمومی — همان آدرسی که کیت اشتراک می‌سازد (app/[slug])
+    // 👁 مشاهدهٔ بازوی فروش عمومی — همان آدرسی که کیت اشتراک می‌سازد (app/[slug])
     const previewCatalog = () => {
         const slug = (currentCatalog as any)?.slug;
         if (slug) router.push(`/${slug}`);
@@ -331,7 +331,7 @@ export default function MyCatalogsContent() {
 
     // ─── گاردها ───
     if (!isLoading && allCatalogs.length === 0) {
-        // ✅ حتی بدون کاتالوگ، بازوهای خرید کاربر با دکمهٔ مدیریت همین‌جا دیده شوند
+        // ✅ حتی بدون بازوی فروش، بازوهای خرید کاربر با دکمهٔ مدیریت همین‌جا دیده شوند
         return <EmptyCatalogState hasTemporaryPassword={hasTemporaryPassword} user={user}
                                   inquiries={myInquiries} onOpenInquiry={selectInquiry} />;
     }
@@ -346,7 +346,7 @@ export default function MyCatalogsContent() {
     const userAvatar = user?.avatarFile?.thumbnailPath || user?.avatarUrl;
     const userHasName = !!user?.fullName?.trim();
 
-    // ─── تب‌های بخش‌های کاتالوگ (RTL: مشخصات در راست) — «اعضا» دو تب شد: تیم فروش + خریداران ───
+    // ─── تب‌های بخش‌های بازوی فروش (RTL: مشخصات در راست) — «اعضا» دو تب شد: تیم فروش + خریداران ───
     const tabItems = isTeamEntry
         ? teamMode === 'admin'
             ? [
@@ -375,7 +375,7 @@ export default function MyCatalogsContent() {
                 <TemporaryPasswordBanner phone={user?.phone} onClick={() => setPasswordOpen(true)} />
             )}
 
-            {/* 🎉 بنر جشن عضویت تازه — بالای تب‌ها؛ هدر و بدنهٔ کاتالوگ یکپارچه بمانند (درخواست کاربر) */}
+            {/* 🎉 بنر جشن عضویت تازه — بالای تب‌ها؛ هدر و بدنهٔ بازوی فروش یکپارچه بمانند (درخواست کاربر) */}
             {freshMembership && !celebrateDismissed && (
                 <CelebrationBanner
                     membership={freshMembership}
@@ -426,22 +426,22 @@ export default function MyCatalogsContent() {
                 </div>
             )}
 
-            {/* 🏪 نوارِ حالت اعضای کاتالوگ — عضوِ فروش/مدیر کاتالوگ دیگری (بازار پخش) */}
+            {/* 🏪 نوارِ حالت اعضای بازوی فروش — عضوِ فروش/مدیر بازوی فروش دیگری (بازار پخش) */}
             {isTeamEntry && (() => {
                 const cfg: Record<string, { title: string; desc: string; cls: string }> = {
                     seller: {
-                        title: 'عضوِ فروش این کاتالوگ',
-                        desc: 'این کاتالوگ مالِ مالک کاتالوگ است — شما عضوِ فروش آن هستید؛ مشتری‌های منطقهٔ خودتان را ثبت کنید تا تماسشان به شما برسد',
+                        title: 'عضوِ فروش این بازوی فروش',
+                        desc: 'این بازوی فروش مالِ مالک بازوی فروش است — شما عضوِ فروش آن هستید؛ مشتری‌های منطقهٔ خودتان را ثبت کنید تا تماسشان به شما برسد',
                         cls: 'border-sky-500/30 bg-sky-500/5 dark:bg-sky-500/10',
                     },
                     admin: {
-                        title: 'مدیر این کاتالوگ',
-                        desc: 'مالک کاتالوگ به شما دسترسی ویرایش داده — محصولات و قیمت‌ها را مدیریت کنید و در مدیریت اعضا کمک کنید',
+                        title: 'مدیر این بازوی فروش',
+                        desc: 'مالک بازوی فروش به شما دسترسی ویرایش داده — محصولات و قیمت‌ها را مدیریت کنید و در مدیریت اعضا کمک کنید',
                         cls: 'border-indigo-500/30 bg-indigo-500/5 dark:bg-indigo-500/10',
                     },
                     pending: {
                         title: 'درخواست فروشندگی در انتظار تایید',
-                        desc: 'تا تایید مالک کاتالوگ، امکان ثبت مشتری ندارید',
+                        desc: 'تا تایید مالک بازوی فروش، امکان ثبت مشتری ندارید',
                         cls: 'border-amber-500/30 bg-amber-500/5 dark:bg-amber-500/10',
                     },
                 };
@@ -568,7 +568,7 @@ export default function MyCatalogsContent() {
                                    onSaved={(tree: any[]) => { setLocalCatTree(tree); refreshAll(); }} />
             <ShareKitModal open={!!shareSlug} onClose={() => setShareSlug(null)} catalogName={shareName} slug={shareSlug ?? undefined}
                            logoUrl={(currentCatalog as any)?.logoFile?.path || currentCatalog?.logoUrl || undefined} />
-            {/* 🪪 استودیو کارت ویزیت — از تب انتشار باز می‌شود؛ با ذخیره، spec روی کاتالوگ می‌ماند */}
+            {/* 🪪 استودیو کارت ویزیت — از تب انتشار باز می‌شود؛ با ذخیره، spec روی بازوی فروش می‌ماند */}
             <VisitCardModal open={cardOpen} onClose={() => setCardOpen(false)} catalogName={currentCatalog.name}
                             slug={(currentCatalog as any)?.slug ?? undefined}
                             catalogId={currentCatalog.id}
@@ -604,7 +604,7 @@ export default function MyCatalogsContent() {
 
 // ════════════════════════════════════════════════════════════
 // ✅ ردیف «درخواست در انتظار تایید شما» — تایید/رد مستقیم از کنسول
-//    kind=customer (صاحب کسب‌وکارِ خریدار) | supplier | service (صاحب کاتالوگِ مقصد)
+//    kind=customer (صاحب کسب‌وکارِ خریدار) | supplier | service (صاحب بازوی فروشِ مقصد)
 // ════════════════════════════════════════════════════════════
 function PendingApprovalRow({ item }: { item: any }) {
     const queryClient = useQueryClient();

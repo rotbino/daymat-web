@@ -22,8 +22,8 @@ const fmt = (n: number | undefined) => n?.toLocaleString('fa-IR') ?? '۰';
 
 // ═══ ستون‌های جدول دسکتاپ ═══
 const COLUMNS = [
-    { key: 'name', label: 'نام کاتالوگ', sortable: true, minWidth: '180px' },
-    { key: 'owner', label: 'صاحب کاتالوگ', sortable: false, minWidth: '140px' },
+    { key: 'name', label: 'نام بازوی فروش', sortable: true, minWidth: '180px' },
+    { key: 'owner', label: 'صاحب بازوی فروش', sortable: false, minWidth: '140px' },
     { key: 'industry', label: 'صنف', sortable: false, minWidth: '120px' },
     { key: 'location', label: 'استان/شهر', sortable: false, minWidth: '120px' },
     { key: 'table', label: 'کالا', sortable: true, minWidth: '70px', align: 'center' as const },
@@ -97,7 +97,7 @@ function SellersContent({ slug, armName }: { slug: string; armName: string }) {
                     <input
                         value={searchInput}
                         onChange={(e) => setSearchInput(e.target.value)}
-                        placeholder="جستجوی نام کاتالوگ، صاحب، شماره…"
+                        placeholder="جستجوی نام بازوی فروش، صاحب، شماره…"
                         className="w-full h-10 pr-9 pl-8 rounded-xl bg-surface-container-lowest border border-outline-variant/40
                             dark:border-gray-700 text-sm outline-none focus:ring-2 focus:ring-primary/30 focus:border-primary transition-all"
                     />
@@ -142,7 +142,7 @@ function SellersContent({ slug, armName }: { slug: string; armName: string }) {
                     <p className="text-xs text-on-surface-variant mt-1.5 max-w-sm mx-auto leading-6">
                         {hasActiveFilters
                             ? 'فیلترها را عوض کن یا پاک کن'
-                            : 'کاتالوگ‌های قیمتنده را از دکمه «افزودن فروشنده» اضافه کن'}
+                            : 'بازوی فروش‌های قیمتنده را از دکمه «افزودن فروشنده» اضافه کن'}
                     </p>
                 </div>
             ) : (
@@ -192,7 +192,7 @@ function SellersContent({ slug, armName }: { slug: string; armName: string }) {
                                                 isPaused && 'opacity-50 bg-surface-container-low/20',
                                             )}
                                         >
-                                            {/* نام کاتالوگ */}
+                                            {/* نام بازوی فروش */}
                                             <td className="px-3 py-2.5">
                                                 <div className="flex items-center gap-2">
                                                     <div className="w-8 h-8 rounded-lg bg-surface-container-high flex items-center justify-center overflow-hidden flex-shrink-0">
@@ -216,7 +216,7 @@ function SellersContent({ slug, armName }: { slug: string; armName: string }) {
                                                     </div>
                                                 </div>
                                             </td>
-                                            {/* صاحب کاتالوگ */}
+                                            {/* صاحب بازوی فروش */}
                                             <td className="px-3 py-2.5">
                                                 <div className="text-[11px] text-on-surface truncate">
                                                     {s.catalog.owner?.fullName || '—'}
@@ -498,7 +498,7 @@ function AddSellerModal({ slug, onClose }: { slug: string; onClose: () => void }
                         <input
                             value={qInput}
                             onChange={(e) => setQInput(e.target.value)}
-                            placeholder="جستجوی نام، شماره، صاحب کاتالوگ…"
+                            placeholder="جستجوی نام، شماره، صاحب بازوی فروش…"
                             className="w-full h-10 pr-9 pl-8 rounded-xl bg-surface-container-lowest border border-outline-variant/40
                                 dark:border-gray-700 text-sm outline-none focus:ring-2 focus:ring-primary/30 focus:border-primary transition-all"
                         />
@@ -521,7 +521,7 @@ function AddSellerModal({ slug, onClose }: { slug: string; onClose: () => void }
                         <div className="text-center py-12">
                             <Search className="w-10 h-10 text-on-surface-variant/20 mx-auto mb-2" />
                             <p className="text-xs text-on-surface-variant">
-                                {hasActiveFilters ? 'کاتالوگی با این فیلترها پیدا نشد' : 'برای جستجو تایپ کنید'}
+                                {hasActiveFilters ? 'بازوی فروشی با این فیلترها پیدا نشد' : 'برای جستجو تایپ کنید'}
                             </p>
                         </div>
                     ) : (
@@ -530,7 +530,7 @@ function AddSellerModal({ slug, onClose }: { slug: string; onClose: () => void }
                             <table className="hidden md:table w-full text-sm">
                                 <thead className="sticky top-0 bg-surface z-10">
                                     <tr className="border-b border-outline-variant/30 bg-surface-container-low/40">
-                                        <th className="px-3 py-2 text-right text-[10px] font-bold text-on-surface-variant uppercase">کاتالوگ</th>
+                                        <th className="px-3 py-2 text-right text-[10px] font-bold text-on-surface-variant uppercase">بازوی فروش</th>
                                         <th className="px-3 py-2 text-right text-[10px] font-bold text-on-surface-variant uppercase">صاحب</th>
                                         <th className="px-3 py-2 text-right text-[10px] font-bold text-on-surface-variant uppercase">صنف</th>
                                         <th className="px-3 py-2 text-right text-[10px] font-bold text-on-surface-variant uppercase">استان/شهر</th>
@@ -555,7 +555,7 @@ function AddSellerModal({ slug, onClose }: { slug: string; onClose: () => void }
                                                             <p className="text-xs font-bold text-on-surface truncate">{c.name}</p>
                                                             {c.slug && (
                                                                 <Link href={`/${c.slug}`} target="_blank" className="text-[9px] text-primary flex items-center gap-0.5 hover:underline">
-                                                                    مشاهده کاتالوگ <ExternalLink className="w-2.5 h-2.5" />
+                                                                    مشاهده بازوی فروش <ExternalLink className="w-2.5 h-2.5" />
                                                                 </Link>
                                                             )}
                                                         </div>

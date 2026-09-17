@@ -1,5 +1,5 @@
 // app/my-catalogs/components/StatsTab.tsx
-// تب آمار کاتالوگ — فقط آمارِ خود کاتالوگ (کیف اعتبار حساب کاربری از اینجا حذف شد — جای آن پروفایل است)
+// تب آمار بازوی فروش — فقط آمارِ خود بازوی فروش (کیف اعتبار حساب کاربری از اینجا حذف شد — جای آن پروفایل است)
 'use client';
 
 import React from 'react';
@@ -38,7 +38,7 @@ export default function StatsTab({ currentCatalog, stats, productsCount }: {
 
             <div className="bg-white dark:bg-gray-900 rounded-xl border border-outline-variant/40 dark:border-gray-700 p-4">
                 <h3 className="text-xs font-extrabold text-on-surface flex items-center gap-1.5 mb-3">
-                    <Bookmark className="w-3.5 h-3.5 text-amber-500" /> چه کسانی کاتالوگت را ذخیره کرده‌اند
+                    <Bookmark className="w-3.5 h-3.5 text-amber-500" /> چه کسانی بازوی فروشت را ذخیره کرده‌اند
                     <span className="text-on-surface-variant/60">({fmt(stats?.savedBy?.length)})</span>
                 </h3>
                 {!stats?.savedBy?.length ? (

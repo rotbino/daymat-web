@@ -38,8 +38,8 @@ function AdFormShell() {
             <div className="min-h-screen grid place-items-center bg-surface dark:bg-gray-950 text-center px-4">
                 <div>
                     <Package className="w-12 h-12 text-on-surface-variant/20 mx-auto mb-4" />
-                    <p className="text-sm font-bold text-on-surface">کاتالوگ مقصد مشخص نیست</p>
-                    <p className="text-xs text-on-surface-variant mt-2">از کاتالوگ موردنظرت دکمهٔ «افزودن محصول» را بزن.</p>
+                    <p className="text-sm font-bold text-on-surface">بازوی فروش مقصد مشخص نیست</p>
+                    <p className="text-xs text-on-surface-variant mt-2">از بازوی فروش موردنظرت دکمهٔ «افزودن محصول» را بزن.</p>
                     <button onClick={() => router.push('/my-catalogs')}
                             className="mt-4 text-primary text-sm font-bold">رفتن به بازوهای من</button>
                 </div>
@@ -58,7 +58,7 @@ function AdFormShell() {
             <div className="min-h-screen grid place-items-center bg-surface dark:bg-gray-950 text-center px-4">
                 <div>
                     <Package className="w-12 h-12 text-on-surface-variant/20 mx-auto mb-4" />
-                    <p className="text-sm font-bold text-on-surface">کاتالوگ یافت نشد</p>
+                    <p className="text-sm font-bold text-on-surface">بازوی فروش یافت نشد</p>
                     <button onClick={() => router.push('/my-catalogs')}
                             className="mt-4 text-primary text-sm font-bold">رفتن به بازوهای من</button>
                 </div>
@@ -91,7 +91,7 @@ function AdFormShell() {
     );
 }
 
-// ═══ مودال‌های تنظیمات کاتالوگ ═══
+// ═══ مودال‌های تنظیمات بازوی فروش ═══
 function Modals() {
     const {
         catalogId, unitModalOpen, setUnitModalOpen, catModalOpen, setCatModalOpen,

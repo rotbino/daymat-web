@@ -1,5 +1,5 @@
 // components/profile/components/ShareKitModal.tsx
-// کیت اشتراک‌گذاری کاتالوگ — لینک + پیام آماده + دو خروجی تصویری:
+// کیت اشتراک‌گذاری بازوی فروش — لینک + پیام آماده + دو خروجی تصویری:
 //   ۱) «دانلود برای چاپ» — پوستر ویترین: متن راهنما + QR بزرگ + لوگو و نام کسب‌وکار
 //   ۲) «فقط تصویر QR» — خود QR با حاشیهٔ ساکت
 // 🪪 کارت ویزیت به استودیوی مستقل VisitCardModal منتقل شد (دکمهٔ «کارت ویزیت» در هدر کنسول)
@@ -24,19 +24,19 @@ interface Props {
     onClose: () => void;
     catalogName: string;
     slug?: string;
-    /** لوگوی کاتالوگ برای پوستر — اختیاری؛ نبودش حرف اول نام می‌نشیند */
+    /** لوگوی بازوی فروش برای پوستر — اختیاری؛ نبودش حرف اول نام می‌نشیند */
     logoUrl?: string;
-    /** مسیر پایهٔ صفحهٔ عمومی — پیش‌فرض ریشهٔ سایت (کاتالوگ قیمت)؛ بازوی خرید: /inquiries */
+    /** مسیر پایهٔ صفحهٔ عمومی — پیش‌فرض ریشهٔ سایت (بازوی فروش قیمت)؛ بازوی خرید: /inquiries */
     basePath?: string;
-    /** نوع محصول — متن‌ها بر همین اساس تنظیم می‌شود (مخاطب کاتالوگ = مشتری؛ مخاطب بازوی خرید = تامین‌کننده) */
+    /** نوع محصول — متن‌ها بر همین اساس تنظیم می‌شود (مخاطب بازوی فروش = مشتری؛ مخاطب بازوی خرید = تامین‌کننده) */
     kind?: 'catalog' | 'inquiry';
 }
 
 const COPY_BY_KIND = {
     catalog: {
-        title: 'کیت اشتراک‌گذاری کاتالوگ',
-        intro: 'کاتالوگ وقتی مشتری می‌آورد که دیده شود. لینک را در بیو اینستاگرام بگذار، برای مشتری‌های واتساپی‌ات بفرست یا در گروههای تلگرامی به اشتراک بگذار. QR چاپی برای ویترین هم اینجاست.',
-        shareText: (name: string) => `کاتالوگ ${name} رو ببین:`,
+        title: 'کیت اشتراک‌گذاری بازوی فروش',
+        intro: 'بازوی فروش وقتی مشتری می‌آورد که دیده شود. لینک را در بیو اینستاگرام بگذار، برای مشتری‌های واتساپی‌ات بفرست یا در گروههای تلگرامی به اشتراک بگذار. QR چاپی برای ویترین هم اینجاست.',
+        shareText: (name: string) => `بازوی فروش ${name} رو ببین:`,
         posterLine1: 'برای دیدن قیمت محصولات ما',
         filePrefix: 'catalog-print',
     },
@@ -61,7 +61,7 @@ export default function ShareKitModal({ open, onClose, catalogName, slug, logoUr
     }, []);
 
     const url = mounted && slug && typeof window !== 'undefined'
-        ? `${window.location.origin}${basePath}/${slug}`   // ⚠️ اگر کاتالوگ هنوز در /c/ است: `/c/${slug}`
+        ? `${window.location.origin}${basePath}/${slug}`   // ⚠️ اگر بازوی فروش هنوز در /c/ است: `/c/${slug}`
         : '';
 
     if (!mounted) return null;
@@ -190,7 +190,7 @@ export default function ShareKitModal({ open, onClose, catalogName, slug, logoUr
             ctx.font = `bold 42px ${CANVAS_FONT}`;
             ctx.fillText(catalogName || '', logoCx - logoR - gap, rowY + 15);
 
-            // آدرس کاتالوگ — کوچک و خوانا پایین
+            // آدرس بازوی فروش — کوچک و خوانا پایین
             ctx.textAlign = 'center';
             ctx.direction = 'ltr';
             ctx.fillStyle = '#6b7280';
@@ -272,14 +272,14 @@ export default function ShareKitModal({ open, onClose, catalogName, slug, logoUr
                             <div className="flex items-center gap-3">
                                 <img
                                     src={`https://api.qrserver.com/v1/create-qr-code/?size=160x160&data=${encodeURIComponent(url)}`}
-                                    alt="QR کاتالوگ"
+                                    alt="QR بازوی فروش"
                                     className="w-20 h-20 rounded-lg bg-white p-1 border border-outline-variant/30 dark:border-gray-700"
                                     loading="lazy"
                                 />
                                 <div className="flex-1 min-w-0">
-                                    <p className="text-xs font-bold flex items-center gap-1.5"><QrCode className="w-3.5 h-3.5 text-primary" /> QR کاتالوگ</p>
+                                    <p className="text-xs font-bold flex items-center gap-1.5"><QrCode className="w-3.5 h-3.5 text-primary" /> QR بازوی فروش</p>
                                     <p className="text-[10px] text-on-surface-variant/70 leading-5 mt-1">
-                                        برای ویترین مغازه یا کارت ویزیت — دانلود کن، چاپ کن؛ مشتری با اسکن مستقیم به کاتالوگت می‌رسد.
+                                        برای ویترین مغازه یا کارت ویزیت — دانلود کن، چاپ کن؛ مشتری با اسکن مستقیم به بازوی فروشت می‌رسد.
                                     </p>
                                 </div>
                             </div>

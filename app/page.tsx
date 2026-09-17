@@ -13,8 +13,8 @@ import { apiService } from '@/lib/api/apiService';
  * روت سایت — نقطهٔ ورود و تعیین هویت (بدون «هوم»: هوم همان صفحهٔ فروشندگان است):
  *   ۱) مهمان → لندینگ
  *   ۲) عضو فعالِ یک بازار → صفحهٔ فروشندگانِ همان بازار (تابلوی قیمت: ‎/{slug})
- *   ۳) کاتالوگ‌دار بدون عضویت → /my-catalogs
- *   ۴) لاگینِ بی‌کاتالوگ → لندینگ (CTA ساخت)
+ *   ۳) بازوی فروش‌دار بدون عضویت → /my-catalogs
+ *   ۴) لاگینِ بی‌بازوی فروش → لندینگ (CTA ساخت)
  */
 export default function HomePage() {
     const router = useRouter();
@@ -24,7 +24,7 @@ export default function HomePage() {
     const { data: cataloges, isLoading: bizLoading } = useCataloges();
     const hasCatalog = (cataloges ?? []).length > 0;
 
-    // عضویت‌ها — هم‌زمان با کاتالوگ‌ها لود می‌شود تا تصمیم تک‌مرحله‌ای باشد
+    // عضویت‌ها — هم‌زمان با بازوی فروش‌ها لود می‌شود تا تصمیم تک‌مرحله‌ای باشد
     const { data: userArms, isLoading: armsLoading } = useArms();
     const loading = bizLoading || armsLoading;
 
@@ -41,13 +41,13 @@ export default function HomePage() {
             return;
         }
 
-        // ✅ اولویت ۲: کاتالوگ
+        // ✅ اولویت ۲: بازوی فروش
         if (hasCatalog) {
             router.replace('/my-catalogs');
             return;
         }
 
-        // لاگینِ بی‌کاتالوگ و بی‌بازار → لندینگ
+        // لاگینِ بی‌بازوی فروش و بی‌بازار → لندینگ
         setResolving(false);
     }, [hydrated, loading, isAuthenticated, userArms, hasCatalog, router]);
 
@@ -60,6 +60,6 @@ export default function HomePage() {
         );
     }
 
-    // مهمان و لاگینِ بی‌کاتالوگ → لندینگ
+    // مهمان و لاگینِ بی‌بازوی فروش → لندینگ
     return <Landing />;
 }

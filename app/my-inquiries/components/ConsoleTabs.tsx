@@ -1,5 +1,5 @@
 // app/my-inquiries/components/ConsoleTabs.tsx
-// نوار تب‌های پنل بازوی خرید — قرینهٔ کنسول کاتالوگ قیمت (Stripe/اینستاگرام استایل)
+// نوار تب‌های پنل بازوی خرید — قرینهٔ کنسول بازوی فروش قیمت (Stripe/اینستاگرام استایل)
 'use client';
 
 import React from 'react';

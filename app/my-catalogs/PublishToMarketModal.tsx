@@ -70,7 +70,7 @@ export default function PublishToMarketModal({ isOpen, onClose, ad, catalogSales
     // رو به‌عنوان «بازارهای فعلی» نشون بده
     const memberArms = userArms.filter((arm: any) =>
         arm.status === 'active' &&
-        arm.catalogId &&  // ← این یعنی کاربر با این کاتالوگش در این بازار seller هست
+        arm.catalogId &&  // ← این یعنی کاربر با این بازوی فروشش در این بازار seller هست
         arm.publishState === 'published' &&  // ← و منتشر شده
         !publishedArmIds.has(arm.id)  // ← ولی این آگهی هنوز در این بازار منتشر نشده
     );
@@ -101,13 +101,13 @@ export default function PublishToMarketModal({ isOpen, onClose, ad, catalogSales
         } catch (err: any) {
             const code = err?.data?.errorCode;
             if (code === 'NOT_MEMBER') {
-                toast.error('کاتالوگ شما در این بازار منتشر نیست — اول عضو بازار شوید');
+                toast.error('بازوی فروش شما در این بازار منتشر نیست — اول عضو بازار شوید');
             } else if (code === 'AD_NOT_ACTIVE') {
                 toast.error('آگهی فعال نیست');
             } else if (code === 'ARM_NOT_ACTIVE') {
                 toast.error('بازار فعال نیست');
             } else if (code === 'MARKET_TYPE_MISMATCH') {
-                toast.error(err?.data?.message || 'نوع کاتالوگ شما با نوع این بازار هم‌خوان نیست');
+                toast.error(err?.data?.message || 'نوع بازوی فروش شما با نوع این بازار هم‌خوان نیست');
             } else {
                 toast.error(err?.data?.message || err?.message || 'خطا در انتشار');
             }
@@ -117,7 +117,7 @@ export default function PublishToMarketModal({ isOpen, onClose, ad, catalogSales
     };
 
     const handleUnpublish = async (armSlug: string, armName: string) => {
-        if (!confirm(`آگهی از بازار «${armName}» حذف شود؟ (آگهی از کاتالوگ شما حذف نمی‌شود)`)) return;
+        if (!confirm(`آگهی از بازار «${armName}» حذف شود؟ (آگهی از بازوی فروش شما حذف نمی‌شود)`)) return;
         setUnpublishing(armSlug);
         try {
             await apiService.ad.unpublishFromMarket(ad.id, armSlug);
@@ -255,7 +255,7 @@ export default function PublishToMarketModal({ isOpen, onClose, ad, catalogSales
                             <div className="rounded-xl border border-dashed border-outline-variant/40 p-4 text-center">
                                 <AlertTriangle className="w-5 h-5 text-amber-500 mx-auto mb-2" />
                                 <p className="text-xs text-on-surface-variant leading-5">
-                                    کاتالوگ شما در بازارهای دیگری عضو نیست یا در همه بازارهای موجود این آگهی منتشر شده.
+                                    بازوی فروش شما در بازارهای دیگری عضو نیست یا در همه بازارهای موجود این آگهی منتشر شده.
                                 </p>
                                 <p className="text-[10px] text-on-surface-variant/60 mt-1.5">
                                     برای انتشار در بازار جدید، اول باید به آن بازار بپیوندید.
@@ -306,7 +306,7 @@ export default function PublishToMarketModal({ isOpen, onClose, ad, catalogSales
                                             key={arm.id}
                                             className="w-full flex items-center gap-3 p-3 rounded-xl border border-outline-variant/30
                                                 bg-surface-container-low/40 opacity-70 text-right cursor-not-allowed"
-                                            title="نوع این بازار با نوع کاتالوگ شما هم‌خوان نیست"
+                                            title="نوع این بازار با نوع بازوی فروش شما هم‌خوان نیست"
                                         >
                                             <span
                                                 className="w-9 h-9 rounded-lg flex items-center justify-center flex-shrink-0"
@@ -321,7 +321,7 @@ export default function PublishToMarketModal({ isOpen, onClose, ad, catalogSales
                                                 <p className="text-xs font-bold text-on-surface-variant truncate">{arm.name}</p>
                                                 <p className="text-[10px] text-amber-600 dark:text-amber-400 mt-0.5 flex items-center gap-1">
                                                     <AlertTriangle className="w-3 h-3" />
-                                                    این بازار فقط {acceptedListLabel(accepted)} می‌پذیرد — کاتالوگ {catalogLabel} شما نمی‌تواند اینجا منتشر شود
+                                                    این بازار فقط {acceptedListLabel(accepted)} می‌پذیرد — بازوی فروش {catalogLabel} شما نمی‌تواند اینجا منتشر شود
                                                 </p>
                                             </div>
                                             <X className="w-4 h-4 text-on-surface-variant/40 flex-shrink-0" />

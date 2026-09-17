@@ -5,9 +5,9 @@ import type { MetadataRoute } from "next";
 export default function manifest(): MetadataRoute.Manifest {
     return {
         id: "/",
-        name: "دیمت | کاتالوگ روزانه قیمت",
+        name: "دیمت | بازوی فروش روزانه قیمت",
         short_name: "دیمت",
-        description: "کاتالوگ شخصی قیمت و نمایش قیمت در بازارهای تخصصی",
+        description: "بازوی فروش شخصی قیمت و نمایش قیمت در بازارهای تخصصی",
         dir: "rtl",
         lang: "fa-IR",
         display: "standalone",

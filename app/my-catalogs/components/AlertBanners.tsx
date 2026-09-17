@@ -50,7 +50,7 @@ export function ProfileBanner({ avatarUrl, hasName, onClick }: {
                     {hasName ? 'عکس پروفایلت را بگذار' : 'نام و عکس پروفایلت را تکمیل کن'}
                 </span>
                 <span className="block text-[10px] text-on-surface-variant/70 mt-0.5">
-                    مشتری‌ها در کاتالوگت به اسم و چهره اعتماد بیشتری می‌کنند
+                    مشتری‌ها در بازوی فروشت به اسم و چهره اعتماد بیشتری می‌کنند
                 </span>
             </span>
             <span className="text-[10px] font-bold text-primary flex-shrink-0">تکمیل ←</span>
@@ -81,7 +81,7 @@ export function CelebrationBanner({ membership, uncatCount, onDismiss, onSetCate
                     <span className="text-[10px] font-extrabold tracking-wider text-primary/80 uppercase">تبریک</span>
                 </div>
                 <h3 className="text-base font-black text-on-surface">
-                    محصولات کاتالوگ شما در بازار {armName} قرار گرفت! 🎉
+                    محصولات بازوی فروش شما در بازار {armName} قرار گرفت! 🎉
                 </h3>
                 <p className="text-xs text-on-surface-variant leading-6 mt-1.5 max-w-md">
                     حالا محصولات شما در کنار محصولات سایر فروشندگان در معرض دید هزاران خریدار قرار دارد و در صورت رعایت

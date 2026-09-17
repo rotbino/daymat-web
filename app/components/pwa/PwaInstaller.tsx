@@ -239,7 +239,7 @@ export function PwaInstaller() {
                     />
                     <div>
                         <div className="text-[17px] font-black text-slate-900 leading-6">دیمت</div>
-                        <div className="text-xs text-slate-400 mt-0.5">کاتالوگ روزانه قیمت</div>
+                        <div className="text-xs text-slate-400 mt-0.5">بازوی فروش روزانه قیمت</div>
                     </div>
                 </div>
 

@@ -1,5 +1,5 @@
 // app/business/manage/components/BusinessVerificationModal.tsx
-// 🛡️ درخواست تیک اعتماد کسب‌وکار — ارسال مدارک به ادمین (سطح کسب‌وکار، نه کاتالوگ)
+// 🛡️ درخواست تیک اعتماد کسب‌وکار — ارسال مدارک به ادمین (سطح کسب‌وکار، نه بازوی فروش)
 'use client';
 
 import React, { useState, useMemo, useEffect } from 'react';

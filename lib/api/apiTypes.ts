@@ -113,7 +113,7 @@ export interface Catalog {
 }
 
 // ==================== Credit ====================
-// ✅ هماهنگ با بک‌اند (credit) — اعتبار کاتالوگ/کاربر
+// ✅ هماهنگ با بک‌اند (credit) — اعتبار بازوی فروش/کاربر
 export interface Credit {
     id: string;
     catalogId?: string;
@@ -317,7 +317,7 @@ export interface AdCustomFields {
 
 export interface CreateAdDto {
     armSlug?: string;
-    // ✅ هماهنگ با بک‌اند — کاتالوگ مالک آگهی (الزامی در جریان جدید)
+    // ✅ هماهنگ با بک‌اند — بازوی فروش مالک آگهی (الزامی در جریان جدید)
     catalogId: string;
     categoryId?: string;
     customCategoryId?: string;
@@ -614,7 +614,7 @@ export interface Brand {
 }
 
 // ==================== ProductReference (کالای مرجع) ====================
-// ✅ هماهنگ با مدل ProductReference بک‌اند — کاتالوگ مرکزی کالاها
+// ✅ هماهنگ با مدل ProductReference بک‌اند — بازوی فروش مرکزی کالاها
 export interface ProductReference {
     id: string;
     title: string;
@@ -793,7 +793,7 @@ export interface InquiryItem {
     referenceUrl?: string | null;
     note?: string | null;
     order: number;
-    /** ✅ بازوی خرید فعال — بالای کاتالوگ عمومی در «درخواست‌های خرید جاری» */
+    /** ✅ بازوی خرید فعال — بالای بازوی فروش عمومی در «درخواست‌های خرید جاری» */
     urgent?: boolean | null;
     urgentAt?: string | null;
     createdAt: string;
@@ -938,7 +938,7 @@ export interface CreateInquiryPayload {
     paymentTerms?: string;
     tags?: string[];
     businessId?: string;
-    units?: InquiryUnitPayload[];      // ✅ واحدهای اختصاصی بازوی خرید (مثل کاتالوگ قیمت)
+    units?: InquiryUnitPayload[];      // ✅ واحدهای اختصاصی بازوی خرید (مثل بازوی فروش قیمت)
     allowNonUrgentOffers?: boolean;    // ✅ امکان ارسال قیمت برای خریدهای غیر فوری
 }
 

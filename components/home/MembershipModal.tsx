@@ -20,7 +20,7 @@ interface Props {
     slug: string;
     /** بازار فعلی — برای نام و شرایط عضویت (از redux یا getDetail) */
     arm?: any;
-    /** ✅ نقشِ اولیه — برای «فرصت فروشندگی»ِ بازای عمومی؛ مودال مستقیم روی انتخاب کاتالوگ باز می‌شود */
+    /** ✅ نقشِ اولیه — برای «فرصت فروشندگی»ِ بازای عمومی؛ مودال مستقیم روی انتخاب بازوی فروش باز می‌شود */
     initialRole?: 'buyer' | 'seller';
 }
 
@@ -31,10 +31,10 @@ const fmtDate = (v?: string | null) =>
 
 /**
  * مدال عضویت بازار — مدل سه‌لِینی:
- *   بازار خصوصی: ویزارد شرایط → نقش → کسب‌وکار/کاتالوگ → درخواست pending → تایید مدیر
+ *   بازار خصوصی: ویزارد شرایط → نقش → کسب‌وکار/بازوی فروش → درخواست pending → تایید مدیر
  *   بازار عمومی: فقط «فرصت فروشندگی» (خریدار نیازی به عضویت ندارد — قیمت‌ها آزاد است)
- *   عضو: تاریخ عضویت + خروج (خریدار از همین‌جا؛ فروشنده از پنل کاتالوگ با تایید دومرحله‌ای)
- *   فروشنده شدن همیشه نیاز به تایید و افزودن کاتالوگ توسط مدیر دارد (عمومی و خصوصی)
+ *   عضو: تاریخ عضویت + خروج (خریدار از همین‌جا؛ فروشنده از پنل بازوی فروش با تایید دومرحله‌ای)
+ *   فروشنده شدن همیشه نیاز به تایید و افزودن بازوی فروش توسط مدیر دارد (عمومی و خصوصی)
  */
 export default function MembershipModal({ open, onClose, slug, arm, initialRole }: Props) {
     const { isAuthenticated } = useSelector((s: RootState) => s.auth);
@@ -58,7 +58,7 @@ export default function MembershipModal({ open, onClose, slug, arm, initialRole 
     const [pendingLeave, setPendingLeave] = useState<any>(null);
     const [pendingSince, setPendingSince] = useState<string | null>(null);
 
-    // کسب‌وکارها و کاتالوگ‌های کاربر — فقط وقتی مودال باز است
+    // کسب‌وکارها و بازوی فروش‌های کاربر — فقط وقتی مودال باز است
     const { data: bizData, isLoading: bizLoading } = useMyBusinesses(open && isAuthenticated);
     const { data: catalogsRaw, isLoading: catLoading } = useQuery({
         queryKey: ['my-catalogs-for-membership'],
@@ -198,7 +198,7 @@ export default function MembershipModal({ open, onClose, slug, arm, initialRole 
                         <div className="min-w-0">
                             <h3 className="font-extrabold text-[15px] text-on-surface truncate">عضویت در {armName}</h3>
                             <p className="text-[10px] text-on-surface-variant">
-                                {marketPrivate ? 'بازار خصوصی — عضویت با تایید مدیر' : 'فرصت فروشندگی — افزودن کاتالوگ با تایید مدیر'}
+                                {marketPrivate ? 'بازار خصوصی — عضویت با تایید مدیر' : 'فرصت فروشندگی — افزودن بازوی فروش با تایید مدیر'}
                             </p>
                         </div>
                     </div>
@@ -248,7 +248,7 @@ export default function MembershipModal({ open, onClose, slug, arm, initialRole 
                                 </div>
                             )}
 
-                            {/* ✅ لغو عضویت — خریدار از همین‌جا درخواست می‌دهد؛ فروشنده از پنل کاتالوگ.
+                            {/* ✅ لغو عضویت — خریدار از همین‌جا درخواست می‌دهد؛ فروشنده از پنل بازوی فروش.
                                 خروج فقط با تایید مالک بازار انجام می‌شود (تاریخ و عاملِ لغو ثبت می‌شود) */}
                             {memberInfo?.catalogId ? (
                                 <div className="mt-4 mx-2 flex items-start gap-2 p-3 rounded-xl bg-surface-container-low
@@ -256,7 +256,7 @@ export default function MembershipModal({ open, onClose, slug, arm, initialRole 
                                     <Info className="w-4 h-4 text-on-surface-variant/70 mt-0.5 flex-shrink-0" />
                                     <p className="text-[11px] text-on-surface-variant leading-5">
                                         فروشندهٔ این بازار هستی؛ برای لغو عضویت، از بخش «انتشار در بازارها» در{' '}
-                                        <Link href="/my-catalogs" className="font-bold text-primary hover:underline">پنل کاتالوگ</Link>{' '}
+                                        <Link href="/my-catalogs" className="font-bold text-primary hover:underline">پنل بازوی فروش</Link>{' '}
                                         درخواست بده — لغو با تایید مالک بازار انجام می‌شود.
                                     </p>
                                 </div>
@@ -378,8 +378,8 @@ export default function MembershipModal({ open, onClose, slug, arm, initialRole 
                                     <span className="min-w-0">
                                         <span className="block text-[13px] font-bold text-on-surface">فروشنده‌ام</span>
                                         <span className="block text-[11px] text-on-surface-variant leading-5 mt-0.5">
-                                            قیمت‌های کاتالوگم روی تابلوی این بازار منتشر می‌شود
-                                            — با تایید و افزودنِ کاتالوگ توسط مدیر بازار
+                                            قیمت‌های بازوی فروشم روی تابلوی این بازار منتشر می‌شود
+                                            — با تایید و افزودنِ بازوی فروش توسط مدیر بازار
                                         </span>
                                     </span>
                                 </button>
@@ -445,18 +445,18 @@ export default function MembershipModal({ open, onClose, slug, arm, initialRole 
                         </>
                     ) : step === 'seller' ? (
                         <>
-                            <p className="text-xs font-bold text-on-surface mb-2">قیمت‌های کدام کاتالوگ را وارد بازار می‌کنید؟</p>
+                            <p className="text-xs font-bold text-on-surface mb-2">قیمت‌های کدام بازوی فروش را وارد بازار می‌کنید؟</p>
                             {catLoading ? (
                                 <div className="py-10 flex justify-center"><Loader2 className="w-6 h-6 animate-spin text-primary" /></div>
                             ) : catalogs.length === 0 ? (
                                 <div className="text-center py-6 mb-2">
                                     <Store className="w-10 h-10 text-on-surface-variant/40 mx-auto mb-3" />
                                     <p className="text-[12.5px] text-on-surface leading-6 mb-4">
-                                        هنوز کاتالوگی نداری — برای فروشندگی در این بازار، اول کاتالوگت را بساز.
+                                        هنوز بازوی فروشی نداری — برای فروشندگی در این بازار، اول بازوی فروشت را بساز.
                                     </p>
                                     <Link href="/business/register?intent=catalog"
                                           className="inline-flex items-center gap-1.5 h-10 px-5 rounded-xl bg-primary text-on-primary text-[13px] font-bold">
-                                        <Store className="w-4 h-4" /> ساخت کاتالوگ
+                                        <Store className="w-4 h-4" /> ساخت بازوی فروش
                                     </Link>
                                 </div>
                             ) : (
@@ -515,7 +515,7 @@ export default function MembershipModal({ open, onClose, slug, arm, initialRole 
                         <p className="text-[10.5px] text-on-surface-variant leading-5">
                             {marketPrivate
                                 ? 'عضویت در بازار خصوصی رایگان است؛ فقط باید شرایط را داشته باشی و مدیر تایید کند.'
-                                : 'فروشنده شدن نیاز به تایید مدیر دارد؛ کاتالوگت توسط مدیر به بازار افزوده می‌شود.'}
+                                : 'فروشنده شدن نیاز به تایید مدیر دارد؛ بازوی فروشت توسط مدیر به بازار افزوده می‌شود.'}
                         </p>
                     </div>
                 )}

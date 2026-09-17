@@ -250,7 +250,7 @@ export default function MarketContent({ search: searchProp }: { search?: string 
                 }
             }
             const contactInfo = await apiService.ad.getContact(adId);
-            // ✅ مسیریابی تیم کاتالوگ: شمارهٔ مسئولِ فروشِ منتسبِ مشتری، اولویت دارد
+            // ✅ مسیریابی تیم بازوی فروش: شمارهٔ مسئولِ فروشِ منتسبِ مشتری، اولویت دارد
             const phoneToUse = contactInfo.seller?.phone || contactInfo.ownerPhone || contactInfo.phone;
             if (!phoneToUse) { toast.error('شماره تماس برای این آگهی ثبت نشده است.'); return; }
             if (window.innerWidth < 768) window.location.href = `tel:${phoneToUse}`;
@@ -398,7 +398,7 @@ export default function MarketContent({ search: searchProp }: { search?: string 
                                 <div className="flex-1 min-w-[200px]">
                                     <p className="text-[13px] font-extrabold text-emerald-900 dark:text-emerald-200">فرصت فروشندگی در این بازار</p>
                                     <p className="text-[11px] text-emerald-800/80 dark:text-emerald-300/80 leading-5">
-                                        کاتالوگت را عرضه کن — پس از تایید مدیر، کاتالوگت به بازار افزوده و روی تابلو منتشر می‌شود.
+                                        بازوی فروشت را عرضه کن — پس از تایید مدیر، بازوی فروشت به بازار افزوده و روی تابلو منتشر می‌شود.
                                     </p>
                                 </div>
                                 <button type="button" onClick={openSellerMembership}

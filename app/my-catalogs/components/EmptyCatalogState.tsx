@@ -10,14 +10,14 @@ import { BookOpen, Key, ClipboardList, ExternalLink, Settings2 } from 'lucide-re
 import { ChangePasswordModal } from '@/components/register/ChangePasswordModal';
 
 /**
- * گارد «هنوز کاتالوگ نداری» — با هشدار رمز موقت و CTA ساخت کاتالوگ
- * ✅ فیکس: کاربری که فقط بازوی خرید دارد (کاتالوگ ندارد) دیگر دست‌خالی نمی‌ماند —
+ * گارد «هنوز بازوی فروش نداری» — با هشدار رمز موقت و CTA ساخت بازوی فروش
+ * ✅ فیکس: کاربری که فقط بازوی خرید دارد (بازوی فروش ندارد) دیگر دست‌خالی نمی‌ماند —
  *    بازوهایش همین‌جا با دکمهٔ «مدیریت» لیست می‌شوند (پرش به کنسول بازوی خرید)
  */
 export default function EmptyCatalogState({ hasTemporaryPassword, user, inquiries = [], onOpenInquiry }: {
     hasTemporaryPassword: boolean;
     user: any;
-    /** بازوهای خرید من — محصول دوم دیمت، حتی بدون کاتالوگ قابل مدیریت است */
+    /** بازوهای خرید من — محصول دوم دیمت، حتی بدون بازوی فروش قابل مدیریت است */
     inquiries?: any[];
     /** پرش به کنسول مدیریت بازوی خرید (/my-inquiries?catalog=…) */
     onOpenInquiry?: (id: string) => void;
@@ -36,7 +36,7 @@ export default function EmptyCatalogState({ hasTemporaryPassword, user, inquirie
         <div className="space-y-3">
             <div className="flex items-center justify-between mb-2.5">
                 <h1 className="text-lg font-black text-on-surface flex items-center gap-1.5">
-                    <BookOpen className="w-4.5 h-4.5 text-primary" /> کاتالوگ‌ها و بازوهای من
+                    <BookOpen className="w-4.5 h-4.5 text-primary" /> بازوی فروش‌ها و بازوهای من
                 </h1>
             </div>
 
@@ -48,7 +48,7 @@ export default function EmptyCatalogState({ hasTemporaryPassword, user, inquirie
                 </button>
             )}
 
-            {/* ✅ بازوهای خرید من — حتی وقتی هیچ کاتالوگی نیست (سناریوی «بازو اول») */}
+            {/* ✅ بازوهای خرید من — حتی وقتی هیچ بازوی فروشی نیست (سناریوی «بازو اول») */}
             {inquiries.length > 0 && (
                 <div className="space-y-2">
                     <h2 className="text-[11px] font-bold text-on-surface-variant/70 px-1">بازوهای خرید من</h2>
@@ -97,7 +97,7 @@ export default function EmptyCatalogState({ hasTemporaryPassword, user, inquirie
                 <div className="w-14 h-14 rounded-lg bg-primary/10 flex items-center justify-center mx-auto mb-3">
                     <BookOpen className="w-7 h-7 text-primary" />
                 </div>
-                <h3 className="text-base font-extrabold text-on-surface mb-1.5">کاتالوگ محصولاتت را بساز</h3>
+                <h3 className="text-base font-extrabold text-on-surface mb-1.5">بازوی فروش محصولاتت را بساز</h3>
                 <p className="text-xs text-on-surface-variant leading-6 max-w-sm mx-auto">
                     با عکس و قیمت، با لینک اختصاصی — چند دقیقه بیشتر وقت نمی‌گیرد.
                 </p>

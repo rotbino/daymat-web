@@ -2,7 +2,7 @@
 // تب تنظیمات پنل بازوی خرید — مشخصات، شرایط، دسترسی و قیمت‌گیری، وضعیت
 // شامل فیلد «امکان ارسال قیمت برای خریدهای غیر فوری» (ایدهٔ مالک)
 // ✅ نمایانی دوگانه: عمومی (هرکس با لینک) | خصوصی (همه لیست را می‌بینند؛ فقط اعضا قیمت می‌دهند)
-// ✅ حذف برداشته شد (تصمیم مالک): کاتالوگ حذف نمی‌شود — فقط پذیرش قیمت متوقف/بسته می‌شود
+// ✅ حذف برداشته شد (تصمیم مالک): بازوی فروش حذف نمی‌شود — فقط پذیرش قیمت متوقف/بسته می‌شود
 'use client';
 
 import React, { useEffect, useState } from 'react';
@@ -42,11 +42,11 @@ export default function SettingsTab({ detail, onSave, onOpenUnits, onToggleStatu
     // ☎️ نمایش شمارهٔ تماس من — فرمان دست خود خریدار (خواستهٔ مالک):
     //    روشن = تامین‌کننده می‌تواند شماره را ببیند/ذخیره کند/تماس بگیرد؛ خاموش = پنهان
     const [showContactPhone, setShowContactPhone] = useState(true);
-    // ✅ آدرس عمومی — قابل ویرایش مثل کاتالوگ قیمت (لینک قدیمی /inquiries/{id} هم همچنان کار می‌کند)
+    // ✅ آدرس عمومی — قابل ویرایش مثل بازوی فروش قیمت (لینک قدیمی /inquiries/{id} هم همچنان کار می‌کند)
     const [slug, setSlug] = useState('');
     const [slugStatus, setSlugStatus] = useState<'taken' | 'reserved' | null>(null);
 
-    // با تعویض کاتالوگ، فرم از نو پر می‌شود
+    // با تعویض بازوی فروش، فرم از نو پر می‌شود
     useEffect(() => {
         if (!detail) return;
         setTitle(detail.title || '');
@@ -235,7 +235,7 @@ export default function SettingsTab({ detail, onSave, onOpenUnits, onToggleStatu
                 ذخیره تغییرات
             </motion.button>
 
-            {/* وضعیت — توقف/ادامهٔ پذیرش قیمت؛ کاتالوگ حذف‌شدنی نیست (تصمیم مالک) */}
+            {/* وضعیت — توقف/ادامهٔ پذیرش قیمت؛ بازوی فروش حذف‌شدنی نیست (تصمیم مالک) */}
             <motion.section initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ delay: 0.15 }} className={card}>
                 <h2 className={cardTitle}>وضعیت پذیرش قیمت</h2>
                 <div className="flex flex-wrap gap-2">

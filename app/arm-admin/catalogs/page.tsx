@@ -51,7 +51,7 @@ interface ReferralData {
 type TabId = 'members' | 'add' | 'uncategorized' | 'referrals';
 
 const TABS: { id: TabId; label: string; icon: any }[] = [
-    { id: 'members', label: 'کاتالوگ‌های بازار', icon: BookOpen },
+    { id: 'members', label: 'بازوی فروش‌های بازار', icon: BookOpen },
     { id: 'add', label: 'افزودن', icon: PlusCircle },
     { id: 'uncategorized', label: 'بی‌دسته', icon: Layers },
     { id: 'referrals', label: 'جذب من', icon: UserPlus },
@@ -107,7 +107,7 @@ function RowSkeleton({ h = 100 }: { h?: number }) {
     return <div style={{ height: h }} className="rounded-2xl bg-surface-container-high/50 animate-pulse" />;
 }
 // ═══════════════════════════════════════════
-// کنترل چندفروشندگی کاتالوگ — ارث‌بری از بازار + اورایت مالک بازار
+// کنترل چندفروشندگی بازوی فروش — ارث‌بری از بازار + اورایت مالک بازار
 // ═══════════════════════════════════════════
 function MultiSellerControl({ slug, catalogId }: { slug: string; catalogId: string }) {
     const queryClient = useQueryClient();
@@ -138,7 +138,7 @@ function MultiSellerControl({ slug, catalogId }: { slug: string; catalogId: stri
             active ? 'bg-primary text-on-primary' : 'text-on-surface-variant hover:bg-surface-container-high dark:hover:bg-gray-800');
 
     return (
-        <div className="inline-flex items-center gap-1 bg-surface-container-low dark:bg-gray-800 rounded-lg p-0.5" title="چندفروشندگی: ارث از بازار یا اورایت برای همین کاتالوگ">
+        <div className="inline-flex items-center gap-1 bg-surface-container-low dark:bg-gray-800 rounded-lg p-0.5" title="چندفروشندگی: ارث از بازار یا اورایت برای همین بازوی فروش">
             <span className="text-[9px] text-on-surface-variant px-1.5">چندفروشندگی</span>
             {isLoading ? (
                 <Loader2 className="w-3 h-3 animate-spin text-on-surface-variant mx-1" />
@@ -226,7 +226,7 @@ export default function ArmAdminCatalogsPage() {
                         stamped: res?.stamped ?? 0,
                         needs: res?.needsCategory?.length ?? 0,
                     });
-                    toast.success(res?.message || 'کاتالوگ به بازار اضافه شد');
+                    toast.success(res?.message || 'بازوی فروش به بازار اضافه شد');
                 },
                 onError: (error: any) => {
                     // ✅ فروشنده‌ای که خودش خارج شده را نباید اشتباهی دوباره ادد کرد
@@ -237,7 +237,7 @@ export default function ArmAdminCatalogsPage() {
                         if (ok) handleAdd(c, true);
                         return;
                     }
-                    toast.error(error?.data?.message || error?.message || 'خطا در افزودن کاتالوگ');
+                    toast.error(error?.data?.message || error?.message || 'خطا در افزودن بازوی فروش');
                 },
             },
         );
@@ -278,9 +278,9 @@ export default function ArmAdminCatalogsPage() {
             {/* ─── هدر ─── */}
             <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
                 <div>
-                    <h1 className="text-xl sm:text-2xl font-bold text-on-surface">مدیریت کاتالوگ‌ها</h1>
+                    <h1 className="text-xl sm:text-2xl font-bold text-on-surface">مدیریت بازوی فروش‌ها</h1>
                     <p className="text-sm text-on-surface-variant mt-0.5">
-                        اتصال کاتالوگ‌ها به تابلوی {currentArm?.name || currentSlug}
+                        اتصال بازوی فروش‌ها به تابلوی {currentArm?.name || currentSlug}
                     </p>
                 </div>
                 <div className="flex items-center gap-2 flex-wrap">
@@ -325,7 +325,7 @@ export default function ArmAdminCatalogsPage() {
                 })}
             </div>
 
-            {/* ═══ تب ۱ — کاتالوگ‌های عضو ═══ */}
+            {/* ═══ تب ۱ — بازوی فروش‌های عضو ═══ */}
             {tab === 'members' && (
                 <div className="space-y-3">
                     {catalogsQ.isPending ? (
@@ -333,14 +333,14 @@ export default function ArmAdminCatalogsPage() {
                     ) : members.length === 0 ? (
                         <div className="rounded-2xl border border-dashed border-outline-variant/50 p-10 text-center">
                             <BookOpen className="w-12 h-12 text-on-surface-variant/20 mx-auto mb-3" />
-                            <h3 className="text-sm font-extrabold text-on-surface">هنوز کاتالوگی عضو بازار نشده</h3>
+                            <h3 className="text-sm font-extrabold text-on-surface">هنوز بازوی فروشی عضو بازار نشده</h3>
                             <p className="text-xs text-on-surface-variant mt-1.5 leading-6 max-w-sm mx-auto">
-                                کاتالوگ‌های مناسب را پیدا کن و به تابلوی قیمت اضافه کن —
+                                بازوی فروش‌های مناسب را پیدا کن و به تابلوی قیمت اضافه کن —
                                 کالاهایشان بلافاصله کنار بقیه نمایش داده می‌شود.
                             </p>
                             <button onClick={() => changeTab('add')}
                                     className="mt-4 h-10 px-6 rounded-xl bg-primary text-on-primary text-xs font-extrabold inline-flex items-center gap-2 hover:bg-primary/90 shadow-sm">
-                                <PlusCircle className="w-4 h-4" /> افزودن اولین کاتالوگ
+                                <PlusCircle className="w-4 h-4" /> افزودن اولین بازوی فروش
                             </button>
                         </div>
                     ) : (
@@ -421,7 +421,7 @@ export default function ArmAdminCatalogsPage() {
                 <span className="flex-1" />
                 {c.catalog.slug && (
                     <a href={`/${c.catalog.slug}`} target="_blank" rel="noreferrer"
-                       title="مشاهده کاتالوگ"
+                       title="مشاهده بازوی فروش"
                        className="h-8 px-3 rounded-lg border border-outline-variant/50 text-[11px] font-bold text-on-surface-variant hover:text-primary hover:border-primary/40 inline-flex items-center gap-1.5 transition-colors">
                         <Eye className="w-3.5 h-3.5" /> مشاهده
                     </a>
@@ -507,7 +507,7 @@ export default function ArmAdminCatalogsPage() {
                 <input
                     value={qInput}
                     onChange={(e) => setQInput(e.target.value)}
-                    placeholder="جستجوی نام کاتالوگ، شماره یا نام مالک…"
+                    placeholder="جستجوی نام بازوی فروش، شماره یا نام مالک…"
                     className="w-full h-11 pr-10 pl-9 rounded-xl bg-surface-container-lowest border border-outline-variant/40 dark:border-gray-700 text-sm outline-none focus:ring-2 focus:ring-primary/30 focus:border-primary transition-all"
                 />
                 {qInput && (
@@ -527,7 +527,7 @@ export default function ArmAdminCatalogsPage() {
                 </button>
                 <span className="text-xs font-bold text-on-surface flex items-center gap-1.5">
                                 <UserPlus className="w-3.5 h-3.5 text-primary/70" />
-                                فقط کاتالوگ‌های جذب‌شدهٔ من
+                                فقط بازوی فروش‌های جذب‌شدهٔ من
                             </span>
                 <span className="text-[10px] text-on-surface-variant/60 hidden sm:inline">
                                 (کاربرانی که با لینک دعوت تو آمده‌اند)
@@ -541,10 +541,10 @@ export default function ArmAdminCatalogsPage() {
             <div className="rounded-2xl border border-dashed border-outline-variant/50 p-10 text-center">
                 <Building2 className="w-12 h-12 text-on-surface-variant/20 mx-auto mb-3" />
                 <p className="text-sm font-bold text-on-surface">
-                    {q || onlyMine ? 'کاتالوگی با این مشخصات پیدا نشد' : 'کاتالوگی برای افزودن نیست'}
+                    {q || onlyMine ? 'بازوی فروشی با این مشخصات پیدا نشد' : 'بازوی فروشی برای افزودن نیست'}
                 </p>
                 <p className="text-xs text-on-surface-variant mt-1.5">
-                    {q || onlyMine ? 'فیلترها را تغییر بده' : 'کاتالوگ‌های تازه در اینجا ظاهر می‌شوند'}
+                    {q || onlyMine ? 'فیلترها را تغییر بده' : 'بازوی فروش‌های تازه در اینجا ظاهر می‌شوند'}
                 </p>
             </div>
         ) : (
@@ -635,7 +635,7 @@ export default function ArmAdminCatalogsPage() {
                                                 </span>
                                     {item.catalogCategoryTitle && (
                                         <span className="text-[10px] px-1.5 py-0.5 rounded-full bg-surface-container-high text-on-surface-variant">
-                                                        دسته در کاتالوگ: {item.catalogCategoryTitle}
+                                                        دسته در بازوی فروش: {item.catalogCategoryTitle}
                                                     </span>
                                     )}
                                 </div>
@@ -669,7 +669,7 @@ export default function ArmAdminCatalogsPage() {
                             <div className="grid grid-cols-3 gap-2.5">
                                 {[
                                     { icon: Users, label: 'دعوت‌شده', value: referrals.invitedCount, cls: 'text-blue-600 dark:text-blue-400', bg: 'bg-blue-50 dark:bg-blue-900/30' },
-                                    { icon: BookOpen, label: 'کاتالوگ جذب‌شده', value: referrals.catalogs.length, cls: 'text-purple-600 dark:text-purple-400', bg: 'bg-purple-50 dark:bg-purple-900/30' },
+                                    { icon: BookOpen, label: 'بازوی فروش جذب‌شده', value: referrals.catalogs.length, cls: 'text-purple-600 dark:text-purple-400', bg: 'bg-purple-50 dark:bg-purple-900/30' },
                                     { icon: Store, label: 'عضو این بازار', value: referrals.catalogs.filter((c) => c.isMember).length, cls: 'text-emerald-600 dark:text-emerald-400', bg: 'bg-emerald-50 dark:bg-emerald-900/30' },
                                 ].map((s) => (
                                     <div key={s.label} className="bg-white dark:bg-gray-900 rounded-2xl border border-outline-variant/40 p-3.5 text-center">
@@ -706,7 +706,7 @@ export default function ArmAdminCatalogsPage() {
                                                     <p className="text-[10px] text-on-surface-variant/70" dir="ltr">{u.phone}</p>
                                                 </div>
                                                 <div className="text-left flex-shrink-0">
-                                                    <p className="text-[10px] font-bold text-on-surface">{fmt(u.catalogsCount)} کاتالوگ</p>
+                                                    <p className="text-[10px] font-bold text-on-surface">{fmt(u.catalogsCount)} بازوی فروش</p>
                                                     <p className="text-[9px] text-on-surface-variant/60">
                                                         {new Date(u.joinedAt).toLocaleDateString('fa-IR')}
                                                     </p>
@@ -720,7 +720,7 @@ export default function ArmAdminCatalogsPage() {
                             <div className="bg-white dark:bg-gray-900 rounded-2xl border border-outline-variant/40 overflow-hidden">
                                 <div className="px-4 py-3 border-b border-outline-variant/20 flex items-center justify-between">
                                     <h3 className="text-xs font-extrabold text-on-surface flex items-center gap-1.5">
-                                        <BookOpen className="w-3.5 h-3.5 text-primary" /> کاتالوگ‌های جذب‌شده
+                                        <BookOpen className="w-3.5 h-3.5 text-primary" /> بازوی فروش‌های جذب‌شده
                                     </h3>
                                     <button onClick={() => changeTab('add')}
                                             className="text-[10px] font-bold text-primary hover:underline">
@@ -729,8 +729,8 @@ export default function ArmAdminCatalogsPage() {
                                 </div>
                                 {referrals.catalogs.length === 0 ? (
                                     <p className="text-xs text-on-surface-variant/70 text-center py-8 px-4 leading-6">
-                                        هنوز کاتالوگی با کد دعوت تو ساخته نشده —
-                                        لینک «تو هم کاتالوگ خودت را بساز» را با دیگران به اشتراک بگذار
+                                        هنوز بازوی فروشی با کد دعوت تو ساخته نشده —
+                                        لینک «تو هم بازوی فروش خودت را بساز» را با دیگران به اشتراک بگذار
                                     </p>
                                 ) : (
                                     <div className="max-h-80 overflow-y-auto divide-y divide-outline-variant/15">

@@ -1,7 +1,7 @@
 // app/[slug]/page.tsx
-// ✅ روت واحد کاتالوگ + بازار + صفحهٔ اعلان خرید:
-//    resolver سمت سرور تعیین می‌کند این slug کاتالوگ است یا تابلوی بازار یا صفحهٔ اعلان خرید.
-//    اولویت با کاتالوگ (Catalog) است؛ تداخل اسلاگ با قید سه-جدولی (کاتالوگ/بازار/بازوی خرید)
+// ✅ روت واحد بازوی فروش + بازار + صفحهٔ اعلان خرید:
+//    resolver سمت سرور تعیین می‌کند این slug بازوی فروش است یا تابلوی بازار یا صفحهٔ اعلان خرید.
+//    اولویت با بازوی فروش (Catalog) است؛ تداخل اسلاگ با قید سه-جدولی (بازوی فروش/بازار/بازوی خرید)
 //    در checkSlug هر دو سرویس جلوگیری می‌شود.
 //    اسلش انتهایی و انکودینگ نرمال می‌شود.
 
@@ -21,17 +21,17 @@ interface Props {
 export async function generateMetadata({ params }: Props) {
     const { slug: rawSlug } = await params;
     const slug = decodeURIComponent(rawSlug).replace(/\/+$/, '').trim();
-    if (!slug) return { title: 'دیمت | کاتالوگ روزانه قیمت' };
+    if (!slug) return { title: 'دیمت | بازوی فروش روزانه قیمت' };
 
-    // ۱) کاتالوگ؟
+    // ۱) بازوی فروش؟
     try {
         const catalog = await apiService.catalog.getBySlug(slug);
         return {
-            title: `کاتالوگ ${catalog.name} | دیمت`,
+            title: `بازوی فروش ${catalog.name} | دیمت`,
             alternates: { canonical: `/${slug}` },
-            description: catalog.shortDescription || catalog.description || `کاتالوگ محصولات ${catalog.name}`,
+            description: catalog.shortDescription || catalog.description || `بازوی فروش محصولات ${catalog.name}`,
             openGraph: {
-                title: `کاتالوگ ${catalog.name}`,
+                title: `بازوی فروش ${catalog.name}`,
                 description: catalog.shortDescription,
                 images: catalog.logoUrl ? [catalog.logoUrl] : [],
             },
@@ -67,7 +67,7 @@ export async function generateMetadata({ params }: Props) {
         }
     } catch {}
 
-    return { title: 'دیمت | کاتالوگ روزانه قیمت' };
+    return { title: 'دیمت | بازوی فروش روزانه قیمت' };
 }
 
 export default async function SlugPage({ params, searchParams }: Props) {
@@ -84,7 +84,7 @@ export default async function SlugPage({ params, searchParams }: Props) {
         apiService.inquiry.resolveSlug(slug).catch(() => null),
     ]);
 
-    // ─── کاتالوگ ───
+    // ─── بازوی فروش ───
     if (catalog) {
         const queryClient = new QueryClient({
             defaultOptions: {
@@ -98,7 +98,7 @@ export default async function SlugPage({ params, searchParams }: Props) {
             },
         });
 
-        // Prefetch کالاهای کاتالوگ — فقط صفحه اول
+        // Prefetch کالاهای بازوی فروش — فقط صفحه اول
         if (catalog.id) {
             try {
                 await queryClient.fetchQuery({

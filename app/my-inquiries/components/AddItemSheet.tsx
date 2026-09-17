@@ -1,7 +1,7 @@
 // app/my-inquiries/components/AddItemSheet.tsx
 // شیت افزودن/ویرایش قلم خرید — هر بار یک کالا (فلسفهٔ مالک: فرم قلم‌به‌قلم، بدون توضیح اضافه؛
 // ساختار فرم خودش حرف می‌زند). کالا از مرجع (EntityPicker با امکان افزودن)، واحد از مرجع واحد،
-// و تاگل قیمت‌گیری که قلم را بالای کاتالوگ عمومی می‌نشاند.
+// و تاگل قیمت‌گیری که قلم را بالای بازوی فروش عمومی می‌نشاند.
 // ✅ ⚖️ قانون دیمت: هر فیلد الزامیِ خالی، علاوه بر CSS، الرتِ toast فیلدبه‌فیلد می‌گیرد
 // ✅ واحد: سلکتور سرچ‌دار (Autocomplete) + واحدهای من با تیکِ افزودن + واحدهای ترکیبی (کارتن ۲۴ عددی)
 // ✅ مهلت ارسال قیمت: ورودی عددی به ساعت (حداکثر ۲۴۰) — گروهی، روی خود بازو ذخیره می‌شود
@@ -80,7 +80,7 @@ const remainingHours = (iso?: string | null): number | null => {
 
 export default function AddItemSheet({ open, onClose, inquiryId, catalogUnits, existingItems, currentDeadline, isFirstItem, editItem }: Props) {
     const qc = useQueryClient();
-    // مرجع واحد (کش مشترک با کاتالوگ قیمت)
+    // مرجع واحد (کش مشترک با بازوی فروش قیمت)
     const { data: allUnits = [] } = useQuery({
         queryKey: ['units-all'],
         queryFn: () => apiService.ad.getAllUnits(),
@@ -385,7 +385,7 @@ export default function AddItemSheet({ open, onClose, inquiryId, catalogUnits, e
                                         if (!v) setErrors((e) => ({ ...e, deadline: '' }));
                                     }}
                                     label="اضافه به لیست در حال قیمت‌گیری"
-                                    sub="با این کار کالای شما، غیر از کاتالوگ، در لیست درخواست قیمت تامین‌کننده‌های همکار شما قرار می‌گیرد."
+                                    sub="با این کار کالای شما، غیر از بازوی فروش، در لیست درخواست قیمت تامین‌کننده‌های همکار شما قرار می‌گیرد."
                                 />
 
                                 {/* ✅ مهلت ارسال قیمت — عددی به ساعت، حداکثر ۲۴۰ (خواستهٔ مالک) */}

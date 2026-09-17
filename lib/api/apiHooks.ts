@@ -98,7 +98,7 @@ export const useCatalog = (id: string) => {
     });
 };
 // ============================================================
-// CATALOG ADS — لیست کالاهای یک کاتالوگ
+// CATALOG ADS — لیست کالاهای یک بازوی فروش
 // عمومی (مهمان هم می‌تواند) + با پشتیبانی search و status و limit
 // ============================================================
 export const useCatalogAds = (
@@ -201,7 +201,7 @@ export const useCreateCatalog = () => {
         onSuccess: () => {
             queryClient.invalidateQueries({ queryKey: ['cataloges'] });
             queryClient.invalidateQueries({ queryKey: ['catalog', 'active'] });
-            queryClient.invalidateQueries({ queryKey: ['catalogs'] }); // کش صفحه «مدیریت کاتالوگ»
+            queryClient.invalidateQueries({ queryKey: ['catalogs'] }); // کش صفحه «مدیریت بازوی فروش»
         },
         // ✅ توست خطا اینجا نمی‌زنیم — صفحه فراخوان (register) خطاها را با کد و پیام اختصاصی مدیریت می‌کند
         //    (قبلاً اینجا + catchِ صفحه هر دو توست می‌زدند = دو پیام برای یک خطا)
@@ -216,9 +216,9 @@ export const useUpdateCatalog = () => {
         onSuccess: () => {
             queryClient.invalidateQueries({ queryKey: ['catalogs'] });
             queryClient.invalidateQueries({ queryKey: ['catalog'] });
-            toast.success('کاتالوگ به‌روزرسانی شد');
+            toast.success('بازوی فروش به‌روزرسانی شد');
         },
-        onError: (error: ApiError) => toast.error(error.message || 'خطا در ویرایش کاتالوگ'),
+        onError: (error: ApiError) => toast.error(error.message || 'خطا در ویرایش بازوی فروش'),
     });
 };
 
@@ -825,7 +825,7 @@ export const useLocationTree = () => {
 };
 
 // ============================================================
-// ARM-ADMIN: CATALOGS — مدیریت کاتالوگ‌های بازار (پنل مالک)
+// ARM-ADMIN: CATALOGS — مدیریت بازوی فروش‌های بازار (پنل مالک)
 // ============================================================
 
 /** کلیدهای کش — صرفاً از اینجا مصرف شوند تا invalidation متقاطع همیشه درست کار کند */
@@ -853,7 +853,7 @@ export function useInvalidateArmCatalogs() {
 }
 
 
-/** جستجوی کاتالوگ برای افزودن — placeholderData برای نبودِ فلش هنگام تایپ */
+/** جستجوی بازوی فروش برای افزودن — placeholderData برای نبودِ فلش هنگام تایپ */
 export const useArmCatalogCandidates = (slug?: string, q = '', onlyMine = false, enabled = true) => {
     return useQuery({
         queryKey: armCatalogKeys.candidates(slug ?? '', q, onlyMine),
@@ -903,7 +903,7 @@ export const useAddCatalogToArm = (slug?: string) => {
         onError: (error: ApiError) => {
             // SELF_REMOVED_CONFLICT در صفحه با confirm مدیریت می‌شود — اینجا پیام تکراری نده
             if ((error as any)?.data?.errorCode !== 'SELF_REMOVED_CONFLICT') {
-                toast.error(error.message || 'خطا در افزودن کاتالوگ');
+                toast.error(error.message || 'خطا در افزودن بازوی فروش');
             }
         },
     });
@@ -925,7 +925,7 @@ export const useRemoveCatalogFromArm = (slug?: string) => {
     return useMutation({
         mutationFn: (catalogId: string) =>
             apiService.armAdmin.catalogs.remove(slug!, catalogId),
-        onSuccess: () => toast.success('کاتالوگ از بازار حذف شد'),
+        onSuccess: () => toast.success('بازوی فروش از بازار حذف شد'),
         onError: (error: ApiError) => toast.error(error.message || 'خطا'),
     });
 };
@@ -998,7 +998,7 @@ export const useMyBusinesses = (enabled = true) => {
     });
 };
 
-// ✅ جستجوی عمومی کسب‌وکارها — برای انتخاب کسب‌وکار هنگام ساخت کاتالوگ
+// ✅ جستجوی عمومی کسب‌وکارها — برای انتخاب کسب‌وکار هنگام ساخت بازوی فروش
 export const useBusinessSearch = (
     params: { q?: string; provinceCode?: string; cityCode?: string; limit?: number; ids?: string },
     enabled = true,
@@ -1036,7 +1036,7 @@ export const useUpdateBusinessEntity = () => {
     });
 };
 
-// ✅ جزئیات کامل کسب‌وکار — صفحه مدیریت کسب‌وکار (با کاتالوگ‌ها، تیم و زمینه‌های فعالیت)
+// ✅ جزئیات کامل کسب‌وکار — صفحه مدیریت کسب‌وکار (با بازوی فروش‌ها، تیم و زمینه‌های فعالیت)
 export const useBusinessDetail = (id?: string | null) => {
     return useQuery({
         queryKey: ['business-detail', id],
@@ -1076,7 +1076,7 @@ export const useSetBusinessActivities = () => {
 
 // ─── تیم کاری کسب‌وکار — دو سطح نقش (سیستمی admin/member + نقش شرکتی) ───
 
-// ✅ عضویت من در کسب‌وکار — فرم ثبت کاتالوگ: نقش شرکتیِ از قبل مشخص شده دوباره پرسیده نمی‌شود
+// ✅ عضویت من در کسب‌وکار — فرم ثبت بازوی فروش: نقش شرکتیِ از قبل مشخص شده دوباره پرسیده نمی‌شود
 export const useMyBusinessMembership = (businessId?: string | null, enabled = true) => {
     return useQuery({
         queryKey: ['business-my-membership', businessId],
@@ -1526,7 +1526,7 @@ export const useRemoveSeller = (slug?: string) => {
         mutationFn: (catalogId: string) =>
             apiRequest(`/arm-admin/${slug}/memberships/sellers/${catalogId}`, { method: 'DELETE' }),
         onSuccess: () => {
-            toast.success('نقش فروشندگی این کاتالوگ در بازار حذف شد');
+            toast.success('نقش فروشندگی این بازوی فروش در بازار حذف شد');
             invalidate(slug!);
         },
         onError: (error: ApiError) => toast.error(error.message || 'خطا'),
@@ -1628,10 +1628,10 @@ export const useToggleBuyerPaused = (slug?: string) => {
 };
 // ─── اعلان‌ها + درخواست‌های در انتظار (چرخهٔ عضویت) ───
 
-// ✅ دادهٔ تیم کاتالوگ — کشِ مشترک بین تب «تیم فروش»، تب «خریداران» و بج‌های نوار کنسول
+// ✅ دادهٔ تیم بازوی فروش — کشِ مشترک بین تب «تیم فروش»، تب «خریداران» و بج‌های نوار کنسول
 //    (همان کلید ['catalog-team', catalogId] — react-query یک بار می‌گیرد، همه مصرف می‌کنند)
 //    ✅ refetchOnMount 'always' — با هر باز شدن برگه تازه می‌شود؛ درخواست همکاری که از
-//    صفحهٔ کاتالوگ آمده بدون رفرش دستی همان‌جا دیده می‌شود (refetchOnWindowFocus خاموش است)
+//    صفحهٔ بازوی فروش آمده بدون رفرش دستی همان‌جا دیده می‌شود (refetchOnWindowFocus خاموش است)
 export const useCatalogTeam = (catalogId?: string | null, enabled = true) => {
     return useQuery({
         queryKey: ['catalog-team', catalogId],
@@ -1642,7 +1642,7 @@ export const useCatalogTeam = (catalogId?: string | null, enabled = true) => {
     });
 };
 
-// ✅ شمارندهٔ بج قرمز برگهٔ اعضا — درخواست‌های در انتظارِ کاتالوگ‌های مدیریتی من
+// ✅ شمارندهٔ بج قرمز برگهٔ اعضا — درخواست‌های در انتظارِ بازوی فروش‌های مدیریتی من
 export const useCatalogPendingSummary = (enabled = true) => {
     return useQuery({
         queryKey: ['catalog-pending-summary'],
@@ -1950,7 +1950,7 @@ export const useAddInquiryMember = () => {
     });
 };
 
-/** درخواست عضویت تامین‌کننده با کاتالوگ قیمتش (از گیت صفحه عمومی) */
+/** درخواست عضویت تامین‌کننده با بازوی فروش قیمتش (از گیت صفحه عمومی) */
 export const useRequestInquiryAccess = () => {
     const qc = useQueryClient();
     return useMutation({

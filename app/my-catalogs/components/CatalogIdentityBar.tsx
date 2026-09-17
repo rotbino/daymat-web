@@ -1,11 +1,11 @@
 // app/my-catalogs/components/CatalogIdentityBar.tsx
-// نوار هویت کاتالوگ — سوییچر سبک اینستاگرام (لوگو + نام + فلش پایین)
-// شیر + چشم (مشاهدهٔ کاتالوگ عمومی) + ⋯
-// ✅ سوییچر دو-محصولی: کاتالوگ‌های قیمت و صفحه‌های بازوی خرید با برچسب پرانتزی
+// نوار هویت بازوی فروش — سوییچر سبک اینستاگرام (لوگو + نام + فلش پایین)
+// شیر + چشم (مشاهدهٔ بازوی فروش عمومی) + ⋯
+// ✅ سوییچر دو-محصولی: بازوی فروش‌های قیمت و صفحه‌های بازوی خرید با برچسب پرانتزی
 //    کنار نام — انتخاب بازوی خرید به مدیریت آن پرش می‌کند (درخواست کاربر)
 // ✅ پایینِ سوییچر: لینک ساخت فقط برای نوعی که هنوز ندارد (ایدهٔ مالک:
-//    هر کاربر از هر نوع یکی — سیستم پر از کاتالوگ سرگردان نشود؛ دومی‌ها از زیر ⋯ یا پروفایل کسب‌وکار)
-// (کارت ویزیت به تب انتشار منتقل شد با نام «ساخت کارت ویزیت کاتالوگ» — بنا بر بازخورد کاربر)
+//    هر کاربر از هر نوع یکی — سیستم پر از بازوی فروش سرگردان نشود؛ دومی‌ها از زیر ⋯ یا پروفایل کسب‌وکار)
+// (کارت ویزیت به تب انتشار منتقل شد با نام «ساخت کارت ویزیت بازوی فروش» — بنا بر بازخورد کاربر)
 // موبایل: دکمه‌ها کوچک‌تر (w-9) تا برای عنوان جا بماند (بازخورد کاربر)
 // ⚠️ قانون: حالت تاریک همیشه چک شده
 'use client';
@@ -17,7 +17,7 @@ import { cn } from '@/lib/utils';
 
 export default function CatalogIdentityBar({ catalogs, inquiries = [], currentCatalog, canShare, onSelect, onSelectInquiry, onShare, onPreview, onNewCatalog, onNewInquiry, onChangePassword }: {
     catalogs: any[];
-    /** بازوهای خرید من — در همان سوییچر کنار کاتالوگ‌های قیمت (درخواست کاربر) */
+    /** بازوهای خرید من — در همان سوییچر کنار بازوی فروش‌های قیمت (درخواست کاربر) */
     inquiries?: any[];
     currentCatalog: any;
     canShare: boolean;
@@ -58,7 +58,7 @@ export default function CatalogIdentityBar({ catalogs, inquiries = [], currentCa
                     )}
                 </span>
                 <span className="block text-[10px] text-on-surface-variant/70">
-                    {multi ? 'برای تغییر لمس کن' : 'کاتالوگ شما'}
+                    {multi ? 'برای تغییر لمس کن' : 'بازوی فروش شما'}
                 </span>
             </span>
         </span>
@@ -69,7 +69,7 @@ export default function CatalogIdentityBar({ catalogs, inquiries = [], currentCa
             {/* سوییچر / نمایش هویت */}
             {canOpen ? (
                 <button type="button" onClick={() => setOpen((o) => !o)} aria-expanded={open}
-                        aria-label="سوییچ بین کاتالوگ‌ها و بازوهای خرید"
+                        aria-label="سوییچ بین بازوی فروش‌ها و بازوهای خرید"
                         className={cn('flex min-w-0 flex-1 items-center gap-2 rounded-2xl border-2 bg-white p-2 ps-2.5 text-right shadow-sm transition-all dark:bg-gray-900',
                             open ? 'border-primary/60 ring-2 ring-primary/10'
                                  : 'border-outline-variant/40 dark:border-gray-700 hover:border-primary/40 active:scale-[0.99]')}>
@@ -85,16 +85,16 @@ export default function CatalogIdentityBar({ catalogs, inquiries = [], currentCa
 
             {/* اشتراک‌گذاری سریع — همیشه یک لمس فاصله دارد */}
             {canShare && (
-                <button type="button" onClick={onShare} aria-label="اشتراک‌گذاری کاتالوگ" title="اشتراک‌گذاری کاتالوگ"
+                <button type="button" onClick={onShare} aria-label="اشتراک‌گذاری بازوی فروش" title="اشتراک‌گذاری بازوی فروش"
                         className="w-9 h-9 lg:w-10 lg:h-10 rounded-lg grid place-items-center flex-shrink-0
                             bg-primary/10 text-primary hover:bg-primary/15 active:scale-95 transition-all">
                     <Share2 className="w-4 h-4 lg:w-[18px] lg:h-[18px]" />
                 </button>
             )}
 
-            {/* 👁 مشاهدهٔ کاتالوگ عمومی — دم دست، بنا بر خواستهٔ کاربر */}
+            {/* 👁 مشاهدهٔ بازوی فروش عمومی — دم دست، بنا بر خواستهٔ کاربر */}
             {canShare && (
-                <button type="button" onClick={onPreview} aria-label="مشاهدهٔ کاتالوگ" title="مشاهدهٔ کاتالوگ"
+                <button type="button" onClick={onPreview} aria-label="مشاهدهٔ بازوی فروش" title="مشاهدهٔ بازوی فروش"
                         className="w-9 h-9 lg:w-10 lg:h-10 rounded-lg grid place-items-center flex-shrink-0
                             bg-surface-container-high/70 dark:bg-gray-800 text-on-surface-variant
                             hover:text-primary hover:bg-surface-container-high dark:hover:bg-gray-700 active:scale-95 transition-all">
@@ -115,10 +115,10 @@ export default function CatalogIdentityBar({ catalogs, inquiries = [], currentCa
                         <div className="fixed inset-0 z-40" onClick={() => setMenuOpen(false)} />
                         <div className="absolute top-full end-0 mt-1 z-50 w-52 p-1.5 rounded-lg bg-white dark:bg-gray-900
                             border border-outline-variant/30 dark:border-gray-700 shadow-xl animate-in fade-in zoom-in-95 duration-150">
-                            {/* 📍 ساخت کاتالوگ جدید — هر دو محصول از همین منو (دسترسی راحت) */}
+                            {/* 📍 ساخت بازوی فروش جدید — هر دو محصول از همین منو (دسترسی راحت) */}
                             <button type="button" onClick={() => { setMenuOpen(false); onNewCatalog(); }}
                                     className="w-full flex items-center gap-2.5 h-10 px-3 rounded-md text-[13px] text-on-surface hover:bg-surface-container-high dark:hover:bg-gray-800 transition-colors">
-                                <Plus className="w-4 h-4 text-primary" /> کاتالوگ قیمت جدید
+                                <Plus className="w-4 h-4 text-primary" /> بازوی فروش قیمت جدید
                             </button>
                             {onNewInquiry && (
                                 <button type="button" onClick={() => { setMenuOpen(false); onNewInquiry(); }}
@@ -135,7 +135,7 @@ export default function CatalogIdentityBar({ catalogs, inquiries = [], currentCa
                 )}
             </div>
 
-            {/* منوی سوییچ — هر دو نوع کاتالوگ با برچسب پرانتزی (درخواست کاربر) */}
+            {/* منوی سوییچ — هر دو نوع بازوی فروش با برچسب پرانتزی (درخواست کاربر) */}
             {open && canOpen && (
                 <>
                     <div className="fixed inset-0 z-40" onClick={() => setOpen(false)} />
@@ -144,7 +144,7 @@ export default function CatalogIdentityBar({ catalogs, inquiries = [], currentCa
                             shadow-xl animate-in fade-in zoom-in-95 duration-150 max-h-[70vh] overflow-y-auto">
                         {catalogs.length > 0 && (
                             <p className="px-3 pt-1.5 pb-1 text-[10px] font-bold text-on-surface-variant/70">
-                                کاتالوگ‌های قیمت
+                                بازوی فروش‌های قیمت
                             </p>
                         )}
                         {catalogs.map((c) => {
@@ -165,7 +165,7 @@ export default function CatalogIdentityBar({ catalogs, inquiries = [], currentCa
                                         <span className={cn('text-[13px] font-bold truncate', active ? 'text-primary' : 'text-on-surface')}>
                                             {c.name}
                                         </span>
-                                        <span className="text-[9px] font-bold text-primary/70 whitespace-nowrap flex-shrink-0">(کاتالوگ قیمت)</span>
+                                        <span className="text-[9px] font-bold text-primary/70 whitespace-nowrap flex-shrink-0">(بازوی فروش قیمت)</span>
                                     </span>
                                     {c.isTeamEntry && (
                                         <span className="text-[9px] font-extrabold text-sky-700 dark:text-sky-300
@@ -205,7 +205,7 @@ export default function CatalogIdentityBar({ catalogs, inquiries = [], currentCa
                             </>
                         )}
 
-                        {/* ساخت — فقط برای نوعِ غایب (ایدهٔ مالک: جلوگیری از کاتالوگ‌های سرگردان؛
+                        {/* ساخت — فقط برای نوعِ غایب (ایدهٔ مالک: جلوگیری از بازوی فروش‌های سرگردان؛
                             دومی‌ها از زیر ⋯ یا پروفایل کسب‌وکار پیدا می‌شوند) */}
                         {(missingCatalog || missingInquiry) && (
                             <>
@@ -216,7 +216,7 @@ export default function CatalogIdentityBar({ catalogs, inquiries = [], currentCa
                                             className="w-full flex items-center gap-2.5 h-11 px-3 rounded-lg text-right text-[13px] font-extrabold
                                                 text-primary hover:bg-surface-container-high dark:hover:bg-gray-800 transition-colors">
                                         <Plus className="w-4 h-4" />
-                                        ساخت کاتالوگ قیمت
+                                        ساخت بازوی فروش قیمت
                                     </button>
                                 )}
                                 {missingInquiry && onNewInquiry && (

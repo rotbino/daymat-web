@@ -12,7 +12,7 @@ import { postPriceHref, postPriceLabel } from '@/lib/utils/postPrice';
 /**
  * دکمهٔ «ثبت قیمت» هدر — لیبل بر اساس نوع بازار (عمده/خرده/خدمات).
  * رفتار دقیقاً مثل دکمهٔ صفحهٔ اول: لاگین → /my-catalogs | مهمان → login با redirect به همان‌جا.
- * روی صفحات کاتالوگ (my-catalogs/business) که خودشان همین اکشن را دارند رندر نمی‌شود.
+ * روی صفحات بازوی فروش (my-catalogs/business) که خودشان همین اکشن را دارند رندر نمی‌شود.
  */
 export default function PostPriceButton({
     size = 'desktop',
@@ -25,7 +25,7 @@ export default function PostPriceButton({
     const { isAuthenticated } = useSelector((s: RootState) => s.auth);
     const { currentArm } = useSelector((s: RootState) => s.arm);
 
-    // روی صفحات کاتالوگ خودِ همین اکشن هست — دکمه تکراری است
+    // روی صفحات بازوی فروش خودِ همین اکشن هست — دکمه تکراری است
     if (pathname?.startsWith('/my-catalogs') || pathname?.startsWith('/business')) return null;
 
     const label = postPriceLabel(currentArm);
@@ -33,7 +33,7 @@ export default function PostPriceButton({
     return (
         <Link
             href={postPriceHref(isAuthenticated)}
-            title={`${label} — مدیریت کاتالوگ`}
+            title={`${label} — مدیریت بازوی فروش`}
             className={cn(
                 'flex-shrink-0 flex items-center justify-center bg-primary text-on-primary font-bold',
                 'shadow-sm hover:bg-primary/90 active:scale-[0.97] transition-all',

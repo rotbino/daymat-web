@@ -1,5 +1,5 @@
 // app/my-catalogs/constants.ts
-// ثابت‌ها و هلپرهای مشترک صفحه «کاتالوگ‌های من»
+// ثابت‌ها و هلپرهای مشترک صفحه «بازوی فروش‌های من»
 
 import { BadgeCheck, Hourglass, PauseCircle, Store, Package, Wrench, XCircle } from 'lucide-react';
 
@@ -31,7 +31,7 @@ export const PUB_CHIP: Record<string, { label: string; cls: string; icon: any }>
     rejected: { label: 'رد شده', cls: 'text-red-700 dark:text-red-300 bg-red-50 dark:bg-red-900/25', icon: XCircle },
 };
 
-// ─── نوع فروش کاتالوگ ───
+// ─── نوع فروش بازوی فروش ───
 export const SALES_LABEL: Record<string, string> = {
     wholesale: 'فروش عمده',
     retail: 'فروش خرده',

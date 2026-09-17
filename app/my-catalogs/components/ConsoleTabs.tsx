@@ -1,5 +1,5 @@
 // app/my-catalogs/components/ConsoleTabs.tsx
-// ناوبری بخش‌های کاتالوگ — داخل «هدر کنسول» (والد) سوار می‌شود:
+// ناوبری بخش‌های بازوی فروش — داخل «هدر کنسول» (والد) سوار می‌شود:
 // والد نوار سفید/سایه‌دار چسبان را می‌سازد؛ اینجا فقط خودِ تب‌هاست.
 // ترند روز: تب‌افقی آندرلاین به‌سبک Stripe/اینستاگرام — آیکون + برچسب، بدون شبیه‌شدن به دکمه
 // موبایل: آیکون بالا + برچسب ریز پایین (عمودی) — ۴ تب بدون اسکرول افقی جا می‌گیرند
@@ -27,7 +27,7 @@ export default function ConsoleTabs({ items, active, onChange }: {
 }) {
     return (
         <div className="pt-1 lg:pt-1.5">
-            <nav aria-label="بخش‌های کاتالوگ"
+            <nav aria-label="بخش‌های بازوی فروش"
                  className="flex items-stretch">
                 {items.map(({ key, label, mobileLabel, icon: Icon, count, alert }) => {
                     const isActive = active === key;

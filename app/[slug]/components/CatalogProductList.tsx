@@ -36,7 +36,7 @@ interface CatalogProductListProps {
     /** ✅ ویرایش درجا */
     isOwner?: boolean;
     onAddProduct?: () => void;
-    /** ✅ کاتالوگ خصوصی — قیمت فقط برای اعضای پذیرفته‌شده */
+    /** ✅ بازوی فروش خصوصی — قیمت فقط برای اعضای پذیرفته‌شده */
     hidePrices?: boolean;
     onCoopRequest?: () => void;
 }
@@ -73,7 +73,7 @@ export default function CatalogProductList({
             </div>
 
             <div className={cn(WRAP, 'pt-5')}>
-                {/* ✅ کاتالوگ خصوصی — به‌جای قیمت: درخواست ارتباط تجاری */}
+                {/* ✅ بازوی فروش خصوصی — به‌جای قیمت: درخواست ارتباط تجاری */}
                 {hidePrices && (
                     <div className="mb-4 rounded-xl border border-amber-200/60 dark:border-amber-500/20 bg-amber-50 dark:bg-amber-500/10 px-3.5 py-3 flex items-center gap-2.5">
                         <Lock className="w-4 h-4 text-amber-600 dark:text-amber-400 flex-shrink-0" />
@@ -92,10 +92,10 @@ export default function CatalogProductList({
                 )}
                 <div className="flex items-end justify-between gap-4 mb-5">
                     <div>
-                        <h2 className="text-[14px] sm:text-[18px] font-black">کاتالوگ محصولات</h2>
+                        <h2 className="text-[14px] sm:text-[18px] font-black">بازوی فروش محصولات</h2>
                     </div>
                     <div className="flex items-center gap-3 pb-0.5">
-                        {/* ✅ افزودن محصول از خود کاتالوگ — فقط مالک */}
+                        {/* ✅ افزودن محصول از خود بازوی فروش — فقط مالک */}
                         {isOwner && onAddProduct && (
                             <button onClick={onAddProduct}
                                     className="h-8 px-3 rounded-full bg-amber-50 dark:bg-amber-900/30 border border-amber-300/60 dark:border-amber-800/50

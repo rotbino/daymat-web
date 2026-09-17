@@ -20,7 +20,7 @@ const armPersistConfig = {
     whitelist: ['currentSlug', 'currentArm'],
 };
 
-// «کاتالوگ کارنت» — پرسیست مثل بازار کارنت (درخواست کاربر)
+// «بازوی فروش کارنت» — پرسیست مثل بازار کارنت (درخواست کاربر)
 const catalogPersistConfig = {
     key: 'catalog',
     storage,

@@ -40,7 +40,7 @@ interface BuyerContactsPanelProps {
 export default function BuyerContactsPanel({
     title = 'دفترچهٔ مخاطبین تلفن تو',
     membersTitle = 'اعضای دیمت — کسب‌وکارشان را خریدار ثبت کن',
-    inviteTitle = 'دعوت به دیمت — لینک کاتالوگ را می‌گیرند',
+    inviteTitle = 'دعوت به دیمت — لینک بازوی فروش را می‌گیرند',
     invite,
     onAddBusiness,
     doneLabel = 'درخواست رفت',
@@ -242,7 +242,7 @@ export default function BuyerContactsPanel({
         );
     };
 
-    // ─── ردیف غیرعضو — دعوت با لینک کاتالوگ ───
+    // ─── ردیف غیرعضو — دعوت با لینک بازوی فروش ───
     const inviteeRow = (c: PhoneContactItem) => {
         const open = openChannels === c.id;
         return (

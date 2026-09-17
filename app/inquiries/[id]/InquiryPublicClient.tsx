@@ -4,17 +4,17 @@
 //   ۲) «سایر کالاهایی که معمولا می‌خرد» — قیمت‌گیری‌شان بسته به تنظیمات خریدار
 //   پیشنهاد قیمت قلم‌به‌قلم در شیت ثبت می‌شود؛ مالک: مدیریت در پنل.
 // ✅ طراحی ۱۴۰۴ (بازطراحی به خواست مالک):
-//   - بستر سفید + کارت‌های سایه‌دار مثل کاتالوگ قیمت (پس‌زمینهٔ کهربایی حذف شد)
+//   - بستر سفید + کارت‌های سایه‌دار مثل بازوی فروش قیمت (پس‌زمینهٔ کهربایی حذف شد)
 //   - لیستِ لیستی حفظ شد؛ دکمهٔ قیمت برای «همه» فعال است
 //   - موبایل: CTA جمع‌وجور فوتر «پیشنهاد قیمت»؛ دسکتاپ: باکس «می‌تونی این لیست رو تامین کنی؟»
-//   - حذف از صفحهٔ مالک برداشته شد — کاتالوگ حذف نمی‌شود، فقط پذیرش قیمت متوقف/بسته می‌شود
+//   - حذف از صفحهٔ مالک برداشته شد — بازوی فروش حذف نمی‌شود، فقط پذیرش قیمت متوقف/بسته می‌شود
 //   - تماس + ذخیرهٔ مخاطب (vCard) برای بازدیدکننده
 // ✅ اصل مالک (۱۴۰۴): «سیستم دست کاربر را می‌گیرد و طبق سناریو راهنمایی می‌کند، بدون آنکه
 //    پیچیدگی را ببیند» — بدنهٔ صفحه هرگز تابلوی تبلیغی ندارد؛ همهٔ سناریوها پشتِ دکمهٔ
 //    «پیشنهاد قیمت» اجرا می‌شوند (SupplierConnectModal) و شبکه‌سازی فقط در فوتر است:
-//    ۱) مهمان → «ثبت‌نام کن، کاتالوگ بساز، بعد پیشنهاد بده»
-//    ۲) عضو بدون کاتالوگ → «اول کاتالوگ محصولاتت را بساز»
-//    ۳) عضو با کاتالوگ → «با کدام کاتالوگت تامین‌کنندهٔ این خریدار باش؟» → اتصال فوری (عمومی) یا درخواست (خصوصی)
+//    ۱) مهمان → «ثبت‌نام کن، بازوی فروش بساز، بعد پیشنهاد بده»
+//    ۲) عضو بدون بازوی فروش → «اول بازوی فروش محصولاتت را بساز»
+//    ۳) عضو با بازوی فروش → «با کدام بازوی فروشت تامین‌کنندهٔ این خریدار باش؟» → اتصال فوری (عمومی) یا درخواست (خصوصی)
 //    ۴) تامین‌کنندهٔ متصل → مستقیم شیت ثبت پیشنهاد
 // ✅ مشترک دو مسیر: /{slug} (ریشهٔ سایت — اسلاگ دلخواه) و /inquiries/{id} (لینک‌های قدیمی)
 'use client';
@@ -51,7 +51,7 @@ const fadeUp = (delay = 0) => ({
     transition: { duration: 0.45, delay, ease: 'easeOut' as const },
 });
 
-// ✅ کارت سایه‌دار — هم‌خانوادهٔ کاتالوگ قیمت؛ بستر سفید، سایهٔ نرم، بوردر خنثی
+// ✅ کارت سایه‌دار — هم‌خانوادهٔ بازوی فروش قیمت؛ بستر سفید، سایهٔ نرم، بوردر خنثی
 const CARD = 'border border-outline-variant/30 bg-white shadow-[0_2px_12px_-6px_rgba(15,23,42,0.14)] dark:border-gray-800 dark:bg-gray-900 dark:shadow-[0_2px_12px_-6px_rgba(0,0,0,0.6)]';
 
 export default function InquiryPublicClient({ idOrSlug }: { idOrSlug: string }) {
@@ -69,11 +69,11 @@ export default function InquiryPublicClient({ idOrSlug }: { idOrSlug: string }) 
     // بعد از ثبت پیشنهاد تامین — بنر حالت «در انتظار تایید» می‌شود
     const [requestedSelf, setRequestedSelf] = useState(false);
     // 🛒 گیت پیشنهاد — مدال سناریومحور (خواستهٔ مالک: «وقتی روی پیشنهاد زد، همان‌جا سناریوها اجرا شود»):
-    //     مهمان / عضو بدون کاتالوگ / عضو با کاتالوگ (انتخاب کاتالوگ) / در انتظار تایید — همه در یک مدال
+    //     مهمان / عضو بدون بازوی فروش / عضو با بازوی فروش (انتخاب بازوی فروش) / در انتظار تایید — همه در یک مدال
     const [gateOpen, setGateOpen] = useState(false);
     const [gateTarget, setGateTarget] = useState<{ id?: string; name: string; quantity?: number | null; unit?: string | null } | null>(null);
 
-    // 💾 سوییچر بازوهای خرید ذخیره‌شده + نشانک این بازو (قرینهٔ کاتالوگ)
+    // 💾 سوییچر بازوهای خرید ذخیره‌شده + نشانک این بازو (قرینهٔ بازوی فروش)
     const [savedOpen, setSavedOpen] = useState(false);
     const savedDropdownRef = useRef<HTMLDivElement>(null);
     const { data: savedInquiries = [] } = useSavedInquiries();
@@ -209,7 +209,7 @@ export default function InquiryPublicClient({ idOrSlug }: { idOrSlug: string }) 
     const canOfferWholeList = canTouchOffer && items.length > 0 && (allowOther || urgentItems.length === items.length);
 
     // لمس دکمهٔ قیمت — کاربر فقط «پیشنهاد قیمت» می‌بیند؛ سیستم بنا به حالتش جواب می‌دهد:
-    //   مهمان یا وصل‌نشده → مدال سناریو (ثبت‌نام / ساخت کاتالوگ / انتخاب کاتالوگ)
+    //   مهمان یا وصل‌نشده → مدال سناریو (ثبت‌نام / ساخت بازوی فروش / انتخاب بازوی فروش)
     //   تامین‌کنندهٔ متصل (یا بازوی عمومیِ قبلاً باز) → مستقیم شیت ثبت پیشنهاد
     const handleOffer = (target: { id?: string; name: string; quantity?: number | null; unit?: string | null; unitId?: string | null }) => {
         if (!inquiry) return;
@@ -279,7 +279,7 @@ export default function InquiryPublicClient({ idOrSlug }: { idOrSlug: string }) 
         }
     };
 
-    // ✅ توقف/ادامهٔ پذیرش قیمت — کاتالوگ هرگز حذف نمی‌شود (تصمیم مالک)
+    // ✅ توقف/ادامهٔ پذیرش قیمت — بازوی فروش هرگز حذف نمی‌شود (تصمیم مالک)
     const toggleStatus = async () => {
         if (!inquiry) return;
         const next = inquiry.status === 'open' ? 'closed' : 'open';
@@ -323,7 +323,7 @@ export default function InquiryPublicClient({ idOrSlug }: { idOrSlug: string }) 
     // ✅ ارتباط تجاری سه‌حالته — «ارسال پیشنهاد تامین» (خواستهٔ مالک): هم عمومی هم خصوصی
     //     none → دکمه | pending → چیپ «در انتظار تایید» | member → چیپ «تاییدشده»
     const openCoop = () => {
-        // 🛒 همان مدال سناریومحور دکمهٔ پیشنهاد — مهمان/بدون کاتالوگ/انتخاب کاتالوگ همه‌جا یک‌جور
+        // 🛒 همان مدال سناریومحور دکمهٔ پیشنهاد — مهمان/بدون بازوی فروش/انتخاب بازوی فروش همه‌جا یک‌جور
         setGateTarget(null);
         setGateOpen(true);
     };
@@ -346,7 +346,7 @@ export default function InquiryPublicClient({ idOrSlug }: { idOrSlug: string }) 
         );
         return (
             <button onClick={openCoop} aria-label="ارسال پیشنهاد تامین"
-                title="با کاتالوگ قیمتت به این خریدار پیشنهاد تامین بده"
+                title="با بازوی فروش قیمتت به این خریدار پیشنهاد تامین بده"
                 className={`flex h-11 w-full items-center justify-center gap-2 rounded-xl bg-primary text-sm font-extrabold text-on-primary shadow-lg shadow-primary/25 transition-all hover:scale-[1.01] hover:opacity-95 active:scale-95 ${className}`}>
                 <Handshake className="size-4" />
                 ارسال پیشنهاد تامین
@@ -367,7 +367,7 @@ export default function InquiryPublicClient({ idOrSlug }: { idOrSlug: string }) 
 
     return (
         <div className="min-h-screen bg-white text-stone-900 dark:bg-gray-950 dark:text-gray-100">
-            {/* ═══ نوار ابزار — قرینهٔ کاتالوگ: بازگشت | سوییچر بازوهای ذخیره‌شده | تنظیمات/ذخیره/اشتراک ═══ */}
+            {/* ═══ نوار ابزار — قرینهٔ بازوی فروش: بازگشت | سوییچر بازوهای ذخیره‌شده | تنظیمات/ذخیره/اشتراک ═══ */}
             <header className="sticky top-0 z-40 border-b border-stone-100/80 bg-white/90 backdrop-blur-md dark:border-gray-800 dark:bg-gray-950/90">
                 <div className="mx-auto flex h-14 max-w-2xl items-center justify-between gap-1 px-4">
                     {/* بازگشت */}
@@ -421,7 +421,7 @@ export default function InquiryPublicClient({ idOrSlug }: { idOrSlug: string }) 
                         </div>
                     ) : null}
 
-                    {/* 👤 چیپ پروفایل خریدار در هدر — مهمان‌ها (مخاطب اصلی لینک) هویت صاحب بازو را در هدر ببینند (خواستهٔ مالک — الگو از هدر کاتالوگ) */}
+                    {/* 👤 چیپ پروفایل خریدار در هدر — مهمان‌ها (مخاطب اصلی لینک) هویت صاحب بازو را در هدر ببینند (خواستهٔ مالک — الگو از هدر بازوی فروش) */}
                     {!isAuthenticated && (
                         <button onClick={() => document.getElementById('buyer-box')?.scrollIntoView({ behavior: 'smooth', block: 'center' })}
                             aria-label="پروفایل خریدار" title="پروفایل خریدار"
@@ -469,7 +469,7 @@ export default function InquiryPublicClient({ idOrSlug }: { idOrSlug: string }) 
             </header>
 
             <main className="mx-auto max-w-2xl px-4 pb-32 pt-5">
-                {/* ═══ کارت هویت بازو — هم‌خانوادهٔ هدر کاتالوگ قیمت ═══ */}
+                {/* ═══ کارت هویت بازو — هم‌خانوادهٔ هدر بازوی فروش قیمت ═══ */}
                 <motion.section {...fadeUp()} className={`overflow-hidden ${CARD} rounded-3xl`}>
                     <div className="h-1 bg-gradient-to-l from-primary via-brand-accent to-brand-primary/50" />
                     <div className="p-5 sm:p-6">
@@ -785,7 +785,7 @@ export default function InquiryPublicClient({ idOrSlug }: { idOrSlug: string }) 
                                         {it.referenceUrl ? (
                                             <a href={it.referenceUrl} target="_blank" rel="noreferrer"
                                                 className="inline-flex items-center gap-1 text-[11px] font-bold text-stone-400 hover:text-primary dark:text-gray-500">
-                                                <ExternalLink className="size-3" /> نمونه / کاتالوگ سازنده
+                                                <ExternalLink className="size-3" /> نمونه / بازوی فروش سازنده
                                             </a>
                                         ) : <span />}
                                         {showItemOffer(it) && (
@@ -855,7 +855,7 @@ export default function InquiryPublicClient({ idOrSlug }: { idOrSlug: string }) 
                                         {it.referenceUrl ? (
                                             <a href={it.referenceUrl} target="_blank" rel="noreferrer"
                                                 className="inline-flex items-center gap-1 text-[11px] font-bold text-stone-400 hover:text-primary dark:text-gray-500">
-                                                <ExternalLink className="size-3" /> نمونه / کاتالوگ سازنده
+                                                <ExternalLink className="size-3" /> نمونه / بازوی فروش سازنده
                                             </a>
                                         ) : <span />}
                                         {showItemOffer(it) && (
@@ -892,7 +892,7 @@ export default function InquiryPublicClient({ idOrSlug }: { idOrSlug: string }) 
                 )}
 
                 {/* ─── باکس مهمان — فقط دسکتاپ؛ CTA همان مدال سناریومحور دکمهٔ پیشنهاد را باز می‌کند
-                    (نه لینک خشک ورود — مسیر ثبت‌نام/کاتالوگ در مدال توضیح داده می‌شود) ─── */}
+                    (نه لینک خشک ورود — مسیر ثبت‌نام/بازوی فروش در مدال توضیح داده می‌شود) ─── */}
                 {!isAuthenticated && canTouchOffer && (
                     <motion.section {...fadeUp()} className="mt-8 hidden rounded-3xl bg-stone-900 px-6 py-8 text-center text-white dark:bg-gray-800 lg:block">
                         <h3 className="text-lg font-black">می‌تونی این لیست رو تامین کنی؟</h3>
@@ -1025,8 +1025,8 @@ export default function InquiryPublicClient({ idOrSlug }: { idOrSlug: string }) 
             )}
 
             {/* ═══ 🛒 مدال سناریومحور تامین — یک مدال برای همهٔ حالت‌ها (خواستهٔ مالک: کاربر فقط «پیشنهاد قیمت»
-                می‌بیند؛ بنا به حالتش، سیستم دستش را می‌گیرد): مهمان → ثبت‌نام+کاتالوگ | عضو بدون کاتالوگ →
-                ساخت کاتالوگ | عضو با کاتالوگ → انتخاب کاتالوگ (عمومی: اتصال فوری / خصوصی: درخواست) ═══ */}
+                می‌بیند؛ بنا به حالتش، سیستم دستش را می‌گیرد): مهمان → ثبت‌نام+بازوی فروش | عضو بدون بازوی فروش →
+                ساخت بازوی فروش | عضو با بازوی فروش → انتخاب بازوی فروش (عمومی: اتصال فوری / خصوصی: درخواست) ═══ */}
             {gateOpen && (
                 <SupplierConnectModal
                     inquiry={inquiry as any}
@@ -1067,9 +1067,9 @@ function dl_over(deadline?: string | null): boolean {
 // 🛒 مدال سناریومحور تامین — قلب قیف (اصل مالک: «سیستم دست کاربر را می‌گیرد؛
 //     کاربر فقط دکمهٔ پیشنهاد را می‌بیند و پیچیدگی را احساس نمی‌کند»)
 //     یک مدال، چهار حالت — بنا به اینکه کاربر کیست، همان یک دکمه جواب متفاوت می‌دهد:
-//     ۱) مهمان → «برای پیشنهاد، در دیمت ثبت‌نام کن و کاتالوگ محصولت را بساز؛ بعد پیشنهاد بده»
-//     ۲) عضوِ بدون کاتالوگ → «اول کاتالوگ محصولاتت را بساز» + CTA ساخت
-//     ۳) عضوِ با کاتالوگ → «با کدام کاتالوگت می‌خواهی تامین‌کنندهٔ این خریدار باشی؟»
+//     ۱) مهمان → «برای پیشنهاد، در دیمت ثبت‌نام کن و بازوی فروش محصولت را بساز؛ بعد پیشنهاد بده»
+//     ۲) عضوِ بدون بازوی فروش → «اول بازوی فروش محصولاتت را بساز» + CTA ساخت
+//     ۳) عضوِ با بازوی فروش → «با کدام بازوی فروشت می‌خواهی تامین‌کنندهٔ این خریدار باشی؟»
 //         عمومی: اتصال فوری → شیت پیشنهاد همان لحظه باز می‌شود
 //         خصوصی: درخواست ثبت می‌شود → منتظر تایید خریدار
 //     ۴) در انتظار تایید (خصوصی) → «درخواستت ثبت شده — به‌محض تایید پیشنهاد بده»
@@ -1086,7 +1086,7 @@ function SupplierConnectModal({ inquiry, target, onClose, onConnected, onRequest
     const [mounted, setMounted] = useState(false);
     const [catalogId, setCatalogId] = useState<string>('');
 
-    // کاتالوگ‌های من — فقط برای عضو لود شود (⚠️ همهٔ هوک‌ها پیش از return شرطی)
+    // بازوی فروش‌های من — فقط برای عضو لود شود (⚠️ همهٔ هوک‌ها پیش از return شرطی)
     const { data: catalogsRaw, isLoading: catsLoading } = useQuery({
         queryKey: ['catalogs'],
         queryFn: () => apiService.catalog.getAll(),
@@ -1129,8 +1129,8 @@ function SupplierConnectModal({ inquiry, target, onClose, onConnected, onRequest
         : pending
           ? 'درخواستت در انتظار تایید است'
           : noCatalog
-            ? 'اول کاتالوگ محصولاتت را بساز'
-            : 'با کدوم کاتالوگت می‌خوای تامین‌کنندهٔ این خریدار باشی؟';
+            ? 'اول بازوی فروش محصولاتت را بساز'
+            : 'با کدوم بازوی فروشت می‌خوای تامین‌کنندهٔ این خریدار باشی؟';
     const Icon = guest || noCatalog ? Store : pending ? Clock : Handshake;
     const iconTone = guest || noCatalog || pending
         ? 'bg-brand-accent-soft dark:bg-amber-500/10'
@@ -1168,17 +1168,17 @@ function SupplierConnectModal({ inquiry, target, onClose, onConnected, onRequest
                     </p>
                 )}
 
-                {/* ── حالت ۱: مهمان — ثبت‌نام + ساخت کاتالوگ، بعد پیشنهاد ── */}
+                {/* ── حالت ۱: مهمان — ثبت‌نام + ساخت بازوی فروش، بعد پیشنهاد ── */}
                 {guest && (
                     <>
                         <p className="mx-auto mt-3 max-w-xs text-[12px] font-bold leading-6 text-stone-500 dark:text-gray-400">
-                            برای پیشنهاد قیمت، در دیمت ثبت‌نام کن و کاتالوگ محصولت را برای تامین‌کنندگی بساز؛
+                            برای پیشنهاد قیمت، در دیمت ثبت‌نام کن و بازوی فروش محصولت را برای تامین‌کنندگی بساز؛
                             بعد می‌توانی پیشنهادت را اینجا ثبت کنی.
                         </p>
                         <Link href={joinHref}
                             className="mt-5 inline-flex h-12 w-full items-center justify-center gap-2 rounded-full bg-primary text-sm font-extrabold text-on-primary shadow-lg shadow-primary/25 transition-opacity hover:opacity-95">
                             <Sparkles className="size-4" />
-                            ثبت‌نام و ساخت کاتالوگ محصولات
+                            ثبت‌نام و ساخت بازوی فروش محصولات
                         </Link>
                         <Link href={backHref}
                             className="mt-2.5 block text-center text-[11px] font-bold text-stone-400 hover:text-primary dark:text-gray-500">
@@ -1187,17 +1187,17 @@ function SupplierConnectModal({ inquiry, target, onClose, onConnected, onRequest
                     </>
                 )}
 
-                {/* ── حالت ۲: عضوِ بدون کاتالوگ — اول کاتالوگ ── */}
+                {/* ── حالت ۲: عضوِ بدون بازوی فروش — اول بازوی فروش ── */}
                 {noCatalog && (
                     <>
                         <p className="mx-auto mt-3 max-w-xs text-[12px] font-bold leading-6 text-stone-500 dark:text-gray-400">
-                            در دیمت تامین‌کننده‌ها با کاتالوگ محصول کار می‌کنند —
-                            در یک دقیقه کاتالوگت را بساز تا بتوانی برای این خریدار پیشنهاد بدهی.
+                            در دیمت تامین‌کننده‌ها با بازوی فروش محصول کار می‌کنند —
+                            در یک دقیقه بازوی فروشت را بساز تا بتوانی برای این خریدار پیشنهاد بدهی.
                         </p>
                         <Link href="/business/register"
                             className="mt-5 inline-flex h-12 w-full items-center justify-center gap-2 rounded-full bg-primary text-sm font-extrabold text-on-primary shadow-lg shadow-primary/25 transition-opacity hover:opacity-95">
                             <Store className="size-4" />
-                            ساخت کاتالوگ محصولات
+                            ساخت بازوی فروش محصولات
                         </Link>
                     </>
                 )}
@@ -1206,7 +1206,7 @@ function SupplierConnectModal({ inquiry, target, onClose, onConnected, onRequest
                 {pending && (
                     <>
                         <p className="mx-auto mt-3 max-w-xs text-[12px] font-bold leading-6 text-stone-500 dark:text-gray-400">
-                            پیشنهاد تامینت با کاتالوگت ثبت شده — به‌محض تایید خریدار می‌توانی
+                            پیشنهاد تامینت با بازوی فروشت ثبت شده — به‌محض تایید خریدار می‌توانی
                             برای اقلام این بازو پیشنهاد قیمت بدهی.
                         </p>
                         <button onClick={onClose}
@@ -1216,13 +1216,13 @@ function SupplierConnectModal({ inquiry, target, onClose, onConnected, onRequest
                     </>
                 )}
 
-                {/* ── حالت ۴: انتخاب کاتالوگ ── */}
+                {/* ── حالت ۴: انتخاب بازوی فروش ── */}
                 {picker && (
                     <>
                         <p className="mx-auto mt-3 max-w-xs text-[12px] font-bold leading-6 text-stone-500 dark:text-gray-400">
                             {isPrivate
-                                ? 'این بازوی خرید خصوصیه — با یکی از کاتالوگ‌هات پیشنهاد تامین بده؛ بعد از تایید خریدار می تونی پیشنهاد بدی.'
-                                : 'کاتالوگت را انتخاب کن تا همین حالا به‌عنوان تامین‌کنندهٔ این خریدار پیشنهادت را ثبت کنی.'}
+                                ? 'این بازوی خرید خصوصیه — با یکی از بازوی فروش‌هات پیشنهاد تامین بده؛ بعد از تایید خریدار می تونی پیشنهاد بدی.'
+                                : 'بازوی فروشت را انتخاب کن تا همین حالا به‌عنوان تامین‌کنندهٔ این خریدار پیشنهادت را ثبت کنی.'}
                         </p>
                         <div className="mt-4 max-h-44 space-y-1.5 overflow-y-auto pl-1 text-right">
                             {myCatalogs.map((c: any) => (
@@ -1251,7 +1251,7 @@ function SupplierConnectModal({ inquiry, target, onClose, onConnected, onRequest
                     </>
                 )}
 
-                {/* ── لودینگ کاتالوگ‌ها ── */}
+                {/* ── لودینگ بازوی فروش‌ها ── */}
                 {isAuthenticated && catsLoading && <Loader2 className="mx-auto mt-5 size-5 animate-spin text-stone-300" />}
             </motion.div>
         </div>,

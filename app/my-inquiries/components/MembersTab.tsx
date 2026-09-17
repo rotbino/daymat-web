@@ -80,7 +80,7 @@ export default function MembersTab({ inquiryId, visibility, slug }: Props) {
                         : <Handshake className="size-4 text-stone-400" />}
                 </span>
                 <div className="min-w-0 flex-1">
-                    <p className="truncate text-[13px] font-black text-stone-900 dark:text-gray-100">{cat.name || 'کاتالوگ'}</p>
+                    <p className="truncate text-[13px] font-black text-stone-900 dark:text-gray-100">{cat.name || 'بازوی فروش'}</p>
                     <p className="truncate text-[10px] font-bold text-stone-400 dark:text-gray-500">
                         {m.user?.fullName || '—'}
                         {cat.city ? ` · ${cat.city}` : ''}
@@ -115,7 +115,7 @@ export default function MembersTab({ inquiryId, visibility, slug }: Props) {
                 ) : (
                     <div className="flex shrink-0 items-center gap-1">
                         {mode === 'active' && cat.slug && (
-                            <Link href={`/${cat.slug}`} target="_blank" aria-label="کاتالوگ قیمت"
+                            <Link href={`/${cat.slug}`} target="_blank" aria-label="بازوی فروش قیمت"
                                 className="grid size-8 place-items-center rounded-lg text-stone-400 transition-colors hover:bg-stone-100 hover:text-primary dark:hover:bg-gray-800">
                                 <ExternalLink className="size-4" />
                             </Link>
@@ -230,9 +230,9 @@ export default function MembersTab({ inquiryId, visibility, slug }: Props) {
 
 /**
  * مودال «درخواست تامین» — دو تب (خواستهٔ مالک):
- *   • اعضا — جست‌وجوی کاتالوگ‌های دیمت با فیلتر استان/شهر/صنف + نام بیزینس و شهر زیر هر کاتالوگ
+ *   • اعضا — جست‌وجوی بازوی فروش‌های دیمت با فیلتر استان/شهر/صنف + نام بیزینس و شهر زیر هر بازوی فروش
  *     (همکارهای فعال هرگز لیست نمی‌شوند؛ درخواست‌های در انتظار با لیبل کهربایی «در انتظار تایید»)
- *   • مخاطبین تلفن — ماژول مخاطبین: عضوهای دیمت → درخواست تامین به کاتالوگشان، غیراعضا → دعوت با لینک بازو
+ *   • مخاطبین تلفن — ماژول مخاطبین: عضوهای دیمت → درخواست تامین به بازوی فروششان، غیراعضا → دعوت با لینک بازو
  */
 function AddSupplierModal({ inquiryId, slug, existingIds, onClose, onDone }: {
     inquiryId: string;
@@ -298,7 +298,7 @@ function AddSupplierModal({ inquiryId, slug, existingIds, onClose, onDone }: {
             >
                 <p className="text-[15px] font-black text-stone-900 dark:text-gray-100">درخواست تامین</p>
                 <p className="mt-0.5 text-[11px] font-bold text-stone-400 dark:text-gray-500">
-                    از کاتالوگ قیمتشان درخواست تامین بفرست — بعد از تاییدشان، اقلامت را می‌بینند و قیمت می‌دهند
+                    از بازوی فروش قیمتشان درخواست تامین بفرست — بعد از تاییدشان، اقلامت را می‌بینند و قیمت می‌دهند
                 </p>
 
                 {/* دو تب — اعضای دیمت | مخاطبین تلفن (خواستهٔ مالک: کنار هم، نه زیر هم) */}
@@ -324,7 +324,7 @@ function AddSupplierModal({ inquiryId, slug, existingIds, onClose, onDone }: {
                             <input
                                 value={q}
                                 onChange={(e) => setQ(e.target.value)}
-                                placeholder="جست‌وجوی کاتالوگ قیمت…"
+                                placeholder="جست‌وجوی بازوی فروش قیمت…"
                                 autoFocus
                                 className="h-11 w-full rounded-xl border border-stone-100 bg-stone-50 pr-9 pl-3 text-sm font-bold outline-none focus:border-brand-contrast dark:border-gray-800 dark:bg-gray-950/60 dark:text-gray-100"
                             />
@@ -349,7 +349,7 @@ function AddSupplierModal({ inquiryId, slug, existingIds, onClose, onDone }: {
                             />
                         </div>
 
-                        {/* لیست کاتالوگ‌ها — زیر اسم، بیزینس · صنف · شهر برای تصمیم آسان */}
+                        {/* لیست بازوی فروش‌ها — زیر اسم، بیزینس · صنف · شهر برای تصمیم آسان */}
                         <div className="mt-3 space-y-1.5">
                             {isFetching && results.length === 0 ? (
                                 <div className="grid place-items-center py-8"><Loader2 className="size-5 animate-spin text-stone-300" /></div>
@@ -407,20 +407,20 @@ function AddSupplierModal({ inquiryId, slug, existingIds, onClose, onDone }: {
                 )}
 
                 {/* 📱 تب مخاطبین تلفن — موتور تامین‌کننده‌یابی:
-                     عضوهای دیمت → «درخواست تامین» به کاتالوگشان می‌رود
+                     عضوهای دیمت → «درخواست تامین» به بازوی فروششان می‌رود
                      غیراعضا → «دعوت به دیمت» — لینک بازو با پیام‌رسان یا پیامک می‌رود */}
                 {tab === 'contacts' && (
                     <div className="mt-3">
                         <PhoneContactsPanel
                             title="از مخاطبین تلفنت انتخاب کن"
-                            membersTitle="اعضای دیمت — درخواست تامین به کاتالوگشان می‌رود"
+                            membersTitle="اعضای دیمت — درخواست تامین به بازوی فروششان می‌رود"
                             inviteTitle="دعوت به دیمت — لینک بازو را می‌گیرند"
                             memberSend={{
                                 label: 'درخواست تامین',
                                 doneLabel: 'درخواست رفت',
                                 reason: (c) => {
                                     const cat = c.matchedUser?.catalog;
-                                    if (!cat) return 'کاتالوگ قیمتی ندارد — با دعوت، لینک بازو را بفرست';
+                                    if (!cat) return 'بازوی فروش قیمتی ندارد — با دعوت، لینک بازو را بفرست';
                                     if (existingIds.has(cat.id)) return 'درخواست تامین قبلاً فرستاده شده';
                                     return null;
                                 },

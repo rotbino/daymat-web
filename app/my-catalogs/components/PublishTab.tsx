@@ -25,7 +25,7 @@ interface Props {
 export default function PublishTab({ currentCatalog, memberships, onShare, onEditCatalog, onRefreshAll, onOpenCard, savedCard }: Props) {
     const queryClient = useQueryClient();
 
-    // ✅ لغوِ عضویت فقط با تصمیمِ مالکِ بازار — تایید دومرحله‌ای با تایپ عنوان یا اسلاگ کاتالوگ؛
+    // ✅ لغوِ عضویت فقط با تصمیمِ مالکِ بازار — تایید دومرحله‌ای با تایپ عنوان یا اسلاگ بازوی فروش؛
     //    درخواست به پنل مالک می‌رود و تا تاییدِ او، عضویت و مزایایش برقرار است
     const [leaveTarget, setLeaveTarget] = useState<any>(null);
     const [leaveConfirmText, setLeaveConfirmText] = useState('');
@@ -90,10 +90,10 @@ export default function PublishTab({ currentCatalog, memberships, onShare, onEdi
 
     return (
         <div className="space-y-3">
-            {/* لینک عمومی کاتالوگ — همان چیزی که مشتری می‌بیند */}
+            {/* لینک عمومی بازوی فروش — همان چیزی که مشتری می‌بیند */}
             {currentCatalog.slug ? (
                 <div className={CARD_CLS + ' p-4'}>
-                    <h3 className="text-sm font-extrabold text-on-surface mb-2">لینک عمومی کاتالوگ</h3>
+                    <h3 className="text-sm font-extrabold text-on-surface mb-2">لینک عمومی بازوی فروش</h3>
                     <div className="flex items-center gap-2">
                         <a href={`/${currentCatalog.slug}`} target="_blank" rel="noreferrer"
                            className="flex-1 min-w-0 h-10 px-3 rounded-lg bg-surface-container-low dark:bg-gray-800
@@ -116,7 +116,7 @@ export default function PublishTab({ currentCatalog, memberships, onShare, onEdi
                             flex items-center gap-3 text-right hover:border-amber-500 transition-colors">
                     <Globe className="w-5 h-5 text-amber-600 dark:text-amber-400 flex-shrink-0" />
                     <span className="flex-1 text-xs font-bold text-amber-700 dark:text-amber-300">
-                        برای انتشار، اول آدرس اختصاصی کاتالوگ را تنظیم کن
+                        برای انتشار، اول آدرس اختصاصی بازوی فروش را تنظیم کن
                     </span>
                 </button>
             )}
@@ -129,12 +129,12 @@ export default function PublishTab({ currentCatalog, memberships, onShare, onEdi
                     <Share2 className="w-5 h-5 text-primary" />
                 </span>
                 <span className="flex-1 min-w-0">
-                    <span className="block text-sm font-extrabold text-primary">کیت اشتراک‌گذاری کاتالوگ</span>
+                    <span className="block text-sm font-extrabold text-primary">کیت اشتراک‌گذاری بازوی فروش</span>
                     <span className="block text-[11px] text-on-surface-variant mt-0.5">لینک + پیام آماده + QR چاپی</span>
                 </span>
             </button>
 
-            {/* 🪪 ساخت کارت ویزیت کاتالوگ — بنا بر خواستهٔ کاربر داخل تب انتشار */}
+            {/* 🪪 ساخت کارت ویزیت بازوی فروش — بنا بر خواستهٔ کاربر داخل تب انتشار */}
             {/* اگر کارت ذخیره‌شده دارد، پیش‌نمایشش همین‌جا دیده می‌شود تا زحمت کاربر از بین نرود */}
             {(() => {
                 const cardPreview = typeof savedCard?.preview === 'string' && savedCard.preview.startsWith('data:image')
@@ -149,10 +149,10 @@ export default function PublishTab({ currentCatalog, memberships, onShare, onEdi
                             <span className="w-[72px] h-[41px] rounded-lg overflow-hidden ring-1 ring-outline-variant/40 dark:ring-gray-700
                                     bg-white flex-shrink-0 shadow-sm">
                                 {/* eslint-disable-next-line @next/next/no-img-element */}
-                                <img src={cardPreview} alt="کارت ویزیت کاتالوگ" className="w-full h-full object-cover" />
+                                <img src={cardPreview} alt="کارت ویزیت بازوی فروش" className="w-full h-full object-cover" />
                             </span>
                             <span className="flex-1 min-w-0">
-                                <span className="block text-sm font-extrabold text-on-surface">کارت ویزیت کاتالوگ</span>
+                                <span className="block text-sm font-extrabold text-on-surface">کارت ویزیت بازوی فروش</span>
                                 <span className="block text-[11px] text-on-surface-variant mt-0.5 truncate">
                                     {savedLabel ? `ذخیره‌شده در ${savedLabel} — ` : 'ذخیره‌شده — '}برای ویرایش لمس کن
                                 </span>
@@ -169,8 +169,8 @@ export default function PublishTab({ currentCatalog, memberships, onShare, onEdi
                             <IdCard className="w-5 h-5 text-amber-600 dark:text-amber-400" />
                         </span>
                         <span className="flex-1 min-w-0">
-                            <span className="block text-sm font-extrabold text-amber-700 dark:text-amber-300">ساخت کارت ویزیت کاتالوگ</span>
-                            <span className="block text-[11px] text-on-surface-variant mt-0.5">طرح چاپی ۹×۵ با لوگو و QR کاتالوگ</span>
+                            <span className="block text-sm font-extrabold text-amber-700 dark:text-amber-300">ساخت کارت ویزیت بازوی فروش</span>
+                            <span className="block text-[11px] text-on-surface-variant mt-0.5">طرح چاپی ۹×۵ با لوگو و QR بازوی فروش</span>
                         </span>
                     </button>
                 );
@@ -187,7 +187,7 @@ export default function PublishTab({ currentCatalog, memberships, onShare, onEdi
                 {memberships.length === 0 ? (
                     <div className="rounded-lg border border-dashed border-outline-variant/50 dark:border-gray-700 p-4 text-center">
                         <p className="text-xs text-on-surface-variant leading-6">
-                            این کاتالوگ هنوز عضو هیچ بازاری نیست.<br />وقتی مدیر بازار کاتالوگت را عضو کند، اینجا فعال می‌شود.
+                            این بازوی فروش هنوز عضو هیچ بازاری نیست.<br />وقتی مدیر بازار بازوی فروشت را عضو کند، اینجا فعال می‌شود.
                         </p>
                     </div>
                 ) : (
@@ -254,7 +254,7 @@ export default function PublishTab({ currentCatalog, memberships, onShare, onEdi
                 )}
             </div>
 
-            {/* ✅ مودال درخواست لغو عضویت — تایید دومرحله‌ای: تایپ عنوان یا اسلاگ کاتالوگ؛
+            {/* ✅ مودال درخواست لغو عضویت — تایید دومرحله‌ای: تایپ عنوان یا اسلاگ بازوی فروش؛
                 درخواست به پنل مالک می‌رود و فقط با تاییدِ او لغو می‌شود */}
             {leaveTarget && (
                 <div className="fixed inset-0 z-[80] flex items-end lg:items-center justify-center">
@@ -270,10 +270,10 @@ export default function PublishTab({ currentCatalog, memberships, onShare, onEdi
                         <p className="text-[11.5px] text-on-surface-variant leading-6 mb-3">
                             با تاییدِ مالکِ بازار، کالاهایت از تابلوی این بازار برداشته می‌شود و خروجت
                             {' '}<b className="text-on-surface">به‌عنوان خروجِ اختیاریِ خودت ثبت می‌شود</b>{' '}
-                            تا مدیر اشتباهی دوباره کاتالوگت را اضافه نکند. تا قبل از تایید، عضویت و مزایایش برقرار است.
+                            تا مدیر اشتباهی دوباره بازوی فروشت را اضافه نکند. تا قبل از تایید، عضویت و مزایایش برقرار است.
                         </p>
                         <p className="text-[11px] text-on-surface mb-1.5">
-                            برای تایید، عنوان یا آدرس اختصاصی کاتالوگت را تایپ کن:
+                            برای تایید، عنوان یا آدرس اختصاصی بازوی فروشت را تایپ کن:
                         </p>
                         <input
                             value={leaveConfirmText}

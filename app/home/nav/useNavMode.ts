@@ -35,10 +35,10 @@ export function useNavMode(): { mode: NavMode; loading: boolean } {
     const hasCatalog = (cataloges ?? []).length > 0;
     const hasMembership = (arms ?? []).some((m: any) => m.status === 'active');
 
-    // ✅ عضو بازار (فروشنده یا خریدار) — حتی بدون کاتالوگ (خریدارِ کسب‌وکارمحور) تب بازار دارد
+    // ✅ عضو بازار (فروشنده یا خریدار) — حتی بدون بازوی فروش (خریدارِ کسب‌وکارمحور) تب بازار دارد
     if (hasMembership) return { mode: 'member', loading: false };
 
-    // ✅ قبل از تصمیم، صبر برای داده — خریدارِ بی‌کاتالوگ نباید فلیکر کند
+    // ✅ قبل از تصمیم، صبر برای داده — خریدارِ بی‌بازوی فروش نباید فلیکر کند
     if (bizLoading || armsLoading) return { mode: 'catalog-owner', loading: true };
 
     if (!hasCatalog) return { mode: 'catalog-owner', loading: false };

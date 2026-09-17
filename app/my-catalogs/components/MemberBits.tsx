@@ -33,7 +33,7 @@ export const EVENT_LABEL: Record<string, string> = {
     service_invite_declined: 'دعوت تامین خدمات را رد کرد',
     seller_invite_sent: 'به همکاری در فروش دعوت شد',
     seller_invite_declined: 'دعوت همکاری در فروش را رد کرد',
-    admin_promoted: 'مدیر کاتالوگ شد',
+    admin_promoted: 'مدیر بازوی فروش شد',
     admin_demoted: 'نقش مدیرش گرفته شد',
     customer_added: 'به‌عنوان خریدار ثبت شد',
     customer_confirmed: 'خریداربودنش را تایید کرد',
@@ -43,8 +43,8 @@ export const EVENT_LABEL: Record<string, string> = {
     customer_reassigned: 'مسئولش عوض شد',
     customer_unassigned: 'بی‌مسئول شد',
     region_set: 'منطقه‌اش تغییر کرد',
-    joined: 'به اعضای کاتالوگ اضافه شد',
-    migrated: 'به مدل اعضای کاتالوگ منتقل شد',
+    joined: 'به اعضای بازوی فروش اضافه شد',
+    migrated: 'به مدل اعضای بازوی فروش منتقل شد',
 };
 
 // ✅ برچسب گویا برای هر نوع درخواست — UX writing به‌جای واژه‌های خام
@@ -87,8 +87,8 @@ export const bizBadge = (m: any) => {
 
 /** بج نقش سیستمی — فقط مالک/مدیر/خودم (تب تیم فروش) */
 export const sysBadge = (m: any) => {
-    if (m.isOwner) return { text: 'مالک کاتالوگ', cls: 'bg-amber-100 text-amber-800 dark:bg-amber-900/40 dark:text-amber-300' };
-    if (m.isAdmin) return { text: 'مدیر کاتالوگ', cls: 'bg-sky-100 text-sky-700 dark:bg-sky-900/30 dark:text-sky-300' };
+    if (m.isOwner) return { text: 'مالک بازوی فروش', cls: 'bg-amber-100 text-amber-800 dark:bg-amber-900/40 dark:text-amber-300' };
+    if (m.isAdmin) return { text: 'مدیر بازوی فروش', cls: 'bg-sky-100 text-sky-700 dark:bg-sky-900/30 dark:text-sky-300' };
     if (m.__isMe) return { text: 'خودم', cls: 'border border-outline-variant/60 text-gray-500 dark:text-gray-400' };
     return null;
 };
@@ -98,7 +98,7 @@ export const sysBadge = (m: any) => {
 //   اگر طرف رد کند برچسب «درخواست رد شده» می‌گیرد و آیکون حذف کنارش می‌آید.
 export type MemberLane = 'seller' | 'customer' | 'supplier' | 'service';
 
-/** مسیری که درخواست را «مدیرِ کاتالوگ» شروع کرده — تنها اینها در لیستِ دعوت‌کننده pending/declined نشان داده می‌شوند */
+/** مسیری که درخواست را «مدیرِ بازوی فروش» شروع کرده — تنها اینها در لیستِ دعوت‌کننده pending/declined نشان داده می‌شوند */
 const MANAGER_INITIATED_VIA: Record<MemberLane, string> = {
     seller: 'manager_invite',
     customer: 'owner_add',
@@ -153,7 +153,7 @@ export function MemberMainInfo({ m, onOpen }: { m: any; onOpen?: () => void }) {
             <p className="text-[11px] text-gray-500 dark:text-gray-400 truncate mt-0.5 flex items-center gap-2">
                 {bizName && (
                     <span className="truncate">
-                        {m.supplierCatalog?.name && m.supplierCatalog?.slug ? 'کاتالوگ: ' : ''}
+                        {m.supplierCatalog?.name && m.supplierCatalog?.slug ? 'بازوی فروش: ' : ''}
                         {bizName}
                     </span>
                 )}
