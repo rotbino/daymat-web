@@ -21,7 +21,7 @@ const vazirmatn = Vazirmatn({
 
 export const metadata: Metadata = {
     title: "Daymat | بازوی فروش روزانه قیمت  ",
-    description: "Daymat ساخت بازوی فروش شخصی قیمت و نمایش قیمت در بازارهای تخصصی .",
+    description: "Daymat ساخت بازوی فروش شخصی قیمت و نمایش قیمت در بازارهای صنفی .",
     applicationName: "دیمت",
     appleWebApp: {
         capable: true,

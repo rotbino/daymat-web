@@ -16,10 +16,10 @@ export function IntroSection() {
             <div className="bg-gradient-to-bl from-primary/5 to-primary/10 dark:from-primary/10 dark:to-primary/20 rounded-2xl p-6 md:p-8 border border-primary/20">
                 <Crown className="w-7 h-7 text-amber-500 mx-auto md:mx-0 mb-3" />
                 <h2 className="text-xl md:text-xl font-black text-on-surface dark:text-gray-100 leading-tight mb-3">
-                 پلتفرم ایجاد بازارهای تخصصی خرید و فروش عمده آنلاین
+                 پلتفرم ایجاد بازارهای صنفی خرید و فروش عمده آنلاین
                 </h2>
                 <p className="text-on-surface-variant/90 dark:text-gray-300 text-base leading-8">
-                    Daymat پلتفرم ایجاد بازارهای تخصصی عمده فروشی است. و بستر نرم افزاری و سخت افزاری ساخت بازارهای تخصصی را برای شما فراهم کرده است، منظور از بازار تخصصی،
+                    Daymat پلتفرم ایجاد بازارهای صنفی عمده فروشی است. و بستر نرم افزاری و سخت افزاری ساخت بازارهای صنفی را برای شما فراهم کرده است، منظور از بازار صنفی،
                     سایتی آنلاین است که فروشندگان عمده و خریداران حرفه‌ای یک صنف خاص، دور هم جمع می‌شوند و معامله می‌کنند.
                     درآمد شما هم از <strong>خدماتی</strong> که به همین اعضا می‌دهید، شروع می‌شود و با رشد بازارتان چند برابر می گردد. تمام بستر نرم افزاری و درآمدزایی آماده است. تنها کاری که شما باید انجام دهید دعوت از اعضای یک یا چند صنف مثلا صنف لوازم التحریر به بازارتان است..
                 </p>
@@ -29,7 +29,7 @@ export function IntroSection() {
             <div>
                 <div className="flex items-center gap-2 mb-4">
                     <Store className="w-5 h-5 text-primary" />
-                    <h3 className="font-bold text-lg text-on-surface dark:text-gray-100">مثالهایی از بازارهای تخصصی خرید و فروش عمده</h3>
+                    <h3 className="font-bold text-lg text-on-surface dark:text-gray-100">مثالهایی از بازارهای صنفی خرید و فروش عمده</h3>
                 </div>
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                     {[
@@ -214,7 +214,7 @@ export function IntroSection() {
                 <p className="text-lg font-black text-on-surface dark:text-gray-100 leading-8">
                     ابزار آماده است. ایده‌تان را بردارید و
                     <br />
-                    <span className="text-primary dark:text-primary-300">با کلیک روی «مرحله بعد» اولین بازار تخصصی خود را بسازید.</span>
+                    <span className="text-primary dark:text-primary-300">با کلیک روی «مرحله بعد» اولین بازار صنفی خود را بسازید.</span>
                 </p>
             </div>
 

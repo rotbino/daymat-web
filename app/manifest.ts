@@ -7,7 +7,7 @@ export default function manifest(): MetadataRoute.Manifest {
         id: "/",
         name: "دیمت | بازوی فروش روزانه قیمت",
         short_name: "دیمت",
-        description: "بازوی فروش شخصی قیمت و نمایش قیمت در بازارهای تخصصی",
+        description: "بازوی فروش شخصی قیمت و نمایش قیمت در بازارهای صنفی",
         dir: "rtl",
         lang: "fa-IR",
         display: "standalone",

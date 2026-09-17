@@ -631,7 +631,16 @@ function MarketBoardIllustration() {
             transition={{ delay: 0.9, duration: 0.5 }}
             className="mt-4 text-center text-[11px] font-bold text-stone-500 dark:text-gray-400"
         >
-          ← بازار تخصصی همون صنف، توی همون شهر تشکیل می‌شه
+          بازار تخصصی همون صنف، توی همون شهر تشکیل می‌شه
+        </motion.p>
+        <motion.p
+            initial={{ opacity: 0 }}
+            whileInView={{ opacity: 1 }}
+            viewport={{ once: true, margin: '-60px' }}
+            transition={{ delay: 0.9, duration: 0.5 }}
+            className="mt-4 text-center text-[11px] font-bold text-stone-500 dark:text-gray-400"
+        >
+         بازارهای صنفی می تونن در سطح استان و کشور هم توسعه پیدا کنن.
         </motion.p>
       </div>
     </div>
@@ -715,11 +724,11 @@ export default function Landing() {
                 </span>
 
                   <h1 className="mt-5 pb-4 pt-3 md:pt-6 text-xl  font-black leading-[1.5] tracking-tight text-stone-950 dark:text-white sm:text-xl md:text-[1.5rem] md:leading-[1.35]">
-                   دیمت با اتصال بازوهای خرید به بازوهای فروش مرتبط، خرید و فروشت رو تسهیل می کنه.
+                   دیمت با اتصال هدفمند بازوهای خرید و فروش به یکدیگر، شبکه خرید و فروش شما رو گسترش میده.
                   </h1>
 
                  {/* <div className={"text-base text-justify"}>
-                      دیمت فروشنده‌ها رو به خریدارهای واقعی‌شون می‌رسونه؛ خریدارها از چند تأمین‌کننده قیمت و شرایط می‌گیرن و مقایسه می‌کنن، فروشنده‌ها هم برای هر گروه از مشتری‌ها یه بازوی فروش آنلاین و همیشه به‌روز دارند و غیر از اون درخواستهای قیمت خریدارن عضو رو در پنل بازوی فروششون می بینن و پیشنهاد قیمت میدن. بازوی فروشها و بازوها می تونن عضو بازارهای تخصصی هم بشن و در تابلوهای عمومی بازار خریدارن یا تمین کنندگان جدید جذب کنند.
+                      دیمت فروشنده‌ها رو به خریدارهای واقعی‌شون می‌رسونه؛ خریدارها از چند تأمین‌کننده قیمت و شرایط می‌گیرن و مقایسه می‌کنن، فروشنده‌ها هم برای هر گروه از مشتری‌ها یه بازوی فروش آنلاین و همیشه به‌روز دارند و غیر از اون درخواستهای قیمت خریدارن عضو رو در پنل بازوی فروششون می بینن و پیشنهاد قیمت میدن. بازوی فروشها و بازوها می تونن عضو بازارهای صنفی هم بشن و در تابلوهای عمومی بازار خریدارن یا تمین کنندگان جدید جذب کنند.
 
                   </div>*/}
                 </motion.div>
@@ -884,6 +893,38 @@ export default function Landing() {
                   <MiniPurchase />
                 </motion.div>
               </div>
+            </section>
+
+            {/* ================================================================ */}
+            {/* SPECIALIZED MARKETS — اشاره به بازارهای صنفی                      */}
+            {/* ================================================================ */}
+
+            <section
+                aria-label="بازارهای صنفی"
+                className="mx-auto max-w-6xl px-4 py-14 sm:px-6"
+            >
+              <motion.div {...fadeUp()} className="mx-auto max-w-2xl text-center">
+                <span className="inline-flex items-center gap-1.5 rounded-full bg-brand-primary-soft px-3 py-1 text-xs font-bold text-brand-primary-strong dark:bg-brand-primary/15 dark:text-brand-primary">
+                  <Store className="size-3.5" />
+                  معرفی بازارهای صنفی دیمت.
+                </span>
+
+                <h2 className="mt-4 text-2xl font-black text-stone-900 dark:text-gray-100 sm:text-3xl">
+                  اما این همه چیز نیست، بازوهای مرتبط در بازارهای تخصصی جمع می شن و بازارهای صنفی رو تشکیل میدن
+                </h2>
+
+                <p className="mt-3 text-justify leading-8 text-stone-600 dark:text-gray-400">
+                  غیر از بازوهای خرید و فروش که صفحات شخصی با مالکیت کاربر هستند دیمت بازارهای خریدو فروش تخصصی هر صنف رو هم کم کم تشکیل می ده.
+                  با به حد نصاب رسیدن بازوهای خرید و فروش در هر صنف و شهر، بازار صنفی همون
+                  صنف کم‌کم تشکیل می‌شه؛ کسب‌وکارها درخواست عضویت می‌دن و بعد از تایید مدیر
+                  بازار عضو می‌شن. اینطوری تامین‌کننده‌ها و خریدارها بیشتر دیده می‌شن و بازارها
+                  هم به جذب بازوهای جدید کمک می‌کنن.
+                </p>
+              </motion.div>
+
+              <motion.div {...fadeUp(0.15)}>
+                <MarketBoardIllustration />
+              </motion.div>
             </section>
 
             {/* ================================================================ */}
@@ -1323,36 +1364,7 @@ export default function Landing() {
 
 
 
-            {/* ================================================================ */}
-            {/* SPECIALIZED MARKETS — اشاره به بازارهای تخصصی                      */}
-            {/* ================================================================ */}
 
-            <section
-                aria-label="بازارهای تخصصی"
-                className="mx-auto max-w-6xl px-4 py-14 sm:px-6"
-            >
-              <motion.div {...fadeUp()} className="mx-auto max-w-2xl text-center">
-                <span className="inline-flex items-center gap-1.5 rounded-full bg-brand-primary-soft px-3 py-1 text-xs font-bold text-brand-primary-strong dark:bg-brand-primary/15 dark:text-brand-primary">
-                  <Store className="size-3.5" />
-                  بازارهای تخصصی
-                </span>
-
-                <h2 className="mt-4 text-2xl font-black text-stone-900 dark:text-gray-100 sm:text-3xl">
-                  بازوها دور هم جمع می‌شن؛ بازار تشکیل می‌شه
-                </h2>
-
-                <p className="mt-3 leading-8 text-stone-600 dark:text-gray-400">
-                  با به حد نصاب رسیدن بازوهای خرید و فروش در هر صنف و شهر، بازار تخصصی همون
-                  صنف کم‌کم تشکیل می‌شه؛ کسب‌وکارها درخواست عضویت می‌دن و بعد از تایید مدیر
-                  بازار عضو می‌شن. اینطوری تامین‌کننده‌ها و خریدارها بیشتر دیده می‌شن و بازارها
-                  هم به جذب بازوهای جدید کمک می‌کنن.
-                </p>
-              </motion.div>
-
-              <motion.div {...fadeUp(0.15)}>
-                <MarketBoardIllustration />
-              </motion.div>
-            </section>
 
             {/* ================================================================ */}
             {/* LIVE                                                               */}

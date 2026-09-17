@@ -72,11 +72,11 @@ function MarketExplainer() {
                 </span>
 
                 <div className="min-w-0">
-                    <h2 className="text-[13px] font-black text-on-surface">بازارهای تخصصی دیمت</h2>
+                    <h2 className="text-[13px] font-black text-on-surface">بازارهای صنفی دیمت</h2>
 
                     <p className="mt-2 text-xs leading-6 text-on-surface-variant">
                         دیمت علاوه بر اینکه ساخت بازوهای خرید و فروش مستقل رو ممکن می‌کنه،
-                        یک سری <b className="font-extrabold text-on-surface">بازارهای تخصصی خرید و فروش</b> هم داره.
+                        یک سری <b className="font-extrabold text-on-surface">بازارهای صنفی خرید و فروش</b> هم داره.
                         کسب‌وکارها می‌تونن برای عضویت در بازارهایی که به کسب‌وکارشون یا شهر و استانشون مربوط می‌شه
                         درخواست بدن و بعد از تایید مدیر بازار، عضو اون بازار بشن —
                         اینطوری هم بیشتر دیده می‌شن و هم این بازارها به عضوگیری بازوهای خرید و فروششون کمک می‌کنن.

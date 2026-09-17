@@ -91,11 +91,11 @@ export default function MarketOwnerClient() {
                         </div>
 
                         <p className="text-sm font-semibold text-primary mb-3">
-                            ساخت بازار تخصصی با دیمت
+                            ساخت بازار صنفی با دیمت
                         </p>
 
                         <h1 className="text-3xl sm:text-4xl lg:text-5xl font-extrabold leading-tight text-on-surface dark:text-white">
-                            بازار تخصصی خودتان را بسازید
+                            بازار صنفی خودتان را بسازید
                         </h1>
 
                         <p className="max-w-3xl mx-auto mt-5 text-base sm:text-lg leading-8 text-on-surface-variant dark:text-gray-400">
@@ -222,7 +222,7 @@ export default function MarketOwnerClient() {
                             <MarketType
                                 icon={Network}
                                 title="بازار یک محصول"
-                                examples="مثل بازار تخصصی لوله، خشکبار، میوه، لبنیات یا محصولات کشاورزی"
+                                examples="مثل بازار صنفی لوله، خشکبار، میوه، لبنیات یا محصولات کشاورزی"
                             />
 
                             <MarketType
@@ -293,7 +293,7 @@ export default function MarketOwnerClient() {
                     <div className="max-w-5xl mx-auto">
                         <SectionTitle
                             eyebrow="مالک بازار"
-                            title="شما صاحب بازار تخصصی خود هستید"
+                            title="شما صاحب بازار صنفی خود هستید"
                             description={`دیمت زیرساخت را فراهم می‌کند و شما بازاری نمونه مانند همین ${armName} را مدیریت و توسعه می‌دهید.`}
                         />
 
@@ -361,7 +361,7 @@ export default function MarketOwnerClient() {
                 <section className="px-4 sm:px-6 lg:px-8 py-20">
                     <div className="max-w-3xl mx-auto text-center">
                         <h2 className="text-2xl sm:text-3xl font-extrabold text-on-surface dark:text-white">
-                            بازار تخصصی خودتان را بسازید
+                            بازار صنفی خودتان را بسازید
                         </h2>
 
                         <p className="mt-4 text-sm sm:text-base leading-7 text-on-surface-variant dark:text-gray-400">

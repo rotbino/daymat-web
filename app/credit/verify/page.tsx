@@ -131,7 +131,7 @@ function VerifyPaymentContent() {
                                 </div>
                                 <div>
                                     <h1 className="text-lg font-bold text-on-surface dark:text-gray-100">{armName}</h1>
-                                    <p className="text-xs text-on-surface-variant/60 dark:text-gray-500">بازار تخصصی خرید و فروش عمده</p>
+                                    <p className="text-xs text-on-surface-variant/60 dark:text-gray-500">بازار صنفی خرید و فروش عمده</p>
                                 </div>
                             </div>
 

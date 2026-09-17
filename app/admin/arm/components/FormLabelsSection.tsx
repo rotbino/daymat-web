@@ -109,7 +109,7 @@ export function FormLabelsSection({ watch, setValue, onSave, isSaving, isAdmin =
                 <Info className="w-5 h-5 text-blue-600 dark:text-blue-400 mt-0.5 flex-shrink-0" />
                 <div>
                     <p className="text-xs text-blue-700/80 dark:text-blue-400/80 mt-0.5">
-                        با برچسب‌ها می‌توانید، روی فرمها از کلمات و جملات مناسبتری، برای بازار تخصصی خود استفاده کنید
+                        با برچسب‌ها می‌توانید، روی فرمها از کلمات و جملات مناسبتری، برای بازار صنفی خود استفاده کنید
                         {!canEdit && ' (فقط قابل مشاهده)'}
                     </p>
                 </div>
