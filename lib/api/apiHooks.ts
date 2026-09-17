@@ -182,12 +182,13 @@ export const useSavedCatalogs = () => {
 // ============================================================
 // LOCATION HOOKS
 // ============================================================
-export const useLocationsTree = () => {
+export const useLocationsTree = (opts?: { enabled?: boolean }) => {
     return useQuery({
         queryKey: ['locations', 'tree'],
         queryFn: () => apiService.location.getFullTree(),
         staleTime: 1000 * 60 * 60 * 24,
         gcTime: 1000 * 60 * 60 * 24,
+        enabled: opts?.enabled,
     });
 };
 

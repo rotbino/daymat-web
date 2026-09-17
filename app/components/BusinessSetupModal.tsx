@@ -15,6 +15,8 @@ import { IranLocationSelector } from '@/app/components/IranLocationSelector';
 import LocationPicker, { LatLngValue } from '@/app/components/LocationPicker';
 import IndustryAutocomplete from '@/app/components/IndustryAutocomplete';
 import BusinessTypeSelector from '@/app/components/BusinessTypeSelector';
+import { useLocationsTree } from '@/lib/api/apiHooks';
+import { matchLocationFromTree, ReverseGeoResult } from '@/lib/reverseGeo';
 
 interface BusinessEntityLite {
     id?: string;
@@ -33,6 +35,7 @@ interface BusinessEntityLite {
     logoUrl?: string | null;
     locationLat?: number | null;
     locationLng?: number | null;
+    address?: string | null;
     position?: string | null; // ✅ نقش شرکتی خودِ کاربر در این کسب‌وکار (از تیم کسب‌وکار)
 }
 
@@ -67,6 +70,13 @@ export default function BusinessSetupModal({ isOpen, onClose, business, onSaved,
     // ✅ لوکیشن دقیق کسب‌وکار (اختیاری) — برای اتصال هدفمند خریدار↔فروشنده
     const [location, setLocation] = useState<LatLngValue | null>(null);
 
+    // 🌍 آدرس — با انتخاب لوکیشن خودکار پر می‌شود (اگر کاربر دستی چیزی ننوشته باشد) و قابل ویرایش است
+    const [address, setAddress] = useState('');
+    const addressTouchedRef = useRef(false);
+
+    // درخت لوکیشن — برای تطبیق استان/شهرِ برگشتی از جستجوی معکوس (کش مشترک با IranLocationSelector)
+    const { data: locTree } = useLocationsTree();
+
     // ─── نقش شما در کسب‌وکار — تک‌منبع: USER_POSITIONS (نقش شرکتی روی تیم کسب‌وکار ثبت می‌شود) ───
     const [positionRole, setPositionRole] = useState('');
     const [positionOther, setPositionOther] = useState('');
@@ -99,6 +109,8 @@ export default function BusinessSetupModal({ isOpen, onClose, business, onSaved,
         setLocation(business?.locationLat != null && business?.locationLng != null
             ? { lat: business.locationLat, lng: business.locationLng }
             : null);
+        setAddress(business?.address || '');
+        addressTouchedRef.current = false;
         setCurrentLogoUrl(business?.logoUrl || null);
         setPendingLogoFile(null);
         setLogoPreview(null);
@@ -123,6 +135,33 @@ export default function BusinessSetupModal({ isOpen, onClose, business, onSaved,
     }, [pendingLogoFile]);
 
     const busy = createMut.isPending || updateMut.isPending || isUploadingLogo;
+
+    // 🌍 نتیجهٔ جستجوی معکوسِ لوکیشن — کشور/استان/شهر از روی نقطهٔ انتخابی آپدیت می‌شوند
+    //    حتی اگر کاربر قبلاً استان/شهر را انتخاب کرده باشد (خواستهٔ صریح مالک)؛
+    //    آدرس فقط وقتی خودکار پر می‌شود که کاربر دستی چیزی ننوشته باشد.
+    const handleLocationResolved = (geo: ReverseGeoResult | null) => {
+        if (!geo) return;
+        if (geo.outsideIran) {
+            toast.info('لوکیشن انتخابی خارج از ایرانه — کشور، استان و شهر را دستی انتخاب کن.');
+            return;
+        }
+        const m = matchLocationFromTree(locTree, geo);
+        if (!m) return; // در درخت پیدا نشد — انتخابِ فعلی دست‌نخورده می‌ماند
+        setProvinceCode(m.provinceCode);
+        setProvinceLabel(m.provinceTitle);
+        if (m.cityCode) {
+            setCityCode(m.cityCode);
+            setCityLabel(m.cityTitle!);
+        } else {
+            setCityCode(''); // شهرِ قبلی به استانِ تازه تعلق ندارد
+            setCityLabel('');
+        }
+        setErrors((p) => ({ ...p, location: '' }));
+        if (!addressTouchedRef.current) {
+            const auto = geo.addressLine || [m.cityTitle, m.provinceTitle].filter(Boolean).join('، ');
+            if (auto) setAddress(auto);
+        }
+    };
 
     // ─── هشدار تکراری‌ثبتی — «اول جستجو کن، دیتای تکراری نساز» ───
     // فقط در حالتِ ساخت: قبل از ثبت، کسب‌وکارهای مشابه (نام + استان/شهر) نشان داده می‌شود؛
@@ -206,6 +245,8 @@ export default function BusinessSetupModal({ isOpen, onClose, business, onSaved,
                 provinceCode,
                 city: cityLabel,
                 cityCode,
+                // 🌍 آدرس — در ویرایش، خالی‌بودن یعنی حذف (null)
+                address: address.trim() || (isEdit ? null : undefined),
             };
             // ✅ لوکیشن دقیق (اختیاری) — در ساخت فقط اگر انتخاب شده؛ در ویرایش با null حذف می‌شود
             if (location) {
@@ -449,7 +490,16 @@ export default function BusinessSetupModal({ isOpen, onClose, business, onSaved,
                     {/* ✅ لوکیشن دقیق کسب‌وکار — اختیاری و بی‌اصرار؛ فقط مزیتش گفته می‌شود */}
                     <section className="space-y-2">
                         <SectionTitle icon={MapPin} text="لوکیشن دقیق کسب‌وکار (اختیاری)" />
-                        <LocationPicker value={location} onChange={(v) => setLocation(v)} />
+                        <LocationPicker value={location} onChange={(v) => setLocation(v)} onResolved={(geo) => handleLocationResolved(geo)} />
+
+                        {/* 🌍 آدرس — با انتخاب لوکیشن خودکار پر می‌شود؛ کاربر می‌تواند ویرایشش کند */}
+                        <div className="space-y-1.5 pt-1">
+                            <label className="text-[11px] font-bold text-on-surface-variant">آدرس (اختیاری)</label>
+                            <input type="text" value={address} maxLength={200}
+                                   onChange={(e) => { setAddress(e.target.value); addressTouchedRef.current = true; }}
+                                   placeholder="با انتخاب لوکیشن، خودش پر می‌شود — مثل: خیابان آزادی، پلاک ۱۲"
+                                   className={inputCls()} />
+                        </div>
                     </section>
 
                     {/* نکته */}

@@ -717,8 +717,10 @@ export default function BusinessManageContent() {
                                 ? { lat: detail.locationLat, lng: detail.locationLng }
                                 : null
                         }
+                        initialAddress={detail.address}
                         onSave={async (val) => {
                             // ✅ لوکیشن دقیق هم با همین ذخیره ثبت/حذف می‌شود (null = حذف)
+                            // 🌍 آدرس هم همین‌جا آپدیت می‌شود (null = حذف)
                             await saveFields({
                                 province: val.province,
                                 provinceCode: val.provinceCode,
@@ -726,6 +728,7 @@ export default function BusinessManageContent() {
                                 cityCode: val.cityCode,
                                 locationLat: val.locationLat ?? null,
                                 locationLng: val.locationLng ?? null,
+                                address: val.address ?? null,
                             });
                             setLocationOpen(false);
                         }}

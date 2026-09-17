@@ -1,11 +1,14 @@
 // app/components/LocationPicker.tsx
 // ✅ انتخاب لوکیشن دقیق — نقشهٔ OpenStreetMap (لیفلت) + «موقعیت فعلی من»
 //    اختیاری و بی‌اصرار: اگر دسترسی موقعیت داده نشد، فقط مزیتش گفته می‌شود و انتخابِ دستی ممکن است.
+//    🌍 روی draft یک جستجوی معکوس (Nominatim) debounce شده می‌رود تا آدرس پیش‌نمایش شود؛
+//    هنگام «تایید این نقطه» نتیجه با onResolved به فرم می‌رسد تا استان/شهر/آدرس خودکار آپدیت شوند.
 'use client';
 
 import React, { useEffect, useRef, useState } from 'react';
 import 'leaflet/dist/leaflet.css';
 import { Check, Crosshair, Loader2, MapPin, Trash2 } from 'lucide-react';
+import { reverseGeocode, ReverseGeoResult } from '@/lib/reverseGeo';
 
 export interface LatLngValue {
     lat: number;
@@ -15,6 +18,8 @@ export interface LatLngValue {
 interface Props {
     value: LatLngValue | null;
     onChange: (v: LatLngValue | null) => void;
+    /** نتیجهٔ جستجوی معکوسِ نقطهٔ تأییدشده — فرم‌ها با آن استان/شهر/آدرس را آپدیت می‌کنند */
+    onResolved?: (geo: ReverseGeoResult | null, coords: LatLngValue) => void;
 }
 
 // مرکز نقشه وقتی هنوز نقطه‌ای انتخاب نشده — کل ایران
@@ -33,17 +38,43 @@ function makePinIcon(L: any) {
     });
 }
 
-export default function LocationPicker({ value, onChange }: Props) {
+export default function LocationPicker({ value, onChange, onResolved }: Props) {
     const [open, setOpen] = useState(false);
     const [draft, setDraft] = useState<LatLngValue | null>(null);
     const [gpsLoading, setGpsLoading] = useState(false);
     const [gpsError, setGpsError] = useState<string | null>(null);
+    // 🌍 پیش‌نمایش آدرسِ نقطهٔ انتخابی + وضعیت انتظارِ تشخیص آدرس هنگام تایید
+    const [geoPreview, setGeoPreview] = useState<ReverseGeoResult | null>(null);
+    const [confirming, setConfirming] = useState(false);
 
     const containerRef = useRef<HTMLDivElement>(null);
     const leafletRef = useRef<any>(null);
     const mapRef = useRef<any>(null);
     const markerRef = useRef<any>(null);
     const circleRef = useRef<any>(null);
+    const geoReqRef = useRef<{ coords: LatLngValue; promise: Promise<ReverseGeoResult | null> } | null>(null);
+    const geoSeqRef = useRef(0);
+
+    // جستجوی معکوسِ نقطه — آخرین درخواست همیشه برنده است
+    const resolveFor = (coords: LatLngValue) => {
+        const seq = ++geoSeqRef.current;
+        const promise = reverseGeocode(coords.lat, coords.lng).then((g) => {
+            if (seq === geoSeqRef.current) setGeoPreview(g);
+            return g;
+        });
+        geoReqRef.current = { coords, promise };
+    };
+
+    // debounce — کلیک/کشیدن سوزن/GPS هرکدام یک بار پرسیده شوند
+    useEffect(() => {
+        if (!draft) {
+            setGeoPreview(null); // انصراف/پاک‌سازی — پیش‌نمایشِ کهنه نماند
+            return;
+        }
+        const t = setTimeout(() => resolveFor(draft), 700);
+        return () => clearTimeout(t);
+        // eslint-disable-next-line react-hooks/exhaustive-deps
+    }, [draft?.lat, draft?.lng]);
 
     const addMarker = (L: any, map: any, p: LatLngValue) => {
         if (markerRef.current) {
@@ -131,11 +162,23 @@ export default function LocationPicker({ value, onChange }: Props) {
         );
     };
 
-    const confirmPoint = () => {
-        if (!draft) return;
-        onChange({ lat: +draft.lat.toFixed(6), lng: +draft.lng.toFixed(6) }); // ~۱۱ سانتی‌متر دقت
-        setOpen(false);
-        setDraft(null);
+    // تایید نقطه — اگر تشخیص آدرس در جریان است، منتظرش می‌مانیم تا فرم نتیجه را بگیرد
+    const confirmPoint = async () => {
+        if (!draft || confirming) return;
+        setConfirming(true);
+        try {
+            const req = geoReqRef.current;
+            const same = req && Math.abs(req.coords.lat - draft.lat) < 1e-9 && Math.abs(req.coords.lng - draft.lng) < 1e-9;
+            const geo = same ? await req.promise : await reverseGeocode(draft.lat, draft.lng);
+            const coords = { lat: +draft.lat.toFixed(6), lng: +draft.lng.toFixed(6) }; // ~۱۱ سانتی‌متر دقت
+            onChange(coords);
+            onResolved?.(geo, coords);
+            setOpen(false);
+            setDraft(null);
+            setGeoPreview(null);
+        } finally {
+            setConfirming(false);
+        }
     };
 
     return (
@@ -204,12 +247,24 @@ export default function LocationPicker({ value, onChange }: Props) {
                             : 'روی نقشه بزن تا نقطهٔ دقیق کسب‌وکارت انتخاب بشه؛ یا از «موقعیت فعلی من» استفاده کن.'}
                     </p>
 
+                    {/* 🌍 پیش‌نمایش آدرسِ نقطهٔ انتخابی — با تایید، استان/شهر/آدرس فرم خودکار آپدیت می‌شوند */}
+                    {draft && geoPreview && (
+                        <p className="text-[10px] leading-4 text-on-surface-variant/80 flex items-start gap-1.5">
+                            <MapPin className="w-3.5 h-3.5 text-primary flex-shrink-0 mt-0.5" />
+                            <span>
+                                {geoPreview.outsideIran
+                                    ? 'این نقطه خارج از ایرانه — استان و شهر باید دستی انتخاب بشن.'
+                                    : `نقطهٔ انتخابی: ${geoPreview.addressLine || geoPreview.displayName || ''}`}
+                            </span>
+                        </p>
+                    )}
+
                     <div className="flex gap-2">
-                        <button type="button" onClick={confirmPoint} disabled={!draft}
+                        <button type="button" onClick={confirmPoint} disabled={!draft || confirming}
                                 className="flex-1 h-9 rounded-xl bg-primary text-on-primary text-[11px] font-extrabold
                                     flex items-center justify-center gap-1.5 disabled:opacity-40 transition-opacity">
-                            <Check className="w-3.5 h-3.5" />
-                            تایید این نقطه
+                            {confirming ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <Check className="w-3.5 h-3.5" />}
+                            {confirming ? 'در حال تشخیص آدرس…' : 'تایید این نقطه'}
                         </button>
                         <button type="button" onClick={() => { setOpen(false); setDraft(null); }}
                                 className="h-9 px-4 rounded-xl border border-outline-variant/40 dark:border-gray-700
