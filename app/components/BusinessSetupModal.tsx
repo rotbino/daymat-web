@@ -284,7 +284,7 @@ export default function BusinessSetupModal({ isOpen, onClose, business, onSaved,
                         </label>
                         <input type="text" value={name}
                                onChange={(e) => { setName(e.target.value); setErrors((p) => ({ ...p, name: '' })); }}
-                               placeholder="مثلا: پخش خوشگوار" className={inputCls(errors.name)} />
+                               placeholder="مثلا: پخش خوشگوار یا سوپرمارکت احمد" className={inputCls(errors.name)} />
                         {errors.name && <p className="text-error text-[11px]">{errors.name}</p>}
                         {!isEdit && !dupCandidates && (
                             <p className="text-[10px] text-on-surface-variant/60 flex items-start gap-1.5">
@@ -373,7 +373,7 @@ export default function BusinessSetupModal({ isOpen, onClose, business, onSaved,
 
                     {/* نوع کسب‌وکار — درخت دو سطحی (همسان با فرم ویرایش) — چیپ‌های قدیمی حذف شد */}
                     <section className="space-y-2">
-                        <SectionTitle icon={Layers} text="نوع فعالیت" />
+                        <SectionTitle icon={Layers} text="نوع فعالیت (با دقت انتخاب شود)" />
                         <BusinessTypeSelector
                             sector={businessSector}
                             role={businessRole}
@@ -410,7 +410,7 @@ export default function BusinessSetupModal({ isOpen, onClose, business, onSaved,
                         {errors.position && <p className="text-error text-[11px]">{errors.position}</p>}
                         {!isEdit && (
                             <p className="text-[10px] text-on-surface-variant/60 leading-4">
-                                این نقشِ شرکتیِ توست — اینکه در کاتالوگ قیمت چه نقشی داشته باشی، موقع ساخت کاتالوگ مشخص می‌شود.
+                                این نقشِ کسب و کاری شماست و در صفحه بازو به کاربران نمایش داده می شود.
                             </p>
                         )}
                     </section>
@@ -418,7 +418,7 @@ export default function BusinessSetupModal({ isOpen, onClose, business, onSaved,
                     {/* موقعیت */}
                     <div className="space-y-2">
                         <label className="text-xs font-medium text-on-surface block">
-                            استان و شهر <span className="text-primary">*</span>
+                            استان و شهر کسب و کار <span className="text-primary">*</span>
                         </label>
                         <IranLocationSelector
                             provinceCode={provinceCode}

@@ -659,8 +659,8 @@ function EntityPickerModal({
                                         {!canSearch && search.length > 0
                                             ? 'حداقل ' + minSearchChars + ' حرف تایپ کنید'
                                             : canSearch && trimmedSearch
-                                                ? 'موردی با این نام پیدا نشد.'
-                                                : 'موردی موجود نیست.'}
+                                                ? 'صنفی با این نام پیدا نشد.'
+                                                : '  هنوز صنفی ثبت نشده. خودت صنفت رو ثبت کن.'}
                                     </p>
                                     {canSearch && trimmedSearch ? (
                                         <button

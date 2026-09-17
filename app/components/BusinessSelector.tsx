@@ -44,7 +44,7 @@ export default function BusinessSelector({ value, onChange, error, disabled, lab
     // ✅ برچسب زمینه‌آگاه: تا انتخاب نشده سؤالِ «کدام کسب‌وکار؟»، بعد از انتخاب یا «ساختِ … برای …» یا هیچی
     const heading = value
         ? (selectedLabel || '')
-        : (label || 'ثبت یا انتخاب کسب و کاری که می خوای براش کاتالوگ بسازی');
+        : (label || 'ثبت یا انتخاب کسب و کاری که می خوای براش بازو بسازی');
 
     const pick = (b: any) => { onChange(b); setOpen(false); };
     const clear = (e: React.MouseEvent) => {
@@ -93,7 +93,7 @@ export default function BusinessSelector({ value, onChange, error, disabled, lab
                         )}>
                     <span className="flex items-center gap-2 text-sm text-on-surface-variant">
                         <Building2 className="w-4.5 h-4.5 text-on-surface-variant/50" />
-                        کسب‌وکارت را جستجو و انتخاب کن
+                        کسب و کارت رو انتخاب یا ثبت کن
                     </span>
                     <ChevronDown className="w-4 h-4 text-on-surface-variant/50" />
                 </button>
@@ -220,7 +220,7 @@ function BusinessPickerModal({ onPick, onClose, onBusinessCreated }: {
                         ثبت کسب‌وکار جدید
                     </button>
                     <p className="text-[9.5px] text-on-surface-variant/50 text-center -mt-0.5">
-                        کسب‌وکارت را پیدا نکردی؟ همین‌جا ثبتش کن — شاید همکارانت قبلاً ثبت کرده باشند
+                        کسب‌وکارت را پیدا نکردی؟ همین‌جا ثبتش کن — فقط اگر همکاران جدید و قدیم قبلا ثبتش نکردن
                     </p>
                 </div>
 
