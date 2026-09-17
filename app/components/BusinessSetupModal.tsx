@@ -2,7 +2,7 @@
 'use client';
 
 import React, { useEffect, useRef, useState } from 'react';
-import { Building2, Camera, Loader2, X, Check, Layers, AlertTriangle, SearchCheck, UserCog } from 'lucide-react';
+import { Building2, Camera, Loader2, X, Check, Layers, AlertTriangle, SearchCheck, UserCog, MapPin } from 'lucide-react';
 import Image from 'next/image';
 import { createPortal } from 'react-dom';
 import { toast } from 'sonner';
@@ -12,6 +12,7 @@ import { apiService } from '@/lib/api/apiService';
 import { getLegacyTypeFromRole, USER_POSITIONS } from '@/lib/api/data-types';
 import { toastFormErrors } from '@/lib/formAlerts';
 import { IranLocationSelector } from '@/app/components/IranLocationSelector';
+import LocationPicker, { LatLngValue } from '@/app/components/LocationPicker';
 import IndustryAutocomplete from '@/app/components/IndustryAutocomplete';
 import BusinessTypeSelector from '@/app/components/BusinessTypeSelector';
 
@@ -30,6 +31,8 @@ interface BusinessEntityLite {
     cityCode?: string | null;
     phone?: string | null;
     logoUrl?: string | null;
+    locationLat?: number | null;
+    locationLng?: number | null;
     position?: string | null; // ✅ نقش شرکتی خودِ کاربر در این کسب‌وکار (از تیم کسب‌وکار)
 }
 
@@ -61,6 +64,9 @@ export default function BusinessSetupModal({ isOpen, onClose, business, onSaved,
     const [cityCode, setCityCode] = useState('');
     const [cityLabel, setCityLabel] = useState('');
 
+    // ✅ لوکیشن دقیق کسب‌وکار (اختیاری) — برای اتصال هدفمند خریدار↔فروشنده
+    const [location, setLocation] = useState<LatLngValue | null>(null);
+
     // ─── نقش شما در کسب‌وکار — تک‌منبع: USER_POSITIONS (نقش شرکتی روی تیم کسب‌وکار ثبت می‌شود) ───
     const [positionRole, setPositionRole] = useState('');
     const [positionOther, setPositionOther] = useState('');
@@ -90,6 +96,9 @@ export default function BusinessSetupModal({ isOpen, onClose, business, onSaved,
         setProvinceLabel(business?.province || '');
         setCityCode(business?.cityCode || '');
         setCityLabel(business?.city || '');
+        setLocation(business?.locationLat != null && business?.locationLng != null
+            ? { lat: business.locationLat, lng: business.locationLng }
+            : null);
         setCurrentLogoUrl(business?.logoUrl || null);
         setPendingLogoFile(null);
         setLogoPreview(null);
@@ -198,6 +207,14 @@ export default function BusinessSetupModal({ isOpen, onClose, business, onSaved,
                 city: cityLabel,
                 cityCode,
             };
+            // ✅ لوکیشن دقیق (اختیاری) — در ساخت فقط اگر انتخاب شده؛ در ویرایش با null حذف می‌شود
+            if (location) {
+                payload.locationLat = location.lat;
+                payload.locationLng = location.lng;
+            } else if (isEdit) {
+                payload.locationLat = null;
+                payload.locationLng = null;
+            }
             // ✅ نقش شرکتی ثبت‌کننده — روی تیم کسب‌وکار (BusinessMember) ثبت می‌شود
             if (!isEdit) payload.position = effectivePosition;
             if (!isEdit && dupCandidates) payload.force = true; // ✅ کاربر صریحاً ثبتِ جدید را انتخاب کرده
@@ -428,6 +445,12 @@ export default function BusinessSetupModal({ isOpen, onClose, business, onSaved,
                         />
                         {errors.location && <p className="text-error text-[11px]">{errors.location}</p>}
                     </div>
+
+                    {/* ✅ لوکیشن دقیق کسب‌وکار — اختیاری و بی‌اصرار؛ فقط مزیتش گفته می‌شود */}
+                    <section className="space-y-2">
+                        <SectionTitle icon={MapPin} text="لوکیشن دقیق کسب‌وکار (اختیاری)" />
+                        <LocationPicker value={location} onChange={(v) => setLocation(v)} />
+                    </section>
 
                     {/* نکته */}
                     {isEdit && (

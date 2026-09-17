@@ -53,6 +53,7 @@
     "framer-motion": "^13.2.0",
     "geist": "latest",
     "input-otp": "1.4.1",
+    "leaflet": "^1.9.4",
     "lucide-react": "^1.38.0",
     "material-symbols": "^0.45.8",
     "moment-jalaali": "^0.10.4",
@@ -78,6 +79,7 @@
     "zod": "^3.24.1"
   },
   "devDependencies": {
+    "@types/leaflet": "^1.9.22",
     "@types/node": "^22",
     "@types/react": "^19",
     "@types/react-dom": "^19",
