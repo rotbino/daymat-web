@@ -66,7 +66,7 @@ export default function InquiryPublicClient({ idOrSlug }: { idOrSlug: string }) 
 
     const [copied, setCopied] = useState(false);
     const [offerTarget, setOfferTarget] = useState<{ id?: string; name: string; quantity?: number | null; unit?: string | null; unitId?: string | null } | null>(null);
-    // بعد از ثبت درخواست همکاری — بنر حالت «در انتظار تایید» می‌شود
+    // بعد از ثبت پیشنهاد تامین — بنر حالت «در انتظار تایید» می‌شود
     const [requestedSelf, setRequestedSelf] = useState(false);
     // 🛒 گیت پیشنهاد — مدال سناریومحور (خواستهٔ مالک: «وقتی روی پیشنهاد زد، همان‌جا سناریوها اجرا شود»):
     //     مهمان / عضو بدون کاتالوگ / عضو با کاتالوگ (انتخاب کاتالوگ) / در انتظار تایید — همه در یک مدال
@@ -136,7 +136,7 @@ export default function InquiryPublicClient({ idOrSlug }: { idOrSlug: string }) 
     }, [inquiry?.title]);
 
     const isOwner = !!inquiry?.isOwner;
-    // ✅ وضعیت رابطهٔ من با این بازو — برای دکمهٔ «ارسال درخواست تامین» سه‌حالته (بک می‌فرستد)
+    // ✅ وضعیت رابطهٔ من با این بازو — برای دکمهٔ «ارسال پیشنهاد تامین» سه‌حالته (بک می‌فرستد)
     const accessState = ((inquiry as any)?.accessState ?? 'none') as 'owner' | 'member' | 'pending' | 'none';
     const suppliersCount = (inquiry as any)?.suppliersCount ?? 0;
     const savesCount = (inquiry as any)?.savesCount ?? 0;
@@ -320,7 +320,7 @@ export default function InquiryPublicClient({ idOrSlug }: { idOrSlug: string }) 
     const ownerAvatar = inquiry.owner?.avatarUrl || null;
     const isLive = isOpen && !deadlineOver;
 
-    // ✅ ارتباط تجاری سه‌حالته — «ارسال درخواست همکاری» (خواستهٔ مالک): هم عمومی هم خصوصی
+    // ✅ ارتباط تجاری سه‌حالته — «ارسال پیشنهاد تامین» (خواستهٔ مالک): هم عمومی هم خصوصی
     //     none → دکمه | pending → چیپ «در انتظار تایید» | member → چیپ «تاییدشده»
     const openCoop = () => {
         // 🛒 همان مدال سناریومحور دکمهٔ پیشنهاد — مهمان/بدون کاتالوگ/انتخاب کاتالوگ همه‌جا یک‌جور
@@ -338,18 +338,18 @@ export default function InquiryPublicClient({ idOrSlug }: { idOrSlug: string }) 
             </span>
         );
         if (accessState === 'pending' || requestedSelf) return (
-            <span aria-label="درخواست همکاری در انتظار تایید خریدار است"
+            <span aria-label="پیشنهاد تامین در انتظار تایید خریدار است"
                 className={`flex h-11 w-full items-center justify-center gap-1.5 rounded-xl border border-brand-accent-tint bg-brand-accent-soft text-sm font-bold text-amber-700 dark:border-amber-500/30 dark:bg-amber-500/10 dark:text-amber-300 ${className}`}>
                 <Clock className="size-4" />
-                درخواست همکاری در انتظار تایید خریدار
+                پیشنهاد تامین در انتظار تایید خریدار
             </span>
         );
         return (
-            <button onClick={openCoop} aria-label="ارسال درخواست همکاری"
-                title="با کاتالوگ قیمتت به این خریدار درخواست همکاری بده"
+            <button onClick={openCoop} aria-label="ارسال پیشنهاد تامین"
+                title="با کاتالوگ قیمتت به این خریدار پیشنهاد تامین بده"
                 className={`flex h-11 w-full items-center justify-center gap-2 rounded-xl bg-primary text-sm font-extrabold text-on-primary shadow-lg shadow-primary/25 transition-all hover:scale-[1.01] hover:opacity-95 active:scale-95 ${className}`}>
                 <Handshake className="size-4" />
-                ارسال درخواست همکاری
+                ارسال پیشنهاد تامین
             </button>
         );
     };
@@ -513,7 +513,7 @@ export default function InquiryPublicClient({ idOrSlug }: { idOrSlug: string }) 
                             <Stat v={savesCount} l="ذخیره" />
                         </div>
 
-                        {/* ✅ ارتباط — «ارسال درخواست تامین» برای همه دیده می‌شود (عمومی و خصوصی) */}
+                        {/* ✅ ارتباط — «ارسال پیشنهاد تامین» برای همه دیده می‌شود (عمومی و خصوصی) */}
                         {!isOwner && <CoopAction className="mt-4" />}
 
                         {/* 👤 باکس خریدار — عکس پروفایل + تماس؛ برای همه رندر می‌شود (هویت صاحب بازو — خواستهٔ مالک) */}
@@ -683,8 +683,8 @@ export default function InquiryPublicClient({ idOrSlug }: { idOrSlug: string }) 
                                 </p>
                                 <p className="mt-0.5 text-[10.5px] font-bold leading-4 text-amber-700/80 dark:text-amber-400/80">
                                     {(accessState === 'pending' || requestedSelf)
-                                        ? 'درخواست تامینت ثبت شد — به‌محض تایید خریدار می‌توانی قیمت بفرستی'
-                                        : 'فقط بعد از تایید درخواست تامین کنندگی می توانید پیشنهاد قیمت ارسال کنید.'}
+                                        ? 'پیشنهاد تامینت ثبت شد — به‌محض تایید خریدار می‌توانی قیمت بفرستی'
+                                        : 'فقط بعد از تایید پیشنهاد تامینت می‌توانی پیشنهاد قیمت بفرستی.'}
                                 </p>
                             </div>
                         </div>
@@ -1012,7 +1012,7 @@ export default function InquiryPublicClient({ idOrSlug }: { idOrSlug: string }) 
                         <div className="min-w-0">
                             <p className="truncate text-[12px] font-black text-stone-800 dark:text-gray-200">می‌تونی این لیست رو تامین کنی؟</p>
                             <p className="truncate text-[10px] font-bold text-stone-400 dark:text-gray-500">
-                                {limited ? 'بازوی خرید خصوصیه — اول درخواست تامین' : 'قیمت بده، خریدار باهات تماس می‌گیره'}
+                                {limited ? 'بازوی خرید خصوصیه — اول پیشنهاد تامین' : 'قیمت بده، خریدار باهات تماس می‌گیره'}
                             </p>
                         </div>
                         <motion.button whileTap={{ scale: 0.96 }} onClick={() => handleOffer({ name: 'کل لیست' })}
@@ -1110,11 +1110,11 @@ function SupplierConnectModal({ inquiry, target, onClose, onConnected, onRequest
                 onConnected();
             } else {
                 // خصوصی: درخواست در انتظار تایید خریدار
-                toast.success('درخواست تامینت ثبت شد — منتظر تایید خریدار باش. یا می تونی باهاش تماس بگیری و بگی سریعتر تاییدت کنه');
+                toast.success('پیشنهاد تامینت ثبت شد — منتظر تایید خریدار باش. یا می تونی باهاش تماس بگیری و بگی سریعتر تاییدت کنه');
                 onRequested();
             }
         } catch (e: any) {
-            toast.error(e?.response?.data?.message || 'ارسال درخواست ناموفق بود');
+            toast.error(e?.response?.data?.message || 'ارسال پیشنهاد تامین ناموفق بود');
         }
     };
 
@@ -1206,7 +1206,7 @@ function SupplierConnectModal({ inquiry, target, onClose, onConnected, onRequest
                 {pending && (
                     <>
                         <p className="mx-auto mt-3 max-w-xs text-[12px] font-bold leading-6 text-stone-500 dark:text-gray-400">
-                            درخواست تامینت با کاتالوگت ثبت شده — به‌محض تایید خریدار می‌توانی
+                            پیشنهاد تامینت با کاتالوگت ثبت شده — به‌محض تایید خریدار می‌توانی
                             برای اقلام این بازو پیشنهاد قیمت بدهی.
                         </p>
                         <button onClick={onClose}
@@ -1221,7 +1221,7 @@ function SupplierConnectModal({ inquiry, target, onClose, onConnected, onRequest
                     <>
                         <p className="mx-auto mt-3 max-w-xs text-[12px] font-bold leading-6 text-stone-500 dark:text-gray-400">
                             {isPrivate
-                                ? 'این بازوی خرید خصوصیه — با یکی از کاتالوگ‌هات درخواست تامین بده؛ بعد از تایید خریدار می تونی پیشنهاد بدی.'
+                                ? 'این بازوی خرید خصوصیه — با یکی از کاتالوگ‌هات پیشنهاد تامین بده؛ بعد از تایید خریدار می تونی پیشنهاد بدی.'
                                 : 'کاتالوگت را انتخاب کن تا همین حالا به‌عنوان تامین‌کنندهٔ این خریدار پیشنهادت را ثبت کنی.'}
                         </p>
                         <div className="mt-4 max-h-44 space-y-1.5 overflow-y-auto pl-1 text-right">
@@ -1246,7 +1246,7 @@ function SupplierConnectModal({ inquiry, target, onClose, onConnected, onRequest
                         <motion.button whileTap={{ scale: 0.97 }} disabled={!catalogId || requestAccess.isPending} onClick={submit}
                             className="mt-4 flex h-12 w-full items-center justify-center gap-2 rounded-full bg-primary text-sm font-extrabold text-on-primary shadow-lg shadow-primary/25 transition-opacity hover:opacity-95 disabled:opacity-50">
                             {requestAccess.isPending ? <Loader2 className="size-4 animate-spin" /> : isPrivate ? <Handshake className="size-4" /> : <Send className="size-4" />}
-                            {isPrivate ? 'ارسال درخواست تامین' : 'اتصال و ثبت پیشنهاد'}
+                            {isPrivate ? 'ارسال پیشنهاد تامین' : 'اتصال و ثبت پیشنهاد'}
                         </motion.button>
                     </>
                 )}

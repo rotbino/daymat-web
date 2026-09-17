@@ -179,7 +179,7 @@ export default function SettingsTab({ detail, onSave, onOpenUnits, onToggleStatu
                         </div>
                         {visibility === 'private' && (
                             <p className="mt-2 rounded-xl bg-brand-contrast-soft/50 px-3 py-2 text-[10px] font-bold leading-4 text-amber-700 dark:bg-amber-500/5 dark:text-amber-400">
-                                لیست برای همه دیده می‌شود و دکمهٔ قیمت فعال است — فقط اعضای تب «تامین‌کنندگان» می‌توانند قیمت بدهند؛ بقیه با لمس دکمه، درخواست همکاری می‌دهند
+                                لیست برای همه دیده می‌شود و دکمهٔ قیمت فعال است — فقط اعضای تب «تامین‌کنندگان» می‌توانند قیمت بدهند؛ بقیه با لمس دکمه، پیشنهاد تامین می‌دهند
                             </p>
                         )}
                     </div>

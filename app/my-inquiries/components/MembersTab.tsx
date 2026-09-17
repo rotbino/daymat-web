@@ -2,10 +2,10 @@
 // ✅ تب «تامین‌کنندگان» پنل بازوی خرید — شبکهٔ خرید↔فروش:
 //    تامین‌کننده‌های تاییدشدهٔ این بازو، اقلام فوری را اول از همه می‌بینند
 //    و در تب «بازوی خرید»ی پنل فروششان قیمت می‌دهند.
-//    دو مسیر: خریدار «درخواست همکاری» می‌فرستد (buyer_add → تایید با تامین‌کننده)
-//             تامین‌کننده «درخواست همکاری» می‌دهد (supplier_request → تایید با خریدار)
+//    دو مسیر: خریدار «درخواست تامین» می‌فرستد (buyer_add → تایید با تامین‌کننده)
+//             تامین‌کننده «پیشنهاد تامین» می‌دهد (supplier_request → تایید با خریدار)
 // فلسفهٔ متن: حداقلی — خودِ ساختار می‌گوید چه خبر است.
-// ✅ اصلاح واژگان (خواستهٔ مالک): همه‌جا «درخواست همکاری» — نه «عضویت» و نه «دعوت»
+// ✅ اصلاح واژگان (خواستهٔ مالک): درخواستِ خریدار = «درخواست تامین»، درخواستِ تامین‌کننده = «پیشنهاد تامین» — نه «عضویت» و نه «دعوت»
 // ✅ دکمه‌های قبول/رد متنی (کاربر کم‌سواد تیک و ضربدر را نمی‌فهمد)
 'use client';
 
@@ -86,7 +86,7 @@ export default function MembersTab({ inquiryId, visibility, slug }: Props) {
                         {cat.city ? ` · ${cat.city}` : ''}
                         {mode === 'invited'
                             ? ` · درخواست ${faDate(m.updatedAt || m.createdAt)} فرستاده شده`
-                            : mode === 'incoming' ? ' · درخواست همکاری از طرف تامین‌کننده' : ''}
+                            : mode === 'incoming' ? ' · پیشنهاد تامین' : ''}
                     </p>
                 </div>
                 {busy ? (
@@ -94,19 +94,19 @@ export default function MembersTab({ inquiryId, visibility, slug }: Props) {
                 ) : mode === 'incoming' ? (
                     <div className="flex shrink-0 items-center gap-1.5">
                         {/* ✅ تماس با متقاضی — همیشه (شمارهٔ ثبت‌نام شخص) */}
-                        <OfferCallButton phone={m.user?.phone} title="تماس با متقاضی همکاری" />
+                        <OfferCallButton phone={m.user?.phone} title="تماس با متقاضی" />
                         <button
-                            onClick={() => run(m.id, () => decide.mutateAsync({ inquiryId, memberId: m.id, status: 'active' }), 'درخواست همکاری تایید شد')}
+                            onClick={() => run(m.id, () => decide.mutateAsync({ inquiryId, memberId: m.id, status: 'active' }), 'پیشنهاد تامین پذیرفته شد')}
                             className="inline-flex h-8 items-center gap-1 rounded-lg bg-emerald-600 px-2.5 text-[11px] font-extrabold text-white shadow-sm transition hover:bg-emerald-700 active:scale-95"
-                            aria-label="قبول درخواست همکاری"
+                            aria-label="قبول پیشنهاد تامین"
                         >
                             <Check className="size-3.5" />
                             قبول
                         </button>
                         <button
-                            onClick={() => run(m.id, () => decide.mutateAsync({ inquiryId, memberId: m.id, status: 'declined' }), 'درخواست همکاری رد شد')}
+                            onClick={() => run(m.id, () => decide.mutateAsync({ inquiryId, memberId: m.id, status: 'declined' }), 'پیشنهاد تامین رد شد')}
                             className="inline-flex h-8 items-center gap-1 rounded-lg border border-stone-200 bg-white px-2.5 text-[11px] font-extrabold text-stone-500 transition hover:border-stone-300 active:scale-95 dark:border-gray-700 dark:bg-gray-900 dark:text-gray-300"
-                            aria-label="رد درخواست همکاری"
+                            aria-label="رد پیشنهاد تامین"
                         >
                             <X className="size-3.5" />
                             رد
@@ -133,7 +133,7 @@ export default function MembersTab({ inquiryId, visibility, slug }: Props) {
                         {/* ✅ تماس با تامین‌کننده — همیشه (شمارهٔ ثبت‌نام؛ یادآوری پذیرش/اتصال تیم را قوی‌تر می‌کند) */}
                         <OfferCallButton
                             phone={m.user?.phone}
-                            title={mode === 'invited' ? 'تماس — یادآوری پذیرش درخواست همکاری' : `تماس با ${m.user?.fullName || 'تامین‌کننده'}`}
+                            title={mode === 'invited' ? 'تماس — یادآوری پذیرش درخواست تامین' : `تماس با ${m.user?.fullName || 'تامین‌کننده'}`}
                         />
                         <button
                             onClick={() => {
@@ -172,7 +172,7 @@ export default function MembersTab({ inquiryId, visibility, slug }: Props) {
                     className="flex h-10 shrink-0 items-center gap-1.5 rounded-full bg-primary px-4 text-[12px] font-extrabold text-on-primary shadow-lg shadow-primary/25 transition-colors hover:bg-primary/90"
                 >
                     <UserPlus className="size-4" />
-                    درخواست همکاری با تامین‌کننده
+                    درخواست تامین
                 </button>
             </div>
 
@@ -182,12 +182,12 @@ export default function MembersTab({ inquiryId, visibility, slug }: Props) {
                 </div>
             ) : (
                 <>
-                    {/* درخواست‌های همکاری در انتظار تایید تو — از طرف تامین‌کننده (خواستهٔ مالک: «درخواست همکاری» نه «عضویت») */}
+                    {/* پیشنهادهای تامینِ تامین‌کننده‌ها در انتظار تایید تو (خواستهٔ مالک: «پیشنهاد تامین») */}
                     {incoming.length > 0 && (
                         <div className={`${card} p-3`}>
                             <p className="mb-2 flex items-center gap-1.5 px-1 text-[11px] font-black text-amber-700 dark:text-amber-400">
                                 <ShieldCheck className="size-3.5" />
-                                درخواست همکاری — {incoming.length.toLocaleString('fa-IR')} مورد
+                                پیشنهاد تامین — {incoming.length.toLocaleString('fa-IR')} مورد
                             </p>
                             {incoming.map((m) => memberRow(m, 'incoming'))}
                         </div>
@@ -201,7 +201,7 @@ export default function MembersTab({ inquiryId, visibility, slug }: Props) {
                                 <p className="mt-2 text-[13px] font-black text-stone-500 dark:text-gray-400">هنوز تامین‌کننده‌ای نداری</p>
                                 {/* ✅ راهنمای تامین‌کننده‌یابی — خواستهٔ مالک: دو مسیر روشن */}
                                 <p className="mx-auto mt-1.5 max-w-sm text-[11px] font-bold leading-5 text-stone-400 dark:text-gray-500">
-                                    با دکمهٔ بالا به تامین‌کننده‌های مناسب کالایت در شهر خودت درخواست همکاری بده؛
+                                    با دکمهٔ بالا به تامین‌کننده‌های مناسب کالایت در شهر خودت درخواست تامین بده؛
                                     یا لینک بازوی خریدت را برای تامین‌کننده‌ها و بازاریاب‌هایی که می‌شناسی بفرست —
                                     اگر عضو دیمت باشند درخواست می‌دهند و اگر نباشند با لینک می‌آیند.
                                 </p>
@@ -229,10 +229,10 @@ export default function MembersTab({ inquiryId, visibility, slug }: Props) {
 }
 
 /**
- * مودال «درخواست همکاری با تامین‌کننده» — دو تب (خواستهٔ مالک):
+ * مودال «درخواست تامین» — دو تب (خواستهٔ مالک):
  *   • اعضا — جست‌وجوی کاتالوگ‌های دیمت با فیلتر استان/شهر/صنف + نام بیزینس و شهر زیر هر کاتالوگ
  *     (همکارهای فعال هرگز لیست نمی‌شوند؛ درخواست‌های در انتظار با لیبل کهربایی «در انتظار تایید»)
- *   • مخاطبین تلفن — ماژول مخاطبین: عضوهای دیمت → درخواست همکاری به کاتالوگشان، غیراعضا → دعوت با لینک بازو
+ *   • مخاطبین تلفن — ماژول مخاطبین: عضوهای دیمت → درخواست تامین به کاتالوگشان، غیراعضا → دعوت با لینک بازو
  */
 function AddSupplierModal({ inquiryId, slug, existingIds, onClose, onDone }: {
     inquiryId: string;
@@ -281,12 +281,12 @@ function AddSupplierModal({ inquiryId, slug, existingIds, onClose, onDone }: {
     const invite = async (c: any) => {
         try {
             await addMember.mutateAsync({ inquiryId, catalogId: c.id });
-            toast.success(`درخواست همکاری برای «${c.name}» فرستاده شد`);
+            toast.success(`درخواست تامین برای «${c.name}» فرستاده شد`);
             setSent((s) => new Set(s).add(c.id));
             // لیبل‌های «در انتظار تایید» بعد از بستن مودال هم درست بمانند
             qc.invalidateQueries({ queryKey: ['inquiry-supplier-candidates', inquiryId] });
         } catch (e: any) {
-            toast.error(e?.response?.data?.message || 'ارسال درخواست همکاری ناموفق بود');
+            toast.error(e?.response?.data?.message || 'ارسال درخواست تامین ناموفق بود');
         }
     };
 
@@ -296,9 +296,9 @@ function AddSupplierModal({ inquiryId, slug, existingIds, onClose, onDone }: {
                 className="max-h-[85dvh] w-full overflow-y-auto rounded-t-3xl bg-white p-5 shadow-2xl sm:max-w-md sm:rounded-2xl dark:bg-gray-900"
                 onClick={(e) => e.stopPropagation()}
             >
-                <p className="text-[15px] font-black text-stone-900 dark:text-gray-100">درخواست همکاری با تامین‌کننده</p>
+                <p className="text-[15px] font-black text-stone-900 dark:text-gray-100">درخواست تامین</p>
                 <p className="mt-0.5 text-[11px] font-bold text-stone-400 dark:text-gray-500">
-                    از کاتالوگ قیمتشان درخواست همکاری بفرست — بعد از تاییدشان، اقلامت را می‌بینند و قیمت می‌دهند
+                    از کاتالوگ قیمتشان درخواست تامین بفرست — بعد از تاییدشان، اقلامت را می‌بینند و قیمت می‌دهند
                 </p>
 
                 {/* دو تب — اعضای دیمت | مخاطبین تلفن (خواستهٔ مالک: کنار هم، نه زیر هم) */}
@@ -397,7 +397,7 @@ function AddSupplierModal({ inquiryId, slug, existingIds, onClose, onDone }: {
                                             disabled={addMember.isPending}
                                             className="shrink-0 rounded-full bg-primary px-3.5 py-1.5 text-[11px] font-extrabold text-on-primary transition-colors hover:bg-primary/90 disabled:opacity-50"
                                         >
-                                            درخواست همکاری
+                                            درخواست تامین
                                         </button>
                                     )}
                                 </div>
@@ -407,27 +407,27 @@ function AddSupplierModal({ inquiryId, slug, existingIds, onClose, onDone }: {
                 )}
 
                 {/* 📱 تب مخاطبین تلفن — موتور تامین‌کننده‌یابی:
-                     عضوهای دیمت → «درخواست همکاری» و درخواست به کاتالوگشان می‌رود
+                     عضوهای دیمت → «درخواست تامین» به کاتالوگشان می‌رود
                      غیراعضا → «دعوت به دیمت» — لینک بازو با پیام‌رسان یا پیامک می‌رود */}
                 {tab === 'contacts' && (
                     <div className="mt-3">
                         <PhoneContactsPanel
                             title="از مخاطبین تلفنت انتخاب کن"
-                            membersTitle="اعضای دیمت — درخواست همکاری به کاتالوگشان می‌رود"
+                            membersTitle="اعضای دیمت — درخواست تامین به کاتالوگشان می‌رود"
                             inviteTitle="دعوت به دیمت — لینک بازو را می‌گیرند"
                             memberSend={{
-                                label: 'درخواست همکاری',
+                                label: 'درخواست تامین',
                                 doneLabel: 'درخواست رفت',
                                 reason: (c) => {
                                     const cat = c.matchedUser?.catalog;
                                     if (!cat) return 'کاتالوگ قیمتی ندارد — با دعوت، لینک بازو را بفرست';
-                                    if (existingIds.has(cat.id)) return 'درخواست همکاری قبلاً فرستاده شده';
+                                    if (existingIds.has(cat.id)) return 'درخواست تامین قبلاً فرستاده شده';
                                     return null;
                                 },
                                 onSend: async (c) => {
                                     const cat = c.matchedUser!.catalog!;
                                     await addMember.mutateAsync({ inquiryId, catalogId: cat.id });
-                                    toast.success(`درخواست همکاری برای «${c.name || c.matchedUser?.fullName || cat.name}» فرستاده شد`);
+                                    toast.success(`درخواست تامین برای «${c.name || c.matchedUser?.fullName || cat.name}» فرستاده شد`);
                                 },
                             }}
                             invite={{

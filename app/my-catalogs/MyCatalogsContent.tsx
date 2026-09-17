@@ -612,7 +612,7 @@ function PendingApprovalRow({ item }: { item: any }) {
 
     const KIND_LABEL: Record<string, string> = {
         customer: 'ثبت شما به‌عنوان خریدار',
-        supplier: 'درخواست تامین‌کنندگی',
+        supplier: 'پیشنهاد تامین',
         service: 'درخواست تامین خدمات',
     };
 

@@ -27,7 +27,7 @@ interface CoopRequestModalProps {
 
 const TYPE_CARDS: { type: CoopType; icon: React.ElementType; title: string; desc: string; requiresServiceCatalog?: boolean }[] = [
     { type: 'buyer', icon: ShoppingBasket, title: 'درخواست تامین‌شوندگی (خرید)', desc: 'از این کسب‌وکار خرید می‌کنید و در لیست مشتریانش قرار می‌گیرید' },
-    { type: 'supplier', icon: Truck, title: 'درخواست تامین‌کنندگی', desc: 'کالاهای کاتالوگ شما را اینجا عرضه می‌کنند' },
+    { type: 'supplier', icon: Truck, title: 'پیشنهاد تامین', desc: 'کالاهای کاتالوگ شما را اینجا عرضه می‌کنند' },
     { type: 'seller', icon: Handshake, title: 'درخواست همکاری در فروش', desc: 'به‌عنوان فروشنده یا بازاریاب، کالاهای این کاتالوگ را می‌فروشید' },
     { type: 'service', icon: Wrench, title: 'درخواست تامین خدمات', desc: 'خدمات کاتالوگ شما (مشاوره، حمل، نصب و…) به این کسب‌وکار ارائه می‌شود', requiresServiceCatalog: true },
 ];

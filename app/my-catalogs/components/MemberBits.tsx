@@ -22,7 +22,7 @@ export const EVENT_LABEL: Record<string, string> = {
     buyer_approved: 'به‌عنوان خریدار تایید شد',
     buyer_rejected: 'بازوی خریدش رد شد',
     supplier_approved: 'به‌عنوان تامین‌کننده تایید شد',
-    supplier_rejected: 'درخواست تامین‌کننده‌اش رد شد',
+    supplier_rejected: 'پیشنهاد تامینش رد شد',
     supplier_removed: 'تامین‌کننده‌اش حذف شد',
     service_removed: 'سرویس‌دهنده‌اش حذف شد',
     service_approved: 'به‌عنوان سرویس‌دهندهٔ خدمات تایید شد',
@@ -51,7 +51,7 @@ export const EVENT_LABEL: Record<string, string> = {
 export const REQUEST_LABEL: Record<string, string> = {
     seller: 'درخواست همکاری در فروش',
     buyer: 'درخواست ثبت به‌عنوان خریدار',
-    supplier: 'درخواست تامین‌کنندگی',
+    supplier: 'پیشنهاد تامین',
     service: 'درخواست تامین خدمات',
 };
 

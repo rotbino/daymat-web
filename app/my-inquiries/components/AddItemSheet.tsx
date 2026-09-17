@@ -246,7 +246,7 @@ export default function AddItemSheet({ open, onClose, inquiryId, catalogUnits, e
                 qc.invalidateQueries({ queryKey: ['inquiries'] });
                 if (isFirstItem) {
                     toast.success('اولین قلمت ثبت شد 🎉', {
-                        description: 'برای اینکه تامین‌کننده‌ها اقلامت را ببینند، از تب «تامین‌کنندگان» به تامین‌کننده‌های مناسب کالایت در شهرت درخواست همکاری بده.',
+                        description: 'برای اینکه تامین‌کننده‌ها اقلامت را ببینند، از تب «تامین‌کنندگان» به تامین‌کننده‌های مناسب کالایت در شهرت درخواست تامین بده.',
                         duration: 9000,
                     });
                 } else if (st.urgent) {
