@@ -254,7 +254,7 @@ function HeroBox({
         {chip}
       </span>
 
-        <h2 className="mt-3 text-xl font-black text-stone-900 dark:text-gray-100">
+        <h2 className="mt-3  font-black text-stone-900 dark:text-gray-100">
           {question}
         </h2>
 
@@ -619,16 +619,16 @@ export default function Landing() {
             {/* ================================================================ */}
 
             <section className="relative overflow-hidden">
-              <div className="mx-auto max-w-6xl px-4 pb-14 pt-12 sm:px-6 sm:pt-16">
+              <div className="mx-auto max-w-8xl px-4 pb-14 pt-12 sm:px-6 sm:pt-16">
 
-                <motion.div {...fadeUp()} className="mx-auto max-w-3xl text-center">
+                <motion.div {...fadeUp()} className="mx-auto max-w-[500px] text-center">
                 <span className="inline-flex items-center gap-1.5 rounded-full border border-brand-primary-tint bg-brand-primary-soft px-3.5 py-1.5 text-xs font-bold text-brand-primary-strong dark:border-brand-primary/25 dark:bg-brand-primary/10 dark:text-brand-primary">
                   <ArrowLeftRight className="size-3.5" />
-                  دیمت، پلتفرم شبکه سازی تجاری
+                  دیمت، پلتفرم ساخت بازوهای خرید و فروش
                 </span>
 
-                  <h1 className="mt-5 pb-4 text-xl font-black leading-[1.5] tracking-tight text-stone-950 dark:text-white sm:text-xl md:text-[1.5rem] md:leading-[1.35]">
-                     شبکه تامین کنندگان و خریدرانت رو گسترش بده.
+                  <h1 className="mt-5 pb-4 pt-3 md:pt-6 text-xl font-black leading-[1.5] tracking-tight text-stone-950 dark:text-white sm:text-xl md:text-[1.5rem] md:leading-[1.35]">
+                   دیمت با اتصال هدفمند بازوهای خرید به بازوهای فروش مرتبط، خرید و فروشت رو تسهیل می کنه.
                   </h1>
 
                  {/* <div className={"text-base text-justify"}>
@@ -645,8 +645,8 @@ export default function Landing() {
                       tone="primary"
                       icon={Store}
                       chip="بازوی فروش"
-                      question="چه محصول یا خدماتی می‌فروشی؟"
-                      body=" کاتالوگ شخصی و هوشمند محصولات یا خدمات رو بساز. لینکش رو به مشتریانت بفرست؛ هر مشتری که به کاتالوگت وصل بشه ، بخشی از شبکه فروشت میشه و همیشه کاتالوگ قیمتهای روز شما رو داره."
+                      question="چه محصول یا خدماتی رو عمده می‌فروشی؟"
+                      body=" بازوی فروش محصولات یا خدماتت رو بساز. لینکش رو به مشتریان مرتبط بفرست؛ هر مشتری که به این بازو وصل بشه ، بخشی از شبکه فروشت میشه و همیشه کاتالوگ قیمتهای روز شما رو داره.دیمت هم شبکه خریدارنت رو گسترش میده."
                       delay={0.1}
                   />
 
@@ -663,8 +663,8 @@ export default function Landing() {
                       tone="contrast"
                       icon={ClipboardList}
                       chip="بازوی خرید"
-                      question="چه محصولات یا خدماتی می‌خری؟"
-                      body="بازوی لیست خریدت رو بساز و اقلام مورد نیاز به خرید رو وارد کن. لینک رو برای تأمین‌کننده‌هات بفرست. هر وقت نیاز داشتی، قیمت‌گیری بعضی اقلام رو فعال کن تا قیمت و شرایط رقابتی بگیری."
+                      question="چه محصولات یا خدماتی رو عمده می‌خری؟"
+                      body="بازوی خرید کسب و کارت رو بساز، لیست خریدت رو وارد کن. لینک رو برای تأمین‌کنندگان مرتبط بفرست. هر وقت نیاز داشتی، قیمت‌گیری بعضی اقلام رو فعال کن تا از تامین کنندگانت، قیمت و شرایط رقابتی بگیری. دیمت هم شبکه تامین کنندگانت رو گسترش میده."
                       delay={0.15}
                   />
                 </div>
@@ -674,7 +674,7 @@ export default function Landing() {
                     className="mx-auto mt-8 max-w-2xl text-center"
                 >
                   <p className="text-sm font-bold leading-7 text-stone-700 dark:text-gray-300">
-                    فروشنده و خریدار، دقیقاً جایی به هم می‌رسند که محصول موردنیاز
+                    فروشنده و خریدار، دقیقاً جایی به هم می‌رسند که محصول یا خدمت موردنیاز
                     وجود دارد.
                   </p>
                 </motion.div>
