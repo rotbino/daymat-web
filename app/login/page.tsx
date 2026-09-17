@@ -14,6 +14,7 @@ import { apiService } from '@/lib/api/apiService';
 import { getApiUrl } from '@/lib/api/apiRequest';
 import { readStoredRef, clearStoredRef } from "@/app/components/RefCapture";
 import { toastFormErrors } from '@/lib/formAlerts';
+import { collectDeviceMeta } from '@/lib/deviceMeta';
 
 export default function LoginPage() {
     const router = useRouter();
@@ -133,7 +134,9 @@ export default function LoginPage() {
                 password: '123456',
                 fullName: `${firstName.trim()} ${lastName.trim()}`,
                 refCode: readStoredRef() ?? undefined,
-            } as any);
+                // 📊 متادیتای سیستمی پشت‌صحنه — دیوایس/مرورگر/تایم‌زون؛ سرور هم UA و IP و جستجوی جغرافیایی IP را اضافه می‌کند
+                signupMeta: collectDeviceMeta(),
+            });
 
             dispatch(setUser(registerResponse.user));
             dispatch(setAccessToken(registerResponse.access_token));
@@ -180,7 +183,12 @@ export default function LoginPage() {
         try {
             await dispatch(clearUserSession());
 
-            const loginResponse = await loginMutation.mutateAsync({ phone, password });
+            const loginResponse = await loginMutation.mutateAsync({
+                phone,
+                password,
+                // 📊 آخرین دیوایس/مرورگر/IP کاربر — برای گزارش‌های بعدی
+                loginMeta: collectDeviceMeta(),
+            });
 
             dispatch(setUser(loginResponse.user));
             dispatch(setAccessToken(loginResponse.access_token));

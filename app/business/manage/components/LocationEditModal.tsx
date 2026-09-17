@@ -1,5 +1,6 @@
 // app/business/manage/components/LocationEditModal.tsx
-// 📍 انتخاب استان و شهر کسب‌وکار — ذخیره با PUT /business/:id
+// 📍 موقعیت مکانی کسب‌وکار — استان/شهر + لوکیشن دقیق روی نقشه — ذخیره با PUT /business/:id
+//    لوکیشن دقیق اختیاری و بی‌اصرار است (LocationPicker خودش مزیتش را توضیح می‌دهد)
 'use client';
 
 import React, { useEffect, useMemo, useState } from 'react';
@@ -7,12 +8,18 @@ import { X, Loader2, Check, MapPin } from 'lucide-react';
 import { useQuery } from '@tanstack/react-query';
 import { cn } from '@/lib/utils';
 import { apiService } from '@/lib/api/apiService';
+import LocationPicker, { LatLngValue } from '@/app/components/LocationPicker';
 
 export interface LocationValue {
     province?: string | null;
     provinceCode?: string | null;
     city?: string | null;
     cityCode?: string | null;
+}
+
+export interface LocationSaveValue extends LocationValue {
+    locationLat?: number | null;
+    locationLng?: number | null;
 }
 
 const SELECT_CLS =
@@ -22,15 +29,20 @@ export function LocationEditModal({
     isOpen,
     onClose,
     initial,
+    initialLocation,
     onSave,
 }: {
     isOpen: boolean;
     onClose: () => void;
     initial: LocationValue;
-    onSave: (value: { province: string; provinceCode: string; city: string; cityCode: string }) => Promise<void>;
+    /** لوکیشن دقیقِ ثبت‌شدهٔ قبلی (اختیاری) */
+    initialLocation?: LatLngValue | null;
+    onSave: (value: LocationSaveValue) => Promise<void>;
 }) {
     const [provinceCode, setProvinceCode] = useState(initial.provinceCode || '');
     const [cityCode, setCityCode] = useState(initial.cityCode || '');
+    const [location, setLocation] = useState<LatLngValue | null>(initialLocation ?? null);
+    const [saving, setSaving] = useState(false);
 
     const { data: provinces, isLoading: provincesLoading } = useQuery({
         queryKey: ['location-provinces'],
@@ -51,24 +63,39 @@ export function LocationEditModal({
         if (isOpen) {
             setProvinceCode(initial.provinceCode || '');
             setCityCode(initial.cityCode || '');
+            setLocation(initialLocation ?? null);
+            setSaving(false);
         }
         // eslint-disable-next-line react-hooks/exhaustive-deps
     }, [isOpen]);
 
     const provinceTitle = useMemo(
-        () => provinces?.items?.find((p) => p.provinceCode === provinceCode)?.title || '',
-        [provinces, provinceCode],
+        () => provinces?.items?.find((p) => p.provinceCode === provinceCode)?.title || initial.province || '',
+        [provinces, provinceCode, initial.province],
     );
     const cityTitle = useMemo(
-        () => cities?.items?.find((c) => c.cityCode === cityCode)?.title || '',
-        [cities, cityCode],
+        () => cities?.items?.find((c) => c.cityCode === cityCode)?.title || initial.city || '',
+        [cities, cityCode, initial.city],
     );
 
     if (!isOpen) return null;
 
     const handleSave = async () => {
-        if (!provinceCode || !cityCode) return;
-        await onSave({ province: provinceTitle, provinceCode, city: cityTitle, cityCode });
+        if (!provinceCode || !cityCode || saving) return;
+        setSaving(true);
+        try {
+            await onSave({
+                province: provinceTitle,
+                provinceCode,
+                city: cityTitle,
+                cityCode,
+                // ✅ لوکیشن دقیق — با null حذف می‌شود (بک‌اند پشتیبانی می‌کند)
+                locationLat: location?.lat ?? null,
+                locationLng: location?.lng ?? null,
+            });
+        } finally {
+            setSaving(false);
+        }
     };
 
     return (
@@ -78,14 +105,14 @@ export function LocationEditModal({
                 if (e.target === e.currentTarget) onClose();
             }}
         >
-            <div className="bg-white dark:bg-gray-900 w-full max-w-sm rounded-2xl shadow-2xl overflow-hidden">
+            <div className="bg-white dark:bg-gray-900 w-full max-w-sm rounded-2xl shadow-2xl overflow-hidden max-h-[92dvh] flex flex-col">
                 {/* هدر */}
-                <div className="flex items-center justify-between px-5 py-4 border-b border-outline-variant/20 bg-primary/5">
+                <div className="flex items-center justify-between px-5 py-4 border-b border-outline-variant/20 bg-primary/5 flex-shrink-0">
                     <div className="flex items-center gap-2">
                         <span className="w-8 h-8 rounded-lg bg-primary/10 grid place-items-center">
                             <MapPin className="w-4 h-4 text-primary" />
                         </span>
-                        <h3 className="text-sm font-extrabold text-on-surface">استان و شهر</h3>
+                        <h3 className="text-sm font-extrabold text-on-surface">موقعیت مکانی</h3>
                     </div>
                     <button
                         onClick={onClose}
@@ -96,7 +123,7 @@ export function LocationEditModal({
                     </button>
                 </div>
 
-                <div className="p-5 space-y-4">
+                <div className="p-5 space-y-4 overflow-y-auto scrollbar-slim">
                     {/* استان */}
                     <div className="space-y-1.5">
                         <label className="text-[11px] font-bold text-on-surface-variant">استان</label>
@@ -146,27 +173,33 @@ export function LocationEditModal({
                         )}
                     </div>
 
-                    {/* دکمه‌ها */}
-                    <div className="flex gap-2 pt-1">
-                        <button
-                            type="button"
-                            onClick={onClose}
-                            className="h-10 px-4 rounded-xl border border-outline-variant/50 text-on-surface-variant text-xs font-bold hover:bg-surface-container-low active:scale-95 transition-all"
-                        >
-                            انصراف
-                        </button>
-                        <button
-                            type="button"
-                            onClick={handleSave}
-                            disabled={!provinceCode || !cityCode}
-                            className={cn(
-                                'flex-1 h-10 rounded-xl bg-primary text-on-primary text-xs font-extrabold flex items-center justify-center gap-1.5',
-                                'hover:bg-primary/90 active:scale-[0.98] transition-all disabled:opacity-50 shadow-sm shadow-primary/25',
-                            )}
-                        >
-                            <Check className="w-4 h-4" /> ذخیره
-                        </button>
+                    {/* ✅ لوکیشن دقیق روی نقشه — اختیاری و بی‌اصرار */}
+                    <div className="space-y-1.5">
+                        <label className="text-[11px] font-bold text-on-surface-variant">لوکیشن دقیق (اختیاری)</label>
+                        <LocationPicker value={location} onChange={(v) => setLocation(v)} />
                     </div>
+                </div>
+
+                {/* دکمه‌ها */}
+                <div className="flex gap-2 pt-1 px-5 pb-5 flex-shrink-0">
+                    <button
+                        type="button"
+                        onClick={onClose}
+                        className="h-10 px-4 rounded-xl border border-outline-variant/50 text-on-surface-variant text-xs font-bold hover:bg-surface-container-low active:scale-95 transition-all"
+                    >
+                        انصراف
+                    </button>
+                    <button
+                        type="button"
+                        onClick={handleSave}
+                        disabled={!provinceCode || !cityCode || saving}
+                        className={cn(
+                            'flex-1 h-10 rounded-xl bg-primary text-on-primary text-xs font-extrabold flex items-center justify-center gap-1.5',
+                            'hover:bg-primary/90 active:scale-[0.98] transition-all disabled:opacity-50 shadow-sm shadow-primary/25',
+                        )}
+                    >
+                        {saving ? <Loader2 className="w-4 h-4 animate-spin" /> : <Check className="w-4 h-4" />} ذخیره
+                    </button>
                 </div>
             </div>
         </div>

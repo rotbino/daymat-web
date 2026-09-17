@@ -8,7 +8,7 @@ import Image from 'next/image';
 import { useSelector } from 'react-redux';
 import {
     ArrowRight, Pencil, BadgeCheck, MapPin, Loader2, Building2, Plus, User,
-    Briefcase, Phone, FileText, Info, LayoutDashboard,
+    Briefcase, Phone, FileText, Info, LayoutDashboard, Check,
 } from 'lucide-react';
 import { toast } from 'sonner';
 import { cn } from '@/lib/utils';
@@ -592,6 +592,20 @@ export default function BusinessManageContent() {
                                             ) : (
                                                 <p className="text-[12px] text-on-surface-variant/40">وارد نشده</p>
                                             )}
+                                            {/* ✅ وضعیت لوکیشن دقیق — همان مودال، بعد از استان/شهر */}
+                                            {detail.locationLat != null && detail.locationLng != null ? (
+                                                <p className="text-[10px] text-primary/80 leading-4 mt-0.5 flex items-center gap-1">
+                                                    <Check className="w-3 h-3" />
+                                                    لوکیشن دقیق ثبت شده
+                                                    <span dir="ltr" className="text-on-surface-variant/50">
+                                                        ({detail.locationLat.toFixed(4)}, {detail.locationLng.toFixed(4)})
+                                                    </span>
+                                                </p>
+                                            ) : (
+                                                <p className="text-[10px] text-on-surface-variant/40 leading-4 mt-0.5">
+                                                    لوکیشن دقیق ثبت نشده — از دکمهٔ ویرایش می‌تونی روی نقشه ستش کنی
+                                                </p>
+                                            )}
                                         </div>
                                         <button
                                             type="button"
@@ -698,8 +712,21 @@ export default function BusinessManageContent() {
                             city: detail.city,
                             cityCode: detail.cityCode,
                         }}
+                        initialLocation={
+                            detail.locationLat != null && detail.locationLng != null
+                                ? { lat: detail.locationLat, lng: detail.locationLng }
+                                : null
+                        }
                         onSave={async (val) => {
-                            await saveFields(val);
+                            // ✅ لوکیشن دقیق هم با همین ذخیره ثبت/حذف می‌شود (null = حذف)
+                            await saveFields({
+                                province: val.province,
+                                provinceCode: val.provinceCode,
+                                city: val.city,
+                                cityCode: val.cityCode,
+                                locationLat: val.locationLat ?? null,
+                                locationLng: val.locationLng ?? null,
+                            });
                             setLocationOpen(false);
                         }}
                     />

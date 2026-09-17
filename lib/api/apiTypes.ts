@@ -22,15 +22,19 @@ export class ApiError extends Error {
 }
 
 // ==================== Auth ====================
+// متادیتای سیستمی پشت‌صحنه — سرور UA/IP/جستجوی جغرافیایی IP را هم اضافه می‌کند (lib/deviceMeta.ts)
 export interface LoginCredentials {
     phone: string;
     password: string;
+    loginMeta?: Record<string, unknown>;
 }
 
 export interface RegisterCredentials {
     phone: string;
     fullName: string;
     password: string;
+    refCode?: string;
+    signupMeta?: Record<string, unknown>;
 }
 
 export interface User {
