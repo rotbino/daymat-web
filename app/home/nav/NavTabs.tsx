@@ -245,6 +245,10 @@ export default function NavTabs({ guestMarketSlug }: { guestMarketSlug?: string 
                     {/* برند فرزند — لوگو + نام + شعار بازار فعلی */}
                     <ArmSwitcher variant="desktop" />
 
+                    {/* ✅ ناو عمومی (بدون جستجو): فاصله‌گذار خالی به‌جای سرچ باکس —
+                        آیتم‌های ناو همیشه سمت مقابل لوگو می‌نشینند، نه چسبیده به آن */}
+                    {!inside && <div className="flex-1" />}
+
                     {/* جستجو فقط داخل بازار — ناو عمومی بی‌جستجو است */}
                     {inside && (
                         <>

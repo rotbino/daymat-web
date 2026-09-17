@@ -490,7 +490,7 @@ export default function BusinessSetupModal({ isOpen, onClose, business, onSaved,
                     {/* ✅ لوکیشن دقیق کسب‌وکار — اختیاری و بی‌اصرار؛ فقط مزیتش گفته می‌شود */}
                     <section className="space-y-2">
                         <SectionTitle icon={MapPin} text="لوکیشن دقیق کسب‌وکار (اختیاری)" />
-                        <LocationPicker value={location} onChange={(v) => setLocation(v)} onResolved={(geo) => handleLocationResolved(geo)} />
+                        <LocationPicker value={location} onChange={(v) => setLocation(v)} onResolved={(geo) => handleLocationResolved(geo)} addressText={address} />
 
                         {/* 🌍 آدرس — با انتخاب لوکیشن خودکار پر می‌شود؛ کاربر می‌تواند ویرایشش کند */}
                         <div className="space-y-1.5 pt-1">

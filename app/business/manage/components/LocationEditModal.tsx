@@ -212,7 +212,7 @@ export function LocationEditModal({
                     {/* ✅ لوکیشن دقیق روی نقشه — اختیاری و بی‌اصرار */}
                     <div className="space-y-1.5">
                         <label className="text-[11px] font-bold text-on-surface-variant">لوکیشن دقیق (اختیاری)</label>
-                        <LocationPicker value={location} onChange={(v) => setLocation(v)} onResolved={(geo) => handleLocationResolved(geo)} />
+                        <LocationPicker value={location} onChange={(v) => setLocation(v)} onResolved={(geo) => handleLocationResolved(geo)} addressText={address} />
                     </div>
 
                     {/* 🌍 آدرس — با انتخاب لوکیشن خودکار پر می‌شود؛ کاربر می‌تواند ویرایشش کند */}

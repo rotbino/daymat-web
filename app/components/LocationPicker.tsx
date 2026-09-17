@@ -20,6 +20,8 @@ interface Props {
     onChange: (v: LatLngValue | null) => void;
     /** نتیجهٔ جستجوی معکوسِ نقطهٔ تأییدشده — فرم‌ها با آن استان/شهر/آدرس را آپدیت می‌کنند */
     onResolved?: (geo: ReverseGeoResult | null, coords: LatLngValue) => void;
+    /** آدرس خوانای نقطهٔ ثبت‌شده (از فرم) — اگر باشد در چیپ به‌جای مختصات خام نشان داده می‌شود */
+    addressText?: string | null;
 }
 
 // مرکز نقشه وقتی هنوز نقطه‌ای انتخاب نشده — کل ایران
@@ -38,7 +40,7 @@ function makePinIcon(L: any) {
     });
 }
 
-export default function LocationPicker({ value, onChange, onResolved }: Props) {
+export default function LocationPicker({ value, onChange, onResolved, addressText }: Props) {
     const [open, setOpen] = useState(false);
     const [draft, setDraft] = useState<LatLngValue | null>(null);
     const [gpsLoading, setGpsLoading] = useState(false);
@@ -206,9 +208,16 @@ export default function LocationPicker({ value, onChange, onResolved }: Props) {
                     <MapPin className="w-4 h-4 text-primary shrink-0" />
                     <div className="flex-1 min-w-0">
                         <p className="text-[11px] font-bold text-primary">لوکیشن ثبت شد</p>
-                        <p className="text-[9px] text-on-surface-variant/60 truncate" dir="ltr">
-                            {value.lat.toFixed(5)} , {value.lng.toFixed(5)}
-                        </p>
+                        {/* ✅ آدرس خوانا اگر داشته باشیم — وگرنه مختصات خام */}
+                        {addressText ? (
+                            <p className="text-[9px] text-on-surface-variant/60 truncate" title={addressText}>
+                                {addressText}
+                            </p>
+                        ) : (
+                            <p className="text-[9px] text-on-surface-variant/60 truncate" dir="ltr">
+                                {value.lat.toFixed(5)} , {value.lng.toFixed(5)}
+                            </p>
+                        )}
                     </div>
                     <button type="button" onClick={() => { setDraft(value); setOpen(true); }}
                             className="text-[10px] font-bold text-primary hover:underline shrink-0">

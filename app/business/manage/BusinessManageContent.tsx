@@ -592,14 +592,20 @@ export default function BusinessManageContent() {
                                             ) : (
                                                 <p className="text-[12px] text-on-surface-variant/40">وارد نشده</p>
                                             )}
-                                            {/* ✅ وضعیت لوکیشن دقیق — همان مودال، بعد از استان/شهر */}
+                                            {/* ✅ وضعیت لوکیشن دقیق — با آدرس خوانا (اگر باشد)، وگرنه مختصات */}
                                             {detail.locationLat != null && detail.locationLng != null ? (
-                                                <p className="text-[10px] text-primary/80 leading-4 mt-0.5 flex items-center gap-1">
-                                                    <Check className="w-3 h-3" />
-                                                    لوکیشن دقیق ثبت شده
-                                                    <span dir="ltr" className="text-on-surface-variant/50">
-                                                        ({detail.locationLat.toFixed(4)}, {detail.locationLng.toFixed(4)})
-                                                    </span>
+                                                <p className="text-[10px] text-primary/80 leading-4 mt-0.5 flex items-center gap-1 min-w-0">
+                                                    <Check className="w-3 h-3 shrink-0" />
+                                                    <span className="shrink-0">لوکیشن دقیق ثبت شده</span>
+                                                    {detail.address ? (
+                                                        <span className="text-on-surface-variant/70 truncate min-w-0" title={detail.address}>
+                                                            — {detail.address}
+                                                        </span>
+                                                    ) : (
+                                                        <span dir="ltr" className="text-on-surface-variant/50 shrink-0">
+                                                            ({detail.locationLat.toFixed(4)}, {detail.locationLng.toFixed(4)})
+                                                        </span>
+                                                    )}
                                                 </p>
                                             ) : (
                                                 <p className="text-[10px] text-on-surface-variant/40 leading-4 mt-0.5">
