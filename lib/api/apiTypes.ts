@@ -595,6 +595,9 @@ export interface Brand {
     title: string;
     slug?: string;
     category?: string | null;
+    // ✅ دستهٔ سطح‌بالای برند — تاکسونومی ثابت (brand_categories)
+    brandCategoryId?: string | null;
+    brandCategory?: { name: string } | null;
     categoryPath?: string[];
     logoUrl?: string | null;
     description?: string | null;

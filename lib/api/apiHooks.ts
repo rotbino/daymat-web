@@ -1240,7 +1240,7 @@ export const useBrandSearch = (q: string, category?: string, page = 1, enabled =
 export const useCreateBrand = () => {
     const queryClient = useQueryClient();
     return useMutation({
-        mutationFn: (data: { title: string; category?: string; keywords?: string[]; logoUrl?: string; armSlug?: string }) =>
+        mutationFn: (data: { title: string; categoryId: string; keywords?: string[]; logoUrl?: string; armSlug?: string }) =>
             apiService.brand.create(data),
         onSuccess: () => {
             queryClient.invalidateQueries({ queryKey: ['brand-search'] });

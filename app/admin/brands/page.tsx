@@ -13,6 +13,7 @@ import {
 import {
     useAdminBrands, useAdminBrand, useUpdateAdminBrand, useDeleteAdminBrand,
 } from '@/lib/api/apiHooks';
+import BrandCategorySelect from '@/app/components/BrandCategorySelect';
 import { Brand, ProductReference, AdRefItem } from '@/lib/api/apiTypes';
 
 const PAGE_SIZE = 20;
@@ -348,7 +349,8 @@ function EditBrandModal({
     saving: boolean;
 }) {
     const [title, setTitle] = useState(brand.title);
-    const [category, setCategory] = useState(brand.category || '');
+    // ✅ دستهٔ برند — از تاکسونومی ثابت (brandCategoryId)
+    const [categoryId, setCategoryId] = useState<string>(brand.brandCategoryId || '');
     const [keywords, setKeywords] = useState((brand.keywords || []).join('، '));
     const [logoUrl, setLogoUrl] = useState(brand.logoUrl || '');
     const [description, setDescription] = useState(brand.description || '');
@@ -363,7 +365,7 @@ function EditBrandModal({
         const splitList = (s: string) => s.split(/[،,]/).map((x) => x.trim()).filter(Boolean);
         await onSave({
             title: title.trim(),
-            category,
+            categoryId,
             keywords: splitList(keywords),
             logoUrl,
             description,
@@ -399,12 +401,7 @@ function EditBrandModal({
 
                     <div>
                         <label className="text-xs font-bold text-on-surface block mb-1.5">دستهٔ برند</label>
-                        <input
-                            value={category}
-                            onChange={(e) => setCategory(e.target.value)}
-                            placeholder="مثلاً: مواد غذایی، شوینده"
-                            className="w-full h-11 px-3 rounded-xl bg-surface-container-lowest border border-outline-variant/50 text-sm text-on-surface placeholder:text-on-surface-variant/50 focus:outline-none focus:ring-2 focus:ring-primary/30"
-                        />
+                        <BrandCategorySelect value={categoryId} onChange={setCategoryId} />
                     </div>
 
                     <div>
@@ -502,7 +499,7 @@ function BrandDetailModal({ brand, onClose }: { brand: Brand; onClose: () => voi
                             )}
                             <div className="min-w-0">
                                 <h4 className="text-sm font-black text-on-surface truncate">{detail?.title}</h4>
-                                <p className="text-xs text-on-surface-variant mt-0.5">{detail?.category || 'بدون دسته'}</p>
+                                <p className="text-xs text-on-surface-variant mt-0.5">{detail?.brandCategory?.name || detail?.category || 'بدون دسته'}</p>
                             </div>
                         </div>
 

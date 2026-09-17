@@ -821,7 +821,7 @@ function ArmBrandDetailModal({ slug, brand, onClose }: { slug: string; brand: Br
                         )}
                         <div className="min-w-0">
                             <h4 className="text-sm font-black text-on-surface truncate">{detail?.title}</h4>
-                            <p className="text-xs text-on-surface-variant mt-0.5">{detail?.category || 'بدون دسته'}</p>
+                            <p className="text-xs text-on-surface-variant mt-0.5">{detail?.brandCategory?.name || detail?.category || 'بدون دسته'}</p>
                         </div>
                     </div>
 

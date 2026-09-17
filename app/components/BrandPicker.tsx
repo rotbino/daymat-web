@@ -3,12 +3,14 @@
 
 import React, { useState } from 'react';
 import EntityPicker, { EntityValue } from './EntityPicker';
+import BrandCategorySelect from './BrandCategorySelect';
 import { apiService } from '@/lib/api/apiService';
 import { Tag, Check, CircleSlash } from 'lucide-react';
 import { cn } from '@/lib/utils';
 
 export interface BrandValue extends EntityValue {
-    category?: string;
+    categoryId?: string;
+    brandCategoryName?: string;
     logoUrl?: string;
 }
 
@@ -109,12 +111,18 @@ export default function BrandPicker({
                     icon={<Tag className="w-3.5 h-3.5 text-on-surface-variant" />}
                     fetchFn={async (params) => {
                         const res = await apiService.brand.search(params.q, category, params.page, params.limit);
-                        return { items: res.items, hasMore: res.hasMore };
+                        // ✅ isByUser → isNew: فقط برندهای کاربر-ساخته ویرایش/حذف دارند
+                        return { items: res.items.map((i: any) => ({ ...i, isNew: !!i.isByUser })), hasMore: res.hasMore };
                     }}
                     createFn={async (data) => {
-                        return apiService.brand.create({ title: data.title, category, armSlug });
+                        return apiService.brand.create({ title: data.title, categoryId: data.categoryId, armSlug });
                     }}
+                    updateFn={(id, data) => apiService.brand.update(id, data)}
                     deleteFn={(id) => apiService.brand.delete(id)}
+                    renderCreateFields={({ dataRef }) => <BrandCategorySelect dataRef={dataRef} />}
+                    createValidate={(d) => (!d.categoryId ? 'دستهٔ برند را انتخاب کن — برای تخصصی‌کردن برندهای بازار لازم می‌شود.' : null)}
+                    renderEditFields={({ dataRef, initialData }) => <BrandCategorySelect dataRef={dataRef} initialData={initialData} />}
+                    editValidate={(d) => (!d.categoryId ? 'دستهٔ برند را انتخاب کن.' : null)}
                     queryKey={`brands-picker-${category || 'all'}`}
                     createLabel="افزودن برند جدید"
                     addButtonLabel="ثبت برند جدید"
@@ -155,7 +163,12 @@ export default function BrandPicker({
                                     <Tag className="w-4 h-4 text-on-surface-variant/50" />
                                 </span>
                             )}
-                            <span className="flex-1 text-sm font-medium text-on-surface truncate">{item.title}</span>
+                            <span className="flex-1 min-w-0">
+                                <span className="block text-sm font-medium text-on-surface truncate">{item.title}</span>
+                                {item.brandCategory?.name && (
+                                    <span className="block text-[10px] text-on-surface-variant/70 truncate">{item.brandCategory.name}</span>
+                                )}
+                            </span>
                             {value?.id === item.id && (
                                 <span className="w-5 h-5 rounded-full bg-primary grid place-items-center flex-shrink-0 shadow-sm">
                                     <Check className="w-3 h-3 text-on-primary" />

@@ -98,6 +98,8 @@ interface Props {
     updateFn?: (id: string, data: any) => Promise<any>;
     /** رندر فیلدهای ویرایش (مشابه renderCreateFields) */
     renderEditFields?: (props: CreateFormProps) => React.ReactNode;
+    createValidate?: (data: { [key: string]: any }) => string | null;
+    editValidate?: (data: { [key: string]: any }) => string | null;
     /** عنوان مدال ویرایش */
     editTitle?: string;
     /** تابع حذف آیتم (اختیاری) — اگه داده بشه، آیکون حذف برای isNew نمایش داده می‌شه */
@@ -133,6 +135,8 @@ export default function EntityPicker({
     mineToggleLabel,
     updateFn,
     renderEditFields,
+    createValidate,
+    editValidate,
     deleteFn,
     addButtonLabel,
     createFieldLabel,
@@ -223,6 +227,8 @@ export default function EntityPicker({
                     createTitle={createTitle}
                     updateFn={updateFn}
                     renderEditFields={renderEditFields}
+                    createValidate={createValidate}
+                    editValidate={editValidate}
                     editTitle={editTitle}
                     mineToggleLabel={mineToggleLabel}
                     deleteFn={deleteFn}
@@ -263,6 +269,8 @@ function EntityPickerModal({
     createTitle: createFormTitle,
     updateFn,
     renderEditFields,
+    createValidate,
+    editValidate,
     editTitle = 'ویرایش',
     mineToggleLabel,
     deleteFn,
@@ -416,6 +424,8 @@ function EntityPickerModal({
     const handleCreate = async (e: React.FormEvent) => {
         e.preventDefault();
         if (createTitle.trim().length < 2) return;
+        const validationError = createValidate?.({ ...createDataRef.current }) || null;
+        if (validationError) { setCreateError(validationError); return; }
         setCreateError(null);
         try {
             // ✅ داده‌های اضافی از ref + title
@@ -440,6 +450,8 @@ function EntityPickerModal({
     const handleEdit = async (e: React.FormEvent) => {
         e.preventDefault();
         if (!editingItem || editTitleValue.trim().length < 2) return;
+        const editValidationError = editValidate?.({ ...editDataRef.current }) || null;
+        if (editValidationError) { setEditError(editValidationError); return; }
         setEditError(null);
         try {
             await updateMut.mutateAsync({

@@ -458,6 +458,9 @@ export const apiService = {
     // BRAND (برند)
     // ============================================================
     brand: {
+        // ✅ دسته‌بندی‌های ثابت برند — برای فیلد الزامی «دستهٔ برند» در فرم ثبت
+        categories: async (): Promise<Array<{ id: string; name: string; slug: string; order: number }>> =>
+            apiRequest('/brands/categories'),
         search: async (q?: string, category?: string, page = 1, limit = 10): Promise<{ items: any[]; total?: number; hasMore?: boolean }> => {
             const params = new URLSearchParams();
             if (q && q.trim().length >= 2) params.set('q', q.trim());
@@ -469,7 +472,8 @@ export const apiService = {
         },
         create: async (data: {
             title: string;
-            category?: string;
+            // ✅ دستهٔ برند — الزامی (از /brands/categories)
+            categoryId: string;
             keywords?: string[];
             logoUrl?: string;
             description?: string;
@@ -478,6 +482,9 @@ export const apiService = {
         }): Promise<any> => {
             return apiRequest('/brands', { method: 'POST', data });
         },
+        // ✅ ویرایش برند — فقط برندهای کاربر-ساختهٔ خودت (بک‌اند گارد دارد)
+        update: async (id: string, data: { title?: string; categoryId?: string }): Promise<any> =>
+            apiRequest(`/brands/${id}`, { method: 'PATCH', data }),
         delete: async (id: string): Promise<any> => {
             return apiRequest(`/brands/${id}`, { method: 'DELETE' });
         },
