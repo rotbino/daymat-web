@@ -129,7 +129,8 @@ export default function RegisterCatalogPage() {
     // ─── تغییر کسب‌وکار: نام پیشنهادی تازه می‌شود ───
     useEffect(() => {
         if (!selectedBiz) return;
-        setCatalogName(selectedBiz.name || '');
+        // ✅ نام پیشنهادی = «بازوی فروش + نام کسب‌وکار» (خواستهٔ مالک) — قابل ویرایش
+        setCatalogName(selectedBiz.name ? `بازوی فروش ${String(selectedBiz.name).trim()}`.slice(0, 60) : '');
         setNameDirty(false);
         setErrors({});
         // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -372,7 +373,7 @@ export default function RegisterCatalogPage() {
                         ) : (
                             !nameDirty && catalogName && (
                                 <p className="text-[10px] text-on-surface-variant/60 px-1">
-                                    پیشنهاد ما همون نام کسب‌وکاره؛ اگه می‌خوای توی لیست بازوهای فروشت متمایز باشه، تغییرش بده.
+                                    پیشنهاد ما «بازوی فروش» به‌همراه نام کسب‌وکاره؛ اگه می‌خوای توی لیست بازوهای فروشت متمایز باشه، تغییرش بده.
                                 </p>
                             )
                         )}
