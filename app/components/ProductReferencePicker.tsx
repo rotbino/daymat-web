@@ -114,6 +114,7 @@ export default function ProductReferencePicker({
             queryKey={`products-picker-${category || 'all'}`}
             createLabel="افزودن کالای جدید به مرجع"
             addButtonLabel="کالای جدید"
+            countLabel="{count} کالا"
             emptyHint="اگر این کالا در مرجع وجود ندارد؟ یک بار آن را اضافه کنید تا هم شما و هم بقیه از آن استفاده کنند."
             minSearchChars={2}
             pageSize={10}
@@ -125,7 +126,7 @@ export default function ProductReferencePicker({
             notFoundMessage="کالایی با این نام پیدا نشد."
             emptyMessage="هنوز کالایی در مرجع کالا ثبت نشده. خودت اولین کالا رو ثبت کن."
             addToListLabel="افزودن «{title}» به مرجع کالا"
-            createFieldLabel="عنوان کالا"
+            createFieldLabel="نام کامل کالا"
             createFieldPlaceholder="مثلاً: تن ماهی ۲۵۰ گرمی مکنزی"
             createHint="این کالا در مرجع وجود ندارد؟ یک بار آن را اضافه کنید تا همه جا قابل استفاده باشد"
             showMineOnly={true}
@@ -355,6 +356,7 @@ function CreateProductExtraFields({
                     queryKey={`brands-in-product-${category || 'all'}`}
                     createLabel="افزودن برند جدید"
                     addButtonLabel="ثبت برند جدید"
+                    countLabel="{count} برند"
                     emptyHint="اگر این برند در لیست برندها وجود ندارد؟ یک بار آن را اضافه کنید تا همه از آن استفاده کنن."
                     minSearchChars={2}
                     pageSize={10}

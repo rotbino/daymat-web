@@ -118,6 +118,7 @@ export default function BrandPicker({
                     queryKey={`brands-picker-${category || 'all'}`}
                     createLabel="افزودن برند جدید"
                     addButtonLabel="ثبت برند جدید"
+                    countLabel="{count} برند"
                     emptyHint="اگر این برند در لیست برندها وجود ندارد؟ یک بار آن را اضافه کنید تا همه از آن استفاده کنن."
                     minSearchChars={2}
                     pageSize={10}

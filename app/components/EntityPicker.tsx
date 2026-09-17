@@ -59,49 +59,50 @@ interface Props {
     renderValue?: (value: EntityValue) => React.ReactNode;
     /** رندر فیلدهای اضافی در فرم create (عکس، برند) */
     renderCreateFields?: (props: CreateFormProps) => React.ReactNode;
-    /** متن دکمه ایجاد */
-    createLabel?: string;
+    // ═══ قانون مالک دیمت: EntityPicker مشترک صنف/برند/کالاست؛ هیچ متنِ انتیتی‌محوری پیش‌فرض ندارد.
+    // هر جملهٔ غیرمشترک (هر چیزی که قرار است نامِ انتیتی را بگوید) باید از بیرون پاس شود
+    // تا کامپایلر جاافتادنش را بگیرد و برنامه بدون ابهام و روان بماند. ═══
+    /** ✅ اجباری — متن دکمهٔ ایجاد در فوتر (کالا: «افزودن کالای جدید به مرجع» / برند: «افزودن برند جدید» / صنف: «ایجاد صنف جدید») */
+    createLabel: string;
+    /** ✅ اجباری — عنوان مدال در حالت ایجاد */
+    createTitle: string;
+    /** ✅ اجباری — عنوان مدال در حالت انتخاب (کالا: «انتخاب از مرجع کالا» / برند: «انتخاب برند» / صنف: «انتخاب صنف») */
+    selectTitle: string;
+    /** ✅ اجباری — متن دکمهٔ هدر مودال (کالا: «کالای جدید» / برند: «ثبت برند جدید» / صنف: «ثبت صنف جدید») */
+    addButtonLabel: string;
+    /** ✅ اجباری — لیبل فیلد عنوان در فرم ایجاد (کالا: «نام کامل کالا» / برند: «عنوان برند» / صنف: «عنوان صنف») */
+    createFieldLabel: string;
+    /** ✅ اجباری — placeholder فیلد عنوان در فرم ایجاد */
+    createFieldPlaceholder: string;
+    /** ✅ اجباری — پیام وقتی جستجو نتیجه نداشت (کالا: «کالایی با این نام پیدا نشد.») */
+    notFoundMessage: string;
+    /** ✅ اجباری — پیام حالت خالی لیست بدون جستجو (کالا: «هنوز کالایی در مرجع کالا ثبت نشده…») */
+    emptyMessage: string;
+    /** ✅ اجباری — قالب دکمهٔ افزودنِ عبارت جستجوشده؛ «{title}» با عبارت جستجو جایگزین می‌شود (کالا: «افزودن «{title}» به مرجع کالا») */
+    addToListLabel: string;
+    /** ✅ اجباری — پیام تکراری بودن (کالا: «این کالا قبلاً در مرجع کالا اضافه شده…») */
+    duplicateMessage: string;
+    /** ✅ اجباری — پیام راهنمای فرم ایجاد (کالا: «این کالا در مرجع وجود ندارد؟…») */
+    createHint: string;
+    /** ✅ اجباری — قالب شمارندهٔ ردیف‌های لیست؛ «{count}» با تعداد فارسی جایگزین می‌شود (کالا: «{count} کالا» / برند: «{count} برند» / صنف: «{count} صنف») */
+    countLabel: string;
     /** حداقل حرف برای سرچ */
     minSearchChars?: number;
     /** تعداد در هر صفحه */
     pageSize?: number;
     /** toggle «فقط آیتم‌های من» */
     showMineOnly?: boolean;
-    /** متن راهنمای toggle mine */
-    mineLabel?: string;
-    /** پیام تکراری بودن */
-    duplicateMessage?: string;
-    /** پیام راهنمای دکمه ایجاد */
-    createHint?: string;
-    /** عنوان مدال در حالت انتخاب */
-    selectTitle?: string;
-    /** عنوان مدال در حالت ایجاد */
-    createTitle?: string;
+    /** label کوتاه برای toggle mine — فقط همراه showMineOnly رندر می‌شود (کالا: «مرجع من») */
+    mineToggleLabel?: string;
     /** تابع ویرایش آیتم (اختیاری) — اگه داده بشه، آیکون ویرایش برای isNew نمایش داده می‌شه */
     updateFn?: (id: string, data: any) => Promise<any>;
     /** رندر فیلدهای ویرایش (مشابه renderCreateFields) */
     renderEditFields?: (props: CreateFormProps) => React.ReactNode;
     /** عنوان مدال ویرایش */
     editTitle?: string;
-    /** label کوتاه برای toggle mine */
-    mineToggleLabel?: string;
-    // ✅ پیام‌های وابسته به انتیتی — چون EntityPicker مشترک صنف/برند/کالاست،
-    // نام انتیتی باید از بیرون پاس شود تا گویایی برنامه بالا بره (نه هاردکد «صنف»!)
-    /** ✅ پیام وقتی جستجو نتیجه نداشت (مثلاً «صنفی با این نام پیدا نشد.») */
-    notFoundMessage?: string;
-    /** ✅ پیام حالت خالی لیست بدون جستجو (مثلاً «هنوز صنفی ثبت نشده. خودت صنفت رو ثبت کن.») */
-    emptyMessage?: string;
-    /** ✅ قالب دکمهٔ افزودنِ عبارت جستجوشده — «{title}» با عبارت جستجو جایگزین می‌شود (مثلاً «افزودن «{title}» به لیست اصناف») */
-    addToListLabel?: string;
     /** تابع حذف آیتم (اختیاری) — اگه داده بشه، آیکون حذف برای isNew نمایش داده می‌شه */
     deleteFn?: (id: string) => Promise<any>;
-    /** ✅ متن دکمه هدر مودال (مثلاً «کالای جدید» / «ثبت برند جدید») */
-    addButtonLabel?: string;
-    /** ✅ لیبل فیلد عنوان در فرم ایجاد — از بیرون پاس شود (صنف: «عنوان صنف» / برند: «عنوان برند» / کالا: «عنوان کالا») */
-    createFieldLabel?: string;
-    /** ✅ placeholder فیلد عنوان در فرم ایجاد */
-    createFieldPlaceholder?: string;
-    /** ✅ متن حالت خالی لیست — قبل از دکمه افزودن */
+    /** متن حالت خالی لیست — قبل از دکمه افزودن (اختیاری؛ پیش‌فرض از addButtonLabel ساخته می‌شود) */
     emptyHint?: string;
 }
 
@@ -119,28 +120,27 @@ export default function EntityPicker({
     renderItem,
     renderValue,
     renderCreateFields,
-    createLabel = 'افزودن مورد جدید',
+    // ✅ اجباری‌ها — بدون هیچ پیش‌فرضی؛ قانون مالک: متنِ هر انتیتی از بیرون پاس می‌شود
+    createLabel,
     minSearchChars = 2,
     pageSize = 10,
     showMineOnly = false,
-    mineLabel = 'فقط موارد اضافه‌شده توسط من',
     duplicateMessage,
-    createHint = 'این مورد در مرکز وجود ندارد؟ یک بار آن را اضافه کنید تا همه جا قابل استفاده باشد',
-    selectTitle = 'انتخاب',
-    createTitle = 'افزودن مورد جدید',
+    createHint,
+    selectTitle,
+    createTitle,
     editTitle = 'ویرایش',
-    mineToggleLabel = 'فقط موارد من',
-    // ✅ props اختیاری بدون default
+    mineToggleLabel,
     updateFn,
     renderEditFields,
     deleteFn,
-    addButtonLabel = 'جدید',
-    // ✅ پیش‌فرض‌ها عمداً کلی‌اند (بدون اسم انتیتی) — هر پیکر متن خودش را از بیرون پاس می‌دهد
-    createFieldLabel = 'عنوان',
-    createFieldPlaceholder = 'نام مورد را وارد کن',
-    notFoundMessage = 'موردی با این نام پیدا نشد.',
-    emptyMessage = 'هنوز موردی ثبت نشده.',
-    addToListLabel = 'افزودن «{title}» به لیست',
+    addButtonLabel,
+    createFieldLabel,
+    createFieldPlaceholder,
+    notFoundMessage,
+    emptyMessage,
+    addToListLabel,
+    countLabel,
     emptyHint,
 }: Props) {
     const [isOpen, setIsOpen] = useState(false);
@@ -217,7 +217,6 @@ export default function EntityPicker({
                     minSearchChars={minSearchChars}
                     pageSize={pageSize}
                     showMineOnly={showMineOnly}
-                    mineLabel={mineLabel}
                     duplicateMessage={duplicateMessage}
                     createHint={createHint}
                     selectTitle={selectTitle}
@@ -234,6 +233,7 @@ export default function EntityPicker({
                     notFoundMessage={notFoundMessage}
                     emptyMessage={emptyMessage}
                     addToListLabel={addToListLabel}
+                    countLabel={countLabel}
                     emptyHint={emptyHint}
                 />
             )}
@@ -257,7 +257,6 @@ function EntityPickerModal({
     minSearchChars,
     pageSize,
     showMineOnly,
-    mineLabel,
     duplicateMessage,
     createHint,
     selectTitle,
@@ -265,15 +264,16 @@ function EntityPickerModal({
     updateFn,
     renderEditFields,
     editTitle = 'ویرایش',
-    mineToggleLabel = 'فقط موارد من',
+    mineToggleLabel,
     deleteFn,
     headerIcon,
-    addButtonLabel = 'جدید',
-    createFieldLabel = 'عنوان',
-    createFieldPlaceholder = 'نام مورد را وارد کن',
-    notFoundMessage = 'موردی با این نام پیدا نشد.',
-    emptyMessage = 'هنوز موردی ثبت نشده.',
-    addToListLabel = 'افزودن «{title}» به لیست',
+    addButtonLabel,
+    createFieldLabel,
+    createFieldPlaceholder,
+    notFoundMessage,
+    emptyMessage,
+    addToListLabel,
+    countLabel,
     emptyHint,
 }: any) {
     const [search, setSearch] = useState('');
@@ -504,7 +504,7 @@ function EntityPickerModal({
                             </h3>
                             {!showCreateForm && !editingItem && allItems.length > 0 && (
                                 <p className="text-[10px] text-on-surface-variant/70">
-                                    {allItems.length.toLocaleString('fa-IR')} مورد
+                                    {countLabel.replace('{count}', allItems.length.toLocaleString('fa-IR'))}
                                 </p>
                             )}
                         </div>
@@ -658,13 +658,15 @@ function EntityPickerModal({
                                             onChange={(e) => setMineOnly(e.target.checked)}
                                             className="w-3.5 h-3.5 rounded accent-primary"
                                         />
-                                        <span className={cn('text-[10px] font-bold whitespace-nowrap', mineOnly ? 'text-primary' : 'text-on-surface-variant')}>{mineToggleLabel}</span>
+                                        {mineToggleLabel && (
+                                            <span className={cn('text-[10px] font-bold whitespace-nowrap', mineOnly ? 'text-primary' : 'text-on-surface-variant')}>{mineToggleLabel}</span>
+                                        )}
                                     </label>
                                 )}
                             </div>
                         </div>
 
-                        {/* لیست — کارت‌موردی */}
+                        {/* لیست — هر ردیف یک کارت */}
                         <div className="flex-1 min-h-0 overflow-y-auto scrollbar-slim pb-[calc(0.75rem+env(safe-area-inset-bottom))]">
                             {isFetching && allItems.length === 0 ? (
                                 <div className="p-8 text-center"><Loader2 className="w-5 h-5 animate-spin text-primary mx-auto" /></div>
@@ -785,7 +787,7 @@ function EntityPickerModal({
                                         <AlertCircle className="w-3.5 h-3.5" />
                                     </span>
                                     <p className="text-[11px] font-medium leading-5">
-                                        {duplicateMessage || 'این مورد قبلاً با همین عنوان ثبت شده. از لیست بالا انتخاب کنید.'}
+                                        {duplicateMessage}
                                     </p>
                                 </div>
                             </div>
