@@ -85,11 +85,19 @@ interface Props {
     editTitle?: string;
     /** label کوتاه برای toggle mine */
     mineToggleLabel?: string;
+    // ✅ پیام‌های وابسته به انتیتی — چون EntityPicker مشترک صنف/برند/کالاست،
+    // نام انتیتی باید از بیرون پاس شود تا گویایی برنامه بالا بره (نه هاردکد «صنف»!)
+    /** ✅ پیام وقتی جستجو نتیجه نداشت (مثلاً «صنفی با این نام پیدا نشد.») */
+    notFoundMessage?: string;
+    /** ✅ پیام حالت خالی لیست بدون جستجو (مثلاً «هنوز صنفی ثبت نشده. خودت صنفت رو ثبت کن.») */
+    emptyMessage?: string;
+    /** ✅ قالب دکمهٔ افزودنِ عبارت جستجوشده — «{title}» با عبارت جستجو جایگزین می‌شود (مثلاً «افزودن «{title}» به لیست اصناف») */
+    addToListLabel?: string;
     /** تابع حذف آیتم (اختیاری) — اگه داده بشه، آیکون حذف برای isNew نمایش داده می‌شه */
     deleteFn?: (id: string) => Promise<any>;
     /** ✅ متن دکمه هدر مودال (مثلاً «کالای جدید» / «ثبت برند جدید») */
     addButtonLabel?: string;
-    /** ✅ لیبل فیلد عنوان در فرم ایجاد (پیش‌فرض محصولی: «عنوان کالا» — برای صنف: «عنوان صنف») */
+    /** ✅ لیبل فیلد عنوان در فرم ایجاد — از بیرون پاس شود (صنف: «عنوان صنف» / برند: «عنوان برند» / کالا: «عنوان کالا») */
     createFieldLabel?: string;
     /** ✅ placeholder فیلد عنوان در فرم ایجاد */
     createFieldPlaceholder?: string;
@@ -111,7 +119,7 @@ export default function EntityPicker({
     renderItem,
     renderValue,
     renderCreateFields,
-    createLabel = 'افزودن به مرجع کالا',
+    createLabel = 'افزودن مورد جدید',
     minSearchChars = 2,
     pageSize = 10,
     showMineOnly = false,
@@ -119,7 +127,7 @@ export default function EntityPicker({
     duplicateMessage,
     createHint = 'این مورد در مرکز وجود ندارد؟ یک بار آن را اضافه کنید تا همه جا قابل استفاده باشد',
     selectTitle = 'انتخاب',
-    createTitle = 'افزودن به مرجع کالا',
+    createTitle = 'افزودن مورد جدید',
     editTitle = 'ویرایش',
     mineToggleLabel = 'فقط موارد من',
     // ✅ props اختیاری بدون default
@@ -127,8 +135,12 @@ export default function EntityPicker({
     renderEditFields,
     deleteFn,
     addButtonLabel = 'جدید',
-    createFieldLabel = 'عنوان کالا',
-    createFieldPlaceholder = 'مثلاً: کنسرو ماهی مکنزی ۲۰۰ گرمی',
+    // ✅ پیش‌فرض‌ها عمداً کلی‌اند (بدون اسم انتیتی) — هر پیکر متن خودش را از بیرون پاس می‌دهد
+    createFieldLabel = 'عنوان',
+    createFieldPlaceholder = 'نام مورد را وارد کن',
+    notFoundMessage = 'موردی با این نام پیدا نشد.',
+    emptyMessage = 'هنوز موردی ثبت نشده.',
+    addToListLabel = 'افزودن «{title}» به لیست',
     emptyHint,
 }: Props) {
     const [isOpen, setIsOpen] = useState(false);
@@ -219,6 +231,9 @@ export default function EntityPicker({
                     addButtonLabel={addButtonLabel}
                     createFieldLabel={createFieldLabel}
                     createFieldPlaceholder={createFieldPlaceholder}
+                    notFoundMessage={notFoundMessage}
+                    emptyMessage={emptyMessage}
+                    addToListLabel={addToListLabel}
                     emptyHint={emptyHint}
                 />
             )}
@@ -254,8 +269,11 @@ function EntityPickerModal({
     deleteFn,
     headerIcon,
     addButtonLabel = 'جدید',
-    createFieldLabel = 'عنوان کالا',
-    createFieldPlaceholder = 'مثلاً: کنسرو ماهی مکنزی ۲۰۰ گرمی',
+    createFieldLabel = 'عنوان',
+    createFieldPlaceholder = 'نام مورد را وارد کن',
+    notFoundMessage = 'موردی با این نام پیدا نشد.',
+    emptyMessage = 'هنوز موردی ثبت نشده.',
+    addToListLabel = 'افزودن «{title}» به لیست',
     emptyHint,
 }: any) {
     const [search, setSearch] = useState('');
@@ -659,8 +677,8 @@ function EntityPickerModal({
                                         {!canSearch && search.length > 0
                                             ? 'حداقل ' + minSearchChars + ' حرف تایپ کنید'
                                             : canSearch && trimmedSearch
-                                                ? 'صنفی با این نام پیدا نشد.'
-                                                : '  هنوز صنفی ثبت نشده. خودت صنفت رو ثبت کن.'}
+                                                ? notFoundMessage
+                                                : emptyMessage}
                                     </p>
                                     {canSearch && trimmedSearch ? (
                                         <button
@@ -672,7 +690,7 @@ function EntityPickerModal({
                                             className="mt-4 h-10 px-4 rounded-xl bg-primary text-on-primary text-xs font-bold inline-flex items-center gap-1.5 hover:bg-primary/90 active:scale-95 transition-all"
                                         >
                                             <Plus className="w-4 h-4" />
-                                            افزودن «{trimmedSearch}» به لیست اصناف
+                                            {addToListLabel.replace('{title}', trimmedSearch)}
                                         </button>
                                     ) : (
                                         <p className="text-[11px] text-on-surface-variant/60 leading-5 mt-1">

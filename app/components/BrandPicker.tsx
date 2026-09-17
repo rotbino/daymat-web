@@ -125,6 +125,12 @@ export default function BrandPicker({
                     createTitle="افزودن برند جدید"
                     editTitle="ویرایش برند"
                     duplicateMessage="این برند قبلاً اضافه شده. با جستجو آن را پیدا و انتخاب کنید."
+                    // ✅ پیام‌های وابسته به انتیتی از بیرون پاس می‌شوند (EntityPicker مشترک صنف/برند/کالاست)
+                    notFoundMessage="برندی با این نام پیدا نشد."
+                    emptyMessage="هنوز برندی ثبت نشده. خودت برندت رو ثبت کن."
+                    addToListLabel="افزودن «{title}» به لیست برندها"
+                    createFieldLabel="عنوان برند"
+                    createFieldPlaceholder="مثلاً: مکنزی"
                     createHint="اگر این برند در لیست برندها وجود ندارد؟ یک بار آن را اضافه کنید تا همه از آن استفاده کنن."
                     renderValue={(v) => (
                         <>

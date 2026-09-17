@@ -57,6 +57,10 @@ export default function IndustryAutocomplete({
             createFieldPlaceholder="مثلاً: پخش مواد غذایی، لوازم یدکی خودرو…"
             createHint="صنف خودت رو پیدا نکردی؟ همین‌جا ثبتش کن تا هم خودت و هم بقیه استفاده کنن."
             duplicateMessage="این صنف قبلاً ثبت شده — از لیست بالا انتخابش کن."
+            // ✅ پیام‌های وابسته به انتیتی از بیرون پاس می‌شوند (EntityPicker مشترک صنف/برند/کالاست)
+            notFoundMessage="صنفی با این نام پیدا نشد."
+            emptyMessage="هنوز صنفی ثبت نشده. خودت صنفت رو ثبت کن."
+            addToListLabel="افزودن «{title}» به لیست اصناف"
             minSearchChars={2}
             pageSize={10}
         />
