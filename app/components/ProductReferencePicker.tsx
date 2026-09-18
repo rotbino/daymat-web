@@ -106,14 +106,28 @@ export default function ProductReferencePicker({
                 };
             }}
             updateFn={async (id, data) => {
-                if ((data as any).brandChoice === 'branded' && !(data as any).brandId) {
+                const d = (data ?? {}) as any;
+                if (d.brandChoice === 'branded' && !d.brandId) {
                     throw new Error('برند را انتخاب یا ثبت کن.');
                 }
-                const updated: any = await apiService.product.update(id, data);
+                // ✅ فیلدهای UI (brandChoice/brandTitle) فقط مال فرم‌اند — هرگز به API نمی‌روند
+                //    (بک‌اند با forbidNonWhitelisted هر پراپی خارج از DTO را با ۴۰۰ رد می‌کند)
+                const apiData: Record<string, any> = {
+                    ...(d.title !== undefined ? { title: d.title } : {}),
+                    ...(d.imageUrl !== undefined ? { imageUrl: d.imageUrl } : {}),
+                    ...(d.specs !== undefined ? { specs: d.specs } : {}),
+                };
+                // ✅ تکلیف صریح برند: «برند‌دار» → شناسهٔ برند؛ «بدون برند» → null (برندِ موجود پاک می‌شود)
+                if (d.brandChoice !== undefined) {
+                    apiData.brandId = d.brandChoice === 'branded' ? d.brandId : null;
+                } else if (d.brandId !== undefined) {
+                    apiData.brandId = d.brandId;
+                }
+                const updated: any = await apiService.product.update(id, apiData);
                 return {
                     ...updated,
-                    brandId: updated?.brandId ?? updated?.brand?.id ?? (data as any).brandId,
-                    brandTitle: updated?.brandTitle ?? updated?.brand?.title ?? (data as any).brandTitle,
+                    brandId: updated?.brandId ?? updated?.brand?.id ?? d.brandId ?? undefined,
+                    brandTitle: updated?.brand?.title ?? updated?.brandTitle ?? d.brandTitle,
                 };
             }}
             deleteFn={(id) => apiService.product.delete(id)}
