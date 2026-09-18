@@ -18,6 +18,8 @@ interface Props {
     statusFilter: StatusFilter;
     onFilterChange: (f: StatusFilter) => void;
     currentCatalog: any;
+    /** ✅ کاتالوگ عضو حداقل یک بازاره؟ — والا دکمه بازارها کلاً مخفی می‌شود */
+    canPublishMarket?: boolean;
     onOpenCategorySettings: () => void;
     onOpenUnitSettings: () => void;
     onCategory: (ad: any) => void;
@@ -28,7 +30,7 @@ interface Props {
 
 /** تب محصولات — قلب پنل مدیریت بازوی فروش */
 export default function ProductsTab({
-    products, adsLoading, statusFilter, onFilterChange, currentCatalog,
+    products, adsLoading, statusFilter, onFilterChange, currentCatalog, canPublishMarket = true,
     onOpenCategorySettings, onOpenUnitSettings, onCategory, onRefresh, onPublish, onPriceUpdate,
 }: Props) {
     const router = useRouter();
@@ -119,6 +121,7 @@ export default function ProductsTab({
                         <ProductRow
                             key={ad.id}
                             ad={ad}
+                            canPublishMarket={canPublishMarket}
                             onEdit={(a) => router.push(`/ad/edit/${a.id}?catalog=${currentCatalog.id}`)}
                             onCategory={onCategory}
                             onRefresh={onRefresh}

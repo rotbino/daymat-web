@@ -498,6 +498,7 @@ export default function MyCatalogsContent() {
                             statusFilter={statusFilter}
                             onFilterChange={setStatusFilter}
                             currentCatalog={currentCatalog}
+                            canPublishMarket={memberships.length > 0}
                             onOpenCategorySettings={() => setCatModalOpen(true)}
                             onOpenUnitSettings={() => setUnitModalOpen(true)}
                             onCategory={openCategoryModal}
@@ -602,6 +603,7 @@ export default function MyCatalogsContent() {
                 onClose={() => setPublishModalAd(null)}
                 ad={publishModalAd}
                 catalogSalesType={(currentCatalog as any)?.salesType}
+                catalogId={currentId ?? undefined}
                 onPublished={() => refreshAll()}
             />
         </div>

@@ -13,8 +13,10 @@ import { fmt, inMarket, isAdExpired, isPriceExpired, isUncategorized } from '../
  * ✅ React.memo: با تغییر statusFilter رندر مجدد لیست ارزان می‌ماند.
  * چیدمان: بالای ردیف (عکس + هویت + قیمت) و ردیف اکشن افقی پایین — خوانا در موبایل.
  */
-function ProductRowBase({ ad, onEdit, onCategory, onRefresh, onPublish, onPriceUpdate }: {
+function ProductRowBase({ ad, canPublishMarket = true, onEdit, onCategory, onRefresh, onPublish, onPriceUpdate }: {
     ad: any;
+    /** ✅ کاتالوگ عضو حداقل یک بازاره؟ — والا دکمه بازارها مخفی می‌شود (کاربر درگیر بازاری که نیست نمی‌شود) */
+    canPublishMarket?: boolean;
     onEdit: (ad: any) => void;
     onCategory: (ad: any) => void;
     onRefresh: (ad: any) => void;
@@ -120,12 +122,15 @@ function ProductRowBase({ ad, onEdit, onCategory, onRefresh, onPublish, onPriceU
                     </button>
                 )}
                 <span className="flex-1" />
-                <button onClick={() => onPublish(ad)}
-                        title="مدیریت انتشار این آگهی در بازارها"
-                        className="h-8 px-3 rounded-lg border border-primary/40 bg-primary/5 text-[10px] font-bold text-primary
-                            hover:bg-primary/10 flex items-center gap-1 transition-colors">
-                    <Store className="w-3 h-3" /> بازارها
-                </button>
+                {/* ✅ دکمه بازارها — فقط وقتی کاتالوگ عضو حداقل یک بازاره */}
+                {canPublishMarket && (
+                    <button onClick={() => onPublish(ad)}
+                            title="مدیریت انتشار این آگهی در بازارها"
+                            className="h-8 px-3 rounded-lg border border-primary/40 bg-primary/5 text-[10px] font-bold text-primary
+                                hover:bg-primary/10 flex items-center gap-1 transition-colors">
+                        <Store className="w-3 h-3" /> بازارها
+                    </button>
+                )}
                 <button onClick={() => onEdit(ad)}
                         className="h-8 px-3 rounded-lg border border-outline-variant/50 text-[10px] font-bold text-on-surface-variant
                             hover:text-primary hover:border-primary/40 flex items-center gap-1 transition-colors">

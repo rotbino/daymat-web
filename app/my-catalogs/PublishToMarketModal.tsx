@@ -16,6 +16,8 @@ interface Props {
     onClose: () => void;
     ad: any;
     catalogSalesType?: string | null;
+    /** ✅ کاتالوگ صاحب آگهی — برای تشخیص عضویت همان کاتالوگ در بازارها */
+    catalogId?: string;
     onPublished?: () => void;
 }
 
@@ -44,7 +46,7 @@ function marketTypeMismatch(arm: any, catalogSalesType?: string | null): string[
 const SALES_TYPE_LABEL: Record<string, string> = { wholesale: 'عمده‌فروشی', retail: 'تک‌فروشی', service: 'خدماتی' };
 const acceptedListLabel = (types: string[]): string => types.map((t) => SALES_TYPE_LABEL[t] || t).join(' / ');
 
-export default function PublishToMarketModal({ isOpen, onClose, ad, catalogSalesType, onPublished }: Props) {
+export default function PublishToMarketModal({ isOpen, onClose, ad, catalogSalesType, catalogId, onPublished }: Props) {
     const queryClient = useQueryClient();
     const [publishing, setPublishing] = useState<string | null>(null);
     const [unpublishing, setUnpublishing] = useState<string | null>(null);
@@ -56,7 +58,7 @@ export default function PublishToMarketModal({ isOpen, onClose, ad, catalogSales
         staleTime: 10_000,
     });
 
-    const { data: userArms = [] } = useQuery({
+    const { data: userArms = [], isLoading: armsLoading } = useQuery({
         queryKey: ['arms'],
         queryFn: () => apiService.arm.getUserArms(),
         enabled: isOpen,
@@ -66,18 +68,27 @@ export default function PublishToMarketModal({ isOpen, onClose, ad, catalogSales
     // ✅ publicationهای غیرمنتشر (حذف‌شدهٔ تک‌آگهی) دیگر «بازار فعلی» نیستند — ولی رکوردشان با دسته حفظ است
     const activePublications = publications.filter((p: any) => p.status !== 'unpublished');
     const publishedArmIds = new Set(activePublications.map((p: any) => p.armId));
-    // ✅ فقط بازارهایی که کاربر در اون‌ها seller فعال هست (catalogId داره و publishState=published)
-    // رو به‌عنوان «بازارهای فعلی» نشون بده
-    const memberArms = userArms.filter((arm: any) =>
-        arm.status === 'active' &&
-        arm.catalogId &&  // ← این یعنی کاربر با این بازوی فروشش در این بازار seller هست
-        arm.publishState === 'published' &&  // ← و منتشر شده
-        !publishedArmIds.has(arm.id)  // ← ولی این آگهی هنوز در این بازار منتشر نشده
-    );
+
+    // ✅ طراحی مرحله‌به‌مرحله: نرمال اول — چندبازاری فقط استثنا
+    // عضویت واقعیِ کاتالوگ صاحب آگهی — فارغ از انتشار این آگهی (برای گیت‌های نمایشی)
+    const memberArmsAll = (userArms as any[]).filter((a: any) =>
+        a?.catalogId === catalogId &&
+        a?.status === 'active' &&
+        (a?.publishState ?? 'published') === 'published');
+
+    const pendingArms = (userArms as any[]).filter((a: any) =>
+        a?.catalogId === catalogId && a?.status === 'pending');
+
+    // ✅ بازارهای عضو که این آگهی هنوز در آن‌ها منتشر نشده
+    const memberArms = memberArmsAll.filter((arm: any) => !publishedArmIds.has(arm.id));
+
     const availableArms = memberArms.filter((arm: any) => !marketTypeMismatch(arm, catalogSalesType));
     const mismatchedArms = memberArms
         .map((arm: any) => ({ arm, accepted: marketTypeMismatch(arm, catalogSalesType) }))
         .filter((x: any) => x.accepted);
+
+    // ✅ حالت خلوت مطلق: نه عضویت واقعی، نه انتشار فعلی — فقط یک پیام کوتاه
+    const pureEmpty = !armsLoading && memberArmsAll.length === 0 && activePublications.length === 0;
 
     useEffect(() => {
         if (!isOpen) {
@@ -168,16 +179,34 @@ export default function PublishToMarketModal({ isOpen, onClose, ad, catalogSales
                     </button>
                 </div>
 
-                {/* بدنه */}
+                {/* بدنه — ✅ مرحله‌به‌مرحله: هر حالت فقط اطلاعات همون مرحله رو نشون می‌ده */}
                 <div className="flex-1 min-h-0 overflow-y-auto scrollbar-slim px-4 py-4 space-y-5">
 
-                    {/* بخش ۱: بازارهای فعلی */}
-                    <section>
-                        <p className="text-[11px] font-bold text-on-surface-variant mb-2 flex items-center gap-1.5">
-                            <Check className="w-3.5 h-3.5 text-emerald-500" />
-                            بازارهای فعلی این آگهی
-                            <span className="text-on-surface-variant/50">({activePublications.length})</span>
-                        </p>
+                    {armsLoading ? (
+                        <div className="h-20 rounded-xl bg-surface-container-high/50 animate-pulse" />
+                    ) : pureEmpty ? (
+                        /* ✅ حالت نرمال ۱: هنوز هیچ بازاری — فقط یک پیام کوتاه، بدون بخش اضافه */
+                        <div className="rounded-2xl border border-dashed border-outline-variant/40 p-6 text-center">
+                            <Store className="w-8 h-8 text-on-surface-variant/25 mx-auto mb-3" />
+                            <p className="text-sm font-extrabold text-on-surface">بازوی شما فعلاً در هیچ بازاری عضو نیست</p>
+                            <p className="text-xs text-on-surface-variant leading-6 mt-2">
+                                هر زمان که بازار تخصصی مرتبط با محصولات شما ساخته شود، می‌توانید درخواست عضویت دهید.
+                            </p>
+                            {pendingArms.length > 0 && (
+                                <p className="text-[11px] text-on-surface-variant/70 mt-3">
+                                    درخواست عضویت شما در «{pendingArms[0]?.name}» در حال بررسی است.
+                                </p>
+                            )}
+                        </div>
+                    ) : (
+                        <>
+                            {/* بخش ۱: بازارهای فعلی */}
+                            <section>
+                                <p className="text-[11px] font-bold text-on-surface-variant mb-2 flex items-center gap-1.5">
+                                    <Check className="w-3.5 h-3.5 text-emerald-500" />
+                                    بازارهای فعلی این آگهی
+                                    <span className="text-on-surface-variant/50">({activePublications.length})</span>
+                                </p>
 
                         {pubLoading ? (
                             <div className="space-y-2">
@@ -244,24 +273,20 @@ export default function PublishToMarketModal({ isOpen, onClose, ad, catalogSales
                         )}
                     </section>
 
-                    {/* بخش ۲: افزودن به بازار جدید */}
-                    <section>
-                        <p className="text-[11px] font-bold text-on-surface-variant mb-2 flex items-center gap-1.5">
-                            <Plus className="w-3.5 h-3.5 text-primary" />
-                            افزودن به بازار دیگر
-                        </p>
+                    {/* بخش ۲: افزودن به بازار دیگر — فقط وقتی عضوِ حداقل یک بازاره */}
+                    {memberArmsAll.length > 0 && (
+                        <section>
+                            <p className="text-[11px] font-bold text-on-surface-variant mb-2 flex items-center gap-1.5">
+                                <Plus className="w-3.5 h-3.5 text-primary" />
+                                افزودن به بازار دیگر
+                            </p>
 
-                        {availableArms.length === 0 && mismatchedArms.length === 0 ? (
-                            <div className="rounded-xl border border-dashed border-outline-variant/40 p-4 text-center">
-                                <AlertTriangle className="w-5 h-5 text-amber-500 mx-auto mb-2" />
-                                <p className="text-xs text-on-surface-variant leading-5">
-                                    بازوی فروش شما در بازارهای دیگری عضو نیست یا در همه بازارهای موجود این آگهی منتشر شده.
-                                </p>
-                                <p className="text-[10px] text-on-surface-variant/60 mt-1.5">
-                                    برای انتشار در بازار جدید، اول باید به آن بازار بپیوندید.
-                                </p>
-                            </div>
-                        ) : (
+                            {availableArms.length === 0 && mismatchedArms.length === 0 ? (
+                                <div className="rounded-xl border border-dashed border-outline-variant/40 p-4 text-center">
+                                    <Check className="w-5 h-5 text-emerald-500 mx-auto mb-2" />
+                                    <p className="text-xs text-on-surface-variant">این آگهی در همهٔ بازارهایی که عضویت داری منتشر شده.</p>
+                                </div>
+                            ) : (
                             <div className="space-y-2">
                                 {availableArms.map((arm: any) => {
                                     const isPublishing = publishing === arm.slug;
@@ -330,16 +355,21 @@ export default function PublishToMarketModal({ isOpen, onClose, ad, catalogSales
                                 })}
                             </div>
                         )}
-                    </section>
+                        </section>
+                    )}
 
-                    {/* اطلاعات تکمیلی */}
-                    <div className="rounded-xl bg-blue-50 dark:bg-blue-900/15 border border-blue-200/50 dark:border-blue-800/40 p-3 flex items-start gap-2">
-                        <AlertTriangle className="w-3.5 h-3.5 text-blue-600 dark:text-blue-400 mt-0.5 flex-shrink-0" />
-                        <p className="text-[10px] text-blue-800 dark:text-blue-300 leading-5">
-                            انتشار در چند بازار به این معناست که آگهی شما روی تابلوی هر بازار به‌صورت مستقل نمایش داده می‌شود.
-                            هر بازار دسته‌بندی مخصوص خودش را دارد — ممکن است در بازار جدید نیاز باشد دسته‌بندی را دوباره انتخاب کنید.
-                        </p>
-                    </div>
+                    {/* ✅ چندبازاری = حالت استثنا — توضیح فقط وقتی واقعاً چند بازار در میان است */}
+                    {memberArmsAll.length >= 2 && (
+                        <div className="rounded-xl bg-blue-50 dark:bg-blue-900/15 border border-blue-200/50 dark:border-blue-800/40 p-3 flex items-start gap-2">
+                            <AlertTriangle className="w-3.5 h-3.5 text-blue-600 dark:text-blue-400 mt-0.5 flex-shrink-0" />
+                            <p className="text-[10px] text-blue-800 dark:text-blue-300 leading-5">
+                                انتشار در چند بازار به این معناست که آگهی شما روی تابلوی هر بازار به‌صورت مستقل نمایش داده می‌شود.
+                                هر بازار دسته‌بندی مخصوص خودش را دارد — ممکن است در بازار جدید نیاز باشد دسته‌بندی را دوباره انتخاب کنید.
+                            </p>
+                        </div>
+                    )}
+                        </>
+                    )}
                 </div>
 
                 {/* فوتر */}
