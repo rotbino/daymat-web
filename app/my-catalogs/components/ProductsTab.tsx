@@ -85,7 +85,7 @@ export default function ProductsTab({
                             flex items-center gap-1.5 flex-shrink-0 whitespace-nowrap
                             hover:bg-amber-600 active:scale-[0.97] transition-all">
                     <Plus className="w-4 h-4" />
-                    {isService ? 'افزودن خدمت' : 'افزودن محصول'}
+                    {isService ? 'افزودن خدمت به بازوی فروش' : 'افزودن محصول به بازوی فروش'}
                 </button>
             </div>
 

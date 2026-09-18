@@ -22,7 +22,7 @@ export function AdFormHeader() {
                 </button>
                 <div className="flex-1 min-w-0">
                     <h1 className="text-sm font-extrabold text-on-surface truncate leading-5">
-                        {isEditMode ? 'ویرایش کالا' : 'افزودن محصول'}
+                        {isEditMode ? 'ویرایش کالا' : 'افزودن محصول به بازوی فروش'}
                     </h1>
                     <p className="text-[10px] text-on-surface-variant/70 tabular-nums">
                         مرحله {currentStep.toLocaleString('fa-IR')} از {TOTAL_STEPS.toLocaleString('fa-IR')}
