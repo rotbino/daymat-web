@@ -178,7 +178,7 @@ export function ArmCreateWizard() {
         [searchParams, router, slug]
     );
 
-    // ─── اعتبارسنجی مرحله فعلی — ⚖️ قانون دیمت: الرتِ واضحِ فیلدبه‌فیلد، نه پیامِ توده‌ای ───
+    // ─── اعتبارسنجی مرحله فعلی — ⚖️ قانون آی مچ: الرتِ واضحِ فیلدبه‌فیلد، نه پیامِ توده‌ای ───
     const validateStep = (stepId: string): boolean => {
         const data = watch();
         switch (stepId) {

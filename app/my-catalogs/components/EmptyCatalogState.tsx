@@ -17,7 +17,7 @@ import { ChangePasswordModal } from '@/components/register/ChangePasswordModal';
 export default function EmptyCatalogState({ hasTemporaryPassword, user, inquiries = [], onOpenInquiry }: {
     hasTemporaryPassword: boolean;
     user: any;
-    /** بازوهای خرید من — محصول دوم دیمت، حتی بدون بازوی فروش قابل مدیریت است */
+    /** بازوهای خرید من — محصول دوم آی مچ، حتی بدون بازوی فروش قابل مدیریت است */
     inquiries?: any[];
     /** پرش به کنسول مدیریت بازوی خرید (/my-inquiries?catalog=…) */
     onOpenInquiry?: (id: string) => void;

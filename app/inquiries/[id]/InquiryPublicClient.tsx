@@ -132,7 +132,7 @@ export default function InquiryPublicClient({ idOrSlug }: { idOrSlug: string }) 
     const wholeListOffers = useMemo(() => (inquiry?.offers ?? []).filter((o: any) => !o.itemId).length, [inquiry?.offers]);
 
     useEffect(() => {
-        if (inquiry?.title) document.title = `${inquiry.title} | بازوی خرید دیمت`;
+        if (inquiry?.title) document.title = `${inquiry.title} | بازوی خرید آی مچ`;
     }, [inquiry?.title]);
 
     const isOwner = !!inquiry?.isOwner;
@@ -255,7 +255,7 @@ export default function InquiryPublicClient({ idOrSlug }: { idOrSlug: string }) 
             bizPhone ? `TEL;TYPE=CELL:${bizPhone}` : null,
             showBizPhone ? `TEL;TYPE=WORK:${bizBusinessPhone}` : null,
             inquiry.city ? `ADR;TYPE=WORK:;;${inquiry.city};;;;` : null,
-            `NOTE:بازوی خرید «${inquiry.title}» — دیمت`,
+            `NOTE:بازوی خرید «${inquiry.title}» — آی مچ`,
             shareUrl ? `URL:${shareUrl}` : null,
             'END:VCARD',
         ].filter(Boolean).join('\n');
@@ -308,7 +308,7 @@ export default function InquiryPublicClient({ idOrSlug }: { idOrSlug: string }) 
                     <h1 className="mt-4 text-xl font-black">این بازوی خرید پیدا نشد</h1>
                     <p className="mt-2 text-sm text-stone-500">ممکن است حذف شده باشد یا لینک اشتباه باشد.</p>
                     <Link href="/" className="mt-5 inline-flex h-11 items-center gap-2 rounded-full bg-primary px-6 text-sm font-extrabold text-on-primary">
-                        رفتن به دیمت
+                        رفتن به آی مچ
                     </Link>
                 </div>
             </div>
@@ -435,7 +435,7 @@ export default function InquiryPublicClient({ idOrSlug }: { idOrSlug: string }) 
                                 </span>
                             )}
                             <span className="min-w-0 truncate text-[11px] font-black text-stone-600 dark:text-gray-300">
-                                {inquiry.owner?.fullName || inquiry.business?.name || 'خریدار دیمت'}
+                                {inquiry.owner?.fullName || inquiry.business?.name || 'خریدار آی مچ'}
                             </span>
                         </button>
                     )}
@@ -498,7 +498,7 @@ export default function InquiryPublicClient({ idOrSlug }: { idOrSlug: string }) 
                                     )}
                                 </div>
                                 <p className="mt-1 text-[11px] font-bold text-stone-400 dark:text-gray-500">
-                                    {inquiry.business?.name || inquiry.owner?.fullName || 'کاربر دیمت'}
+                                    {inquiry.business?.name || inquiry.owner?.fullName || 'کاربر آی مچ'}
                                     {inquiry.city ? ` · ${inquiry.city}` : ''} · {faTimeAgo(inquiry.createdAt)}
                                 </p>
                             </div>
@@ -1067,7 +1067,7 @@ function dl_over(deadline?: string | null): boolean {
 // 🛒 مدال سناریومحور تامین — قلب قیف (اصل مالک: «سیستم دست کاربر را می‌گیرد؛
 //     کاربر فقط دکمهٔ پیشنهاد را می‌بیند و پیچیدگی را احساس نمی‌کند»)
 //     یک مدال، چهار حالت — بنا به اینکه کاربر کیست، همان یک دکمه جواب متفاوت می‌دهد:
-//     ۱) مهمان → «برای پیشنهاد، در دیمت ثبت‌نام کن و بازوی فروش محصولت را بساز؛ بعد پیشنهاد بده»
+//     ۱) مهمان → «برای پیشنهاد، در آی مچ ثبت‌نام کن و بازوی فروش محصولت را بساز؛ بعد پیشنهاد بده»
 //     ۲) عضوِ بدون بازوی فروش → «اول بازوی فروش محصولاتت را بساز» + CTA ساخت
 //     ۳) عضوِ با بازوی فروش → «با کدام بازوی فروشت می‌خواهی تامین‌کنندهٔ این خریدار باشی؟»
 //         عمومی: اتصال فوری → شیت پیشنهاد همان لحظه باز می‌شود
@@ -1172,7 +1172,7 @@ function SupplierConnectModal({ inquiry, target, onClose, onConnected, onRequest
                 {guest && (
                     <>
                         <p className="mx-auto mt-3 max-w-xs text-[12px] font-bold leading-6 text-stone-500 dark:text-gray-400">
-                            برای پیشنهاد قیمت، در دیمت ثبت‌نام کن و بازوی فروش محصولت را برای تامین‌کنندگی بساز؛
+                            برای پیشنهاد قیمت، در آی مچ ثبت‌نام کن و بازوی فروش محصولت را برای تامین‌کنندگی بساز؛
                             بعد می‌توانی پیشنهادت را اینجا ثبت کنی.
                         </p>
                         <Link href={joinHref}
@@ -1182,7 +1182,7 @@ function SupplierConnectModal({ inquiry, target, onClose, onConnected, onRequest
                         </Link>
                         <Link href={backHref}
                             className="mt-2.5 block text-center text-[11px] font-bold text-stone-400 hover:text-primary dark:text-gray-500">
-                            قبلا عضو دیمت هستم — فقط ورود
+                            قبلا عضو آی مچ هستم — فقط ورود
                         </Link>
                     </>
                 )}
@@ -1191,7 +1191,7 @@ function SupplierConnectModal({ inquiry, target, onClose, onConnected, onRequest
                 {noCatalog && (
                     <>
                         <p className="mx-auto mt-3 max-w-xs text-[12px] font-bold leading-6 text-stone-500 dark:text-gray-400">
-                            در دیمت تامین‌کننده‌ها با بازوی فروش محصول کار می‌کنند —
+                            در آی مچ تامین‌کننده‌ها با بازوی فروش محصول کار می‌کنند —
                             در یک دقیقه بازوی فروشت را بساز تا بتوانی برای این خریدار پیشنهاد بدهی.
                         </p>
                         <Link href="/business/register"

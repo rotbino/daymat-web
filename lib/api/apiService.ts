@@ -124,7 +124,7 @@ export const apiService = {
     },
 
     // ============================================================
-    // PROFORMA — پیش‌فاکتور: مُهرِ سبک معامله داخل دیمت
+    // PROFORMA — پیش‌فاکتور: مُهرِ سبک معامله داخل آی مچ
     //   فروشنده می‌فرستد ← خریدار تایید/رد می‌کند → معاملهٔ موفق ثبت می‌شود
     // ============================================================
     proforma: {
@@ -164,7 +164,7 @@ export const apiService = {
     // CONTACT — دفترچهٔ مخاطبین تلفن (PWA) — اشتراک‌گذاری مستقیم + کشف ارتباطات
     // ============================================================
     contacts: {
-        // همگام‌سازی مخاطبین انتخاب‌شده از گوشی — نرمال + تطبیق با اعضای دیمت + ذخیره
+        // همگام‌سازی مخاطبین انتخاب‌شده از گوشی — نرمال + تطبیق با اعضای آی مچ + ذخیره
         sync: (contacts: { name?: string | null; phone: string }[]): Promise<{
             saved: number; created: number; updated: number; invalid: number; skippedByCap?: number;
             matched: number; total: number;
@@ -253,7 +253,7 @@ export const apiService = {
         listMembers: (id: string): Promise<{ items: BusinessTeamMember[] }> =>
             apiRequest(`/business/${id}/members`),
 
-        // ✅ جستجوی کاربر ثبت‌نام‌شدهٔ دیمت برای افزودن به تیم — با نام یا شماره موبایل
+        // ✅ جستجوی کاربر ثبت‌نام‌شدهٔ آی مچ برای افزودن به تیم — با نام یا شماره موبایل
         searchUsers: (q: string): Promise<{ items: { id: string; fullName: string | null; phone: string; avatarUrl: string | null }[] }> =>
             apiRequest(`/business/search-users?q=${encodeURIComponent(q)}`),
 

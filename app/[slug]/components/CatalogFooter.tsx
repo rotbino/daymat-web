@@ -52,11 +52,11 @@ export default function CatalogFooter({ catalog }: { catalog: any; onGoHome?: ()
                     </div>
                 </div>
 
-                {/* برندینگ دیمت */}
+                {/* برندینگ آی مچ */}
                 <div className="pt-4 border-t border-gray-100 dark:border-gray-800 flex flex-col items-center gap-2">
                     <button onClick={() => router.push(createHref)}>
-                        <div className="relative h-14 w-56"><Image src="/images/logo2.png" alt="دیمت" fill className="object-contain" unoptimized /></div>
-                        <p className="text-[13px] font-bold text-gray-500 dark:text-gray-400">دیمت، ساخت بازوی خرید</p>
+                        <div className="relative h-14 w-56"><Image src="/images/logo2.png" alt="آی مچ" fill className="object-contain" unoptimized /></div>
+                        <p className="text-[13px] font-bold text-gray-500 dark:text-gray-400">آی مچ، ساخت بازوی خرید</p>
                     </button>
                 </div>
 
@@ -74,7 +74,7 @@ export default function CatalogFooter({ catalog }: { catalog: any; onGoHome?: ()
                         >
                             <Sparkles className="w-3.5 h-3.5 text-primary/60 group-hover:text-primary transition-colors" />
                             <span className="hidden sm:inline text-gray-500 dark:text-gray-400">ساخته شده با</span>
-                            <span className="font-extrabold text-primary/80 group-hover:text-primary transition-colors">دیمت</span>
+                            <span className="font-extrabold text-primary/80 group-hover:text-primary transition-colors">آی مچ</span>
                             <span className="hidden sm:inline text-gray-400">·</span>
                             <span className="hidden sm:inline text-gray-500 group-hover:text-primary/80 transition-colors">تو هم بازوی فروش خودت را بساز</span>
                         </button>

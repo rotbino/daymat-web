@@ -101,7 +101,7 @@ export default function OfferSheet({ inquiry, item, existingOffer, onClose }: {
         if (!isWholeList && !unit.id && !unit.title.trim()) e.unit = 'واحد را انتخاب کن — مثلا کارتن یا کیلوگرم';
         if (Object.keys(e).length) {
             setErrors(e);
-            toastFormErrors(e); // ⚖️ قانون دیمت: الرت واضح کنار خطای CSS فیلدها
+            toastFormErrors(e); // ⚖️ قانون آی مچ: الرت واضح کنار خطای CSS فیلدها
             return;
         }
         setSending(true);

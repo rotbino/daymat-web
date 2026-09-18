@@ -190,7 +190,7 @@ export default function BusinessSetupModal({ isOpen, onClose, business, onSaved,
         setPendingLogoFile(null);
     };
 
-    // ⚖️ قانون دیمت: خطای CSSِ روی فیلد کافی نیست — الرتِ واضحِ toast هم با ذکرِ خودِ فیلد بده
+    // ⚖️ قانون آی مچ: خطای CSSِ روی فیلد کافی نیست — الرتِ واضحِ toast هم با ذکرِ خودِ فیلد بده
     const validate = (): Record<string, string> | null => {
         const e: Record<string, string> = {};
         if (!name.trim()) e.name = 'نام کسب‌وکار وارد نشده';

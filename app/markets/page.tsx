@@ -13,7 +13,7 @@ import { cn } from '@/lib/utils';
  * ✅ صفحه لیست و جستجوی بازارها — «اکسپلور بازارها»
  *    این صفحه هیچ رفتار دیگری ندارد: همیشه لیست بازارهای عضو + سایر بازارها را نشان می‌دهد.
  *    نقطهٔ دسترسی: آیتم «بازارها» در ناو عمومی — کاربر از اینجا وارد بازار می‌شود.
- *    بالای لیست توضیح کوتاه «بازارها در دیمت» آمده تا کاربر بداند بازار چیست و عضویت چطور کار می‌کند.
+ *    بالای لیست توضیح کوتاه «بازارها در آی مچ» آمده تا کاربر بداند بازار چیست و عضویت چطور کار می‌کند.
  *    (در نهایت این صفحه محل دیدن و فیلتر بازارها بر حسب صنف/استان/شهر خواهد بود.)
  */
 
@@ -64,7 +64,7 @@ function MarketExplainer() {
     ];
 
     return (
-        <section aria-label="بازارها در دیمت چیست؟"
+        <section aria-label="بازارها در آی مچ چیست؟"
                  className="rounded-2xl border border-primary/20 bg-primary/[0.04] dark:bg-primary/[0.07] p-4 sm:p-5">
             <div className="flex items-start gap-3">
                 <span className="hidden sm:grid size-10 place-items-center rounded-xl bg-primary/10 text-primary flex-shrink-0">
@@ -72,10 +72,10 @@ function MarketExplainer() {
                 </span>
 
                 <div className="min-w-0">
-                    <h2 className="text-[13px] font-black text-on-surface">بازارهای صنفی دیمت</h2>
+                    <h2 className="text-[13px] font-black text-on-surface">بازارهای صنفی آی مچ</h2>
 
                     <p className="mt-2 text-xs leading-6 text-on-surface-variant">
-                        دیمت علاوه بر اینکه ساخت بازوهای خرید و فروش مستقل رو ممکن می‌کنه،
+                        آی مچ علاوه بر اینکه ساخت بازوهای خرید و فروش مستقل رو ممکن می‌کنه،
                         یک سری <b className="font-extrabold text-on-surface">بازارهای صنفی خرید و فروش</b> هم داره.
                         کسب‌وکارها می‌تونن برای عضویت در بازارهایی که به کسب‌وکارشون یا شهر و استانشون مربوط می‌شه
                         درخواست بدن و بعد از تایید مدیر بازار، عضو اون بازار بشن —
@@ -101,7 +101,7 @@ function MarketExplainer() {
                     {/* یادداشت حد نصاب */}
                     <p className="mt-3 flex items-start gap-1.5 text-[11px] leading-5 text-on-surface-variant/80">
                         <Info className="w-3.5 h-3.5 mt-0.5 flex-shrink-0 text-primary/70" />
-                        دیمت تازه کارش رو در ایران شروع کرده و فعلاً تعداد این بازارها محدوده؛
+                        آی مچ تازه کارش رو در ایران شروع کرده و فعلاً تعداد این بازارها محدوده؛
                         به تدریج و با به حد نصاب رسیدن تعداد بازوهای هر صنف، بازارهای جدید ساخته می‌شن.
                     </p>
                 </div>

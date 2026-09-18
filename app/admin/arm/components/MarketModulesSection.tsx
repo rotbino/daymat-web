@@ -166,7 +166,7 @@ const MODULES: ModuleDef[] = [
                             {
                                 key: 'referrerSharePercent',
                                 label: 'سهم دعوت‌کننده',
-                                hint: 'درصدی از درآمد درخواست‌های ارتباطی، به کیف پول کسی که آن کاربر را به دیمت آورده',
+                                hint: 'درصدی از درآمد درخواست‌های ارتباطی، به کیف پول کسی که آن کاربر را به آی مچ آورده',
                                 icon: 'Users',
                                 isNumber: true,
                                 min: 0,
@@ -795,7 +795,7 @@ export function MarketModulesSection({
                     <AlertCircle className="w-4 h-4 text-amber-600 dark:text-amber-400 mt-0.5 flex-shrink-0" />
                     <p className="text-[11px] font-medium text-amber-800 dark:text-amber-300 leading-5">
                         تغییر تنظیمات ماژول‌ها فعلاً برای شما فعال نیست — فقط می‌توانی آن‌ها را ببینی.
-                        در صورت نیاز با پشتیبانی دیمت تماس بگیر.
+                        در صورت نیاز با پشتیبانی آی مچ تماس بگیر.
                     </p>
                 </div>
             )}

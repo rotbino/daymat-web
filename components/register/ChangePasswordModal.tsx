@@ -31,7 +31,7 @@ export function ChangePasswordModal({ isOpen, onClose, onSuccess }: ChangePasswo
 
     if (!isOpen) return null;
 
-    // ⚖️ قانون دیمت: علاوه بر خطای CSSِ فیلد، الرتِ toast واضح هم با ذکرِ خودِ فیلد بده
+    // ⚖️ قانون آی مچ: علاوه بر خطای CSSِ فیلد، الرتِ toast واضح هم با ذکرِ خودِ فیلد بده
     const validate = () => {
         const e: { currentPassword?: string; newPassword?: string; confirmPassword?: string } = {};
         if (!currentPassword) e.currentPassword = 'رمز عبور فعلی وارد نشده';

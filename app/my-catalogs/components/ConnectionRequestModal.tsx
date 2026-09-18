@@ -1,7 +1,7 @@
 // app/my-catalogs/components/ConnectionRequestModal.tsx
 // 🤝 «افزودن به تیم فروش / درخواست ارتباط با خریدار» — کشفِ مخاطبِ مرتبط میان کسب‌وکارها و افراد
 //   ✅ دو مودِ جدا (خواستهٔ مالک — Task 26):
-//     mode=team    → فقط «شخص»: افرادِ دیمت + مخاطبین موبایل (پذیرش با خودِ دعوت‌شده)
+//     mode=team    → فقط «شخص»: افرادِ آی مچ + مخاطبین موبایل (پذیرش با خودِ دعوت‌شده)
 //     mode=buyers  → فقط «بیزینس + بازوی خریدش»: کسب‌وکارها + مخاطبین (پذیرش با خودِ خریدار)
 //   مودال با «پیشنهادهای مرتبط» باز می‌شود — لیستِ اولِ هر تب هرگز خالی نیست:
 //   سورتِ مرتبط‌سازی: هم‌شهری → هم‌استان → پیش‌شمارهٔ تلفن (مثل ۰۹۱۸ همدان) → مکملِ زنجیرهٔ کاری
@@ -42,12 +42,12 @@ type Scope = 'businesses' | 'people' | 'contacts';
 //    خریداران فقط «کسب‌وکارها + مخاطبین» (مقصدها همیشه بیزینس + بازوی خریدش است)
 const SCOPES: Record<'team' | 'buyers', { key: Scope; label: string; icon: React.ElementType; hint: string }[]> = {
     team: [
-        { key: 'people', label: 'افراد', icon: User, hint: 'فروشندگان و بازاریابان دیمت را به فروش بازوی فروش دعوت کن' },
-        { key: 'contacts', label: 'مخاطبین', icon: Smartphone, hint: 'از دفترچهٔ تلفنت: اعضای دیمت دعوت همکاری می‌گیرند، غیراعضا با لینک بازوی فروش دعوت می‌شوند' },
+        { key: 'people', label: 'افراد', icon: User, hint: 'فروشندگان و بازاریابان آی مچ را به فروش بازوی فروش دعوت کن' },
+        { key: 'contacts', label: 'مخاطبین', icon: Smartphone, hint: 'از دفترچهٔ تلفنت: اعضای آی مچ دعوت همکاری می‌گیرند، غیراعضا با لینک بازوی فروش دعوت می‌شوند' },
     ],
     buyers: [
         { key: 'businesses', label: 'کسب‌وکارها', icon: Store, hint: 'کسب‌وکارها را به‌عنوان خریدار ثبت کن تا تماس‌شان به شما برسد' },
-        { key: 'contacts', label: 'مخاطبین', icon: Smartphone, hint: 'از دفترچهٔ تلفنت: کسب‌وکار اعضای دیمت به‌عنوان خریدار ثبت می‌شود، غیراعضا با لینک بازوی فروش دعوت می‌شوند' },
+        { key: 'contacts', label: 'مخاطبین', icon: Smartphone, hint: 'از دفترچهٔ تلفنت: کسب‌وکار اعضای آی مچ به‌عنوان خریدار ثبت می‌شود، غیراعضا با لینک بازوی فروش دعوت می‌شوند' },
     ],
 };
 
@@ -240,7 +240,7 @@ export default function ConnectionRequestModal({ open, onClose, catalogId, mode,
                         </p>
                         <p className="text-[11px] text-gray-500 dark:text-gray-400 mt-0.5">
                             {mode === 'team'
-                                ? 'همکارِ فروش از میان اعضای دیمت یا مخاطبین تلفنت — پذیرش با خودِ دعوت‌شده'
+                                ? 'همکارِ فروش از میان اعضای آی مچ یا مخاطبین تلفنت — پذیرش با خودِ دعوت‌شده'
                                 : 'خریدار از میان کسب‌وکارها یا مخاطبین تلفنت — پذیرش با خودِ خریدار'}
                         </p>
                     </div>
@@ -339,13 +339,13 @@ export default function ConnectionRequestModal({ open, onClose, catalogId, mode,
                 )}
 
                 {/* 📱 تب مخاطبین:
-                      مود team   → لیست عمومی مخاطبین: اعضای دیمت دعوت همکاری در فروش می‌گیرند، غیراعضا لینک بازوی فروش
+                      مود team   → لیست عمومی مخاطبین: اعضای آی مچ دعوت همکاری در فروش می‌گیرند، غیراعضا لینک بازوی فروش
                       مود buyers → ✅ پنل تخصصی خریداران: کسب‌وکارها + بازوهای خریدِ هر عضو؛ بی‌کسب‌وکار قابل افزودن نیست */}
                 {scope === 'contacts' && mode === 'team' && (
                     <PhoneContactsPanel
                         title="دفترچهٔ مخاطبین تلفن تو"
-                        membersTitle="اعضای دیمت — دعوت همکاری در فروش می‌گیرند"
-                        inviteTitle="دعوت به دیمت — لینک بازوی فروش را می‌گیرند"
+                        membersTitle="اعضای آی مچ — دعوت همکاری در فروش می‌گیرند"
+                        inviteTitle="دعوت به آی مچ — لینک بازوی فروش را می‌گیرند"
                         memberSend={{
                             label: 'دعوت',
                             doneLabel: 'دعوت رفت',
@@ -366,8 +366,8 @@ export default function ConnectionRequestModal({ open, onClose, catalogId, mode,
                             },
                         }}
                         invite={{
-                            label: 'دعوت به دیمت',
-                            getText: () => 'سلام! بازوی فروشی ما در دیمت را ببین:',
+                            label: 'دعوت به آی مچ',
+                            getText: () => 'سلام! بازوی فروشی ما در آی مچ را ببین:',
                             getUrl: () => (slug ? `${window.location.origin}/${slug}` : undefined),
                         }}
                     />
@@ -376,8 +376,8 @@ export default function ConnectionRequestModal({ open, onClose, catalogId, mode,
                 {scope === 'contacts' && mode === 'buyers' && (
                     <BuyerContactsPanel
                         title="دفترچهٔ مخاطبین تلفن تو"
-                        membersTitle="اعضای دیمت — کسب‌وکارشان را خریدار ثبت کن"
-                        inviteTitle="دعوت به دیمت — لینک بازوی فروش را می‌گیرند"
+                        membersTitle="اعضای آی مچ — کسب‌وکارشان را خریدار ثبت کن"
+                        inviteTitle="دعوت به آی مچ — لینک بازوی فروش را می‌گیرند"
                         doneLabel="درخواست رفت"
                         onAddBusiness={async (businessId) => {
                             try {
@@ -397,8 +397,8 @@ export default function ConnectionRequestModal({ open, onClose, catalogId, mode,
                             }
                         }}
                         invite={{
-                            label: 'دعوت به دیمت',
-                            getText: () => 'سلام! بازوی فروشی ما در دیمت را ببین:',
+                            label: 'دعوت به آی مچ',
+                            getText: () => 'سلام! بازوی فروشی ما در آی مچ را ببین:',
                             getUrl: () => (slug ? `${window.location.origin}/${slug}` : undefined),
                         }}
                     />
@@ -522,7 +522,7 @@ export default function ConnectionRequestModal({ open, onClose, catalogId, mode,
                                 )}
                                 <div className="flex-1 min-w-0">
                                     <p className="font-bold text-sm text-gray-900 dark:text-gray-100 truncate flex items-center gap-1.5">
-                                        {isBiz ? item.name : (item.fullName || 'کاربر دیمت')}
+                                        {isBiz ? item.name : (item.fullName || 'کاربر آی مچ')}
                                     </p>
                                     <p className="text-[11px] text-gray-500 dark:text-gray-400 truncate">
                                         {isBiz && (item.owner?.fullName ? `صاحب: ${item.owner.fullName}` : '')}

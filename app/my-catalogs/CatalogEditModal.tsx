@@ -145,7 +145,7 @@ export default function CatalogEditModal({ isOpen, onClose, catalog, salesTypeLo
         }
         setErrors(e);
         if (Object.keys(e).length > 0) {
-            // ⚖️ قانون دیمت: الرتِ واضح کنار خطای CSS فیلدها — سکوت ممنوع
+            // ⚖️ قانون آی مچ: الرتِ واضح کنار خطای CSS فیلدها — سکوت ممنوع
             toastFormErrors({
                 name: e.name ? 'نام بازوی فروش وارد نشده' : '',
                 slug: e.slug === 'taken' ? 'این لینک آزاد نیست — کمی عوضش کن'

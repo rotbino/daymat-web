@@ -6,7 +6,7 @@
 export const CANVAS_FONT = '"Vazirmatn", "Noto Sans Arabic", Tahoma, sans-serif';
 export const DEFAULT_CAPTION = 'برای دیدن بازوی فروش ما اسکن کنید';
 
-/** آیکون برند دیمت (نشان dm با گوشه‌های شفاف) — برای امضای برند پایین کارت */
+/** آیکون برند آی مچ (نشان dm با گوشه‌های شفاف) — برای امضای برند پایین کارت */
 export const DAYMAT_BADGE_SRC = '/icons/icon-512.png';
 
 /* ─── قالب‌های آمادهٔ پس‌زمینه — ۳ قالب برند (بنا بر خواستهٔ کاربر: از ۷ به ۳) ─── */

@@ -115,7 +115,7 @@ export default function LoginPage() {
     const handleRegisterSubmit = async (ev: React.FormEvent) => {
         ev.preventDefault();
 
-        // ⚖️ قانون دیمت: الرتِ واضح کنار خطای CSSِ فیلدها
+        // ⚖️ قانون آی مچ: الرتِ واضح کنار خطای CSSِ فیلدها
         const errs: Record<string, string> = {};
         if (!firstName.trim()) errs.firstName = 'نام وارد نشده';
         if (!lastName.trim()) errs.lastName = 'نام خانوادگی وارد نشده';

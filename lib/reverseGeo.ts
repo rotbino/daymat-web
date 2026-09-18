@@ -1,5 +1,5 @@
 // lib/reverseGeo.ts
-// 🌍 جستجوی معکوس (reverse geocode) با Nominatim/OpenStreetMap + تطبیق با درخت لوکیشن دیمت
+// 🌍 جستجوی معکوس (reverse geocode) با Nominatim/OpenStreetMap + تطبیق با درخت لوکیشن آی مچ
 //    از روی نقطهٔ انتخابی کاربر: کشور/استان/شهر + آدرس نسبی درمی‌آید تا فرم‌ها بتوانند
 //    استان و شهر را خودکار آپدیت کنند (حتی اگر کاربر قبلاً انتخاب کرده باشد) و آدرسِ
 //    دست‌نخورده را خودکار پر کنند. شکستِ آن بی‌صدا است — فقط یک مزیت است، نه گره.
@@ -113,7 +113,7 @@ function parseNominatim(data: any): ReverseGeoResult | null {
     };
 }
 
-// ─── تطبیق با درخت لوکیشن دیمت (country → province → city) ───
+// ─── تطبیق با درخت لوکیشن آی مچ (country → province → city) ───
 // اول استان با نامِ (بی‌پیشوندِ) state جور می‌شود؛ بعد شهر در همان استان.
 // اگر استان جور نشد، شهر در کل درخت جستجو می‌شود و استان از والدش درمی‌آید.
 export function matchLocationFromTree(tree: LocationNode[] | null | undefined, geo: ReverseGeoResult): TreeMatch | null {

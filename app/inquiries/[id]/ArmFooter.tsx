@@ -1,7 +1,7 @@
 // app/inquiries/[id]/ArmFooter.tsx
 // فوتر صفحهٔ عمومی بازوی خرید — قرینهٔ CatalogFooter (کد مرجع از مالک):
 //   ۱) اطلاعات خریدار (تماس/موقعیت/اطلاعات)
-//   ۲) برندینگ دیمت با پرش به ساخت بازوی خرید
+//   ۲) برندینگ آی مچ با پرش به ساخت بازوی خرید
 //   ۳) 🦠 قیف ویروسی: لینک‌ها کد دعوتِ مالکِ همین بازو را حمل می‌کنند
 //      «تو هم بازوی خریدت را بساز» + «تامین‌کننده هستی؟ بازوی فروش بساز»
 //   ⚠️ بلوک‌های ویروسی فقط برای کسانی که بازو ندارند رندر می‌شود (showViral از پدر) —
@@ -23,7 +23,7 @@ export default function ArmFooter({ inquiry, showViral, bottomBar }: { inquiry: 
     const { isAuthenticated } = useSelector((state: RootState) => state.auth);
 
     // ✅ قیف ویروسی با انتساب رفرال صاحب بازو — مثل فوتر بازوی فروش:
-    //    هر کس از این بازو وارد دیمت شود، «دعوت‌شدهٔ» صاحب بازو ثبت می‌شود
+    //    هر کس از این بازو وارد آی مچ شود، «دعوت‌شدهٔ» صاحب بازو ثبت می‌شود
     //    (RefCapture سراسری ref داخلِ redirect را هم می‌گیرد → انتساب در ثبت‌نام)
     const refCode: string | undefined = inquiry?.owner?.referralCode;
     const q = refCode ? `?ref=${refCode}` : '';
@@ -101,11 +101,11 @@ export default function ArmFooter({ inquiry, showViral, bottomBar }: { inquiry: 
                     </div>
                 )}
 
-                {/* برندینگ دیمت */}
+                {/* برندینگ آی مچ */}
                 <div className="pt-4 border-t border-gray-100 dark:border-gray-800 flex flex-col items-center gap-2">
                     <button onClick={() => router.push(armHref)}>
-                        <div className="relative h-14 w-56"><Image src="/images/logo2.png" alt="دیمت" fill className="object-contain" unoptimized /></div>
-                        <p className="text-[13px] font-bold text-gray-500 dark:text-gray-400">دیمت، ساخت بازوی خرید</p>
+                        <div className="relative h-14 w-56"><Image src="/images/logo2.png" alt="آی مچ" fill className="object-contain" unoptimized /></div>
+                        <p className="text-[13px] font-bold text-gray-500 dark:text-gray-400">آی مچ، ساخت بازوی خرید</p>
                     </button>
                 </div>
 
@@ -124,7 +124,7 @@ export default function ArmFooter({ inquiry, showViral, bottomBar }: { inquiry: 
                             >
                                 <Sparkles className="w-3.5 h-3.5 text-primary/60 group-hover:text-primary transition-colors" />
                                 <span className="hidden sm:inline text-gray-500 dark:text-gray-400">ساخته شده با</span>
-                                <span className="font-extrabold text-primary/80 group-hover:text-primary transition-colors">دیمت</span>
+                                <span className="font-extrabold text-primary/80 group-hover:text-primary transition-colors">آی مچ</span>
                                 <span className="hidden sm:inline text-gray-400">·</span>
                                 <span className="hidden sm:inline text-gray-500 group-hover:text-primary/80 transition-colors">تو هم بازوی خریدت را بساز</span>
                             </button>

@@ -145,7 +145,7 @@ export default function RegisterCatalogPage() {
         return !!nm && myCatalogs.some((c: any) => (c.name || '').trim() === nm && c.status === 'active');
     }, [myCatalogs, catalogName]);
 
-    // ⚖️ قانون دیمت: خطای CSSِ روی فیلد کافی نیست — الرتِ واضحِ toast هم با ذکرِ خودِ فیلد بده
+    // ⚖️ قانون آی مچ: خطای CSSِ روی فیلد کافی نیست — الرتِ واضحِ toast هم با ذکرِ خودِ فیلد بده
     const validate = (): Record<string, string> | null => {
         const e: Record<string, string> = {};
         if (!bizId) e.biz = 'کسب‌وکار انتخاب نشده';
@@ -285,7 +285,7 @@ export default function RegisterCatalogPage() {
                             )}
                             {!selectedBiz && (
                                 <p className="mt-2.5 text-[12px] text-justify leading-5 text-on-surface-variant/70">
-                                    در دیمت، هر کسب‌وکار می‌تونه چند بازوی فروش داشته باشه؛ مثلاً بازوی شخصی شما یا بازوی تیم بازاریابی و فروش. یا هر بازاریاب یه بازوی شخصی.
+                                    در آی مچ، هر کسب‌وکار می‌تونه چند بازوی فروش داشته باشه؛ مثلاً بازوی شخصی شما یا بازوی تیم بازاریابی و فروش. یا هر بازاریاب یه بازوی شخصی.
 
                                     بنابراین ممکنه کسب‌وکاری که در اون کار می‌کنی یا حتی صاحبش هستی، قبلاً توسط یکی از همکاران فرش ثبت شده باشه. پس قبل از ثبت تکراری، اسم کسب‌وکارت رو جست‌وجو کن.
 

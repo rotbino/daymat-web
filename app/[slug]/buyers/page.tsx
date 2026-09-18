@@ -20,13 +20,13 @@ export async function generateMetadata({ params }: Props) {
         const arm = await apiService.arm.fetchArmData(slug);
         if (arm) {
             return {
-                title: `دیوار خریداران بازار ${arm.name} | دیمت`,
+                title: `دیوار خریداران بازار ${arm.name} | آی مچ`,
                 alternates: { canonical: `/${slug}/buyers` },
                 description: arm.slogan || `دیوار خریداران بازار ${arm.name} — درخواست‌های خرید خریداران و پیشنهاد قیمت`,
             };
         }
     } catch {}
-    return { title: 'تابلوی خریداران | دیمت' };
+    return { title: 'تابلوی خریداران | آی مچ' };
 }
 
 export default async function BuyersPage({ params }: Props) {

@@ -109,7 +109,7 @@ export default function MyInquiriesPage() {
     }, []);
 
     useEffect(() => {
-        document.title = 'بازوی خرید من | دیمت';
+        document.title = 'بازوی خرید من | آی مچ';
     }, []);
 
     useEffect(() => {

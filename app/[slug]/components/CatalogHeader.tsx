@@ -318,17 +318,17 @@ export default function CatalogHeader({
                                     <p className="mt-1 text-xs text-gray-500">
                                         {[bizTypeMap[catalog.type], catalog.city].filter(Boolean).join(' · ')}
                                     </p>
-                                    {/* ✅ سیگنال‌های اعتماد — عضو از کِی + معامله‌های موفقِ ثبت‌شده داخل دیمت */}
+                                    {/* ✅ سیگنال‌های اعتماد — عضو از کِی + معامله‌های موفقِ ثبت‌شده داخل آی مچ */}
                                     <div className="mt-1.5 flex flex-wrap items-center gap-1.5">
                                         {!!catalog.successfulDeals && (
                                             <span className="inline-flex items-center gap-1 rounded-full bg-emerald-50 px-2 py-0.5 text-[10px] font-extrabold text-emerald-700 dark:bg-emerald-500/10 dark:text-emerald-400">
                                                 <Handshake className="w-3 h-3" />
-                                                {(catalog.successfulDeals as number).toLocaleString('fa-IR')} معاملهٔ موفق در دیمت
+                                                {(catalog.successfulDeals as number).toLocaleString('fa-IR')} معاملهٔ موفق در آی مچ
                                             </span>
                                         )}
                                         {catalog.memberSince && (
                                             <span className="inline-flex items-center gap-1 rounded-full bg-gray-100 px-2 py-0.5 text-[10px] font-bold text-gray-500 dark:bg-gray-800 dark:text-gray-400">
-                                                عضو دیمت از {new Date(catalog.memberSince as any).toLocaleDateString('fa-IR', { year: 'numeric', month: 'long' })}
+                                                عضو آی مچ از {new Date(catalog.memberSince as any).toLocaleDateString('fa-IR', { year: 'numeric', month: 'long' })}
                                             </span>
                                         )}
                                     </div>

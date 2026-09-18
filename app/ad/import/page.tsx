@@ -239,7 +239,7 @@ function ImportContent() {
                             )}
                             {report.createdReferences.length > 0 && (
                                 <p className="text-[11.5px] font-bold leading-6 text-emerald-800 dark:text-emerald-300">
-                                    {fa(report.createdReferences.length)} کالای مرجع جدید در دیمت ثبت شد
+                                    {fa(report.createdReferences.length)} کالای مرجع جدید در آی مچ ثبت شد
                                 </p>
                             )}
                         </div>

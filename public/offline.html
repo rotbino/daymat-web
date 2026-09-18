@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
-    <title>آفلاین هستید | دیمت</title>
+    <title>آفلاین هستید | آی مچ</title>
     <style>
         * { margin: 0; padding: 0; box-sizing: border-box; }
         body {
@@ -58,21 +58,21 @@
 <body>
     <div class="box">
         <div class="icon">
-            <img src="/icons/icon-192.png" alt="دیمت" onerror="this.style.display='none'">
+            <img src="/icons/icon-192.png" alt="آی مچ" onerror="this.style.display='none'">
         </div>
         <h1>اتصال اینترنت قطع است</h1>
-        <p>نگران نباش؛ به‌محض وصل شدن دوباره، دیمت همون‌جایی که بودی منتظرته.</p>
+        <p>نگران نباش؛ به‌محض وصل شدن دوباره، آی مچ همون‌جایی که بودی منتظرته.</p>
         <div class="status" id="status">چک خودکار هر ۴ ثانیه انجام می‌شود</div>
         <button id="retry">تلاش مجدد</button>
     </div>
 
     <script>
         // ─── جریان درست: اول اینترنت، بعد سرور ───
-        // ۱) پروب فعال اینترنت (به مقصدهای بی‌طرف خارج از دیمت) —
+        // ۱) پروب فعال اینترنت (به مقصدهای بی‌طرف خارج از آی مچ) —
         //    چون navigator.onLine وقتی وای‌فای به مودم وصل است ولی اینترنت
         //    واقعی قطع است، دروغ می‌گوید (true).
         // ۲) اینترنت قطع → همین‌جا می‌مانیم و هر ۴ ثانیه دوباره چک می‌کنیم
-        // ۳) اینترنت وصل → پینگ health دیمت:
+        // ۳) اینترنت وصل → پینگ health آی مچ:
         //      200 → برگشت خودکار به صفحهٔ قبلی کاربر
         //      خطا/503 → اینترنت هست ولی سرور/دیتابیس مشکل دارد → صفحهٔ «سرور در دسترس نیست»
         (function () {
@@ -81,7 +81,7 @@
             var statusEl = document.getElementById('status');
             var probing = false;
 
-            // مقصدهای بی‌طرف برای تشخیص واقعی اینترنت (CDN — خارج از سرور دیمت)
+            // مقصدهای بی‌طرف برای تشخیص واقعی اینترنت (CDN — خارج از سرور آی مچ)
             var PROBE_URLS = [
                 'https://www.arvancloud.ir/favicon.ico',     // CDN ایرانی
                 'https://www.cloudflare.com/cdn-cgi/trace',  // گلوبال
@@ -172,7 +172,7 @@
                         statusEl.textContent = 'اینترنت هنوز قطع است — دوباره چک می‌کنیم…';
                         return;
                     }
-                    // اینترنت وصل است → حالا سرور دیمت را چک کن
+                    // اینترنت وصل است → حالا سرور آی مچ را چک کن
                     var bases = getBases();
                     var i = 0;
                     var next = function () {

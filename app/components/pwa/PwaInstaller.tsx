@@ -1,5 +1,5 @@
 // app/components/pwa/PwaInstaller.tsx
-// ✅ مدیر نصب PWA دیمت — مینیمال، حرفه‌ای، چندسکویی (اندروید / iOS / بقیه)
+// ✅ مدیر نصب PWA آی مچ — مینیمال، حرفه‌ای، چندسکویی (اندروید / iOS / بقیه)
 //
 // قوانین نمایش مدال:
 //  ۱) اگر اپ نصب‌شده است (standalone) → هرگز نمایش داده نمی‌شود
@@ -200,7 +200,7 @@ export function PwaInstaller() {
             className="fixed inset-0 z-[9999] flex items-end justify-center"
             role="dialog"
             aria-modal="true"
-            aria-label="نصب اپلیکیشن دیمت"
+            aria-label="نصب اپلیکیشن آی مچ"
         >
             {/* پس‌زمینه */}
             <button
@@ -234,18 +234,18 @@ export function PwaInstaller() {
                 <div className="flex items-center gap-3.5 mt-4">
                     <img
                         src="/icons/icon-192.png"
-                        alt="دیمت"
+                        alt="آی مچ"
                         className="w-[62px] h-[62px] rounded-[18px] shadow-md shadow-slate-900/10 ring-1 ring-black/5"
                     />
                     <div>
-                        <div className="text-[17px] font-black text-slate-900 leading-6">دیمت</div>
+                        <div className="text-[17px] font-black text-slate-900 leading-6">آی مچ</div>
                         <div className="text-xs text-slate-400 mt-0.5">بازوی فروش روزانه قیمت</div>
                     </div>
                 </div>
 
                 {/* پیام */}
                 <p className="mt-4 text-[13.5px] leading-6 text-slate-500">
-                    دیمت را روی گوشی خودت نصب کن؛ مثل یک اپ واقعی با یک لمس از دسکتاپ گوشی باز می‌شود —
+                    آی مچ را روی گوشی خودت نصب کن؛ مثل یک اپ واقعی با یک لمس از دسکتاپ گوشی باز می‌شود —
                     سریع‌تر، تمام‌صفحه و بدون نوار مرورگر.
                 </p>
 

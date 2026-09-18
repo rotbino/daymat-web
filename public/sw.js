@@ -1,5 +1,5 @@
 // public/sw.js
-// ✅ سرویس‌ورکر مینیمال دیمت
+// ✅ سرویس‌ورکر مینیمال آی مچ
 // فلسفه: هیچ‌وقت دادهٔ API را کش نمی‌کنیم (تازگی داده مقدس است)؛
 // فقط ناوبری‌ها network-first با صفحهٔ آفلاین، و استاتیک‌ها stale-while-revalidate.
 
@@ -86,7 +86,7 @@ self.addEventListener("fetch", (event) => {
 
 // ─── 🔔 پوش فوری — اعلام خرید فعال شد، پیشنهاد رسید، پیش‌فاکتور تایید شد ───
 self.addEventListener("push", (event) => {
-    let data = { title: "دیمت", body: "", href: null };
+    let data = { title: "آی مچ", body: "", href: null };
     try {
         if (event.data) {
             const parsed = event.data.json();
@@ -97,7 +97,7 @@ self.addEventListener("push", (event) => {
     }
 
     event.waitUntil(
-        self.registration.showNotification(data.title || "دیمت", {
+        self.registration.showNotification(data.title || "آی مچ", {
             body: data.body || "",
             icon: "/icons/icon-192.png",
             badge: "/icons/icon-192.png",

@@ -273,7 +273,7 @@ export default function ItemsTab({ detail, offers, loading, onAdd, onEdit, onTog
                             <p className="mt-1.5 text-[10.5px] font-bold leading-5 text-stone-500 dark:text-gray-400">
                                 از تب «تامین‌کنندگان» به تامین‌کننده‌های مناسب کالایت در شهر خودت یا هر شهری درخواست تامین بده؛
                                 یا لینک بازوی خریدت را برای تامین‌کننده‌ها و بازاریاب‌هایی که می‌شناسی بفرست —
-                                عضو دیمت باشند یا نه.
+                                عضو آی مچ باشند یا نه.
                             </p>
                             <button onClick={onGoMembers}
                                 className="mt-2.5 flex h-9 w-full items-center justify-center gap-1.5 rounded-xl bg-brand-contrast text-[12px] font-extrabold text-white transition-colors hover:bg-brand-contrast-strong">

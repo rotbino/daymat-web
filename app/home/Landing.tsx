@@ -485,7 +485,7 @@ function LiveFromDaymat() {
 
   return (
       <section
-          aria-label="بازوهای فروشی دیمت"
+          aria-label="بازوهای فروشی آی مچ"
           className="mx-auto max-w-6xl px-4 py-14 sm:px-6"
       >
         <motion.div {...fadeUp()} className="mx-auto max-w-2xl text-center">
@@ -495,7 +495,7 @@ function LiveFromDaymat() {
         </span>
 
           <h2 className="mt-3 text-2xl font-black text-stone-900 dark:text-gray-100 sm:text-3xl">
-            همین حالا در دیمت
+            همین حالا در آی مچ
           </h2>
 
           <p className="mt-3 leading-7 text-stone-600 dark:text-gray-400">
@@ -675,11 +675,11 @@ export default function Landing() {
               <Link
                   href="/"
                   className="flex items-center gap-2.5"
-                  aria-label="دیمت"
+                  aria-label="آی مچ"
               >
                 <Image
                     src="/images/logo3.png"
-                    alt="دیمت"
+                    alt="آی مچ"
                     width={104}
                     height={36}
                     className="h-9 w-auto object-contain"
@@ -721,15 +721,15 @@ export default function Landing() {
                 <motion.div {...fadeUp()} className="mx-auto max-w-[500px] text-center">
                 <span className="inline-flex items-center gap-1.5 rounded-full border border-brand-primary-tint bg-brand-primary-soft px-3.5 py-1.5 text-xs font-bold text-brand-primary-strong dark:border-brand-primary/25 dark:bg-brand-primary/10 dark:text-brand-primary">
                   <ArrowLeftRight className="size-3.5" />
-                  دیمت، پلتفرم ساخت بازوهای خرید و فروش
+                  آی مچ، پلتفرم ساخت بازوهای خرید و فروش
                 </span>
 
                   <h1 className="mt-5 pb-4 pt-3 md:pt-6 text-xl  font-black leading-[1.5] tracking-tight text-stone-950 dark:text-white sm:text-xl md:text-[1.5rem] md:leading-[1.35]">
-                   دیمت با اتصال هدفمند بازوهای خرید و فروش به یکدیگر، شبکه خرید و فروش شما رو گسترش میده.
+                   آی مچ با اتصال هدفمند بازوهای خرید و فروش به یکدیگر، شبکه خرید و فروش شما رو گسترش میده.
                   </h1>
 
                  {/* <div className={"text-base text-justify"}>
-                      دیمت فروشنده‌ها رو به خریدارهای واقعی‌شون می‌رسونه؛ خریدارها از چند تأمین‌کننده قیمت و شرایط می‌گیرن و مقایسه می‌کنن، فروشنده‌ها هم برای هر گروه از مشتری‌ها یه بازوی فروش آنلاین و همیشه به‌روز دارند و غیر از اون درخواستهای قیمت خریدارن عضو رو در پنل بازوی فروششون می بینن و پیشنهاد قیمت میدن. بازوی فروشها و بازوها می تونن عضو بازارهای صنفی هم بشن و در تابلوهای عمومی بازار خریدارن یا تمین کنندگان جدید جذب کنند.
+                      آی مچ فروشنده‌ها رو به خریدارهای واقعی‌شون می‌رسونه؛ خریدارها از چند تأمین‌کننده قیمت و شرایط می‌گیرن و مقایسه می‌کنن، فروشنده‌ها هم برای هر گروه از مشتری‌ها یه بازوی فروش آنلاین و همیشه به‌روز دارند و غیر از اون درخواستهای قیمت خریدارن عضو رو در پنل بازوی فروششون می بینن و پیشنهاد قیمت میدن. بازوی فروشها و بازوها می تونن عضو بازارهای صنفی هم بشن و در تابلوهای عمومی بازار خریدارن یا تمین کنندگان جدید جذب کنند.
 
                   </div>*/}
                 </motion.div>
@@ -743,7 +743,7 @@ export default function Landing() {
                       icon={Store}
                       chip="بازوی فروش"
                       question="چه محصول یا خدماتی رو عمده می‌فروشی؟"
-                      body=" بازوی فروش محصولات یا خدماتت رو بساز. لینکش رو به مشتریان مرتبط بفرست؛ هر مشتری که به این بازو وصل بشه ، بخشی از شبکه فروشت میشه و همیشه کاتالوگ آنلاین قیمتهای شما رو داره. دیمت هم شبکه خریدارنت رو گسترش میده."
+                      body=" بازوی فروش محصولات یا خدماتت رو بساز. لینکش رو به مشتریان مرتبط بفرست؛ هر مشتری که به این بازو وصل بشه ، بخشی از شبکه فروشت میشه و همیشه کاتالوگ آنلاین قیمتهای شما رو داره. آی مچ هم شبکه خریدارنت رو گسترش میده."
                       delay={0.1}
                   />
 
@@ -761,7 +761,7 @@ export default function Landing() {
                       icon={ClipboardList}
                       chip="بازوی خرید"
                       question="چه محصولات یا خدماتی رو عمده می‌خری؟"
-                      body="بازوی خرید کسب و کارت رو بساز، لیست خریدت رو وارد کن. لینک رو برای تأمین‌کنندگان مرتبط بفرست. هر وقت نیاز داشتی، قیمت‌گیری بعضی اقلام رو فعال کن تا از تامین کنندگانت، قیمت و شرایط رقابتی بگیری. دیمت هم شبکه تامین کنندگانت رو گسترش میده."
+                      body="بازوی خرید کسب و کارت رو بساز، لیست خریدت رو وارد کن. لینک رو برای تأمین‌کنندگان مرتبط بفرست. هر وقت نیاز داشتی، قیمت‌گیری بعضی اقلام رو فعال کن تا از تامین کنندگانت، قیمت و شرایط رقابتی بگیری. آی مچ هم شبکه تامین کنندگانت رو گسترش میده."
                       delay={0.15}
                   />
                 </div>
@@ -907,7 +907,7 @@ export default function Landing() {
               <motion.div {...fadeUp()} className="mx-auto max-w-2xl text-center">
                 <span className="inline-flex items-center gap-1.5 rounded-full bg-brand-primary-soft px-3 py-1 text-xs font-bold text-brand-primary-strong dark:bg-brand-primary/15 dark:text-brand-primary">
                   <Store className="size-3.5" />
-                  معرفی بازارهای صنفی دیمت.
+                  معرفی بازارهای صنفی آی مچ.
                 </span>
 
                 <h2 className="mt-4 text-2xl font-black text-stone-900 dark:text-gray-100 sm:text-3xl">
@@ -915,7 +915,7 @@ export default function Landing() {
                 </h2>
 
                 <p className="mt-3 text-justify leading-8 text-stone-600 dark:text-gray-400">
-                  غیر از بازوهای خرید و فروش که صفحات شخصی با مالکیت کاربر هستند دیمت بازارهای خریدو فروش تخصصی هر صنف رو هم کم کم تشکیل می ده.
+                  غیر از بازوهای خرید و فروش که صفحات شخصی با مالکیت کاربر هستند آی مچ بازارهای خریدو فروش تخصصی هر صنف رو هم کم کم تشکیل می ده.
                   با به حد نصاب رسیدن بازوهای خرید و فروش در هر صنف و شهر، بازار صنفی همون
                   صنف کم‌کم تشکیل می‌شه؛ کسب‌وکارها درخواست عضویت می‌دن و بعد از تایید مدیر
                   بازار عضو می‌شن. اینطوری تامین‌کننده‌ها و خریدارها بیشتر دیده می‌شن و بازارها
@@ -952,7 +952,7 @@ export default function Landing() {
                   </h2>
 
                   <p className="mt-4 text-justify text-sm leading-8 text-stone-600 dark:text-gray-400 sm:text-base">
-                    دیمت قرار نیست همه را به همه وصل کند؛ هدفش اینه که هر فروشنده در بازوی فروش خودش با خریدارانی روبه‌رو بشه که واقعاً مشتری محصولاتش هستند، و هر خریدار هم با کمک بازوی خریدش به تأمین‌کننده‌هایی وصل بشه که واقعاً می تونن نیازش را به بهترین نحو تأمین کنند.
+                    آی مچ قرار نیست همه را به همه وصل کند؛ هدفش اینه که هر فروشنده در بازوی فروش خودش با خریدارانی روبه‌رو بشه که واقعاً مشتری محصولاتش هستند، و هر خریدار هم با کمک بازوی خریدش به تأمین‌کننده‌هایی وصل بشه که واقعاً می تونن نیازش را به بهترین نحو تأمین کنند.
 
                   </p>
                 </motion.div>
@@ -1031,7 +1031,7 @@ export default function Landing() {
                     bullets={[
                       'حالا خریداران شبکه ای که خودت اعضاشو انتخاب کردی و اونا هم تایید کردن، قیمتهاتو می بینن',
                       'قیمت‌ها رو به‌روز کن؛ خریدارهای متصل به بازوی فروشت همیشه آخرین قیمت را می بینن و سفارش میدن.',
-                      'برای اینکه خریدارای جدید پیدا کنی دیمت بازوهای خرید مرتبط رو در اختیارت قرار میده تا براشون، پیشنهاد تامین بفرستی.اگر قبول کنن، جز شبکه ات میشن.',
+                      'برای اینکه خریدارای جدید پیدا کنی آی مچ بازوهای خرید مرتبط رو در اختیارت قرار میده تا براشون، پیشنهاد تامین بفرستی.اگر قبول کنن، جز شبکه ات میشن.',
                     ]}
                     delay={0.05}
                 />
@@ -1258,7 +1258,7 @@ export default function Landing() {
                 </h2>
 
                 <p className="mt-3 leading-7 text-stone-600 dark:text-gray-400">
-                  دیمت خریدار و فروشنده رو بر اساس چیزی که واقعاً می‌خرند و
+                  آی مچ خریدار و فروشنده رو بر اساس چیزی که واقعاً می‌خرند و
                   می‌فروشند به هم متصل می‌کند.
                 </p>
               </motion.div>
@@ -1430,7 +1430,7 @@ export default function Landing() {
               <div className="flex items-center gap-2.5">
                 <Image
                     src="/images/logo3.png"
-                    alt="دیمت"
+                    alt="آی مچ"
                     width={80}
                     height={28}
                     className="h-7 w-auto object-contain"

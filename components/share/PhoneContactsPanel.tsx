@@ -1,14 +1,14 @@
 // components/share/PhoneContactsPanel.tsx
 // 📱 اشتراک‌گذاری مستقیم با مخاطبین تلفن (PWA) — بخش قابل استفاده در همهٔ فرم‌های اشتراک
 //   • اندروید/کروم (و PWA نصب‌شده): Contact Picker API — با اجازهٔ کاربر، مخاطبینِ انتخابی
-//     با همان نامی که در دفترچهٔ گوشی است در دیمت ذخیره می‌شوند (کشف ارتباطات)
+//     با همان نامی که در دفترچهٔ گوشی است در آی مچ ذخیره می‌شوند (کشف ارتباطات)
 //   • دفترچهٔ ذخیره‌شده جستجوپذیر است و با یک تپ، پیامکِ آماده (متن + لینک) برایش باز می‌شود
-//   • شماره‌های ثبت‌نام‌شدهٔ دیمت با بج «عضو دیمت» مشخص می‌شوند
+//   • شماره‌های ثبت‌نام‌شدهٔ آی مچ با بج «عضو آی مچ» مشخص می‌شوند
 //   • جایی که Contact Picker نیست (آیفون/دسکتاپ): افزودن دستی شماره + راهنمای شیت سیستم
 // ── حالت زمینه‌ای (موتور رشد) ──
 //   با memberSend و/یا invite لیست دوگروه می‌شود:
-//     • اعضای دیمت → دکمهٔ «ارسال» زمینه‌ای (مثلاً درخواست تامین به بازوی فروشش، یا درخواست خریدار به کسب‌وکارش)
-//     • غیراعضا   → دکمهٔ «دعوت به دیمت» — نوار کانال‌ها: واتساپ/تلگرام/پیامک/سایر با متن و لینکِ زمینه‌ای
+//     • اعضای آی مچ → دکمهٔ «ارسال» زمینه‌ای (مثلاً درخواست تامین به بازوی فروشش، یا درخواست خریدار به کسب‌وکارش)
+//     • غیراعضا   → دکمهٔ «دعوت به آی مچ» — نوار کانال‌ها: واتساپ/تلگرام/پیامک/سایر با متن و لینکِ زمینه‌ای
 //   کپشن‌ها و اکشن‌ها را جایِ استفاده تعیین می‌کند — در بازو لینک بازو می‌رود، در اعضای بازوی فروش لینک بازوی فروش.
 'use client';
 import React, { useState, useEffect } from 'react';
@@ -21,7 +21,7 @@ import { cn } from '@/lib/utils/utils';
 import { resolveFileSrc } from '@/app/business/manage/components/BusinessLogo';
 import { useMyContacts, useSyncContacts } from '@/lib/api/apiHooks';
 
-/** ✅ یک کسب‌وکارِ عضو دیمت — با بازوهای خریدش (Inquiry) و نقشِ مخاطب در آن */
+/** ✅ یک کسب‌وکارِ عضو آی مچ — با بازوهای خریدش (Inquiry) و نقشِ مخاطب در آن */
 export interface ContactBusinessItem {
     id: string;
     name: string;
@@ -53,7 +53,7 @@ export interface PhoneContactItem {
     } | null;
 }
 
-/** اکشن زمینه‌ای روی اعضای دیمت — دکمهٔ کنار هر عضو */
+/** اکشن زمینه‌ای روی اعضای آی مچ — دکمهٔ کنار هر عضو */
 export interface ContactMemberAction {
     /** برچسب دکمه — پیش‌فرض «ارسال» */
     label?: string;
@@ -67,7 +67,7 @@ export interface ContactMemberAction {
 
 /** دعوت غیراعضا (و عضوهای بدون مقصد) — نوار کانال‌های اشتراک با متن زمینه‌ای */
 export interface ContactInviteAction {
-    /** برچسب دکمه — پیش‌فرض «دعوت به دیمت» */
+    /** برچسب دکمه — پیش‌فرض «دعوت به آی مچ» */
     label?: string;
     /** متن پیام — در همهٔ کانال‌ها می‌نشیند */
     getText: () => string;
@@ -88,7 +88,7 @@ interface PhoneContactsPanelProps {
     // ── حالت زمینه‌ای (دوگروه) ──
     memberSend?: ContactMemberAction;
     invite?: ContactInviteAction;
-    /** سربرگ گروه اعضای دیمت — کپشنِ زمینه‌ای هر جای استفاده */
+    /** سربرگ گروه اعضای آی مچ — کپشنِ زمینه‌ای هر جای استفاده */
     membersTitle?: string;
     /** سربرگ گروه دعوت — کپشنِ زمینه‌ای هر جای استفاده */
     inviteTitle?: string;
@@ -148,7 +148,7 @@ export default function PhoneContactsPanel({
         if (res.saved > 0) {
             toast.success(`${res.saved} مخاطب ذخیره شد`, {
                 description: res.matched > 0
-                    ? `${res.matched} نفرشان عضو دیمت‌اند — با بج سبز می‌بینی‌شان`
+                    ? `${res.matched} نفرشان عضو آی مچ‌اند — با بج سبز می‌بینی‌شان`
                     : 'از این به بعد هر کدام ثبت‌نام کنند، همین‌جا می‌بینی‌شان',
             });
         } else if (res.invalid > 0) {
@@ -199,7 +199,7 @@ export default function PhoneContactsPanel({
         window.location.href = smsHref(c.phone, body);
     };
 
-    // ─── اکشن زمینه‌ای: ارسال درخواست به عضو دیمت ───
+    // ─── اکشن زمینه‌ای: ارسال درخواست به عضو آی مچ ───
     const runMemberSend = async (c: PhoneContactItem) => {
         if (!memberSend || busyId) return;
         setBusyId(c.id);
@@ -242,7 +242,7 @@ export default function PhoneContactsPanel({
         }
     };
 
-    // ─── ردیف عضو دیمت (حالت زمینه‌ای) ───
+    // ─── ردیف عضو آی مچ (حالت زمینه‌ای) ───
     const memberRow = (c: PhoneContactItem) => {
         const mu = c.matchedUser || null;
         const reason = memberSend?.reason?.(c) ?? null;
@@ -271,10 +271,10 @@ export default function PhoneContactsPanel({
                     <div className="flex-1 min-w-0">
                         <div className="flex items-center gap-1.5">
                             <p className="text-[11px] font-bold text-on-surface truncate">
-                                {mu?.fullName || c.name || 'عضو دیمت'}
+                                {mu?.fullName || c.name || 'عضو آی مچ'}
                             </p>
                             <span className="flex-shrink-0 px-1.5 py-px rounded-full bg-emerald-500/15 text-emerald-600 dark:text-emerald-400 text-[9px] font-extrabold">
-                                عضو دیمت
+                                عضو آی مچ
                             </span>
                         </div>
                         <p className="text-[10px] text-on-surface-variant/70 truncate">{subLine || <span dir="ltr">{c.phone}</span>}</p>
@@ -295,7 +295,7 @@ export default function PhoneContactsPanel({
                     {/* عضوی که مقصد ندارد — همین‌جا هم می‌شود دعوتش کرد */}
                     {invite && (reason || !memberSend) && (
                         <button type="button" onClick={() => setOpenChannels(openChannels === c.id ? null : c.id)}
-                                title={invite.label || 'دعوت به دیمت'}
+                                title={invite.label || 'دعوت به آی مچ'}
                                 className="flex-shrink-0 h-8 px-2.5 rounded-full border border-outline-variant/50 dark:border-gray-700 text-[10px] font-extrabold text-primary flex items-center gap-1 hover:bg-primary/5 transition">
                             <UserPlus className="w-3 h-3" /> دعوت
                         </button>
@@ -323,7 +323,7 @@ export default function PhoneContactsPanel({
                     </div>
                     <button type="button" onClick={() => setOpenChannels(open ? null : c.id)}
                             className="flex-shrink-0 h-8 px-3.5 rounded-full border-2 border-primary/70 text-primary text-[11px] font-extrabold flex items-center gap-1 hover:bg-primary/5 active:scale-95 transition-all">
-                        <UserPlus className="w-3 h-3" /> {invite?.label || 'دعوت به دیمت'}
+                        <UserPlus className="w-3 h-3" /> {invite?.label || 'دعوت به آی مچ'}
                         <ChevronDown className={cn('w-3 h-3 transition-transform', open && 'rotate-180')} />
                     </button>
                 </div>
@@ -350,7 +350,7 @@ export default function PhoneContactsPanel({
                     <p className="text-xs font-extrabold text-on-surface">{title}</p>
                     <p className="text-[10px] text-on-surface-variant/70 leading-4">
                         {total > 0
-                            ? `${total} مخاطب ذخیره‌شده${matchedCount > 0 ? ` — ${matchedCount} نفر عضو دیمت` : ''}`
+                            ? `${total} مخاطب ذخیره‌شده${matchedCount > 0 ? ` — ${matchedCount} نفر عضو آی مچ` : ''}`
                             : 'مخاطبینت را یک‌بار اضافه کن، همیشه همین‌جا داشته باش'}
                     </p>
                 </div>
@@ -429,7 +429,7 @@ export default function PhoneContactsPanel({
                         {members.length > 0 && (
                             <p className="flex items-center gap-1.5 pt-1 text-[10px] font-extrabold text-emerald-700 dark:text-emerald-400">
                                 <Check className="w-3 h-3" />
-                                {membersTitle || 'اعضای دیمت'}
+                                {membersTitle || 'اعضای آی مچ'}
                                 <span className="opacity-60">({members.length.toLocaleString('fa-IR')})</span>
                             </p>
                         )}
@@ -437,7 +437,7 @@ export default function PhoneContactsPanel({
                         {invitees.length > 0 && (
                             <p className="flex items-center gap-1.5 pt-2 text-[10px] font-extrabold text-on-surface-variant/70">
                                 <UserPlus className="w-3 h-3" />
-                                {inviteTitle || 'دعوت به دیمت'}
+                                {inviteTitle || 'دعوت به آی مچ'}
                                 <span className="opacity-60">({invitees.length.toLocaleString('fa-IR')})</span>
                             </p>
                         )}
@@ -465,7 +465,7 @@ export default function PhoneContactsPanel({
                                     </p>
                                     {c.matchedUserId && (
                                         <span className="flex-shrink-0 px-1.5 py-px rounded-full bg-emerald-500/15 text-emerald-600 dark:text-emerald-400 text-[9px] font-extrabold">
-                                            عضو دیمت
+                                            عضو آی مچ
                                         </span>
                                     )}
                                 </div>
@@ -484,7 +484,7 @@ export default function PhoneContactsPanel({
             {/* حریم خصوصی */}
             <p className="text-[9px] leading-4 text-on-surface-variant/50 flex items-center gap-1">
                 <Sparkles className="w-3 h-3 flex-shrink-0" />
-                مخاطبین فقط برای خودت ذخیره می‌شوند — اگر عضو دیمت باشند، پیدایشان می‌کنی.
+                مخاطبین فقط برای خودت ذخیره می‌شوند — اگر عضو آی مچ باشند، پیدایشان می‌کنی.
             </p>
         </div>
     );

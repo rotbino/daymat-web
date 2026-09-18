@@ -249,7 +249,7 @@ export default function ProfilePage() {
                             <div className="flex-1">
                                 <p className="text-sm font-extrabold text-on-surface">دعوت دوستان</p>
                                 <p className="text-[10px] text-on-surface-variant/70 mt-0.5">
-                                    لینک دعوتت رو برای کسانی که بازوی فروش دیمت به دردشون می‌خوره ارسال کن.
+                                    لینک دعوتت رو برای کسانی که بازوی فروش آی مچ به دردشون می‌خوره ارسال کن.
                                 </p>
                             </div>
                         </div>
@@ -306,7 +306,7 @@ export default function ProfilePage() {
                 {/* ═══ درباره ═══ */}
                 <section className="space-y-2">
                     <h2 className="text-xs font-bold text-on-surface-variant/70 px-1">درباره</h2>
-                    <Row icon={Info} label="درباره دیمت" onClick={() => router.push('/docs/about')} />
+                    <Row icon={Info} label="درباره آی مچ" onClick={() => router.push('/docs/about')} />
                     <Row icon={FileText} label="قوانین" onClick={() => router.push('/docs/terms')} />
                     <Row icon={Lightbulb} label="پیشنهادات و انتقادات" onClick={() => router.push('/feedback')} />
                     <Row icon={LogOut} label={loggingOut ? 'در حال خروج…' : 'خروج از حساب'} danger onClick={handleLogout} />

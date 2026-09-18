@@ -1,5 +1,5 @@
 // app/business/manage/components/BusinessPreviewCard.tsx
-// 👀 «نمای مشتری» — خلاصهٔ کسب‌وکار همان‌طور که در دیمت دیده می‌شود
+// 👀 «نمای مشتری» — خلاصهٔ کسب‌وکار همان‌طور که در آی مچ دیده می‌شود
 'use client';
 
 import React from 'react';
@@ -42,7 +42,7 @@ export function BusinessPreviewCard({ business }: { business: PreviewBusiness })
                 </span>
                 <div className="flex-1">
                     <p className="text-[13px] font-extrabold text-on-surface">نمای مشتری</p>
-                    <p className="text-[10px] text-on-surface-variant/70">کسب‌وکار شما این‌طور در دیمت دیده می‌شود</p>
+                    <p className="text-[10px] text-on-surface-variant/70">کسب‌وکار شما این‌طور در آی مچ دیده می‌شود</p>
                 </div>
             </div>
 

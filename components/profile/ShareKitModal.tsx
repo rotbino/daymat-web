@@ -252,7 +252,7 @@ export default function ShareKitModal({ open, onClose, catalogName, slug, logoUr
                         <ActionBtn icon={Share2} label="سایر" onClick={nativeShare} />
                     </div>
 
-                    {/* 📱 ارسال مستقیم به مخاطبین تلفن — پیامکِ آماده با لینک + ذخیره در دفترچهٔ دیمت */}
+                    {/* 📱 ارسال مستقیم به مخاطبین تلفن — پیامکِ آماده با لینک + ذخیره در دفترچهٔ آی مچ */}
                     {url && (
                         <PhoneContactsPanel
                             url={url}

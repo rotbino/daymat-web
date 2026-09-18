@@ -14,15 +14,15 @@ interface Props {
 export async function generateMetadata({ params }: Props) {
     const { slug: rawSlug } = await params;
     const slug = (() => { try { return decodeURIComponent(rawSlug).replace(/\/+$/, '').trim(); } catch { return rawSlug; } })();
-    if (!slug) return { title: 'دیمت | بازوی خرید' };
+    if (!slug) return { title: 'آی مچ | بازوی خرید' };
 
     try {
         const inquiry = await apiService.inquiry.resolveSlug(slug);
         if (inquiry) {
             return {
-                title: `${inquiry.title} | دیمت`,
+                title: `${inquiry.title} | آی مچ`,
                 alternates: { canonical: `/i/${slug}` },
-                description: inquiry.description || `بازوی خرید ${inquiry.business?.name || ''} — ${inquiry.city || 'دیمت'}`.trim(),
+                description: inquiry.description || `بازوی خرید ${inquiry.business?.name || ''} — ${inquiry.city || 'آی مچ'}`.trim(),
                 openGraph: {
                     title: inquiry.title,
                     description: inquiry.description || undefined,
@@ -32,7 +32,7 @@ export async function generateMetadata({ params }: Props) {
         }
     } catch {}
 
-    return { title: 'دیمت | بازوی خرید' };
+    return { title: 'آی مچ | بازوی خرید' };
 }
 
 export default async function InquiryPublicPage({ params }: Props) {

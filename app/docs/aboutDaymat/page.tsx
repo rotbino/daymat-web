@@ -91,7 +91,7 @@ export default function MarketOwnerClient() {
                         </div>
 
                         <p className="text-sm font-semibold text-primary mb-3">
-                            ساخت بازار صنفی با دیمت
+                            ساخت بازار صنفی با آی مچ
                         </p>
 
                         <h1 className="text-3xl sm:text-4xl lg:text-5xl font-extrabold leading-tight text-on-surface dark:text-white">
@@ -99,7 +99,7 @@ export default function MarketOwnerClient() {
                         </h1>
 
                         <p className="max-w-3xl mx-auto mt-5 text-base sm:text-lg leading-8 text-on-surface-variant dark:text-gray-400">
-                            دیمت به شما امکان می‌دهد یک بازار آنلاین تخصصی
+                            آی مچ به شما امکان می‌دهد یک بازار آنلاین تخصصی
                             برای صنف، شهر، محصول یا بخشی از زنجیره تأمین خود
                             بسازید؛ خریداران و فروشندگان مرتبط را دور هم جمع
                             کنید و از فعالیت بازار درآمد داشته باشید.
@@ -133,7 +133,7 @@ export default function MarketOwnerClient() {
                         <SectionTitle
                             eyebrow="یک زیرساخت، برای کل زنجیره تأمین"
                             title="هر بخشی از زنجیره تأمین را می‌توانید به بازار تبدیل کنید"
-                            description="دیمت به یک مرحله خاص از زنجیره تأمین محدود نیست. شما می‌توانید بازاری متناسب با مدل کسب‌وکار خود بسازید."
+                            description="آی مچ به یک مرحله خاص از زنجیره تأمین محدود نیست. شما می‌توانید بازاری متناسب با مدل کسب‌وکار خود بسازید."
                         />
 
                         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-4">
@@ -257,7 +257,7 @@ export default function MarketOwnerClient() {
                     <div className="max-w-5xl mx-auto">
                         <SectionTitle
                             eyebrow="امکانات آماده"
-                            title="شما بازار را می‌سازید؛ زیرساخت را دیمت فراهم می‌کند"
+                            title="شما بازار را می‌سازید؛ زیرساخت را آی مچ فراهم می‌کند"
                         />
 
                         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
@@ -294,7 +294,7 @@ export default function MarketOwnerClient() {
                         <SectionTitle
                             eyebrow="مالک بازار"
                             title="شما صاحب بازار صنفی خود هستید"
-                            description={`دیمت زیرساخت را فراهم می‌کند و شما بازاری نمونه مانند همین ${armName} را مدیریت و توسعه می‌دهید.`}
+                            description={`آی مچ زیرساخت را فراهم می‌کند و شما بازاری نمونه مانند همین ${armName} را مدیریت و توسعه می‌دهید.`}
                         />
 
                         <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
@@ -366,7 +366,7 @@ export default function MarketOwnerClient() {
 
                         <p className="mt-4 text-sm sm:text-base leading-7 text-on-surface-variant dark:text-gray-400">
                             اگر یک صنف، بازار، محصول یا بخش مشخصی از زنجیره
-                            تأمین را می‌شناسید، دیمت ابزار ساخت بازار آنلاین
+                            تأمین را می‌شناسید، آی مچ ابزار ساخت بازار آنلاین
                             آن را در اختیار شما می‌گذارد.
                         </p>
 
@@ -374,7 +374,7 @@ export default function MarketOwnerClient() {
                             href="/create-arm"
                             className="inline-flex items-center justify-center gap-2 mt-7 px-7 py-3.5 rounded-xl bg-primary text-on-primary font-bold hover:bg-primary/90 transition"
                         >
-                            ساخت بازار در دیمت
+                            ساخت بازار در آی مچ
                             <ArrowLeft className="w-4 h-4" />
                         </a>
                     </div>

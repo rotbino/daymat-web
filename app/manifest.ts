@@ -1,12 +1,12 @@
 // app/manifest.ts
-// ✅ مانیفست PWA دیمت — Next.js به‌صورت خودکار <link rel="manifest"> را اضافه می‌کند
+// ✅ مانیفست PWA آی مچ — Next.js به‌صورت خودکار <link rel="manifest"> را اضافه می‌کند
 import type { MetadataRoute } from "next";
 
 export default function manifest(): MetadataRoute.Manifest {
     return {
         id: "/",
-        name: "دیمت | بازوی فروش روزانه قیمت",
-        short_name: "دیمت",
+        name: "آی مچ | بازوی فروش روزانه قیمت",
+        short_name: "آی مچ",
         description: "بازوی فروش شخصی قیمت و نمایش قیمت در بازارهای صنفی",
         dir: "rtl",
         lang: "fa-IR",

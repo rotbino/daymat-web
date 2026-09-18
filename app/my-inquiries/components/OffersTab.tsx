@@ -72,7 +72,7 @@ export default function OffersTab({ detail, offers, loading, onDecide, onFinaliz
         try {
             if (decision === 'confirm') {
                 await confirmProforma.mutateAsync(id);
-                toast.success('پیش‌فاکتور تایید شد — معامله داخل دیمت ثبت شد');
+                toast.success('پیش‌فاکتور تایید شد — معامله داخل آی مچ ثبت شد');
             } else {
                 await rejectProforma.mutateAsync(id);
                 toast.success('پیش‌فاکتور رد شد — فروشنده خبردار می‌شود');
@@ -161,7 +161,7 @@ export default function OffersTab({ detail, offers, loading, onDecide, onFinaliz
                                             پیش‌فاکتور {proforma.number} رسید — {faPrice(proforma.totalAmount)} تومان
                                         </p>
                                         <p className="mt-1 text-[10px] font-bold leading-4 text-stone-500 dark:text-gray-400">
-                                            اگر قیمت و اقلامش موافقی، داخل دیمت تاییدش کن تا معامله هر دو طرف ثبت شود.
+                                            اگر قیمت و اقلامش موافقی، داخل آی مچ تاییدش کن تا معامله هر دو طرف ثبت شود.
                                         </p>
                                         <div className="mt-2 flex gap-1.5">
                                             <button onClick={() => decideProforma(proforma.id, 'confirm')}
@@ -291,7 +291,7 @@ export default function OffersTab({ detail, offers, loading, onDecide, onFinaliz
                 </>
             )}
 
-            {/* ✅ مودال بستن پرونده — دو گزینهٔ بزرگ و صریح (قاعدهٔ دیمت: متنِ واضح برای کاربر بازار) */}
+            {/* ✅ مودال بستن پرونده — دو گزینهٔ بزرگ و صریح (قاعدهٔ آی مچ: متنِ واضح برای کاربر بازار) */}
             {finalizeOpen && (
                 <div className="fixed inset-0 z-[95] flex items-end sm:items-center justify-center bg-black/50 sm:p-4"
                     onClick={finalizing ? undefined : () => setFinalizeOpen(false)}>

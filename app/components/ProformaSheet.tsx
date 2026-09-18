@@ -1,6 +1,6 @@
 // app/components/ProformaSheet.tsx
 // 🧾 شیت ارسال پیش‌فاکتور — فروشنده (تامین‌کننده) برای پیشنهاد پذیرفته‌شده پیش‌فاکتور می‌فرستد.
-//    خریدار داخل دیمت تایید می‌کند → معامله مُهر می‌شود و در «معامله‌های موفق» هر دو طرف می‌ماند.
+//    خریدار داخل آی مچ تایید می‌کند → معامله مُهر می‌شود و در «معامله‌های موفق» هر دو طرف می‌ماند.
 //    فرم عمداً کوچک است: یک قلم شروع می‌شود (از روی پیشنهاد)، چند قلم می‌شود اضافه کرد.
 'use client';
 
@@ -55,7 +55,7 @@ export default function ProformaSheet({ target, onClose }: { target: ProformaTar
                 })),
                 notes: notes.trim() || undefined,
             });
-            toast.success(`پیش‌فاکتور ${p?.number ?? ''} فرستاده شد — خریدار داخل دیمت تایید می‌کند`);
+            toast.success(`پیش‌فاکتور ${p?.number ?? ''} فرستاده شد — خریدار داخل آی مچ تایید می‌کند`);
             onClose();
         } catch (e: any) {
             toast.error(e?.response?.data?.message || 'ارسال پیش‌فاکتور ناموفق بود');
@@ -78,7 +78,7 @@ export default function ProformaSheet({ target, onClose }: { target: ProformaTar
                     <div className="min-w-0 flex-1">
                         <h3 className="text-[14.5px] font-black text-stone-900 dark:text-gray-100">ارسال پیش‌فاکتور</h3>
                         <p className="text-[10.5px] font-bold text-stone-400 dark:text-gray-500">
-                            خریدار داخل دیمت تایید می‌کند؛ معامله برای هر دو طرف ثبت می‌شود.
+                            خریدار داخل آی مچ تایید می‌کند؛ معامله برای هر دو طرف ثبت می‌شود.
                         </p>
                     </div>
                     <button onClick={onClose} disabled={sending} aria-label="بستن"

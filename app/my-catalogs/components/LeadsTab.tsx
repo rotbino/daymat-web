@@ -158,7 +158,7 @@ export default function LeadsTab() {
                                         </p>
                                     )}
 
-                                    {/* ✅ پیش‌فاکتور — مُهر سبک معامله داخل دیمت:
+                                    {/* ✅ پیش‌فاکتور — مُهر سبک معامله داخل آی مچ:
                                         اگر پیش‌فاکتور داری وضعیتش را ببین؛ وگرنه با یک دکمه بفرست */}
                                     {(() => {
                                         const proforma = proformaByOffer.get(a.id);
@@ -187,7 +187,7 @@ export default function LeadsTab() {
                                             })}
                                                 className="mt-2 flex h-9 w-full items-center justify-center gap-1.5 rounded-lg border border-emerald-200 bg-white text-[11px] font-extrabold text-emerald-700 transition-colors hover:bg-emerald-50 dark:border-emerald-500/30 dark:bg-transparent dark:text-emerald-400">
                                                 <FileText className="size-3.5" />
-                                                ارسال پیش‌فاکتور — معامله را داخل دیمت ثبت کن
+                                                ارسال پیش‌فاکتور — معامله را داخل آی مچ ثبت کن
                                             </button>
                                         );
                                     })()}

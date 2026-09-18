@@ -338,7 +338,7 @@ export default function ArmAdminLayout({ children }: { children: React.ReactNode
                                     return item?.label || 'پنل مدیریت';
                                 })()}
                             </h1>
-                            <p className="text-[11px] text-on-surface-variant/60 dark:text-gray-500">پنل مدیریت بازار در دیمت</p>
+                            <p className="text-[11px] text-on-surface-variant/60 dark:text-gray-500">پنل مدیریت بازار در آی مچ</p>
                         </div>
                         {/* ✅ بازارِ در حال مدیریت — همیشه جلوی چشم در هدر */}
                         <span

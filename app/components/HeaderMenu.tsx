@@ -160,16 +160,16 @@ export default function HeaderMenu({ className }: { className?: string }) {
                         پیشنهادات و انتقادات
                     </Link>
 
-                    {/* ─── برندینگ دیمت ─── */}
+                    {/* ─── برندینگ آی مچ ─── */}
                     <div className="border-t border-outline-variant/20 mt-1 pt-2.5 pb-1 px-4 flex flex-col items-center gap-1">
                         <Image
                             src="/images/logo2.png"
-                            alt="دیمت"
+                            alt="آی مچ"
                             width={130}
                             height={30}
                             className="object-contain"
                         />
-                        <span className="text-[12px] text-on-surface-variant">دیمت، بازوی فروش روزانه قیمت</span>
+                        <span className="text-[12px] text-on-surface-variant">آی مچ، بازوی فروش روزانه قیمت</span>
                     </div>
                 </div>
             )}

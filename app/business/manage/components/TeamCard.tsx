@@ -23,13 +23,13 @@ import { resolveFileSrc } from './BusinessLogo';
 type TeamUserItem = { id: string; fullName: string | null; phone: string; avatarUrl: string | null };
 
 /**
- * دعوت به ثبت‌نام در دیمت — شیت اشتراک‌گذاری سیستم (موبایل)
+ * دعوت به ثبت‌نام در آی مچ — شیت اشتراک‌گذاری سیستم (موبایل)
  * اگر شیت نبود (دسکتاپ) یا خطا داد، لینک کپی می‌شود
  */
 const inviteToDaymat = async () => {
     const link = `${window.location.origin}/login`;
     const copyFallback = async () => {
-        const ok = () => toast.success('لینک ثبت‌نام کپی شد — بفرستش برایش تا در دیمت ثبت‌نام کنه');
+        const ok = () => toast.success('لینک ثبت‌نام کپی شد — بفرستش برایش تا در آی مچ ثبت‌نام کنه');
         try {
             await navigator.clipboard.writeText(link);
             ok();
@@ -52,8 +52,8 @@ const inviteToDaymat = async () => {
     try {
         if (typeof navigator !== 'undefined' && typeof navigator.share === 'function') {
             await navigator.share({
-                title: 'دعوت به ثبت‌نام در دیمت',
-                text: 'بیا به دیمت بپیوند — بازار عمده و خردهٔ آنلاین. ثبت‌نام از این لینک:',
+                title: 'دعوت به ثبت‌نام در آی مچ',
+                text: 'بیا به آی مچ بپیوند — بازار عمده و خردهٔ آنلاین. ثبت‌نام از این لینک:',
                 url: link,
             });
             return; // اشتراک موفق
@@ -126,7 +126,7 @@ function MemberRow({ member, canRemove, onEdit, onRemove, removing }: {
             <div className="flex-1 min-w-0">
                 <div className="flex items-center gap-1.5 flex-wrap">
                     <p className="text-[12px] font-bold text-on-surface truncate">
-                        {member.user?.fullName || 'کاربر دیمت'}
+                        {member.user?.fullName || 'کاربر آی مچ'}
                     </p>
                     {member.isCreator && (
                         <span className="text-[9px] font-extrabold text-emerald-600 dark:text-emerald-400 bg-emerald-500/10 rounded-full px-1.5 py-0.5">سازنده</span>
@@ -227,7 +227,7 @@ export function TeamCard({
         return () => window.clearTimeout(t);
     }, [addQuery]);
 
-    // جستجوی کاربران ثبت‌نام‌شدهٔ دیمت — فقط تا وقتی عضوی انتخاب نشده
+    // جستجوی کاربران ثبت‌نام‌شدهٔ آی مچ — فقط تا وقتی عضوی انتخاب نشده
     const userSearchQ = useTeamUserSearch(debouncedQ, addOpen && !selectedUser);
 
     const openAdd = () => {
@@ -237,7 +237,7 @@ export function TeamCard({
         setAddOpen(true);
     };
 
-    /** 📱 تپ روی مخاطب از دفترچهٔ گوشی — عضو دیمت؟ انتخابش کن. نیست؟ پیامک دعوت */
+    /** 📱 تپ روی مخاطب از دفترچهٔ گوشی — عضو آی مچ؟ انتخابش کن. نیست؟ پیامک دعوت */
     const handlePickContact = (c: PhoneContactItem) => {
         if (c.matchedUserId) {
             setSelectedUser({
@@ -248,12 +248,12 @@ export function TeamCard({
             });
             setShowContacts(false);
             setAddQuery('');
-            toast.success(`${c.name || c.matchedUser?.fullName || 'همکارت'} عضو دیمت است — نقشش را مشخص کن`, { duration: 4000 });
+            toast.success(`${c.name || c.matchedUser?.fullName || 'همکارت'} عضو آی مچ است — نقشش را مشخص کن`, { duration: 4000 });
             return;
         }
         // هنوز ثبت‌نام نکرده — پیامک دعوت مستقیم با شمارهٔ خودش
         const link = `${window.location.origin}/login`;
-        const body = `سلام ${c.name || ''}؛ بیا به دیمت بپیوند — بازار عمده و خردهٔ آنلاین. ثبت‌نام از این لینک:\n${link}`;
+        const body = `سلام ${c.name || ''}؛ بیا به آی مچ بپیوند — بازار عمده و خردهٔ آنلاین. ثبت‌نام از این لینک:\n${link}`;
         const isIOS = typeof navigator !== 'undefined' && /iPad|iPhone|iPod/.test(navigator.userAgent);
         window.location.href = `sms:${c.phone}${isIOS ? '&' : '?'}body=${encodeURIComponent(body)}`;
     };
@@ -399,7 +399,7 @@ export function TeamCard({
                         {!selectedUser ? (
                             <div className="space-y-1.5">
                                 <label className="text-xs font-medium text-on-surface block">
-                                    جستجوی همکار در دیمت <span className="text-primary">*</span>
+                                    جستجوی همکار در آی مچ <span className="text-primary">*</span>
                                 </label>
                                 <div className="relative">
                                     <Search className="absolute right-3 top-1/2 -translate-y-1/2 w-4 h-4 text-on-surface-variant/50" />
@@ -411,7 +411,7 @@ export function TeamCard({
                                                focus:ring-2 focus:ring-primary/20 focus:border-primary outline-none transition-all" />
                                 </div>
                                 <p className="text-[10px] text-on-surface-variant/60 leading-4">
-                                    همکارت باید اول در دیمت ثبت‌نام کرده باشد.
+                                    همکارت باید اول در آی مچ ثبت‌نام کرده باشد.
                                 </p>
 
                                 {/* 📱 از مخاطبین تلفن — انتخاب عضو از دفترچهٔ گوشی */}
@@ -455,7 +455,7 @@ export function TeamCard({
                                                         </span>
                                                         <span className="flex-1 min-w-0">
                                                             <span className="block text-[12px] font-bold text-on-surface truncate">
-                                                                {u.fullName || 'کاربر دیمت'}
+                                                                {u.fullName || 'کاربر آی مچ'}
                                                             </span>
                                                             <span className="block text-[10px] text-on-surface-variant/70 text-left" dir="ltr">
                                                                 {u.phone}
@@ -466,14 +466,14 @@ export function TeamCard({
                                                 ))}
                                             </>
                                         ) : debouncedQ ? (
-                                            /* پیدا نشد — دعوت به ثبت‌نام در دیمت (شیت اشتراک‌گذاری) */
+                                            /* پیدا نشد — دعوت به ثبت‌نام در آی مچ (شیت اشتراک‌گذاری) */
                                             <div className="rounded-xl border border-amber-300/60 dark:border-amber-800/50 bg-amber-50 dark:bg-amber-500/5 p-3 space-y-2">
                                                 <p className="text-[11px] font-bold text-amber-700 dark:text-amber-400 leading-5">
-                                                    همکارت ظاهراً در دیمت ثبت‌نام نکرده. دعوت کن که در دیمت ثبت‌نام کنه.
+                                                    همکارت ظاهراً در آی مچ ثبت‌نام نکرده. دعوت کن که در آی مچ ثبت‌نام کنه.
                                                 </p>
                                                 <button type="button" onClick={inviteToDaymat}
                                                         className="w-full h-10 rounded-xl bg-amber-500 text-white text-[11px] font-extrabold flex items-center justify-center gap-1.5 hover:bg-amber-500/90 active:scale-95 transition-all">
-                                                    <Share2 className="w-3.5 h-3.5" /> دعوت به ثبت‌نام در دیمت
+                                                    <Share2 className="w-3.5 h-3.5" /> دعوت به ثبت‌نام در آی مچ
                                                 </button>
                                             </div>
                                         ) : null}
@@ -493,7 +493,7 @@ export function TeamCard({
                                 </span>
                                 <div className="flex-1 min-w-0">
                                     <p className="text-[12px] font-bold text-on-surface truncate">
-                                        {selectedUser.fullName || 'کاربر دیمت'}
+                                        {selectedUser.fullName || 'کاربر آی مچ'}
                                     </p>
                                     <p className="text-[10px] text-on-surface-variant/70 text-left" dir="ltr">
                                         {selectedUser.phone}

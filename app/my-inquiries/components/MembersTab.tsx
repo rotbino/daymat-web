@@ -203,7 +203,7 @@ export default function MembersTab({ inquiryId, visibility, slug }: Props) {
                                 <p className="mx-auto mt-1.5 max-w-sm text-[11px] font-bold leading-5 text-stone-400 dark:text-gray-500">
                                     با دکمهٔ بالا به تامین‌کننده‌های مناسب کالایت در شهر خودت یا هر شهری درخواست تامین بده؛
                                     یا لینک بازوی خریدت را برای تامین‌کننده‌ها و بازاریاب‌هایی که می‌شناسی بفرست —
-                                    اگر عضو دیمت باشند درخواست می‌دهند و اگر نباشند با لینک می‌آیند.
+                                    اگر عضو آی مچ باشند درخواست می‌دهند و اگر نباشند با لینک می‌آیند.
                                 </p>
                                 <p className="mx-auto mt-1.5 max-w-xs text-[10px] font-bold leading-4 text-amber-600/80 dark:text-amber-400/70">
                                     تا حداقل ۵ تامین‌کننده به این لیست اضافه نشود، یادآوری آن در اعلان‌هایت می‌ماند.
@@ -230,9 +230,9 @@ export default function MembersTab({ inquiryId, visibility, slug }: Props) {
 
 /**
  * مودال «درخواست تامین» — دو تب (خواستهٔ مالک):
- *   • اعضا — جست‌وجوی بازوهای فروشی دیمت با فیلتر استان/شهر/صنف + نام بیزینس و شهر زیر هر بازوی فروش
+ *   • اعضا — جست‌وجوی بازوهای فروشی آی مچ با فیلتر استان/شهر/صنف + نام بیزینس و شهر زیر هر بازوی فروش
  *     (همکارهای فعال هرگز لیست نمی‌شوند؛ درخواست‌های در انتظار با لیبل کهربایی «در انتظار تایید»)
- *   • مخاطبین تلفن — ماژول مخاطبین: عضوهای دیمت → درخواست تامین به بازوی فروششان، غیراعضا → دعوت با لینک بازو
+ *   • مخاطبین تلفن — ماژول مخاطبین: عضوهای آی مچ → درخواست تامین به بازوی فروششان، غیراعضا → دعوت با لینک بازو
  */
 function AddSupplierModal({ inquiryId, slug, existingIds, onClose, onDone }: {
     inquiryId: string;
@@ -261,7 +261,7 @@ function AddSupplierModal({ inquiryId, slug, existingIds, onClose, onDone }: {
         return () => clearTimeout(t);
     }, [q]);
 
-    // صنف‌ها — از مرجع صنف دیمت (عمومی)
+    // صنف‌ها — از مرجع صنف آی مچ (عمومی)
     const { data: industries } = useQuery({
         queryKey: ['industries-list'],
         queryFn: () => apiService.industry.list(true),
@@ -301,7 +301,7 @@ function AddSupplierModal({ inquiryId, slug, existingIds, onClose, onDone }: {
                     از بازوی فروششان درخواست تامین بفرست — بعد از تاییدشان، اقلامت را می‌بینند و قیمت می‌دهند
                 </p>
 
-                {/* دو تب — اعضای دیمت | مخاطبین تلفن (خواستهٔ مالک: کنار هم، نه زیر هم) */}
+                {/* دو تب — اعضای آی مچ | مخاطبین تلفن (خواستهٔ مالک: کنار هم، نه زیر هم) */}
                 <div className="mt-3 grid grid-cols-2 gap-1 rounded-xl bg-stone-100 p-1 dark:bg-gray-950/60">
                     {([['members', 'اعضا', Users], ['contacts', 'مخاطبین تلفن', Smartphone]] as const).map(([v, label, Icon]) => (
                         <button key={v} onClick={() => setTab(v)}
@@ -407,14 +407,14 @@ function AddSupplierModal({ inquiryId, slug, existingIds, onClose, onDone }: {
                 )}
 
                 {/* 📱 تب مخاطبین تلفن — موتور تامین‌کننده‌یابی:
-                     عضوهای دیمت → «درخواست تامین» به بازوی فروششان می‌رود
-                     غیراعضا → «دعوت به دیمت» — لینک بازو با پیام‌رسان یا پیامک می‌رود */}
+                     عضوهای آی مچ → «درخواست تامین» به بازوی فروششان می‌رود
+                     غیراعضا → «دعوت به آی مچ» — لینک بازو با پیام‌رسان یا پیامک می‌رود */}
                 {tab === 'contacts' && (
                     <div className="mt-3">
                         <PhoneContactsPanel
                             title="از مخاطبین تلفنت انتخاب کن"
-                            membersTitle="اعضای دیمت — درخواست تامین به بازوی فروششان می‌رود"
-                            inviteTitle="دعوت به دیمت — لینک بازو را می‌گیرند"
+                            membersTitle="اعضای آی مچ — درخواست تامین به بازوی فروششان می‌رود"
+                            inviteTitle="دعوت به آی مچ — لینک بازو را می‌گیرند"
                             memberSend={{
                                 label: 'درخواست تامین',
                                 doneLabel: 'درخواست رفت',
@@ -431,8 +431,8 @@ function AddSupplierModal({ inquiryId, slug, existingIds, onClose, onDone }: {
                                 },
                             }}
                             invite={{
-                                label: 'دعوت به دیمت',
-                                getText: () => 'سلام! لطفاً برای قیمت‌دادن به کالاهای بازوی خرید من، از این لینک دیمت دیدن کن:',
+                                label: 'دعوت به آی مچ',
+                                getText: () => 'سلام! لطفاً برای قیمت‌دادن به کالاهای بازوی خرید من، از این لینک آی مچ دیدن کن:',
                                 getUrl: () => publicUrl || undefined,
                             }}
                         />

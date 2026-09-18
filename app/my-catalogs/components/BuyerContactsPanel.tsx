@@ -1,7 +1,7 @@
 // app/my-catalogs/components/BuyerContactsPanel.tsx
 // 🤝 لیست مخاطبینِ تخصصیِ «درخواست ارتباط با خریدار» — لیست مخاطبینِ ساده همه‌جا به درد نمی‌خورد (خواستهٔ مالک)
 //    خریدار = کسب‌وکار (یا بازوی خریدش)، نه مدیرش؛ پس این پنل به‌ازای هر مخاطب نشان می‌دهد:
-//      • آیا مخاطب اصلاً عضو دیمت است؟
+//      • آیا مخاطب اصلاً عضو آی مچ است؟
 //      • اگر هست: لیست کسب‌وکارهایش — هر کسب‌وکار با بازوهای خریدش
 //      • دکمهٔ افزودن به‌ازای «هر کسب‌وکار» (نه هر مخاطب) — چون هر کسب‌وکار یک خریدار جداگانه است
 //      • مخاطبِ عضوِ بدون کسب‌وکار قابل افزودن نیست — با پیام روشن، نه دکمهٔ کور
@@ -24,7 +24,7 @@ import {
 
 interface BuyerContactsPanelProps {
     title?: string;
-    /** سربرگ گروه اعضای دیمت */
+    /** سربرگ گروه اعضای آی مچ */
     membersTitle?: string;
     /** سربرگ گروه دعوت غیرعضوها */
     inviteTitle?: string;
@@ -39,8 +39,8 @@ interface BuyerContactsPanelProps {
 
 export default function BuyerContactsPanel({
     title = 'دفترچهٔ مخاطبین تلفن تو',
-    membersTitle = 'اعضای دیمت — کسب‌وکارشان را خریدار ثبت کن',
-    inviteTitle = 'دعوت به دیمت — لینک بازوی فروش را می‌گیرند',
+    membersTitle = 'اعضای آی مچ — کسب‌وکارشان را خریدار ثبت کن',
+    inviteTitle = 'دعوت به آی مچ — لینک بازوی فروش را می‌گیرند',
     invite,
     onAddBusiness,
     doneLabel = 'درخواست رفت',
@@ -72,7 +72,7 @@ export default function BuyerContactsPanel({
         if (res.saved > 0) {
             toast.success(`${res.saved.toLocaleString('fa-IR')} مخاطب ذخیره شد`, {
                 description: res.matched > 0
-                    ? `${res.matched.toLocaleString('fa-IR')} نفرشان عضو دیمت‌اند — کسب‌وکارشان همین‌جا می‌بینی`
+                    ? `${res.matched.toLocaleString('fa-IR')} نفرشان عضو آی مچ‌اند — کسب‌وکارشان همین‌جا می‌بینی`
                     : 'از این به بعد هر کدام ثبت‌نام کنند، همین‌جا می‌بینی‌شان',
             });
         } else if (res.invalid > 0) {
@@ -156,11 +156,11 @@ export default function BuyerContactsPanel({
         }
     };
 
-    // ─── ردیف عضو دیمت — با لیست کسب‌وکارها و بازوهای خریدش ───
+    // ─── ردیف عضو آی مچ — با لیست کسب‌وکارها و بازوهای خریدش ───
     const memberRow = (c: PhoneContactItem) => {
         const mu = c.matchedUser || null;
         const businesses = mu?.businesses || (mu?.business ? [mu.business as any] : []);
-        const displayName = mu?.fullName || c.name || 'عضو دیمت';
+        const displayName = mu?.fullName || c.name || 'عضو آی مچ';
         return (
             <div key={c.id} className="rounded-xl border border-emerald-500/20 bg-emerald-500/5 dark:border-emerald-500/15 dark:bg-emerald-500/5 p-2">
                 <div className="flex items-center gap-2.5">
@@ -177,7 +177,7 @@ export default function BuyerContactsPanel({
                         <div className="flex items-center gap-1.5">
                             <p className="text-[11px] font-bold text-on-surface truncate">{displayName}</p>
                             <span className="flex-shrink-0 px-1.5 py-px rounded-full bg-emerald-500/15 text-emerald-600 dark:text-emerald-400 text-[9px] font-extrabold">
-                                عضو دیمت
+                                عضو آی مچ
                             </span>
                         </div>
                         <p dir="ltr" className="text-[10px] text-on-surface-variant/70 text-right">{c.phone}</p>
@@ -234,7 +234,7 @@ export default function BuyerContactsPanel({
                     <div className="mt-1.5 flex items-start gap-1.5 p-2 rounded-lg bg-amber-50/80 dark:bg-amber-900/15 border border-amber-200/60 dark:border-amber-800/50">
                         <CircleAlert className="w-3.5 h-3.5 text-amber-600 dark:text-amber-400 flex-shrink-0 mt-0.5" />
                         <p className="text-[10px] leading-4 text-amber-800 dark:text-amber-300">
-                            در دیمت کسب‌وکاری ثبت نکرده — برای خریدارشدن باید اول کسب‌وکارش را در دیمت بسازد
+                            در آی مچ کسب‌وکاری ثبت نکرده — برای خریدارشدن باید اول کسب‌وکارش را در آی مچ بسازد
                         </p>
                     </div>
                 )}
@@ -257,7 +257,7 @@ export default function BuyerContactsPanel({
                     </div>
                     <button type="button" onClick={() => setOpenChannels(open ? null : c.id)}
                             className="flex-shrink-0 h-8 px-3.5 rounded-full border-2 border-primary/70 text-primary text-[11px] font-extrabold flex items-center gap-1 hover:bg-primary/5 active:scale-95 transition-all">
-                        <UserPlus className="w-3 h-3" /> {invite?.label || 'دعوت به دیمت'}
+                        <UserPlus className="w-3 h-3" /> {invite?.label || 'دعوت به آی مچ'}
                         <ChevronDown className={cn('w-3 h-3 transition-transform', open && 'rotate-180')} />
                     </button>
                 </div>
@@ -283,7 +283,7 @@ export default function BuyerContactsPanel({
                     <p className="text-xs font-extrabold text-on-surface">{title}</p>
                     <p className="text-[10px] text-on-surface-variant/70 leading-4">
                         {total > 0
-                            ? `${total.toLocaleString('fa-IR')} مخاطب ذخیره‌شده${matchedCount > 0 ? ` — ${matchedCount.toLocaleString('fa-IR')} نفر عضو دیمت` : ''}`
+                            ? `${total.toLocaleString('fa-IR')} مخاطب ذخیره‌شده${matchedCount > 0 ? ` — ${matchedCount.toLocaleString('fa-IR')} نفر عضو آی مچ` : ''}`
                             : 'مخاطبینت را یک‌بار اضافه کن، همیشه همین‌جا داشته باش'}
                     </p>
                 </div>
@@ -382,7 +382,7 @@ export default function BuyerContactsPanel({
             {/* حریم خصوصی */}
             <p className="text-[9px] leading-4 text-on-surface-variant/50 flex items-center gap-1">
                 <Send className="w-3 h-3 flex-shrink-0" />
-                مخاطبین فقط برای خودت ذخیره می‌شوند — اگر عضو دیمت باشند، کسب‌وکار و بازوهای خریدش همین‌جا می‌بینی.
+                مخاطبین فقط برای خودت ذخیره می‌شوند — اگر عضو آی مچ باشند، کسب‌وکار و بازوهای خریدش همین‌جا می‌بینی.
             </p>
         </div>
     );

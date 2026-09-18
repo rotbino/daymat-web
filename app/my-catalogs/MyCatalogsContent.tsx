@@ -94,7 +94,7 @@ export default function MyCatalogsContent() {
     // ✅ بج قرمز برگهٔ اعضا + کارت «در انتظار تایید شما» — چرخهٔ عضویت
     const { data: pendingApprovals } = useMyPendingApprovals();
     const approvals: any[] = pendingApprovals?.items || [];
-    // ✅ بازوهای خرید من — در همان سوییچر کنار بازوهای فروشی قیمت (محصول دوم دیمت)
+    // ✅ بازوهای خرید من — در همان سوییچر کنار بازوهای فروشی قیمت (محصول دوم آی مچ)
     const { data: myInquiriesRaw } = useMyInquiries();
     const myInquiries: any[] = useMemo(() => myInquiriesRaw ?? [], [myInquiriesRaw]);
     const catalogs = useMemo(

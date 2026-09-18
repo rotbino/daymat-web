@@ -71,7 +71,7 @@ export default function NewInquiryPage() {
     }, [hydrated, isAuthenticated, router, bizParam]);
 
     useEffect(() => {
-        document.title = 'بازوی خرید جدید | دیمت';
+        document.title = 'بازوی خرید جدید | آی مچ';
     }, []);
 
     // کسب‌وکاری که از قبل بازوی خرید باز دارد → مستقیم به پنلش (بازوی خریدِ هر کسب‌وکار یکی است)
@@ -146,7 +146,7 @@ export default function NewInquiryPage() {
                     <Link href="/my-inquiries" className="flex items-center gap-1.5 text-sm font-bold text-stone-500 transition-colors hover:text-stone-900 dark:text-gray-400 dark:hover:text-gray-100">
                         بازوهای خرید من
                     </Link>
-                    <Image src="/logo.png" alt="دیمت" width={30} height={30} className="size-[30px]" unoptimized />
+                    <Image src="/logo.png" alt="آی مچ" width={30} height={30} className="size-[30px]" unoptimized />
                 </div>
             </header>
 

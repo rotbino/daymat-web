@@ -24,7 +24,7 @@ export const isUncategorized = (ad: any) =>
 export const fmt = (n: number | undefined) => n?.toLocaleString('fa-IR') ?? '۰';
 
 // ─── تازگی قیمت — عمر قیمت بر پایهٔ priceUpdatedAt (بک: زمان آخرین بروزرسانی قیمت) ───
-//     چون قیمت‌ها مهم‌ترین دارایی دیمت است، کهنگی‌اش باید برای فروشنده و خریدار پیداشان باشد.
+//     چون قیمت‌ها مهم‌ترین دارایی آی مچ است، کهنگی‌اش باید برای فروشنده و خریدار پیداشان باشد.
 export const priceAgeDays = (priceUpdatedAt?: string | Date | null): number => {
     if (!priceUpdatedAt) return 0;
     const ms = Date.now() - new Date(priceUpdatedAt).getTime();

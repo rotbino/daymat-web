@@ -64,7 +64,7 @@ export function TrustSealCard({
                 </span>
                 <div className="flex-1">
                     <p className="text-[13px] font-extrabold text-on-surface">تیک اعتماد</p>
-                    <p className="text-[10px] text-on-surface-variant/70">مُهر تأیید دیمت برای کسب‌وکار شما</p>
+                    <p className="text-[10px] text-on-surface-variant/70">مُهر تأیید آی مچ برای کسب‌وکار شما</p>
                 </div>
             </div>
 
@@ -98,7 +98,7 @@ export function TrustSealCard({
             ) : (
                 <div className="space-y-2.5">
                     <p className="text-[11px] text-on-surface-variant leading-5">
-                        تیک اعتماد یعنی دیمت هویت و مجوزهای کسب‌وکار شما را تأیید کرده — خریدار با خیال راحت از شما
+                        تیک اعتماد یعنی آی مچ هویت و مجوزهای کسب‌وکار شما را تأیید کرده — خریدار با خیال راحت از شما
                         خرید می‌کند و اعتماد بیشتری می‌گیرد.
                     </p>
                     <button

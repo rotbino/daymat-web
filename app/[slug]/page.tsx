@@ -19,13 +19,13 @@ interface Props {
 export async function generateMetadata({ params }: Props) {
     const { slug: rawSlug } = await params;
     const slug = decodeURIComponent(rawSlug).replace(/\/+$/, '').trim();
-    if (!slug) return { title: 'دیمت | بازوی فروش روزانه قیمت' };
+    if (!slug) return { title: 'آی مچ | بازوی فروش روزانه قیمت' };
 
     // ۱) بازوی فروش؟
     try {
         const catalog = await apiService.catalog.getBySlug(slug);
         return {
-            title: `بازوی فروش ${catalog.name} | دیمت`,
+            title: `بازوی فروش ${catalog.name} | آی مچ`,
             alternates: { canonical: `/${slug}` },
             description: catalog.shortDescription || catalog.description || `بازوی فروش محصولات ${catalog.name}`,
             openGraph: {
@@ -41,7 +41,7 @@ export async function generateMetadata({ params }: Props) {
         const arm = await apiService.arm.fetchArmData(slug);
         if (arm) {
             return {
-                title: `${arm.name} | تابلوی قیمت عمده | دیمت`,
+                title: `${arm.name} | تابلوی قیمت عمده | آی مچ`,
                 alternates: { canonical: `/${slug}` },
                 description: arm.slogan || arm.description || `تابلوی قیمت عمده ${arm.name}`,
             };
@@ -49,7 +49,7 @@ export async function generateMetadata({ params }: Props) {
     } catch {}
 
     // ۳) اعلان خرید؟ — آدرس رسمی‌اش /i/<slug> است؛ متادیتا هم آن‌جا ساخته می‌شود
-    return { title: 'دیمت | بازوی فروش روزانه قیمت' };
+    return { title: 'آی مچ | بازوی فروش روزانه قیمت' };
 }
 
 export default async function SlugPage({ params, searchParams }: Props) {

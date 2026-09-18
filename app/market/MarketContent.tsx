@@ -1,5 +1,5 @@
 // app/market/MarketContent.tsx
-// ✅ صفحهٔ فروشندگان — تابلوی قیمت (هومِ دیمت: ‎/{slug})
+// ✅ صفحهٔ فروشندگان — تابلوی قیمت (هومِ آی مچ: ‎/{slug})
 //    تابلوی خریداران (بازوهای خرید) صفحهٔ مستقل دارد: ‎/{slug}/buyers
 'use client';
 import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
@@ -319,8 +319,8 @@ export default function MarketContent({ search: searchProp }: { search?: string 
 
     return (
         <div className="h-screen supports-[height:100dvh]:h-[100dvh] flex flex-col bg-surface dark:bg-gray-950">
-            {/* ═══ ناوبری یکپارچهٔ دیمت (نسخهٔ ۳):
-                دسکتاپ — دو ردیف: برند فرزند+سرچ+موقعیت+اعلان+CTA+منو / تب‌های ناو+امضای دیمت
+            {/* ═══ ناوبری یکپارچهٔ آی مچ (نسخهٔ ۳):
+                دسکتاپ — دو ردیف: برند فرزند+سرچ+موقعیت+اعلان+CTA+منو / تب‌های ناو+امضای آی مچ
                 موبایل — نوار پایین ثابت
                 (هدر دسکتاپِ قدیمی اینجا حذف شد تا سرچ و CTA و اعلان دوبل نشود؛
                  موبایل MobileHeader را از NavTabs نمی‌گیرد — زیرش هویت بازار همان MobileHeader است) ═══ */}
