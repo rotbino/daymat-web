@@ -74,16 +74,20 @@ export default function MyInquiriesPage() {
     // پیشنهادهای دریافتی — فقط مالک (شمارش پیشنهاد هر قلم + تب پیشنهادها)
     const { data: offers = [], isLoading: offersLoading, refetch: refetchOffers } = useInquiryOffers(isOwner ? currentInquiryId ?? undefined : undefined);
 
-    // انتخاب خودکار: ?catalog= لینک عمیق → پرسیست → اولین لیست
+    // انتخاب خودکار: ?catalog= لینک عمیق (اولویت اول — لینک اعلان‌ها) → پرسیست → اولین لیست
     useEffect(() => {
         if (isLoading || list.length === 0) return;
-        if (currentInquiryId && list.some((w) => w.id === currentInquiryId)) return;
+        const all: any[] = [...list, ...archivedList];
         const fromUrl = new URLSearchParams(window.location.search).get('catalog');
-        const picked = fromUrl && list.some((w) => w.id === fromUrl) ? fromUrl : list[0].id;
-        dispatch(setCurrentInquiry(picked));
-        if (fromUrl) window.history.replaceState({}, '', '/my-inquiries');
+        if (fromUrl && all.some((w) => w.id === fromUrl)) {
+            if (fromUrl !== currentInquiryId) dispatch(setCurrentInquiry(fromUrl));
+            window.history.replaceState({}, '', '/my-inquiries');
+            return;
+        }
+        if (currentInquiryId && all.some((w) => w.id === currentInquiryId)) return;
+        dispatch(setCurrentInquiry(list[0].id));
         // eslint-disable-next-line react-hooks/exhaustive-deps
-    }, [isLoading, list, currentInquiryId]);
+    }, [isLoading, list, archivedList, currentInquiryId]);
 
     // لینک عمیق تب + ?add=1 (بعد از ساخت بازوی فروش جدید مستقیم شیت افزودن باز می‌شود)
     useEffect(() => {
