@@ -12,7 +12,7 @@ export async function generateMetadata({ params }: { params: Promise<{ id: strin
     try {
         const ad = await apiService.ad.getDetail(id);
         return {
-            title: `${ad.productType || ad.title} | Daymat`,
+            title: `${ad.productType || ad.title} | iMach`,
             description: ad.description?.slice(0, 160) || `قیمت ${ad.productType} در بازار عمده`,
             openGraph: {
                 images: ad.files?.[0]?.path ? [ad.files[0].path] : [],
@@ -20,8 +20,8 @@ export async function generateMetadata({ params }: { params: Promise<{ id: strin
         };
     } catch {
         return {
-            title: 'آگهی | Daymat',
-            description: 'مشاهده جزئیات آگهی در Daymat',
+            title: 'آگهی | iMach',
+            description: 'مشاهده جزئیات آگهی در iMach',
         };
     }
 }

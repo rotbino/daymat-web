@@ -90,7 +90,7 @@ export const faDigits = (s: string) => s.replace(/[0-9]/g, (d) => '۰۱۲۳۴۵�
 
 /* ─── تم‌های رنگی کارت ویزیت ─── */
 export const CARD_THEMES = [
-    { key: 'daymat',  name: 'دی‌متی',  bg1: '#0f2743', bg2: '#1d4e7e', text: '#ffffff', muted: 'rgba(255,255,255,0.78)', accent: '#f97316', accentText: '#ffffff' },
+    { key: 'imach',  name: 'ای مچی',  bg1: '#0f2743', bg2: '#1d4e7e', text: '#ffffff', muted: 'rgba(255,255,255,0.78)', accent: '#f97316', accentText: '#ffffff' },
     { key: 'amber',   name: 'کهربایی', bg1: '#7c2d12', bg2: '#d97706', text: '#ffffff', muted: 'rgba(255,255,255,0.8)',  accent: '#fde68a', accentText: '#1a1c1e' },
     { key: 'night',   name: 'شب',      bg1: '#0b1220', bg2: '#27354f', text: '#ffffff', muted: 'rgba(255,255,255,0.72)', accent: '#f59e0b', accentText: '#ffffff' },
     { key: 'emerald', name: 'زمردی',   bg1: '#064e3b', bg2: '#0d9488', text: '#ffffff', muted: 'rgba(255,255,255,0.76)', accent: '#a7f3d0', accentText: '#1a1c1e' },

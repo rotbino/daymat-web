@@ -228,14 +228,14 @@ export default function ServerUnavailablePage() {
                                 borderTopColor: '#fff',
                                 borderRadius: '50%',
                                 display: 'inline-block',
-                                animation: 'daymat-spin 0.8s linear infinite',
+                                animation: 'iMach-spin 0.8s linear infinite',
                             }}
                         />
                     )}
                     تلاش مجدد
                 </button>
 
-                <style>{`@keyframes daymat-spin { to { transform: rotate(360deg); } }`}</style>
+                <style>{`@keyframes iMach-spin { to { transform: rotate(360deg); } }`}</style>
             </div>
         </main>
     );

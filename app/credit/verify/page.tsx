@@ -42,7 +42,7 @@ function VerifyPaymentContent() {
     const cardnumber = searchParams.get('cardnumber') || '';
 
     // ⭐ تنظیمات بازار
-    const armName = currentArm?.name || 'Daymat';
+    const armName = currentArm?.name || 'iMach';
     const API_BASE = process.env.NEXT_PUBLIC_API_BASE_URL?.replace(/\/$/, '') || 'http://localhost:3011';
     const armLogo = currentArm?.config?.general?.logoFileId
         ? `${API_BASE}/file/${currentArm.config.general.logoFileId}`

@@ -154,7 +154,7 @@ export function LocationSelector({
                     <AlertCircle className="w-4 h-4 text-amber-600 dark:text-amber-400 mt-0.5 flex-shrink-0" />
                     <p className="text-xs text-amber-800 dark:text-amber-300">
                         ویرایش موقعیت‌ها فقط توسط مدیر سیستم قابل انجام است.
-                        در صورت نیاز به تغییر، با پشتیبانی Daymat تماس بگیرید.
+                        در صورت نیاز به تغییر، با پشتیبانی iMach تماس بگیرید.
                     </p>
                 </div>
             )}

@@ -33,7 +33,7 @@ const getSelectedCategoryPaths = (
 
 export default function AboutPage() {
     const { currentArm } = useSelector((state: RootState) => state.arm);
-    const armName = currentArm?.name || 'Daymat';
+    const armName = currentArm?.name || 'iMach';
     const config = (currentArm?.config as any) || {};
     const general = config.general || {};
     const mission = general.mission || currentArm?.mission || 'ایجاد بستری شفاف برای تجارت عمده';
@@ -60,7 +60,7 @@ export default function AboutPage() {
     const bumpCost = priceTable.bumpCost ?? 10;
 
     // دامنه
-    const domain = currentArm?.customDomain || `${currentArm?.slug}.daymat.com` || 'daymat.com';
+    const domain = currentArm?.customDomain || `${currentArm?.slug}.iMach.com` || 'iMach.com';
 
     // دسته‌بندی‌های فعال با مسیر کامل
     const categoryPaths = getSelectedCategoryPaths(currentArm?.categoryTree || []);

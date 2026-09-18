@@ -671,21 +671,23 @@ export default function Landing() {
               className="fixed inset-x-0 top-0 z-50 border-b border-stone-200/80 bg-white/85 backdrop-blur-md
           dark:border-gray-800 dark:bg-gray-950/85"
           >
-            <div className="mx-auto flex h-16 max-w-6xl items-center justify-between px-4 sm:px-6">
+            <div className="mx-auto flex h-22 max-w-6xl items-center justify-between px-4 sm:px-6">
               <Link
                   href="/"
                   className="flex items-center gap-2.5"
                   aria-label="آی مچ"
               >
-                <Image
-                    src="/images/logo3.png"
-                    alt="آی مچ"
-                    width={104}
-                    height={36}
-                    className="h-9 w-auto object-contain"
-                    unoptimized
-                    priority
-                />
+                <div className="rounded bg-white/90 px-3 py-1.5 shadow-sm transition-colors dark:bg-white/90 dark:ring-1 dark:ring-white/20">
+                  <Image
+                      src="/images/logo3.png"
+                      alt="آی مچ"
+                      width={200}
+                      height={165}
+                      className="h-14 w-auto object-contain"
+                      unoptimized
+                      priority
+                  />
+                </div>
               </Link>
 
               {isAuthenticated ? (
@@ -728,10 +730,15 @@ export default function Landing() {
                    آی مچ با اتصال هدفمند بازوهای خرید و فروش به یکدیگر، شبکه خرید و فروش شما رو گسترش میده.
                   </h1>
 
-                 {/* <div className={"text-base text-justify"}>
-                      آی مچ فروشنده‌ها رو به خریدارهای واقعی‌شون می‌رسونه؛ خریدارها از چند تأمین‌کننده قیمت و شرایط می‌گیرن و مقایسه می‌کنن، فروشنده‌ها هم برای هر گروه از مشتری‌ها یه بازوی فروش آنلاین و همیشه به‌روز دارند و غیر از اون درخواستهای قیمت خریدارن عضو رو در پنل بازوی فروششون می بینن و پیشنهاد قیمت میدن. بازوی فروشها و بازوها می تونن عضو بازارهای صنفی هم بشن و در تابلوهای عمومی بازار خریدارن یا تمین کنندگان جدید جذب کنند.
+                 {/*  <span className="inline-flex items-center gap-1.5 rounded-full border border-brand-primary-tint bg-brand-primary-soft px-3.5 py-1.5 text-xs font-bold text-brand-primary-strong dark:border-brand-primary/25 dark:bg-brand-primary/10 dark:text-brand-primary">
+                  <ArrowLeftRight className="size-3.5" />
+                  آی مچ، پلتفرم اتصال خریداران عمده به تامین کنندگان
+                </span>
 
-                  </div>*/}
+                  <h1 className="mt-5 pb-4 pt-3 md:pt-6   font-black leading-[1.5] tracking-tight text-stone-950 dark:text-white ">
+                    آی‌مچ، نیاز لحظه ای خریداران عمده رو از بازوی خریدشون می‌گیره و در بازوی فروش تأمین‌کنندگانی که همون کالا رو با حجم کافی دارند نشون میده؛ تا قیمت و شرایط رقابتی خودشون رو پیشنهاد بدن.
+
+                  </h1>*/}
                 </motion.div>
 
                 {/* دو مسیر اصلی */}
@@ -1431,8 +1438,8 @@ export default function Landing() {
                 <Image
                     src="/images/logo3.png"
                     alt="آی مچ"
-                    width={80}
-                    height={28}
+                    width={200}
+                    height={165}
                     className="h-7 w-auto object-contain"
                     unoptimized
                 />

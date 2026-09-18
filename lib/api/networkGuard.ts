@@ -17,9 +17,9 @@
 
 import { checkInternet, getCachedConnectivity } from './connectivity';
 
-export const RETURN_URL_KEY = 'daymat:returnUrl';
-export const API_BASE_KEY = 'daymat:apiBase';
-const LAST_REDIRECT_KEY = 'daymat:lastNetRedirect';
+export const RETURN_URL_KEY = 'imach:returnUrl';
+export const API_BASE_KEY = 'imach:apiBase';
+const LAST_REDIRECT_KEY = 'imach:lastNetRedirect';
 
 /* ───────────────────────── فاز جلسه — ورود vs میان‌جلسه ─────────────────── */
 

@@ -1,11 +1,11 @@
-# آی مچ (Daymat) — بازار عمده‌فروشی B2B
+# آی مچ (iMach) — بازار عمده‌فروشی B2B
 
 > **راهنمای کامل پروژه — برای توسعه‌دهندهٔ انسانی یا هوش مصنوعی**
 > هدف این سند یک چیز است: هر ایجنتی که این ریپو را باز می‌کند، بدون حتی یک سؤال از مالک، ایدهٔ آی مچ، معماری بک‌اند و فرانت‌اند، قوانین پروژه و روش درست ادامه‌دادن کار را بفهمد و سریع روی کد سوار شود.
 >
-> - ریپوی فرانت‌اند: `github.com/rotbino/daymat-web` (همین ریپو — Next.js)
-> - ریپوی بک‌اند: `github.com/rotbino/daymat-back` (NestJS + Prisma + MongoDB)
-> - دامنهٔ رسمی: `daymat.ir`
+> - ریپوی فرانت‌اند: `github.com/rotbino/imach-web` (همین ریپو — Next.js)
+> - ریپوی بک‌اند: `github.com/rotbino/imach-back` (NestJS + Prisma + MongoDB)
+> - دامنهٔ رسمی: `imach.ir`
 
 ---
 
@@ -138,14 +138,14 @@ User ──< ArmMembership >── Arm
                 └───────────────┬───────────────┘
                                 │ HTTPS
         ┌───────────────────────▼────────────────────────┐
-        │ daymat-web — Next.js 16 · React 19 · App Router│
+        │ imach-web — Next.js 16 · React 19 · App Router│
         │ Tailwind 4 · Radix UI · React Query · Redux    │
         │ Vazirmatn · dir=rtl · PWA (manifest + sw.js)   │
         └───────────────────────┬────────────────────────┘
                                 │ REST + Bearer JWT (axios)
                                 │ NEXT_PUBLIC_API_BASE_URL
         ┌───────────────────────▼────────────────────────┐
-        │ daymat-back — NestJS 11 (Fastify)              │
+        │ imach-back — NestJS 11 (Fastify)              │
         │ ValidationPipe سخت‌گیرانه · JWT · گاردهای چندلایه│
         │ CacheHelper (باطل‌سازی epoch) · Swagger /api/docs│
         │ i18n (fa/en) · AllExceptionsFilter با errorCode│
@@ -163,7 +163,7 @@ User ──< ArmMembership >── Arm
 
 ---
 
-## ۷) بک‌اند — daymat-back
+## ۷) بک‌اند — imach-back
 
 ### ۷.۱) استک
 
@@ -252,7 +252,7 @@ User ──< ArmMembership >── Arm
 
 ---
 
-## ۸) فرانت‌اند — daymat-web (همین ریپو)
+## ۸) فرانت‌اند — imach-web (همین ریپو)
 
 ### ۸.۱) استک
 
@@ -336,7 +336,7 @@ updateFn / deleteFn                  // فقط isNew (= isByUser) ویرایش/�
 
 ```bash
 # ── بک‌اند ────────────────────────────────────────────────
-cd daymat-back
+cd imach-back
 npm install
 # .env: DATABASE_URL (Atlas) + JWT_SECRET + (اختیاری) آروان/درگاه
 npx prisma generate
@@ -347,7 +347,7 @@ npm run build && node dist/src/main.js   # → http://localhost:3011
 # مستندات: http://localhost:3011/api/docs
 
 # ── فرانت‌اند ─────────────────────────────────────────────
-cd daymat-web
+cd imach-web
 npm install --legacy-peer-deps
 # .env.local: NEXT_PUBLIC_API_BASE_URL=http://localhost:3011
 npm run s        # dev  → http://localhost:3000

@@ -5,7 +5,7 @@
 
 import { apiService } from '@/lib/api/apiService';
 
-const STORAGE_KEY = 'daymat-push-enabled';
+const STORAGE_KEY = 'imach-push-enabled';
 
 export const isPushEnabledLocally = (): boolean => {
     if (typeof window === 'undefined') return false;

@@ -19,7 +19,7 @@ export function IntroSection() {
                  پلتفرم ایجاد بازارهای صنفی خرید و فروش عمده آنلاین
                 </h2>
                 <p className="text-on-surface-variant/90 dark:text-gray-300 text-base leading-8">
-                    Daymat پلتفرم ایجاد بازارهای صنفی عمده فروشی است. و بستر نرم افزاری و سخت افزاری ساخت بازارهای صنفی را برای شما فراهم کرده است، منظور از بازار صنفی،
+                    iMach پلتفرم ایجاد بازارهای صنفی عمده فروشی است. و بستر نرم افزاری و سخت افزاری ساخت بازارهای صنفی را برای شما فراهم کرده است، منظور از بازار صنفی،
                     سایتی آنلاین است که فروشندگان عمده و خریداران حرفه‌ای یک صنف خاص، دور هم جمع می‌شوند و معامله می‌کنند.
                     درآمد شما هم از <strong>خدماتی</strong> که به همین اعضا می‌دهید، شروع می‌شود و با رشد بازارتان چند برابر می گردد. تمام بستر نرم افزاری و درآمدزایی آماده است. تنها کاری که شما باید انجام دهید دعوت از اعضای یک یا چند صنف مثلا صنف لوازم التحریر به بازارتان است..
                 </p>
@@ -84,7 +84,7 @@ export function IntroSection() {
                         <div className="flex-1 pb-2">
                             <h4 className="font-bold text-on-surface dark:text-gray-100 flex items-center gap-2">
                                 <Store className="w-4 h-4 text-primary" />
-                                بازارتان را در Daymat بسازید (همین حالا!)
+                                بازارتان را در iMach بسازید (همین حالا!)
                             </h4>
                             <p className="text-sm text-on-surface-variant/80 dark:text-gray-400 mt-1 leading-7">
                                 در همین ویزارد، اطلاعات پایه، دسته‌بندی کالاها، شهرهای هدف و صنوف مجاز را مشخص می‌کنید.
@@ -145,7 +145,7 @@ export function IntroSection() {
                             <p className="text-sm text-on-surface-variant/80 dark:text-gray-400 mt-1 leading-7">
                                 بعد از موفقیت در شهر اول، به‌راحتی شهر دوم و سوم را اضافه کنید.
                                 با گسترش بازار، تعداد اعضا و نردبان‌ها چند برابر می‌شود و درآمد شما از <strong>چند ده میلیون به چند صد میلیون</strong> در ماه می‌رسد.
-                                Daymat ابزار توسعه را در اختیارتان می‌گذارد.
+                                iMach ابزار توسعه را در اختیارتان می‌گذارد.
                             </p>
                         </div>
                     </div>
@@ -187,7 +187,7 @@ export function IntroSection() {
                 <div>
                     <h3 className="font-bold text-on-surface dark:text-gray-100 mb-2">و این تازه شروع ماجراست...</h3>
                     <p className="text-sm text-on-surface-variant/80 dark:text-gray-400 leading-7">
-                        Daymat در حال توسعهٔ ابزارهای درآمدزایی جدیدی است که به مرور در اختیار بازارهای موفق قرار می‌گیرد:
+                        iMach در حال توسعهٔ ابزارهای درآمدزایی جدیدی است که به مرور در اختیار بازارهای موفق قرار می‌گیرد:
                     </p>
                     <ul className="mt-3 space-y-2 text-sm">
                         <li className="flex items-start gap-2">
@@ -204,7 +204,7 @@ export function IntroSection() {
                         </li>
                     </ul>
                     <p className="mt-3 text-xs text-indigo-600 dark:text-indigo-400 font-bold">
-                        * هدف ما این است که شما را به یک بازاردار بزرگ تبدیل کنیم. ایجاد درآمد برای شما = موفقیت Daymat.
+                        * هدف ما این است که شما را به یک بازاردار بزرگ تبدیل کنیم. ایجاد درآمد برای شما = موفقیت iMach.
                     </p>
                 </div>
             </div>

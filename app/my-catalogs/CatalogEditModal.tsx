@@ -434,7 +434,7 @@ export default function CatalogEditModal({ isOpen, onClose, catalog, salesTypeLo
                             <div className="flex items-center justify-between gap-2">
                                 {catalog.slug ? (
                                     <span dir="ltr" className="text-[13px] font-bold text-on-surface truncate">
-                                        daymat.ir/<span className="text-primary">{catalog.slug}</span>
+                                        iMach.ir/<span className="text-primary">{catalog.slug}</span>
                                     </span>
                                 ) : (
                                     <span className="text-[11px] text-amber-600 dark:text-amber-400">لینک تنظیم نشده</span>

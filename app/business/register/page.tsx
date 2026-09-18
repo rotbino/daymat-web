@@ -193,7 +193,7 @@ export default function RegisterCatalogPage() {
             });
 
             toast.success(`«${shortName(catalogName.trim(), 24)}» برای «${shortName(selectedBiz.name, 24)}» ساخته شد 🎉`, {
-                description: `آدرس: daymat.ir/${created?.slug || slug}`,
+                description: `آدرس: iMach.ir/${created?.slug || slug}`,
                 duration: 6000,
             });
             clearStoredRef();

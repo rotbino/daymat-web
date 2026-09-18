@@ -38,7 +38,7 @@ export default function NewInquiryPage() {
 
     const [biz, setBiz] = useState<any | null>(null);
     const [visibility, setVisibility] = useState<'public' | 'private'>('public');
-    // ✅ آدرس عمومی صفحه — مثل بازوی فروش کاربر خودش انتخاب می‌کند (daymat.ir/supey)
+    // ✅ آدرس عمومی صفحه — مثل بازوی فروش کاربر خودش انتخاب می‌کند (iMach.ir/supey)
     const [slug, setSlug] = useState('');
     const [slugStatus, setSlugStatus] = useState<'taken' | 'reserved' | null>(null);
     const [submitting, setSubmitting] = useState(false);

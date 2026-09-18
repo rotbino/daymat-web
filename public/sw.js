@@ -4,7 +4,7 @@
 // فقط ناوبری‌ها network-first با صفحهٔ آفلاین، و استاتیک‌ها stale-while-revalidate.
 
 const VERSION = "v1.0";
-const STATIC_CACHE = `daymat-static-${VERSION}`;
+const STATIC_CACHE = `imach-static-${VERSION}`;
 const OFFLINE_URL = "/offline.html";
 
 // ─── نصب: پیش‌بارگذاری صفحهٔ آفلاین و آیکون‌ها ───

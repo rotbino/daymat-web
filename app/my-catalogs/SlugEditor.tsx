@@ -92,7 +92,7 @@ export default function SlugEditor({ value, onChange, excludeId, initialError, i
             )}>
                 <span className="flex items-center px-3 bg-surface-container-high dark:bg-gray-800
                     text-[12px] font-bold text-on-surface-variant/70 select-none whitespace-nowrap border-e border-outline-variant/30">
-                    daymat.ir/
+                    iMach.ir/
                 </span>
                 <input
                     value={value}

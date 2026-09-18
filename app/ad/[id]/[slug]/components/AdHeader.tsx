@@ -36,7 +36,7 @@ export default function AdHeader({ ad }: Props) {
         logoFile?.path ||
         (currentArm as any)?.config?.general?.logoUrl ||
         '/images/logo.png';
-    const armName = currentArm?.name || 'Daymat';
+    const armName = currentArm?.name || 'iMach';
     const armSlogan = currentArm?.slogan
     return (
         <header className="sticky top-0 z-40 bg-white/90 dark:bg-gray-900/85 backdrop-blur-xl border-b border-gray-200/60 dark:border-gray-800">

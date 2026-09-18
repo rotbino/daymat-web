@@ -10,7 +10,7 @@ import { AppFooter } from '@/components/AppFooter';
 export default function TermsClient() {
     const { currentArm } = useSelector((state: RootState) => state.arm);
 
-    const armName = currentArm?.name || 'Daymat';
+    const armName = currentArm?.name || 'iMach';
     const armConfig = (currentArm?.config as any) || {};
 
     const supportPhone =
@@ -61,11 +61,11 @@ export default function TermsClient() {
                         <strong>۱-۱) {armName}:</strong> یک بازار صنفی
                         آنلاین برای تسهیل ارتباط و تعامل میان خریداران،
                         فروشندگان و تأمین‌کنندگان است که بر بستر زیرساخت
-                        نرم‌افزاری Daymat فعالیت می‌کند.
+                        نرم‌افزاری iMach فعالیت می‌کند.
                     </p>
 
                     <p>
-                        <strong>۲-۱) Daymat:</strong> پلتفرم و زیرساخت
+                        <strong>۲-۱) iMach:</strong> پلتفرم و زیرساخت
                         نرم‌افزاری ارائه‌دهنده خدمات ایجاد و مدیریت
                         بازارهای صنفی خرید و فروش عمده است.
                     </p>
@@ -288,7 +288,7 @@ export default function TermsClient() {
                 <Section title="ماده ۹- مالکیت فکری">
                     <p>
                         حقوق مربوط به نرم‌افزار، طراحی، نام تجاری،
-                        علائم، ساختار و محتوای اختصاصی Daymat و{' '}
+                        علائم، ساختار و محتوای اختصاصی iMach و{' '}
                         {armName} متعلق به صاحبان حقوق مربوطه است و
                         استفاده، کپی یا بازتولید آن‌ها بدون مجوز قانونی
                         ممنوع است.
@@ -306,7 +306,7 @@ export default function TermsClient() {
                 {/* ماده ۱۰ */}
                 <Section title="ماده ۱۰- تغییر خدمات و قوانین">
                     <p>
-                        {armName} و Daymat می‌توانند در راستای توسعه،
+                        {armName} و iMach می‌توانند در راستای توسعه،
                         بهبود یا الزامات قانونی، خدمات، امکانات و این
                         شرایط را اصلاح یا به‌روزرسانی کنند.
                     </p>

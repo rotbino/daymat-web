@@ -20,8 +20,8 @@ const vazirmatn = Vazirmatn({
 });
 
 export const metadata: Metadata = {
-    title: "Daymat | بازوی فروش روزانه قیمت  ",
-    description: "Daymat ساخت بازوی فروش شخصی قیمت و نمایش قیمت در بازارهای صنفی .",
+    title: "iMach | بازوی فروش روزانه قیمت  ",
+    description: "iMach ساخت بازوی فروش شخصی قیمت و نمایش قیمت در بازارهای صنفی .",
     applicationName: "آی مچ",
     appleWebApp: {
         capable: true,

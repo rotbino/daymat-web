@@ -245,7 +245,7 @@ export function GeneralSection({
                         </label>
                         <input
                             {...register('name', { required: true })}
-                            placeholder="مثلا، Daymat مصالح"
+                            placeholder="مثلا، iMach مصالح"
                             readOnly={!canEditName}
                             className={cn(
                                 "w-full border rounded-xl h-10 px-3 text-sm text-right placeholder:text-on-surface-variant/30",

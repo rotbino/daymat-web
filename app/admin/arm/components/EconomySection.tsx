@@ -71,7 +71,7 @@ export function EconomySection({ watch, setValue, onSave, isSaving, isAdmin = fa
                 )}
             </div>
 
-            {/* ═══════════ سهم Daymat از درآمد بازار ═══════════ */}
+            {/* ═══════════ سهم iMach از درآمد بازار ═══════════ */}
             <div className={cn(
                 "bg-amber-50/50 dark:bg-amber-900/20 border rounded-xl p-5",
                 isAdmin ? 'border-amber-200 dark:border-amber-800' : 'border-amber-200/50 dark:border-amber-800/50'
@@ -83,9 +83,9 @@ export function EconomySection({ watch, setValue, onSave, isSaving, isAdmin = fa
                             isAdmin ? 'text-amber-600 dark:text-amber-400' : 'text-amber-500/70 dark:text-amber-400/70'
                         )} />
                         <div>
-                            <h4 className="font-semibold text-sm text-on-surface">سهم Daymat از درآمد بازار</h4>
+                            <h4 className="font-semibold text-sm text-on-surface">سهم iMach از درآمد بازار</h4>
                             <p className="text-[10px] text-on-surface-variant/60">
-                                درصدی که از درآمد بازار به Daymat تعلق می‌گیرد
+                                درصدی که از درآمد بازار به iMach تعلق می‌گیرد
                             </p>
                         </div>
                     </div>
@@ -113,7 +113,7 @@ export function EconomySection({ watch, setValue, onSave, isSaving, isAdmin = fa
                             <span className="text-[10px] text-on-surface-variant/40 dark:text-gray-600">پیش‌فرض: ۳۰%</span>
                         </div>
                         <p className="text-[10px] text-amber-600/70 dark:text-amber-400/70 mt-1">
-                            این درصد از هر تراکنش مالی در بازار به عنوان کارمزد به Daymat تعلق می‌گیرد.
+                            این درصد از هر تراکنش مالی در بازار به عنوان کارمزد به iMach تعلق می‌گیرد.
                         </p>
                     </div>
                 )}
@@ -122,7 +122,7 @@ export function EconomySection({ watch, setValue, onSave, isSaving, isAdmin = fa
                 {!isAdmin && (
                     <div className="mt-3 pt-3 border-t border-amber-200/50 dark:border-amber-800/50">
                         <div className="flex items-center justify-between">
-                            <span className="text-[10px] text-on-surface-variant/60">سهم شما (پس از کسر سهم Daymat)</span>
+                            <span className="text-[10px] text-on-surface-variant/60">سهم شما (پس از کسر سهم iMach)</span>
                             <span className="text-sm font-semibold text-emerald-600 dark:text-emerald-400">
                                 {100 - daymatShare}%
                             </span>

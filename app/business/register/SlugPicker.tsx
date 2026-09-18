@@ -23,7 +23,7 @@ interface Props {
 
 /**
  * آدرس بازوی فروش — تک‌خطی یکپارچه:
- *   [ daymat.ir /  ┃  this-input  ]   چک زنده · بدون دکمهٔ تایید · مقدار همان لحظه در state والد
+ *   [ iMach.ir /  ┃  this-input  ]   چک زنده · بدون دکمهٔ تایید · مقدار همان لحظه در state والد
  * ورودی: فقط a-z، 0-9، خط‌تیره (regex) · چیدمان LTR داخل RTL
  */
 export default function SlugPicker({ value, onChange, onStatus, disabled, excludeId }: Props) {
@@ -143,7 +143,7 @@ export default function SlugPicker({ value, onChange, onStatus, disabled, exclud
                 <span className="flex items-center px-3 bg-surface-container-high dark:bg-gray-800
                     text-[12px] font-bold text-on-surface-variant/70 select-none whitespace-nowrap border-e
                     border-outline-variant/30">
-                    daymat.ir/
+                    iMach.ir/
                 </span>
                 {/* اینپوت */}
                 <input

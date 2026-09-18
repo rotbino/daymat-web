@@ -124,7 +124,7 @@ export default function SettingsTab({ detail, onSave, onOpenUnits, onToggleStatu
                         onProvinceChange={(code, label) => { setProvinceCode(code); setProvinceLabel(label); }}
                         onCityChange={(code, label) => { setCityCode(code); setCityLabel(label); }}
                     />
-                    {/* 📍 آدرس عمومی — لینک کوتاه ریشه‌ای daymat.ir/{آدرس} */}
+                    {/* 📍 آدرس عمومی — لینک کوتاه ریشه‌ای iMach.ir/{آدرس} */}
                     <div className="rounded-2xl border border-stone-100 bg-stone-50 p-3 dark:border-gray-800 dark:bg-gray-950/60">
                         <div className="mb-2 flex items-center gap-1.5">
                             <Link2 className="size-3.5 text-amber-600 dark:text-amber-400" />

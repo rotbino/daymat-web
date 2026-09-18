@@ -232,7 +232,7 @@ export default function PaymentSettingsPage() {
                         <p className="text-sm text-yellow-800 text-justify">
                             <span className="font-bold">توجه:</span> با فعال‌سازی پرداخت آنلاین یا کارت به کارت،
                             مبلغ پرداختی کاربران مستقیماً به <span className="font-bold">حساب بانکی شما</span> واریز می‌شود.
-                            سامانه Daymat هیچ نقشی در دریافت و انتقال وجه ندارد.
+                            سامانه iMach هیچ نقشی در دریافت و انتقال وجه ندارد.
                         </p>
                     </div>
                 </div>

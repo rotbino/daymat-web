@@ -93,10 +93,10 @@ export default function AdminSettingsPage() {
     });
 
     const [generalSettings, setGeneralSettings] = useState<GeneralSettings>({
-        appName: 'Daymat',
+        appName: 'iMach',
         defaultLocale: 'fa',
         supportPhone: '09123456789',
-        supportEmail: 'support@daymat.com',
+        supportEmail: 'support@iMach.com',
     });
 
     const [securitySettings, setSecuritySettings] = useState<SecuritySettings>({
