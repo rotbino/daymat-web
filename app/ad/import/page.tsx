@@ -27,8 +27,8 @@ type SourceTab = 'excel' | 'text' | 'grid' | 'ai' | 'site';
 
 const TABS: { key: SourceTab; title: string; icon: React.ReactNode }[] = [
     { key: 'excel', title: 'اکسل', icon: <FileSpreadsheet className="size-4" /> },
-    { key: 'text', title: 'متن یا تایپ', icon: <Type className="size-4" /> },
-    { key: 'grid', title: 'گرید سریع', icon: <Table2 className="size-4" /> },
+    { key: 'text', title: 'متن', icon: <Type className="size-4" /> },
+    { key: 'grid', title: 'جدول', icon: <Table2 className="size-4" /> },
     { key: 'ai', title: 'هوش مصنوعی', icon: <Sparkles className="size-4" /> },
     { key: 'site', title: 'از سایت', icon: <Globe className="size-4" /> },
 ];
@@ -432,7 +432,7 @@ function ImportContent() {
                     افزودن گروهی محصول
                 </h1>
                 <p className="mt-1.5 text-[12.5px] font-bold leading-6 text-stone-500 dark:text-gray-400">
-                    هر لیستی داری — اکسل، متن، یا حتی سایت خودت — یک‌جا بیاور؛ واحد و برندِ نبود خودکار ساخته می‌شود.
+                    برای آسانی ورود محصولات، امکان ورود محصولات از لیستهای مختلف مثل اکسل یا فایل ساده یا با استفاده از هوش مصنوعی فراهم شده است. یکی از بهترینها فایل اکسل است. اما اگر فایل اکسل محصولات را ندارید می توایند از روشهای دیگر استفاده کنیدو اما دقت کنید این روش فقط برای ساده تر کردن ثبت لیست محصول است . قطعا بعد از ورود محصولات باید جزئیات وقیمتهای آنرا ویرایش و کامل کنید  و در صورت نداشتن تصویر، تصویر تک تک محصولات را آپلود نمایید
                 </p>
             </div>
 
@@ -440,12 +440,14 @@ function ImportContent() {
             <div className="mb-4 flex gap-1.5 overflow-x-auto scrollbar-hide">
                 {TABS.map((t) => (
                     <button key={t.key} onClick={() => setTab(t.key)}
-                        className={`flex h-9 shrink-0 items-center gap-1.5 rounded-full px-3.5 text-[11.5px] font-extrabold whitespace-nowrap border transition-colors ${
+                        className={`flex flex-col h-9 shrink-0 items-center gap-1.5  px-3.5 text-[11.5px] font-extrabold whitespace-nowrap border transition-colors ${
                             tab === t.key
                                 ? 'border-amber-500 bg-amber-500 text-white'
                                 : 'border-outline-variant/50 text-stone-500 hover:border-amber-400 dark:text-gray-400'
                         }`}>
-                        {t.icon} {t.title}
+                        <span className={"text-[10px]"}>
+                            {t.icon} {t.title}
+                        </span>
                     </button>
                 ))}
             </div>

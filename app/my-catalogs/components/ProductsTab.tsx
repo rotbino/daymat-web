@@ -3,7 +3,7 @@
 
 import React, { useMemo } from 'react';
 import { useRouter } from 'next/navigation';
-import { BookOpen, Layers, Package, Plus } from 'lucide-react';
+import {BookOpen, Layers, ListPlus, Package, Plus} from 'lucide-react';
 import { ProductRow } from './ProductRow';
 import { cn } from '@/lib/utils';
 import { fmt, isAdExpired, inMarket, isPriceExpired, isUncategorized, StatusFilter } from '../constants';
@@ -89,12 +89,12 @@ export default function ProductsTab({
                 {/* ✨ افزودن گروهی محصول — قلم‌به‌قلم ننویس؛ لیستت را یک‌جا بیاور (CTA اصلی و چشمگیر)
                     موبایل: flex-1 — تمام فضای باقی‌مانده را می‌گیرد؛ دسکتاپ: اندازهٔ طبیعی */}
                 <button onClick={() => router.push(`/ad/import?catalog=${currentCatalog.id}`)}
-                        title="افزودن گروهی محصول — با اکسل، متن، گرید یا هوش مصنوعی"
-                        className="h-9 px-3.5 rounded-lg bg-amber-500 text-white text-[12px] font-extrabold shadow-sm
+                        title="وارد کردن محصولات"
+                        className="h-9 px-2 rounded-lg bg-amber-500 text-white text-[12px] font-extrabold shadow-sm
                             flex flex-1 sm:flex-none items-center justify-center gap-1.5 flex-shrink-0 sm:flex-shrink whitespace-nowrap
                             hover:bg-amber-600 active:scale-[0.97] transition-all">
-                    <Layers className="w-4 h-4" />
-                    افزودن گروهی محصول
+                    <ListPlus  className="w-4 h-4" />
+                   افزودن لیست محصول
                 </button>
                 {/* ✨ افزودن تکی — ثانویه و جمع‌وجور */}
                 <button onClick={() => router.push(`/ad/create?catalog=${currentCatalog.id}`)}

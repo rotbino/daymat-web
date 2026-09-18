@@ -74,7 +74,7 @@ export default function MyCatalogsContent() {
     const [updatePriceAd, setUpdatePriceAd] = useState<any>(null);
     // ✅ مچینگ دوطرفه — مدال «خریداران این کالا» + شمارشِ خریدارِ فعالِ هر کالا
     const [buyersModalAd, setBuyersModalAd] = useState<any>(null);
-    const { data: buyerCountsData } = useBuyerCounts(currentId);
+
     const [verifyOpen, setVerifyOpen] = useState(false);
     const [passwordOpen, setPasswordOpen] = useState(false);
     const [celebrateDismissed, setCelebrateDismissed] = useState(false);
@@ -106,6 +106,7 @@ export default function MyCatalogsContent() {
     const allCatalogs = catalogs;
 
     const [currentId, setCurrentId] = useState<string | null>(null);
+    const { data: buyerCountsData } = useBuyerCounts(currentId);
     // ── انتخاب اولیه با اولویت: ۱) لینک عمیق ?catalog= (مثلاً بعد از ساخت بازوی فروش جدید)
     // ۲) بازوی فروش کارنت پرسیست  ۳) اولین بازوی فروش
     // نکته: کش ممکن است کهنه باشد و بازوی فروش جدید هنوز در آن نباشد → قبل از fallback
