@@ -502,7 +502,7 @@ export default function LeadsTab() {
                                                         )}
                                                     </div>
                                                 ))}
-                                                <Link href={`/${lead.inquiry.slug || lead.inquiry.id}`}
+                                                <Link href={`/i/${lead.inquiry.slug || lead.inquiry.id}`}
                                                     className="flex items-center justify-center gap-1 pt-1 text-[11px] font-extrabold text-amber-700 hover:underline dark:text-amber-400">
                                                     مشاهدهٔ کل بازوی خرید
                                                     <ArrowLeft className="size-3" />
