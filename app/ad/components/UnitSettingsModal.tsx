@@ -1,16 +1,16 @@
 // app/ad/components/UnitSettingsModal.tsx
-// ✅ مدال واحدهای بازوی فروش — با تفکیک عمده/خرده + ثبت واحد جدید توسط خود کاربر
-//    ۱) فیلتر دسته‌بندی: همه / عمده‌فروشی / خرده‌فروشی — فروشندهٔ عمده سریع واحدش را پیدا می‌کند
-//    ۲) ثبت واحد جدید: عنوان بدون تکرار (نرمال‌سازی ی/ک/نیم‌فاصله) + تکلیف صریح عمده/خرده
-//       + برای عمده: تعداد داخل واحد (مثل ۲۴ عدد در هر کارتن) و ثابت/قابل‌تغییر
-//    ۳) تعدادِ هر واحدِ عمده در همین مدال قابل تنظیم است — حتی اگر در دیتابیس تعداد نداشته باشد
+// ✅ مدال «انتخاب واحد فروش» — سرچ کلی + فیلتر تکی/بسته + ثبت واحد جدید (کم‌مصرف)
+//    ۱) سرچ همیشه کلی است — فیلتر دسته (تکی/بسته) هنگام جستجو نادیده گرفته می‌شود
+//    ۲) واحد جدید: دکمهٔ کوچکِ بالا (بیشترِ واحدها از قبل ثبت‌اند) + نرمال‌سازی ی/ک/نیم‌فاصله
+//       + برای بسته: تعداد داخل واحد (مثل ۲۴ عدد در هر کارتن) و ثابت/قابل‌تغییر
+//    ۳) انتخاب‌شده‌ها فقط در سورتینگ بالای لیست می‌آیند — تک‌خطی و جمع‌وجور: نام (تعداد) + تیک + مداد
 'use client';
 
 import React, { useEffect, useMemo, useState } from 'react';
 import { createPortal } from 'react-dom';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import {
-    Check, Loader2, Package, Search, X, Lock, Plus, Boxes, Store,
+    Check, Loader2, Package, Search, X, Lock, Plus, Boxes, Store, Pencil,
 } from 'lucide-react';
 import { toast } from 'sonner';
 import { cn } from '@/lib/utils';
@@ -57,8 +57,10 @@ export default function UnitSettingsModal({ isOpen, onClose, catalogId, initialU
     const [search, setSearch] = useState('');
     const [saving, setSaving] = useState(false);
     const [mounted, setMounted] = useState(false);
+    // ✅ ویرایشگر تعداد — فقط با کلیک روی مداد باز می‌شود تا لیست جمع‌وجور بماند
+    const [editingId, setEditingId] = useState<string | null>(null);
 
-    // ✅ فیلتر دسته — فروشندهٔ عمده روی «عمده‌فروشی» می‌زند و کارتن/پالت/باله را فوری می‌بیند
+    // ✅ فیلتر دسته — تکی/بسته؛ هنگام جستجو نادیده گرفته می‌شود (سرچ همیشه کلی)
     const [scopeFilter, setScopeFilter] = useState<'all' | Scope>('all');
 
     // ✅ فرم ثبت واحد جدید
@@ -83,6 +85,7 @@ export default function UnitSettingsModal({ isOpen, onClose, catalogId, initialU
         setSelected(map);
         setSearch('');
         setScopeFilter('all');
+        setEditingId(null);
         setShowCreate(false);
         setNewTitle('');
         setNewScope(null);
@@ -130,7 +133,7 @@ export default function UnitSettingsModal({ isOpen, onClose, catalogId, initialU
             return;
         }
         if (!newScope) {
-            toast.error('تکلیف واحد را روشن کن: عمده‌فروشی یا خرده‌فروشی؟');
+            toast.error('تکلیف واحد را روشن کن: بسته است یا تکی؟');
             return;
         }
         // ✅ چک تکراری محلی — قبل از رفتن به سرور
@@ -170,13 +173,19 @@ export default function UnitSettingsModal({ isOpen, onClose, catalogId, initialU
         }
     };
 
-    // ✅ لیست: جستجو + فیلتر دسته
+    // ✅ سرچ همیشه کلی — فیلتر دسته (تکی/بسته) فقط وقتی سرچ خالی است اعمال می‌شود
     const filtered = useMemo(() => {
         const q = search.trim();
         return (allUnits as any[]).filter((u) =>
             (!q || (u.title || '').includes(q) || (u.shortCode || '').includes(q))
-            && (scopeFilter === 'all' || u.scope === scopeFilter));
+            && (!q || scopeFilter === 'all' || u.scope === scopeFilter));
     }, [allUnits, search, scopeFilter]);
+
+    // ✅ انتخاب‌شده‌ها فقط با سورتینگ بالا می‌آیند — نه بخش جدای بزرگ
+    const sorted = useMemo(() => {
+        return [...(filtered as any[])].sort((a: any, b: any) =>
+            Number(selected.has(b.id)) - Number(selected.has(a.id)));
+    }, [filtered, selected]);
 
     const counts = useMemo(() => {
         const list = allUnits as any[];
@@ -186,8 +195,6 @@ export default function UnitSettingsModal({ isOpen, onClose, catalogId, initialU
             retail: list.filter((u) => u.scope === 'retail').length,
         };
     }, [allUnits]);
-
-    const addList = filtered.filter((u: any) => !selected.has(u.id));
 
     const handleSave = async () => {
         setSaving(true);
@@ -214,9 +221,9 @@ export default function UnitSettingsModal({ isOpen, onClose, catalogId, initialU
     if (!isOpen) return null;
 
     const scopeBadge = (scope?: string) => scope === 'wholesale' ? (
-        <span className="text-[9px] px-1.5 py-0.5 rounded-full bg-amber-100 text-amber-700 dark:bg-amber-900/40 dark:text-amber-400 flex-shrink-0">عمده</span>
+        <span className="text-[9px] px-1.5 py-0.5 rounded-full bg-amber-100 text-amber-700 dark:bg-amber-900/40 dark:text-amber-400 flex-shrink-0">بسته</span>
     ) : scope === 'retail' ? (
-        <span className="text-[9px] px-1.5 py-0.5 rounded-full bg-sky-100 text-sky-700 dark:bg-sky-900/40 dark:text-sky-400 flex-shrink-0">خرده</span>
+        <span className="text-[9px] px-1.5 py-0.5 rounded-full bg-sky-100 text-sky-700 dark:bg-sky-900/40 dark:text-sky-400 flex-shrink-0">تکی</span>
     ) : null;
 
     const modalContent = (
@@ -234,7 +241,7 @@ export default function UnitSettingsModal({ isOpen, onClose, catalogId, initialU
                             <Package className="w-4.5 h-4.5 text-amber-600 dark:text-amber-400" />
                         </span>
                         <div>
-                            <h3 className="text-sm font-extrabold text-on-surface">{title || 'واحدهای اختصاصی بازوی فروش'}</h3>
+                            <h3 className="text-sm font-extrabold text-on-surface">{title || 'انتخاب واحد فروش'}</h3>
                             <p className="text-[10px] text-on-surface-variant/70">
                                 {selected.size > 0
                                     ? `${selected.size.toLocaleString('fa-IR')} واحد انتخاب شده`
@@ -248,27 +255,38 @@ export default function UnitSettingsModal({ isOpen, onClose, catalogId, initialU
                     </button>
                 </div>
 
-                {/* جستجو */}
+                {/* جستجو + دکمهٔ کوچک «واحد جدید» */}
                 <div className="flex-shrink-0 px-4 pt-3 pb-2 border-b border-outline-variant/15 space-y-2.5">
-                    <div className="relative">
-                        <Search className="absolute right-3 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-gray-400" />
-                        <input value={search} onChange={(e) => setSearch(e.target.value)}
-                               placeholder="جستجو و افزودن واحد…"
-                               className="w-full h-10 pr-9 rounded-xl bg-surface-container-lowest border border-outline-variant/40
-                                   text-sm outline-none focus:border-amber-500 transition-colors" />
+                    <div className="flex items-center gap-2">
+                        <div className="relative flex-1">
+                            <Search className="absolute right-3 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-gray-400" />
+                            <input value={search} onChange={(e) => setSearch(e.target.value)}
+                                   placeholder="جستجو و افزودن واحد…"
+                                   className="w-full h-10 pr-9 rounded-xl bg-surface-container-lowest border border-outline-variant/40
+                                       text-sm outline-none focus:border-amber-500 transition-colors" />
+                        </div>
+                        {/* ✅ دکمهٔ کوچک «واحد جدید» — بالا و همیشه در دسترس؛ بیشترِ واحدها از قبل ثبت‌اند */}
+                        <button type="button" onClick={() => setShowCreate((v) => !v)} aria-label="ثبت واحد جدید"
+                                className={cn('h-10 px-2.5 rounded-xl border border-dashed text-[10px] font-bold flex items-center gap-1 flex-shrink-0 transition-colors',
+                                    showCreate
+                                        ? 'border-amber-500 bg-amber-50 dark:bg-amber-900/20 text-amber-700 dark:text-amber-300'
+                                        : 'border-amber-500/60 text-amber-600 dark:text-amber-400 hover:bg-amber-50/60 dark:hover:bg-amber-900/10')}>
+                            <Plus className="w-3.5 h-3.5" />
+                            واحد جدید
+                        </button>
                     </div>
-                    {/* ✅ فیلتر دسته — عمده/خرده */}
+                    {/* ✅ فیلتر دسته — تکی/بسته با فول‌راند؛ سرچ همیشه از این فیلتر مستقل است */}
                     <div className="grid grid-cols-3 gap-1.5">
                         {([
                             { key: 'all' as const, label: 'همه', icon: null, count: counts.all },
-                            { key: 'wholesale' as const, label: 'عمده‌فروشی', icon: Boxes, count: counts.wholesale },
-                            { key: 'retail' as const, label: 'خرده‌فروشی', icon: Store, count: counts.retail },
+                            { key: 'wholesale' as const, label: 'بسته', icon: Boxes, count: counts.wholesale },
+                            { key: 'retail' as const, label: 'تکی', icon: Store, count: counts.retail },
                         ]).map((t) => {
                             const active = scopeFilter === t.key;
                             return (
                                 <button key={t.key} type="button" onClick={() => setScopeFilter(t.key)}
                                         aria-pressed={active}
-                                        className={cn('h-8 rounded-lg text-[11px] font-bold border flex items-center justify-center gap-1 transition-colors',
+                                        className={cn('h-8 rounded-full text-[11px] font-bold border flex items-center justify-center gap-1 transition-colors',
                                             active
                                                 ? 'bg-amber-500 text-white border-amber-500'
                                                 : 'bg-surface text-on-surface-variant border-outline-variant/40 hover:border-amber-500/40')}>
@@ -286,71 +304,8 @@ export default function UnitSettingsModal({ isOpen, onClose, catalogId, initialU
                 {/* بدنه */}
                 <div className="flex-1 min-h-0 overflow-y-auto scrollbar-slim px-4 py-3">
 
-                    {/* ✅ بخش انتخاب‌شده‌ها — بالای لیست، با امکان حذف و تنظیم تعداد */}
-                    {selected.size > 0 && (
-                        <div className="mb-4">
-                            <p className="text-[11px] font-bold text-on-surface-variant flex items-center gap-1.5 mb-2">
-                                <Check className="w-3.5 h-3.5 text-emerald-500" />
-                                واحدهای بازوی فروش تو
-                            </p>
-                            <div className="space-y-1.5">
-                                {[...selected.entries()].map(([unitId, conf]) => {
-                                    const u = allUnits.find((x: any) => x.id === unitId) as any;
-                                    const title = u?.title || unitId;
-                                    // ✅ تعداد برای هر واحد عمده قابل تنظیم است — حتی اگر در دیتابیس تعداد نداشته باشد
-                                    const isPackaging = conf.containsQty != null || u?.scope === 'wholesale';
-                                    return (
-                                        <div key={unitId}
-                                             className="rounded-xl border border-amber-500/40 bg-amber-50/50 dark:bg-amber-900/10 p-2.5">
-                                            <div className="flex items-center gap-2.5">
-                                                <Package className="w-4 h-4 text-amber-600 dark:text-amber-400 flex-shrink-0" />
-                                                <span className="text-sm font-bold text-on-surface flex-1 truncate">{title}</span>
-                                                {scopeBadge(u?.scope)}
-                                                <button type="button" onClick={() => toggleUnit(unitId)}
-                                                        aria-label={`حذف ${title} از بازوی فروش`}
-                                                        className="w-6 h-6 rounded-full text-error hover:bg-error/10 grid place-items-center flex-shrink-0 transition-colors">
-                                                    <X className="w-3.5 h-3.5" />
-                                                </button>
-                                            </div>
-                                            {showQtyFields && isPackaging && (
-                                                <div className="flex items-center gap-2.5 mt-2">
-                                                    <div className="flex-1 flex items-center gap-2">
-                                                        <span className="text-[10px] text-on-surface-variant/70 whitespace-nowrap">تعداد داخلش:</span>
-                                                        <NumberInput value={conf.containsQty ?? undefined}
-                                                                     onChange={(v) => updateQty(unitId, v ?? null)}
-                                                                     className="h-8 flex-1" />
-                                                    </div>
-                                                    <label className="flex items-center gap-1.5 cursor-pointer flex-shrink-0">
-                                                        <input type="checkbox" checked={!!conf.qtyIsFixed}
-                                                               onChange={() => toggleFixed(unitId)}
-                                                               className="w-4 h-4 rounded border-outline text-amber-600 focus:ring-amber-500/30" />
-                                                        <span className="text-[10px] text-on-surface-variant flex items-center gap-1">
-                                                            <Lock className="w-3 h-3" /> ثابت
-                                                        </span>
-                                                    </label>
-                                                </div>
-                                            )}
-                                        </div>
-                                    );
-                                })}
-                            </div>
-                            <div className="h-px bg-outline-variant/20 my-3" />
-                            <p className="text-[11px] font-bold text-on-surface-variant flex items-center gap-1.5 mb-2">
-                                <Plus className="w-3.5 h-3.5 text-primary" />
-                                افزودن از همهٔ واحدها:
-                            </p>
-                        </div>
-                    )}
-
-                    {/* ✅ دکمهٔ ثبت واحد جدید */}
-                    {!showCreate ? (
-                        <button type="button" onClick={() => setShowCreate(true)}
-                                className="w-full mb-2.5 h-10 rounded-xl border border-dashed border-amber-500/60 text-amber-600 dark:text-amber-400
-                                    text-xs font-bold flex items-center justify-center gap-1.5 hover:bg-amber-50/60 dark:hover:bg-amber-900/10 transition-colors">
-                            <Plus className="w-4 h-4" />
-                            ثبت واحد جدید
-                        </button>
-                    ) : (
+                    {/* ✅ فرم ثبت واحد جدید — فقط وقتی کاربر از دکمهٔ کوچک بالا بازش کرده */}
+                    {showCreate && (
                         <div className="mb-3 rounded-xl border border-amber-500/40 bg-amber-50/40 dark:bg-amber-900/10 p-3 space-y-2.5">
                             <div className="flex items-center justify-between">
                                 <p className="text-[11px] font-extrabold text-on-surface">ثبت واحد جدید</p>
@@ -364,11 +319,11 @@ export default function UnitSettingsModal({ isOpen, onClose, catalogId, initialU
                                    maxLength={30}
                                    className="w-full h-9 px-3 rounded-lg bg-surface border border-outline-variant/40 text-sm
                                        outline-none focus:border-amber-500 transition-colors" />
-                            {/* ✅ تکلیف صریح: عمده یا خرده */}
+                            {/* ✅ تکلیف صریح: بسته یا تکی */}
                             <div className="grid grid-cols-2 gap-2">
                                 {([
-                                    { key: 'wholesale' as const, label: 'عمده‌فروشی', icon: Boxes },
-                                    { key: 'retail' as const, label: 'خرده‌فروشی', icon: Store },
+                                    { key: 'wholesale' as const, label: 'بسته', icon: Boxes },
+                                    { key: 'retail' as const, label: 'تکی', icon: Store },
                                 ]).map((s) => {
                                     const active = newScope === s.key;
                                     return (
@@ -384,7 +339,7 @@ export default function UnitSettingsModal({ isOpen, onClose, catalogId, initialU
                                     );
                                 })}
                             </div>
-                            {/* ✅ تعداد برای واحدهای عمده — مثل ۲۴ عدد در هر کارتن */}
+                            {/* ✅ تعداد برای واحدهای بسته — مثل ۲۴ عدد در هر کارتن */}
                             {showQtyFields && newScope === 'wholesale' && (
                                 <div className="space-y-2 rounded-lg bg-surface p-2.5 border border-outline-variant/25">
                                     <div className="flex items-center gap-2">
@@ -424,35 +379,88 @@ export default function UnitSettingsModal({ isOpen, onClose, catalogId, initialU
                         </div>
                     )}
 
-                    {/* لیست افزودن — انتخاب‌شده‌ها فیلتر شده‌اند که دوباره نیایند */}
+                    {/* ✅ لیست واحد — انتخاب‌شده‌ها فقط با سورتینگ بالا می‌آیند، تک‌خطی مثل بقیه */}
                     {isLoading ? (
                         <div className="py-8 text-center"><Loader2 className="w-5 h-5 animate-spin text-amber-500 mx-auto" /></div>
-                    ) : addList.length === 0 ? (
+                    ) : sorted.length === 0 ? (
                         <p className="text-center py-4 text-xs text-on-surface-variant/60">
-                            {scopeFilter === 'all' ? 'همهٔ واحدها انتخاب شده‌اند ✓' : 'واحدی در این دسته نمانده — «ثبت واحد جدید» بزن'}
+                            {search.trim()
+                                ? 'واحدی با این نام پیدا نشد — با «واحد جدید» ثبتش کن'
+                                : 'واحدی در این دسته نمانده — «واحد جدید» بزن'}
                         </p>
                     ) : (
                         <div className="space-y-1.5">
-                            {addList.map((u: any) => (
-                                <button key={u.id} type="button" onClick={() => toggleUnit(u.id)}
-                                        className="w-full flex items-center gap-2.5 px-3 py-2.5 rounded-xl
-                                            border border-outline-variant/40 text-right
-                                            hover:border-amber-500/50 hover:bg-amber-50/40 dark:hover:bg-amber-900/10
-                                            transition-colors">
-                                    <div className="w-5 h-5 rounded-full border-2 border-outline-variant/40 flex items-center justify-center flex-shrink-0">
-                                        <Plus className="w-3 h-3 text-on-surface-variant/60" />
+                            {sorted.map((u: any) => {
+                                const isSel = selected.has(u.id);
+                                const conf = selected.get(u.id);
+                                // ✅ ویرایشگر تعداد فقط برای واحدهای بسته‌ای/تعدادی باز می‌شود
+                                const isPackaging = !!conf && (conf.containsQty != null || u?.scope === 'wholesale');
+                                return (
+                                    <div key={u.id}>
+                                        <div className={cn('w-full flex items-center gap-2.5 px-3 py-2.5 rounded-full border transition-colors',
+                                            isSel
+                                                ? 'border-amber-500/50 bg-amber-50/60 dark:bg-amber-900/15'
+                                                : 'border-outline-variant/40 hover:border-amber-500/50 hover:bg-amber-50/40 dark:hover:bg-amber-900/10')}>
+                                            <button type="button" onClick={() => toggleUnit(u.id)}
+                                                    className="flex-1 min-w-0 flex items-center gap-2.5 text-right">
+                                                {isSel ? (
+                                                    <span className="w-5 h-5 rounded-full bg-emerald-500 grid place-items-center flex-shrink-0">
+                                                        <Check className="w-3 h-3 text-white" />
+                                                    </span>
+                                                ) : (
+                                                    <span className="w-5 h-5 rounded-full border-2 border-outline-variant/40 grid place-items-center flex-shrink-0">
+                                                        <Plus className="w-3 h-3 text-on-surface-variant/60" />
+                                                    </span>
+                                                )}
+                                                <span className={cn('text-sm truncate', isSel ? 'font-bold text-on-surface' : 'font-medium text-on-surface')}>{u.title}</span>
+                                                {/* ✅ تعداد داخل پرانتز — جمع‌وجور و تک‌خطی */}
+                                                {isSel && isPackaging && conf?.containsQty != null && (
+                                                    <span className="text-[10px] tabular-nums text-on-surface-variant/70 flex-shrink-0">
+                                                        ({conf.containsQty.toLocaleString('fa-IR')})
+                                                    </span>
+                                                )}
+                                            </button>
+                                            {scopeBadge(u?.scope)}
+                                            {!isSel && u.containsQty != null && (
+                                                <span className="text-[9px] px-1.5 py-0.5 rounded-full bg-amber-100 text-amber-700 dark:bg-amber-900/40 dark:text-amber-400 flex-shrink-0">
+                                                    {u.containsQty.toLocaleString('fa-IR')} عددی{u.qtyIsFixed ? ' • ثابت' : ''}
+                                                </span>
+                                            )}
+                                            {/* ✅ مداد ویرایش تعداد — فقط برای انتخاب‌شده‌ها */}
+                                            {isSel && showQtyFields && isPackaging && (
+                                                <button type="button" onClick={() => setEditingId(editingId === u.id ? null : u.id)}
+                                                        aria-label={`ویرایش تعداد ${u.title}`}
+                                                        className={cn('w-6 h-6 rounded-full grid place-items-center flex-shrink-0 transition-colors',
+                                                            editingId === u.id
+                                                                ? 'bg-amber-500 text-white'
+                                                                : 'text-on-surface-variant hover:bg-surface-container-high')}>
+                                                    <Pencil className="w-3 h-3" />
+                                                </button>
+                                            )}
+                                        </div>
+                                        {/* ✅ ویرایشگر تعداد — فقط با مداد باز می‌شود تا لیست شلوغ نشود */}
+                                        {isSel && showQtyFields && isPackaging && editingId === u.id && (
+                                            <div className="flex items-center gap-2.5 mt-1 mr-7 px-3 py-2 rounded-xl
+                                                bg-surface border border-outline-variant/25">
+                                                <div className="flex-1 flex items-center gap-2">
+                                                    <span className="text-[10px] text-on-surface-variant/70 whitespace-nowrap">تعداد داخلش:</span>
+                                                    <NumberInput value={conf?.containsQty ?? undefined}
+                                                                 onChange={(v) => updateQty(u.id, v ?? null)}
+                                                                 className="h-8 flex-1" />
+                                                </div>
+                                                <label className="flex items-center gap-1.5 cursor-pointer flex-shrink-0">
+                                                    <input type="checkbox" checked={!!conf?.qtyIsFixed}
+                                                           onChange={() => toggleFixed(u.id)}
+                                                           className="w-4 h-4 rounded border-outline text-amber-600 focus:ring-amber-500/30" />
+                                                    <span className="text-[10px] text-on-surface-variant flex items-center gap-1">
+                                                        <Lock className="w-3 h-3" /> ثابت
+                                                    </span>
+                                                </label>
+                                            </div>
+                                        )}
                                     </div>
-                                    <span className="text-sm font-medium text-on-surface flex-1">{u.title}</span>
-                                    {/* ✅ بج دسته — عمده/خرده */}
-                                    {scopeBadge(u?.scope)}
-                                    {/* ✅ بج تعداد — از دیتابیس */}
-                                    {u.containsQty != null && (
-                                        <span className="text-[9px] px-1.5 py-0.5 rounded-full bg-amber-100 text-amber-700 dark:bg-amber-900/40 dark:text-amber-400 flex-shrink-0">
-                                            {u.containsQty.toLocaleString('fa-IR')} عددی{u.qtyIsFixed ? ' • ثابت' : ''}
-                                        </span>
-                                    )}
-                                </button>
-                            ))}
+                                );
+                            })}
                         </div>
                     )}
                 </div>
