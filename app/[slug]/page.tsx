@@ -1,17 +1,15 @@
 // app/[slug]/page.tsx
-// ✅ روت واحد بازوی فروش + بازار + صفحهٔ اعلان خرید:
-//    resolver سمت سرور تعیین می‌کند این slug بازوی فروش است یا تابلوی بازار یا صفحهٔ اعلان خرید.
-//    اولویت با بازوی فروش (Catalog) است؛ تداخل اسلاگ با قید سه-جدولی (بازوی فروش/بازار/بازوی خرید)
-//    در checkSlug هر دو سرویس جلوگیری می‌شود.
-//    اسلش انتهایی و انکودینگ نرمال می‌شود.
+// ✅ روت بازوی فروش + تابلوی بازار — فقط دو چیز ماندگار و «قیمتی»:
+//    بازوی فروش (Catalog) و تابلوی بازار (Arm) روی ریشه می‌مانند (آدرس کوتاه = ویترین).
+//    اعلان خریدها (بازوی خرید) اسلاگِ گذرا دارند و به فولدر /i منتقل شده‌اند؛
+//    لینک‌های قدیمی ریشه‌ای اینجا گرفته شده و به /i/<slug> می‌پیوندند.
 
 import React from 'react';
 import { QueryClient, dehydrate, HydrationBoundary } from '@tanstack/react-query';
-import { notFound } from 'next/navigation';
+import { notFound, redirect } from 'next/navigation';
 import { apiService } from '@/lib/api/apiService';
 import CatalogClient from './CatalogClient';
 import MarketShell from './components/MarketShell';
-import InquiryPublicClient from '../inquiries/[id]/InquiryPublicClient';
 
 interface Props {
     params: Promise<{ slug: string }>;
@@ -50,23 +48,7 @@ export async function generateMetadata({ params }: Props) {
         }
     } catch {}
 
-    // ۳) صفحهٔ اعلان خرید؟ — رزولور سبک (بدون شمارش بازدید)
-    try {
-        const inquiry = await apiService.inquiry.resolveSlug(slug);
-        if (inquiry) {
-            return {
-                title: `${inquiry.title} | دیمت`,
-                alternates: { canonical: `/${slug}` },
-                description: inquiry.description || `بازوی خرید ${inquiry.business?.name || ''} — ${inquiry.city || 'دیمت'}`.trim(),
-                openGraph: {
-                    title: inquiry.title,
-                    description: inquiry.description || undefined,
-                    images: inquiry.business?.logoUrl ? [inquiry.business.logoUrl] : [],
-                },
-            };
-        }
-    } catch {}
-
+    // ۳) اعلان خرید؟ — آدرس رسمی‌اش /i/<slug> است؛ متادیتا هم آن‌جا ساخته می‌شود
     return { title: 'دیمت | بازوی فروش روزانه قیمت' };
 }
 
@@ -120,9 +102,16 @@ export default async function SlugPage({ params, searchParams }: Props) {
         return <MarketShell slug={slug} search={search} />;
     }
 
-    // ─── صفحهٔ اعلان خرید — همان کلاینت مسیر قدیمی /inquiries/[id] ───
+    // ─── اعلان خرید — آدرس رسمی /i/<slug>؛ لینک‌های قدیمی ریشه‌ای به آنجا می‌پیوندند ───
     if (inquiry) {
-        return <InquiryPublicClient idOrSlug={slug} />;
+        const sp = await searchParams;
+        const rest = new URLSearchParams();
+        for (const [k, v] of Object.entries(sp)) {
+            if (typeof v === 'string' && v) rest.set(k, v);
+            else if (Array.isArray(v) && v[0]) rest.set(k, v[0]);
+        }
+        const qs = rest.toString();
+        redirect(`/i/${slug}${qs ? `?${qs}` : ''}`);
     }
 
     // ─── هیچ‌کدام ───

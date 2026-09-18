@@ -272,10 +272,10 @@ export default function MyInquiriesPage() {
     const selectSalesCatalog = (id: string) => {
         router.push(`/my-catalogs?catalog=${id}`);
     };
-    // 👁 مشاهدهٔ صفحهٔ عمومی — همان آدرسی که کیت اشتراک می‌سازد (app/inquiries/[id])
+    // 👁 مشاهدهٔ صفحهٔ عمومی — همان آدرسی که کیت اشتراک می‌سازد (/i/<slug>)
     const previewInquiry = () => {
         const key = detail?.slug || detail?.id || currentInquiryId;
-        if (key) router.push(`/${key}`);
+        if (key) router.push(`/i/${key}`);
     };
     // 💾 بعد از ذخیرهٔ کارت ویزیت — لیست بازوهای خرید تازه شود (metadata.visitCard)
     const refreshInquiries = () => {
@@ -494,7 +494,7 @@ export default function MyInquiriesPage() {
                                 onClose={() => setShareOpen(false)}
                                 catalogName={detail.title}
                                 slug={detail.slug || detail.id}
-                                basePath=""
+                                basePath="/i"
                                 kind="inquiry"
                             />
                         )}
@@ -506,7 +506,7 @@ export default function MyInquiriesPage() {
                                 onClose={() => setCardOpen(false)}
                                 catalogName={detail.title}
                                 slug={detail.slug || detail.id}
-                                basePath=""
+                                basePath="/i"
                                 inquiryId={detail.id}
                                 savedSpec={savedVisitCard}
                                 onSaved={refreshInquiries}

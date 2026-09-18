@@ -166,7 +166,7 @@ export default function BuyersBoard({ slug }: { slug: string }) {
 /** کارت بازوی خرید — سفیدِ سایه‌دار با تاکید کهربایی (متمایز از کارت قیمت) */
 function InquiryCard({ inq }: { inq: any }) {
     return (
-        <Link href={`/${inq.slug || inq.id}`}
+        <Link href={`/i/${inq.slug || inq.id}`}
               className="group block rounded-2xl border border-amber-200/50 dark:border-gray-800 bg-white dark:bg-gray-900 p-4
                   shadow-[0_2px_12px_-6px_rgba(15,23,42,0.14)] hover:shadow-[0_8px_24px_-10px_rgba(245,158,11,0.35)]
                   hover:border-amber-300/60 transition-all">

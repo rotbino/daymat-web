@@ -97,7 +97,7 @@ export default function InquiryPublicClient({ idOrSlug }: { idOrSlug: string }) 
         if (!inquiry) return;
         if (!isAuthenticated) {
             // 🡒 مهمان — اول ورود/ثبت‌نام با شماره موبایل؛ بعد از برگشت، ذخیره خودش ادامه پیدا می‌کند (?save=1)
-            router.push(`/login?redirect=${encodeURIComponent(`/${inquiry.slug || inquiry.id}?save=1`)}`);
+            router.push(`/login?redirect=${encodeURIComponent(`/i/${inquiry.slug || inquiry.id}?save=1`)}`);
             return;
         }
         const next = !isSaved;
@@ -185,15 +185,15 @@ export default function InquiryPublicClient({ idOrSlug }: { idOrSlug: string }) 
     const deadlineOver = dl_over(inquiry?.deadline);
 
     const dl = useMemo(() => faDeadlineLeft(inquiry?.deadline), [inquiry?.deadline]);
-    // ✅ آدرس کوتاه ریشه‌ای — همان چیزی که کاربر به هم می‌گوید (روز ۱ اسلاگ دلخواه)
+    // ✅ آدرس کوتاه اعلان خرید — /i/<slug> (اسلاگ دلخواه روز ۱؛ جدا از ریشه تا با بازوهای فروش قاطی نشود)
     const shareUrl = typeof window !== 'undefined' && inquiry
-        ? `${window.location.origin}/${inquiry.slug || inquiry.id}`
+        ? `${window.location.origin}/i/${inquiry.slug || inquiry.id}`
         : '';
 
-    // ✅ canonical — لینک‌های قدیمی /inquiries/{slug} هم لود می‌شوند ولی سئو به آدرس ریشه‌ای اشاره می‌کند
+    // ✅ canonical — لینک‌های قدیمی /{slug} و /inquiries/{slug} لود می‌شوند ولی سئو به /i/<slug> اشاره می‌کند
     useEffect(() => {
         if (!inquiry?.slug || typeof window === 'undefined') return;
-        const href = `${window.location.origin}/${inquiry.slug}`;
+        const href = `${window.location.origin}/i/${inquiry.slug}`;
         let tag = document.head.querySelector('link[rel="canonical"]') as HTMLLinkElement | null;
         if (!tag) {
             tag = document.createElement('link');

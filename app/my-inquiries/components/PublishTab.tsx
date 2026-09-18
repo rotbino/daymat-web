@@ -26,7 +26,7 @@ interface Props {
 }
 
 export default function PublishTab({ slug, id, title, visibility, onOpenShare, onOpenCard, savedCard }: Props) {
-    const url = typeof window !== 'undefined' ? `${window.location.origin}/${slug || id}` : `/${slug || id}`;
+    const url = typeof window !== 'undefined' ? `${window.location.origin}/i/${slug || id}` : `/i/${slug || id}`;
 
     const copy = async () => {
         try {
@@ -85,7 +85,7 @@ export default function PublishTab({ slug, id, title, visibility, onOpenShare, o
                         </p>
                     </div>
                 </div>
-                <Link href={`/${slug || id}`}
+                <Link href={`/i/${slug || id}`}
                     className="mt-3 flex h-10 items-center justify-center gap-2 rounded-xl border border-stone-200 text-xs font-extrabold text-stone-600 transition-colors hover:border-brand-contrast hover:text-amber-700 dark:border-gray-700 dark:text-gray-300">
                     <Eye className="size-3.5" />
                     دیدن بازوی خرید

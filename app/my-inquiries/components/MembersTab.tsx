@@ -253,7 +253,7 @@ function AddSupplierModal({ inquiryId, slug, existingIds, onClose, onDone }: {
     const addMember = useAddInquiryMember();
 
     // لینک عمومی بازو — همان آدرسی که از برگهٔ انتشار می‌رود
-    const publicUrl = typeof window !== 'undefined' ? `${window.location.origin}/${slug || inquiryId}` : '';
+    const publicUrl = typeof window !== 'undefined' ? `${window.location.origin}/i/${slug || inquiryId}` : '';
 
     // جست‌وجوی نرم — با هر تپ کوئری نزنیم
     useEffect(() => {
