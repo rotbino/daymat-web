@@ -2,6 +2,8 @@
 'use client';
 
 import React, { useState } from 'react';
+import { useSelector } from 'react-redux';
+import { RootState } from '@/lib/store/store';
 import EntityPicker, { EntityValue } from './EntityPicker';
 import BrandCategorySelect from './BrandCategorySelect';
 import { apiService } from '@/lib/api/apiService';
@@ -52,6 +54,10 @@ export default function BrandPicker({
     onModeChange,
     armSlug,
 }: Props) {
+    // ✅ قانون ویرایش برند: فقط سازندهٔ برند حق ویرایش/حذف دارد
+    //    و آن هم فقط تا قبل از تأیید و نهایی‌کردن ادمین (confirmed=false)
+    const meId = useSelector((s: RootState) => s.auth.user?.id || null);
+
     // ✅ controlled mode (از parent) یا uncontrolled (داخلی)
     const [internalMode, setInternalMode] = useState<boolean | null>(!!value ? true : null);
     const brandMode = mode !== undefined ? mode : internalMode;
@@ -111,8 +117,15 @@ export default function BrandPicker({
                     icon={<Tag className="w-3.5 h-3.5 text-on-surface-variant" />}
                     fetchFn={async (params) => {
                         const res = await apiService.brand.search(params.q, category, params.page, params.limit);
-                        // ✅ isByUser → isNew: فقط برندهای کاربر-ساخته ویرایش/حذف دارند
-                        return { items: res.items.map((i: any) => ({ ...i, isNew: !!i.isByUser })), hasMore: res.hasMore };
+                        // ✅ isNew فقط برای برندِ خودِ سازنده و فقط تا قبل از تأیید ادمین —
+                        //    برندِ تأییدشده یا ساختهٔ دیگران دکمهٔ ویرایش/حذف نمی‌بیند
+                        return {
+                            items: res.items.map((i: any) => ({
+                                ...i,
+                                isNew: !!i.isByUser && !i.confirmed && !!i.createdByUserId && i.createdByUserId === meId,
+                            })),
+                            hasMore: res.hasMore,
+                        };
                     }}
                     createFn={async (data) => {
                         return apiService.brand.create({ title: data.title, categoryId: data.categoryId, armSlug });

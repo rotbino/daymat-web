@@ -2,6 +2,8 @@
 'use client';
 
 import React, { useState } from 'react';
+import { useSelector } from 'react-redux';
+import { RootState } from '@/lib/store/store';
 import EntityPicker, { EntityValue } from './EntityPicker';
 import BrandCategorySelect from './BrandCategorySelect';
 import { apiService } from '@/lib/api/apiService';
@@ -56,6 +58,8 @@ export default function ProductReferencePicker({
     error,
     armSlug,
 }: Props) {
+    // ✅ قانون ویرایش (برند و کالای مرجع): فقط سازنده و فقط تا قبل از تأیید ادمین
+    const meId = useSelector((s: RootState) => s.auth.user?.id || null);
     return (
         <EntityPicker
             value={value}
@@ -67,7 +71,14 @@ export default function ProductReferencePicker({
             icon={<Package className="w-3.5 h-3.5 text-on-surface-variant" />}
             fetchFn={async (params) => {
                 const res = await apiService.product.search(params.q, category, params.page, params.limit, params.mine);
-                return { items: res.items, hasMore: res.hasMore };
+                // ✅ دکمهٔ ویرایش/حذف فقط برای کالایِ ساختهٔ خود کاربر و هنوز تأییدنشده (isNew)
+                return {
+                    items: res.items.map((i: any) => ({
+                        ...i,
+                        isNew: !!i.isNew && !!i.createdByUserId && i.createdByUserId === meId,
+                    })),
+                    hasMore: res.hasMore,
+                };
             }}
             createFn={async (data) => {
                 // ✅ تکلیف برند در مودال کالای مرجع باید صریح روشن شده باشد
@@ -197,6 +208,8 @@ function CreateProductExtraFields({
     category?: string;
     armSlug?: string;
 }) {
+    // ✅ قانون ویرایش برند: فقط سازندهٔ برند و فقط تا قبل از تأیید ادمین
+    const meId = useSelector((s: RootState) => s.auth.user?.id || null);
     const [imageUrl, setImageUrl] = useState<string>(initialData?.imageUrl || initialData?.thumbnailUrl || '');
     // ✅ تکلیف صریح برند — create: بدون پیش‌فرض (انتخاب اجباری)؛ edit: از برند موجود کالا
     const [brandChoice, setBrandChoice] = useState<'branded' | 'none' | null>(() => {
@@ -348,7 +361,14 @@ function CreateProductExtraFields({
                     icon={<Tag className="w-3.5 h-3.5 text-on-surface-variant" />}
                     fetchFn={async (params) => {
                         const res = await apiService.brand.search(params.q, category, params.page, params.limit);
-                        return { items: res.items.map((i: any) => ({ ...i, isNew: !!i.isByUser })), hasMore: res.hasMore };
+                        // ✅ قانون ویرایش برند: فقط سازندهٔ برند و فقط تا قبل از تأیید ادمین
+                        return {
+                            items: res.items.map((i: any) => ({
+                                ...i,
+                                isNew: !!i.isByUser && !i.confirmed && !!i.createdByUserId && i.createdByUserId === meId,
+                            })),
+                            hasMore: res.hasMore,
+                        };
                     }}
                     createFn={async (data) => {
                         return apiService.brand.create({ title: data.title, categoryId: data.categoryId, armSlug });
