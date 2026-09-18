@@ -17,6 +17,7 @@ import {
     useArms, useMyUncategorized, useSetOwnAdCategory,
     useMyPendingApprovals, useMyInquiries,
     useInquiryOpportunities, useCatalogTeam, useDeleteAd,
+    useBuyerCounts,
 } from '@/lib/api/apiHooks';
 import { toast } from 'sonner';
 import { cn } from '@/lib/utils';
@@ -36,6 +37,7 @@ import CatalogIdentityBar from './components/CatalogIdentityBar';
 import ConsoleTabs from './components/ConsoleTabs';
 import ProfileTab from './components/ProfileTab';
 import ProductsTab from './components/ProductsTab';
+import BuyersModal from './components/BuyersModal';
 import PublishTab from './components/PublishTab';
 import StatsTab from './components/StatsTab';
 import TeamTab from './components/TeamTab';
@@ -70,6 +72,9 @@ export default function MyCatalogsContent() {
     const [catModalAd, setCatModalAd] = useState<any>(null);
     const [publishModalAd, setPublishModalAd] = useState<any>(null);
     const [updatePriceAd, setUpdatePriceAd] = useState<any>(null);
+    // ✅ مچینگ دوطرفه — مدال «خریداران این کالا» + شمارشِ خریدارِ فعالِ هر کالا
+    const [buyersModalAd, setBuyersModalAd] = useState<any>(null);
+    const { data: buyerCountsData } = useBuyerCounts(currentId);
     const [verifyOpen, setVerifyOpen] = useState(false);
     const [passwordOpen, setPasswordOpen] = useState(false);
     const [celebrateDismissed, setCelebrateDismissed] = useState(false);
@@ -518,6 +523,8 @@ export default function MyCatalogsContent() {
                             onPublish={setPublishModalAd}
                             onPriceUpdate={setUpdatePriceAd}
                             onDelete={handleDeleteAd}
+                            onBuyers={setBuyersModalAd}
+                            buyerCounts={buyerCountsData?.counts}
                         />
                     </div>
                 )}
@@ -610,6 +617,10 @@ export default function MyCatalogsContent() {
             {updatePriceAd && (
                 <UpdatePriceModal isOpen={!!updatePriceAd} onClose={() => setUpdatePriceAd(null)} ad={updatePriceAd}
                                   onSuccess={() => refreshAll()} />
+            )}
+            {/* ✅ مچینگ دوطرفه — مدال «خریداران این کالا» سمت بازوی فروش */}
+            {buyersModalAd && (
+                <BuyersModal isOpen onClose={() => setBuyersModalAd(null)} ad={buyersModalAd} />
             )}
             <PublishToMarketModal
                 isOpen={!!publishModalAd}

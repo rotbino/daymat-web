@@ -4,7 +4,7 @@
 import React, { useRef, useState } from 'react';
 import Link from 'next/link';
 import Image from 'next/image';
-import { Clock, EyeOff, Layers, Package, Pencil, RefreshCw, Store, TrendingUp, Unlink, History, Trash2 } from 'lucide-react';
+import { Clock, EyeOff, Layers, Package, Pencil, RefreshCw, Store, TrendingUp, Unlink, History, Trash2, Users } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { fmt, inMarket, isAdExpired, isPriceExpired, isUncategorized, priceAgeDays } from '../constants';
 
@@ -14,7 +14,7 @@ import { fmt, inMarket, isAdExpired, isPriceExpired, isUncategorized, priceAgeDa
  * چیدمان: بالای ردیف (عکس + هویت + قیمت) و ردیف اکشن افقی پایین — خوانا در موبایل.
  * حذف: دو-مرحله‌ای (اول کلیک → «تایید حذف؟»، کلیک دوم واقعاً حذف می‌کند) — بدون مدال اضافه.
  */
-function ProductRowBase({ ad, canPublishMarket = true, onEdit, onCategory, onRefresh, onPublish, onPriceUpdate, onDelete }: {
+function ProductRowBase({ ad, canPublishMarket = true, onEdit, onCategory, onRefresh, onPublish, onPriceUpdate, onDelete, onBuyers, buyerCount = 0 }: {
     ad: any;
     /** ✅ کاتالوگ عضو حداقل یک بازاره؟ — والا دکمه بازارها مخفی می‌شود (کاربر درگیر بازاری که نیست نمی‌شود) */
     canPublishMarket?: boolean;
@@ -24,6 +24,9 @@ function ProductRowBase({ ad, canPublishMarket = true, onEdit, onCategory, onRef
     onPublish: (ad: any) => void;
     onPriceUpdate: (ad: any) => void;
     onDelete: (ad: any) => void;
+    /** ✅ مچینگ دوطرفه — مدال «خریداران این کالا»؛ فقط وقتی خریدارِ فعالِ واقعی باشد دیده می‌شود */
+    onBuyers?: (ad: any) => void;
+    buyerCount?: number;
 }) {
     const expired = isAdExpired(ad);
     const priceExpired = isPriceExpired(ad);
@@ -148,6 +151,16 @@ function ProductRowBase({ ad, canPublishMarket = true, onEdit, onCategory, onRef
                     </button>
                 )}
                 <span className="flex-1" />
+                {/* ✅ مچینگ دوطرفه — «خریداران این کالا»؛ خریدارِ واقعی پشتش باشد نشان داده می‌شود */}
+                {onBuyers && buyerCount > 0 && (
+                    <button onClick={() => onBuyers(ad)}
+                            title="بازوهای خریدی که همین کالا را فعالانه قیمت‌گیری می‌کنند"
+                            className="h-8 px-3 rounded-lg bg-brand-contrast text-white text-[10px] font-extrabold flex items-center gap-1
+                                hover:bg-brand-contrast-strong active:scale-95 transition-transform shadow-sm">
+                        <Users className="w-3 h-3" /> خریداران این کالا
+                        <span className="rounded-full bg-white/20 px-1.5 text-[9px] font-black">{buyerCount.toLocaleString('fa-IR')}</span>
+                    </button>
+                )}
                 {/* ✅ دکمه بازارها — فقط وقتی کاتالوگ عضو حداقل یک بازاره */}
                 {canPublishMarket && (
                     <button onClick={() => onPublish(ad)}

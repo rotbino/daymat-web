@@ -6,7 +6,7 @@ import { useRouter } from 'next/navigation';
 import { useSelector } from 'react-redux';
 import { RootState } from '@/lib/store/store';
 import { toast } from 'sonner';
-import { Save, Loader2, CreditCard, Shield, Globe, Palette } from 'lucide-react';
+import { Save, Loader2, CreditCard, Shield, Globe, Palette, Store } from 'lucide-react';
 import {
     useCreditSettings,
     useUpdateCreditSettings,
@@ -16,9 +16,11 @@ import {
     useUpdateSecuritySettings,
     useAppearanceSettings,
     useUpdateAppearanceSettings,
+    useArmsSettings,
+    useUpdateArmsSettings,
 } from '@/lib/api/apiHooks';
 
-type SettingsTab = 'credit' | 'general' | 'security' | 'appearance';
+type SettingsTab = 'credit' | 'general' | 'security' | 'appearance' | 'arms';
 
 // ============================================================
 // ✅ تایپ‌ها
@@ -50,6 +52,14 @@ interface AppearanceSettings {
     primaryColor: string;
 }
 
+interface ArmsSettings {
+    enforceMatchLimits: boolean;
+    matchFreeRevealsDaily: number;
+    matchMaxRevealsDaily: number;
+    creditPriceToman: number;
+    freeProductsPerCatalog: number;
+}
+
 export default function AdminSettingsPage() {
     const router = useRouter();
     const { user } = useSelector((state: RootState) => state.auth);
@@ -61,11 +71,13 @@ export default function AdminSettingsPage() {
     const { data: generalData, isLoading: generalLoading } = useGeneralSettings();
     const { data: securityData, isLoading: securityLoading } = useSecuritySettings();
     const { data: appearanceData, isLoading: appearanceLoading } = useAppearanceSettings();
+    const { data: armsData, isLoading: armsLoading } = useArmsSettings();
 
     const updateCredit = useUpdateCreditSettings();
     const updateGeneral = useUpdateGeneralSettings();
     const updateSecurity = useUpdateSecuritySettings();
     const updateAppearance = useUpdateAppearanceSettings();
+    const updateArms = useUpdateArmsSettings();
 
     // ============================================================
     // ✅ State
@@ -99,7 +111,15 @@ export default function AdminSettingsPage() {
         primaryColor: '#610000',
     });
 
-    const isLoading = creditLoading || generalLoading || securityLoading || appearanceLoading;
+    const [armsSettings, setArmsSettings] = useState<ArmsSettings>({
+        enforceMatchLimits: false,
+        matchFreeRevealsDaily: 3,
+        matchMaxRevealsDaily: 10,
+        creditPriceToman: 1000,
+        freeProductsPerCatalog: 20,
+    });
+
+    const isLoading = creditLoading || generalLoading || securityLoading || appearanceLoading || armsLoading;
 
     // ============================================================
     // ✅ پر کردن دیتا از API
@@ -128,6 +148,12 @@ export default function AdminSettingsPage() {
         }
     }, [appearanceData]);
 
+    useEffect(() => {
+        if (armsData) {
+            setArmsSettings(armsData);
+        }
+    }, [armsData]);
+
     // ============================================================
     // ✅ ذخیره تنظیمات
     // ============================================================
@@ -138,6 +164,7 @@ export default function AdminSettingsPage() {
                 updateGeneral.mutateAsync(generalSettings),
                 updateSecurity.mutateAsync(securitySettings),
                 updateAppearance.mutateAsync(appearanceSettings),
+                updateArms.mutateAsync(armsSettings),
             ]);
         } catch (error) {
             // خطاها در هوک‌ها مدیریت می‌شوند
@@ -149,6 +176,7 @@ export default function AdminSettingsPage() {
     // ============================================================
     const tabs: { id: SettingsTab; label: string; icon: React.ReactNode }[] = [
         { id: 'credit', label: 'اعتبار', icon: <CreditCard className="w-4 h-4" /> },
+        { id: 'arms', label: 'بازوها', icon: <Store className="w-4 h-4" /> },
         { id: 'general', label: 'عمومی', icon: <Globe className="w-4 h-4" /> },
         { id: 'security', label: 'امنیت', icon: <Shield className="w-4 h-4" /> },
         { id: 'appearance', label: 'ظاهر', icon: <Palette className="w-4 h-4" /> },
@@ -164,6 +192,8 @@ export default function AdminSettingsPage() {
                 return renderSecurityTab();
             case 'appearance':
                 return renderAppearanceTab();
+            case 'arms':
+                return renderArmsTab();
             default:
                 return null;
         }
@@ -500,7 +530,105 @@ export default function AdminSettingsPage() {
         );
     }
 
-    const isAnySaving = updateCredit.isPending || updateGeneral.isPending || updateSecurity.isPending || updateAppearance.isPending;
+    const isAnySaving = updateCredit.isPending || updateGeneral.isPending || updateSecurity.isPending || updateAppearance.isPending || updateArms.isPending;
+
+    // ============================================================
+    // ✅ تب بازوها — سهمیهٔ رایگان/سقف روزانه مچینگ + قیمت اعتبار سراسری
+    //    فعلا enforceMatchLimits خاموش است: هیچ کاربری محدود نمی‌شود و هیچ
+    //    چیزی از مالی نمی‌بیند — فقط مصرف در دفتر مچینگ ثبت می‌شود تا
+    //    درآمدزایی بعداً با یک کلید روشن شود.
+    // ============================================================
+    const renderArmsTab = () => (
+        <div className="space-y-6">
+            <div className="bg-surface-container-low border border-outline-variant p-4 rounded-xl">
+                <h3 className="text-sm font-semibold text-on-surface mb-1">تنظیمات بازوها — رایگان و پولی</h3>
+                <p className="text-xs text-on-surface-variant mb-4">
+                    مچینگ دوطرفهٔ خریدار↔تامین‌کننده، تعداد کالای رایگان و قیمت اعتبارِ سراسری
+                </p>
+
+                {/* سوییچ اصلی درآمدزایی — فعلا خاموش */}
+                <div className="mb-5 rounded-xl border border-amber-300/60 bg-amber-50/60 dark:bg-amber-900/10 p-3.5">
+                    <label className="flex items-center justify-between gap-3 cursor-pointer">
+                        <div>
+                            <p className="text-xs font-bold text-on-surface">اعمال سقف و اعتبار در مچینگ</p>
+                            <p className="mt-0.5 text-[10.5px] leading-5 text-on-surface-variant">
+                                خاموش = همه‌چیز رایگان و بی‌سقف (الان). روشن = بعد از سهمیهٔ رایگان روزانه،
+                                برداشتن شمارهٔ خریدار برای تامین‌کننده اعتبار مصرف می‌کند (برآورد ارزش سفارش،
+                                سفارشِ بزرگ‌تر = اعتبارِ بیشتر). شمارهٔ فروشنده برای خریدار همیشه رایگان است.
+                            </p>
+                        </div>
+                        <input
+                            type="checkbox"
+                            checked={armsSettings.enforceMatchLimits}
+                            onChange={(e) => setArmsSettings({ ...armsSettings, enforceMatchLimits: e.target.checked })}
+                            className="w-10 h-5 accent-amber-600 shrink-0"
+                        />
+                    </label>
+                </div>
+
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <div>
+                        <label className="text-xs font-medium text-on-surface-variant block mb-1">
+                            برداشت رایگان روزانه از مچینگ
+                        </label>
+                        <input
+                            type="number"
+                            value={armsSettings.matchFreeRevealsDaily}
+                            onChange={(e) => setArmsSettings({ ...armsSettings, matchFreeRevealsDaily: parseInt(e.target.value) || 0 })}
+                            className="w-full bg-surface-container-lowest border border-outline rounded-lg h-10 px-3 text-sm text-right focus:ring-1 focus:ring-primary focus:border-primary outline-none transition-all"
+                        />
+                        <p className="text-[10px] text-on-surface-variant/60 mt-1">مثلا ۳ — بعد از آن با اعتبار</p>
+                    </div>
+
+                    <div>
+                        <label className="text-xs font-medium text-on-surface-variant block mb-1">
+                            حداکثر برداشت روزانه (با اعتبار)
+                        </label>
+                        <input
+                            type="number"
+                            value={armsSettings.matchMaxRevealsDaily}
+                            onChange={(e) => setArmsSettings({ ...armsSettings, matchMaxRevealsDaily: parseInt(e.target.value) || 0 })}
+                            className="w-full bg-surface-container-lowest border border-outline rounded-lg h-10 px-3 text-sm text-right focus:ring-1 focus:ring-primary focus:border-primary outline-none transition-all"
+                        />
+                        <p className="text-[10px] text-on-surface-variant/60 mt-1">مثلا ۱۰ نفر در روز</p>
+                    </div>
+
+                    <div>
+                        <label className="text-xs font-medium text-on-surface-variant block mb-1">
+                            قیمت هر اعتبار (تومان)
+                        </label>
+                        <input
+                            type="number"
+                            value={armsSettings.creditPriceToman}
+                            onChange={(e) => setArmsSettings({ ...armsSettings, creditPriceToman: parseInt(e.target.value) || 0 })}
+                            className="w-full bg-surface-container-lowest border border-outline rounded-lg h-10 px-3 text-sm text-right focus:ring-1 focus:ring-primary focus:border-primary outline-none transition-all"
+                        />
+                        <p className="text-[10px] text-on-surface-variant/60 mt-1">قیمتِ اعتبار سراسری و ثابت است — بازارها فقط تعدادِ مصرف را تنظیم می‌کنند</p>
+                    </div>
+
+                    <div>
+                        <label className="text-xs font-medium text-on-surface-variant block mb-1">
+                            تعداد کالای رایگان هر بازوی فروش
+                        </label>
+                        <input
+                            type="number"
+                            value={armsSettings.freeProductsPerCatalog}
+                            onChange={(e) => setArmsSettings({ ...armsSettings, freeProductsPerCatalog: parseInt(e.target.value) || 0 })}
+                            className="w-full bg-surface-container-lowest border border-outline rounded-lg h-10 px-3 text-sm text-right focus:ring-1 focus:ring-primary focus:border-primary outline-none transition-all"
+                        />
+                        <p className="text-[10px] text-on-surface-variant/60 mt-1">فراتر از آن = بستهٔ پولی (پایهٔ بسته‌های آینده)</p>
+                    </div>
+                </div>
+
+                {updateArms.isPending && (
+                    <div className="mt-4 flex items-center gap-2 text-primary">
+                        <Loader2 className="w-4 h-4 animate-spin" />
+                        <span className="text-sm">در حال ذخیره...</span>
+                    </div>
+                )}
+            </div>
+        </div>
+    );
 
     return (
         <div className="p-4 md:p-6 max-w-5xl mx-auto">

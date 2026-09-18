@@ -27,12 +27,16 @@ interface Props {
     onPublish: (ad: any) => void;
     onPriceUpdate: (ad: any) => void;
     onDelete: (ad: any) => void;
+    /** ✅ مچینگ دوطرفه — باز کردن مدال «خریداران این کالا» + شمارشِ خریدارِ هر کالا */
+    onBuyers: (ad: any) => void;
+    buyerCounts?: Record<string, number>;
 }
 
 /** تب محصولات — قلب پنل مدیریت بازوی فروش */
 export default function ProductsTab({
     products, adsLoading, statusFilter, onFilterChange, currentCatalog, canPublishMarket = true,
     onOpenCategorySettings, onOpenUnitSettings, onCategory, onRefresh, onPublish, onPriceUpdate, onDelete,
+    onBuyers, buyerCounts,
 }: Props) {
     const router = useRouter();
     const isService = currentCatalog.salesType === 'service';
@@ -139,6 +143,8 @@ export default function ProductsTab({
                             onPublish={onPublish}
                             onPriceUpdate={onPriceUpdate}
                             onDelete={onDelete}
+                            onBuyers={onBuyers}
+                            buyerCount={buyerCounts?.[ad.id] ?? 0}
                         />
                     ))}
                 </div>

@@ -1033,6 +1033,13 @@ export const apiService = {
         updateAppearance: (data: any): Promise<any> =>
             apiRequest('/admin/settings/appearance', { method: 'PUT', data }),
 
+        // تنظیمات بازوها — رایگان/پولی و اقتصادِ مچینگ (فقط ادمین)
+        getArms: (): Promise<any> =>
+            apiRequest('/admin/settings/arms'),
+
+        updateArms: (data: any): Promise<any> =>
+            apiRequest('/admin/settings/arms', { method: 'PUT', data }),
+
         // دریافت یک تنظیمات خاص
         getOne: (key: string): Promise<any> =>
             apiRequest(`/admin/settings/${key}`),
@@ -1634,4 +1641,18 @@ export const apiService = {
             apiRequest(`/inquiry/${id}/saved-status`),
     },
 
+    // ── مچینگ دوطرفهٔ خریدار↔تامین‌کننده — فروشندگان/خریدارانِ هر کالا ──
+    match: {
+        // شمارش خریدارانِ فعالِ هر کالای بازوی فروش — چیپ «خریداران این کالا (n)»
+        buyerCounts: (catalogId: string): Promise<{ counts: Record<string, number>; total: number }> =>
+            apiRequest(`/match/catalog/${catalogId}/buyer-counts`),
+
+        // خریدارانِ یک کالا — مدال «خریداران این کالا»
+        adBuyers: (adId: string): Promise<any> =>
+            apiRequest(`/match/ad/${adId}/buyers`),
+
+        // افشای شمارهٔ تماس با ثبت در دفتر مچینگ — شماره فقط از این مسیر داده می‌شود
+        reveal: (data: { side: 'seller' | 'buyer'; catalogId?: string; inquiryId?: string; adId?: string; itemId?: string; productReferenceId?: string }): Promise<any> =>
+            apiRequest('/match/reveal', { method: 'POST', data }),
+    },
 };

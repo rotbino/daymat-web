@@ -744,6 +744,30 @@ export const useUpdateAppearanceSettings = () => {
     });
 };
 
+// ============================================================
+// 🏪 تنظیمات بازوها — رایگان/پولی و اقتصادِ مچینگ (فقط ادمین)
+//    تا وقتی enforceMatchLimits خاموش است هیچ کاربری محدود نمی‌شود.
+// ============================================================
+export const useArmsSettings = () => {
+    return useQuery({
+        queryKey: ['admin', 'settings', 'arms'],
+        queryFn: () => apiService.settings.getArms(),
+        staleTime: 1000 * 60 * 5,
+    });
+};
+
+export const useUpdateArmsSettings = () => {
+    const queryClient = useQueryClient();
+    return useMutation({
+        mutationFn: (data: any) => apiService.settings.updateArms(data),
+        onSuccess: () => {
+            queryClient.invalidateQueries({ queryKey: ['admin', 'settings', 'arms'] });
+            toast.success('تنظیمات بازوها با موفقیت ذخیره شد');
+        },
+        onError: (error: ApiError) => toast.error(error.message || 'خطا در ذخیره تنظیمات بازوها'),
+    });
+};
+
 export const useSetting = (key: string) => {
     return useQuery({
         queryKey: ['admin', 'settings', key],
@@ -2084,6 +2108,39 @@ export const useSupplierSuggestions = (inquiryId?: string) => {
         queryFn: () => apiService.inquiry.supplierSuggestions(inquiryId!),
         enabled: !!inquiryId && hasAccess,
         staleTime: 60 * 1000,
+    });
+};
+
+// ============================================================
+// 🔁 مچینگ دوطرفه — خریدارانِ کالا (سمت بازوی فروش) + افشای شماره
+//    هر دو طرفِ معامله یکدیگر را از پشتِ کالاهایشان پیدا می‌کنند؛
+//    شماره فقط با reveal داده می‌شود و هر برداشت در دفتر مچینگ ثبت می‌گردد.
+// ============================================================
+export const useBuyerCounts = (catalogId?: string | null) => {
+    const { hasAccess } = useAuthState();
+    return useQuery({
+        queryKey: ['match', 'buyer-counts', catalogId],
+        queryFn: () => apiService.match.buyerCounts(catalogId!),
+        enabled: !!catalogId && hasAccess,
+        staleTime: 30 * 1000,
+    });
+};
+
+export const useAdBuyers = (adId?: string | null, enabled = true) => {
+    const { hasAccess } = useAuthState();
+    return useQuery({
+        queryKey: ['match', 'ad-buyers', adId],
+        queryFn: () => apiService.match.adBuyers(adId!),
+        enabled: !!adId && enabled && hasAccess,
+        staleTime: 30 * 1000,
+    });
+};
+
+export const useRevealContact = () => {
+    return useMutation({
+        mutationFn: (data: { side: 'seller' | 'buyer'; catalogId?: string; inquiryId?: string; adId?: string; itemId?: string; productReferenceId?: string }) =>
+            apiService.match.reveal(data),
+        onError: (error: ApiError) => toast.error(error.message || 'دریافت شماره تماس ناموفق بود'),
     });
 };
 

@@ -13,13 +13,14 @@ import { motion, AnimatePresence } from 'framer-motion';
 import {
     Megaphone, Pencil, Trash2, Plus, MessageSquareText,
     PackageSearch, Loader2, ChevronDown, Clock, Handshake, Square,
-    Sparkles, Check,
+    Store,
 } from 'lucide-react';
 import { toast } from 'sonner';
 import { faNum, faDigits, faPrice } from '../../inquiries/utils';
 import { cn } from '@/lib/utils';
-import { useAddInquiryMember, useSupplierSuggestions } from '@/lib/api/apiHooks';
+import { useSupplierSuggestions } from '@/lib/api/apiHooks';
 import type { InquiryDetail, InquiryItem, InquiryOffer } from '@/lib/api/apiTypes';
+import SellersModal from './SellersModal';
 
 interface Props {
     detail: InquiryDetail;
@@ -58,55 +59,7 @@ function remainingLabel(iso?: string | null): { text: string; hours: number | nu
     };
 }
 
-/** ✅ پیشنهاد تامین‌کنندهٔ دیمت برای این قلم — وعدهٔ «شبکه‌ت را گسترش می‌دهیم» بی‌جست‌وجو:
- *    بازوهای فروشی که همین کالا را با قیمت فعال دارند (همان‌شهری‌ها اول). دعوت = درخواست تامین. */
-function SuggestedSuppliers({ suggestions, invitedIds, busy, onInvite }: {
-    suggestions: any[];
-    invitedIds: Set<string>;
-    busy: boolean;
-    onInvite: (s: any) => void;
-}) {
-    if (!suggestions?.length) return null;
-    const top = suggestions.slice(0, 3);
-    return (
-        <div className="mt-2.5 rounded-xl border border-brand-primary-tint bg-brand-primary-soft/30 p-2.5 dark:border-emerald-500/20 dark:bg-emerald-500/5">
-            <p className="flex items-center gap-1.5 text-[10.5px] font-black text-emerald-700 dark:text-emerald-400">
-                <Sparkles className="size-3.5 shrink-0" />
-                تامین‌کننده‌های این کالا در دیمت
-            </p>
-            <div className="mt-1.5 space-y-1">
-                {top.map((s) => {
-                    const already = invitedIds.has(s.catalogId);
-                    return (
-                        <div key={s.catalogId} className="flex items-center gap-2 rounded-lg bg-white/80 px-2 py-1.5 dark:bg-gray-900/60">
-                            <span className="min-w-0 flex-1 truncate text-[11px] font-extrabold text-stone-700 dark:text-gray-200">
-                                {s.name}
-                                {s.city ? <span className="font-bold text-stone-400"> · {s.city}</span> : null}
-                            </span>
-                            {!isNaN(Number(s.minPrice)) && Number(s.minPrice) > 0 && (
-                                <span className="shrink-0 rounded-full bg-emerald-50 px-2 py-0.5 text-[9.5px] font-black text-emerald-700 dark:bg-emerald-500/10 dark:text-emerald-400">
-                                    از {faPrice(s.minPrice)}{s.unitTitle && s.unitTitle !== 'عدد' ? ` / ${s.unitTitle}` : ''}
-                                </span>
-                            )}
-                            {already ? (
-                                <span className="flex shrink-0 items-center gap-0.5 text-[9.5px] font-extrabold text-emerald-600">
-                                    <Check className="size-3" /> دعوت شدی
-                                </span>
-                            ) : (
-                                <button onClick={() => onInvite(s)} disabled={busy}
-                                    className="shrink-0 rounded-lg bg-brand-contrast px-2 py-1 text-[9.5px] font-extrabold text-white transition-colors hover:bg-brand-contrast-strong disabled:opacity-50">
-                                    درخواست تامین
-                                </button>
-                            )}
-                        </div>
-                    );
-                })}
-            </div>
-        </div>
-    );
-}
-
-function ItemRow({ item, offerCount, variant, busy, onEdit, onToggleUrgent, onDelete, onGoOffers, suggestions, invitedIds, inviteBusy, onInvite, inquiryId }: {
+function ItemRow({ item, offerCount, variant, busy, onEdit, onToggleUrgent, onDelete, onGoOffers, onOpenSellers, sellerCount, inquiryId }: {
     item: InquiryItem;
     offerCount: number;
     variant: 'urgent' | 'regular';
@@ -115,11 +68,10 @@ function ItemRow({ item, offerCount, variant, busy, onEdit, onToggleUrgent, onDe
     onToggleUrgent: () => void;
     onDelete: () => void;
     onGoOffers: () => void;
-    /** ✅ پیشنهاد تامین‌کننده‌های دیمت برای این قلم فعال — دعوت با یک لمس */
-    suggestions?: any[];
-    invitedIds?: Set<string>;
-    inviteBusy?: boolean;
-    onInvite?: (s: any) => void;
+    /** ✅ مچینگ دوطرفه — لینکِ تمیزِ «فروشندگان این کالا» به‌جای لیستِ زیرِ کالا؛
+     *  فقط وقتی خریدارِ واقعی وجود دارد (sellerCount>۰) دیده می‌شود */
+    onOpenSellers?: () => void;
+    sellerCount?: number;
     inquiryId: string;
 }) {
     const urgent = variant === 'urgent';
@@ -222,6 +174,16 @@ function ItemRow({ item, offerCount, variant, busy, onEdit, onToggleUrgent, onDe
                         شروع قیمت‌گیری
                     </button>
                 )}
+                {/* ✅ مچینگ دوطرفه — لینک «فروشندگان این کالا»؛ فقط وقتی خریدارِ واقعی پشتش باشد دیده می‌شود */
+                    urgent && !!onOpenSellers && !!sellerCount && sellerCount > 0 && (
+                        <button onClick={onOpenSellers}
+                            title="بازوهای فروشی که همین کالا را فعال می‌فروشند"
+                            className="flex h-8 items-center gap-1.5 rounded-lg bg-emerald-600 px-2.5 text-[11px] font-extrabold text-white transition-colors hover:bg-emerald-700 active:scale-[0.97]">
+                            <Store className="size-3.5" />
+                            فروشندگان این کالا
+                            <span className="rounded-full bg-white/20 px-1.5 text-[9px] font-black">{faNum(sellerCount)}</span>
+                        </button>
+                    )}
                 <button onClick={onEdit} aria-label="ویرایش قلم" title="ویرایش"
                     className="grid size-8 place-items-center rounded-lg text-stone-400 transition-colors hover:bg-stone-100 hover:text-stone-600 dark:hover:bg-gray-800">
                     <Pencil className="size-3.5" />
@@ -232,11 +194,6 @@ function ItemRow({ item, offerCount, variant, busy, onEdit, onToggleUrgent, onDe
                     <Trash2 className="size-3.5" />
                 </button>
             </div>
-
-            {/* ✅ پیشنهاد تامین‌کننده — فقط برای قلم فعال؛ هرجا کالای مرجع پیدا شد */}
-            {urgent && suggestions && suggestions.length > 0 && (
-                <SuggestedSuppliers suggestions={suggestions} invitedIds={invitedIds ?? new Set()} busy={!!inviteBusy} onInvite={(s) => onInvite?.(s)} />
-            )}
         </motion.div>
     );
 }
@@ -250,7 +207,7 @@ export default function ItemsTab({ detail, offers, loading, onAdd, onEdit, onTog
         return acc;
     }, {});
 
-    // ✅ مچینگ خودکار — برای هر قلم فعال، تامین‌کننده‌های مرتبطِ دیمت (همان‌شهری اول)
+    // ✅ مچینگ دوطرفه — برای هر قلم فعال، تعدادِ فروشندگانِ مرتبط (برای چیپ لینک) + مدال
     const { data: suggestionsData } = useSupplierSuggestions(detail.id);
     const suggestionsByItem = useMemo(() => {
         const map = new Map<string, any[]>();
@@ -259,17 +216,7 @@ export default function ItemsTab({ detail, offers, loading, onAdd, onEdit, onTog
         }
         return map;
     }, [suggestionsData]);
-    const [invitedCatalogIds, setInvitedCatalogIds] = useState<Set<string>>(new Set());
-    const addMember = useAddInquiryMember();
-    const handleInvite = async (catalogId: string, name: string) => {
-        try {
-            await addMember.mutateAsync({ inquiryId: detail.id, catalogId });
-            setInvitedCatalogIds((prev) => new Set(prev).add(catalogId));
-            toast.success(`درخواست تامین برای «${name}» ثبت شد — بعد از پذیرششان، اقلامت را می‌بینند`);
-        } catch (e: any) {
-            toast.error(e?.response?.data?.message || 'ارسال درخواست ناموفق بود');
-        }
-    };
+    const [sellersModalItem, setSellersModalItem] = useState<InquiryItem | null>(null);
     // ✅ مهلت گروهی — چیپ جمع‌وجور روبروی عنوان «اقلام در حال قیمت‌گیری» (خواستهٔ مالک) + ویرایش عددی به ساعت
     const remaining = remainingLabel(deadline);
     const deadlineActive = !!deadline && new Date(deadline).getTime() > Date.now();
@@ -400,10 +347,8 @@ export default function ItemsTab({ detail, offers, loading, onAdd, onEdit, onTog
                                     {urgentItems.map((it) => (
                                         <ItemRow key={it.id} item={it} variant="urgent" busy={busyItemId === it.id}
                                             offerCount={countByItem[it.id] || 0}
-                                            suggestions={suggestionsByItem.get(it.id)}
-                                            invitedIds={invitedCatalogIds}
-                                            inviteBusy={addMember.isPending}
-                                            onInvite={(s: any) => handleInvite(s.catalogId, s.name)}
+                                            onOpenSellers={() => setSellersModalItem(it)}
+                                            sellerCount={suggestionsByItem.get(it.id)?.length ?? 0}
                                             inquiryId={detail.id}
                                             onEdit={() => onEdit(it)}
                                             onToggleUrgent={() => onToggleUrgent(it)}
@@ -446,6 +391,19 @@ export default function ItemsTab({ detail, offers, loading, onAdd, onEdit, onTog
                         </section>
                     )}
                 </>
+            )}
+
+            {/* ✅ مدال «فروشندگان این کالا» — مچینگ دوطرفه، جای لیستِ زیرِ کالا */}
+            {sellersModalItem && (
+                <SellersModal
+                    isOpen
+                    onClose={() => setSellersModalItem(null)}
+                    itemName={sellersModalItem.name}
+                    itemId={sellersModalItem.id}
+                    productReferenceId={(sellersModalItem as any).referenceItemId}
+                    suppliers={suggestionsByItem.get(sellersModalItem.id) ?? []}
+                    inquiryId={detail.id}
+                />
             )}
         </div>
     );
