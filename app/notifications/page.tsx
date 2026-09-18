@@ -94,14 +94,14 @@ export default function NotificationsPage() {
             <NavTabs />
             <header className="max-w-3xl mx-auto px-4 pt-6 pb-4">
                 <h1 className="text-lg font-black text-on-surface flex items-center gap-1.5">
-                    اعلان‌ها
+                    کارتابل کارها
                     {unreadCount > 0 && (
                         <span className="min-w-5 h-5 px-1.5 rounded-full bg-red-500 text-white text-[11px] font-black grid place-items-center">
                             {unreadCount.toLocaleString('fa-IR')} جدید
                         </span>
                     )}
                 </h1>
-                <p className="text-xs text-on-surface-variant mt-1">درخواست‌های ارتباط تجاری، تاییدها و وضعیت بازوهای فروش — همه اینجا.</p>
+                <p className="text-xs text-on-surface-variant mt-1">درخواست‌های ارتباط تجاری، تاییدها و وضعیت بازوهای فروش — همه در کارتابل.</p>
             </header>
 
             <main className="max-w-3xl mx-auto px-4 space-y-2.5">
@@ -118,7 +118,7 @@ export default function NotificationsPage() {
                                 </span>
                                 <span className="block text-[10px] text-on-surface-variant leading-5">
                                     تا وقتی حداقل ۵ تامین‌کننده به لیست تامین‌کنندگان بازوی خریدت اضافه نشود، این اعلان باقی می‌ماند.
-                                    از تب «تامین‌کنندگان» به تامین‌کننده‌های مناسب کالایت در شهر خودت درخواست ارتباط بده،
+                                    از تب «تامین‌کنندگان» به تامین‌کننده‌های مناسب کالایت در شهر خودت یا هر شهری درخواست ارتباط بده،
                                     یا لینکت را برای تامین‌کننده‌ها و بازاریاب‌هایی که می‌شناسی بفرست.
                                 </span>
                                 <span className="mt-1 block text-[10px] font-bold text-brand-contrast group-hover:underline">
