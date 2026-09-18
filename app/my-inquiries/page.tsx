@@ -479,7 +479,7 @@ export default function MyInquiriesPage() {
                                 return { units };
                             }}
                             onSaved={() => { /* کش با invalidate تازه می‌شود */ }}
-                            title="واحدهای بازوی خرید"
+                            title="انتخاب واحد خرید"
                             showQtyFields={false}
                         />
 
