@@ -76,7 +76,7 @@ export function StepPricing() {
                                 <NumberInput value={formData.singleUnitPrice || undefined}
                                              onChange={handleSingleUnitPriceChange}
                                              unit={`${CURRENCY}/${baseUnitTitle}`}
-                                             className="w-full h-14 text-lg font-extrabold" />
+                                             className="w-full h-14 text-lg font-extrabold ring-2 ring-primary/20 rounded-xl" />
                                 <p className="text-[9px] text-on-surface-variant/50">قیمت هر {baseUnitTitle}</p>
                             </div>
                             <div className="space-y-1.5">

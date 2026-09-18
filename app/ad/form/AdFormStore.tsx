@@ -223,8 +223,8 @@ export function AdFormProvider({ adId, onSuccess, children }: { adId?: string; o
         () => (formData.categoryId ? findNodeInTree(categoryTree, formData.categoryId) : null),
         [formData.categoryId, categoryTree],
     );
-    const unitName = formData.unitTitle || selectedCategoryNode?.overrideUnitTitle || 'واحد';
-    const baseUnitTitle = selectedCategoryNode?.baseUnitTitle || 'واحد';
+    const unitName = formData.unitTitle || selectedCategoryNode?.overrideUnitTitle || 'عدد';
+    const baseUnitTitle = selectedCategoryNode?.baseUnitTitle || 'عدد';
 
     // ═══ suggestedUnitIds ═══
     const suggestedUnitIds = useMemo(() => {

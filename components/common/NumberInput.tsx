@@ -65,7 +65,7 @@ export const NumberInput: React.FC<NumberInputProps> = ({
                 className={`w-full bg-surface-container-lowest border border-outline px-3 py-2 focus:ring-1 focus:ring-primary focus:border-primary outline-none transition-all rounded-lg text-center ${className}`}
             />
             {unit && (
-                <span className={`absolute top-1/2 left-3 -translate-y-1/2 text-on-surface-variant  pointer-events-none  ${unitClassName}`}>
+                <span className={`absolute text-xs top-1/2 left-3 -translate-y-1/2 text-on-surface-variant  pointer-events-none  ${unitClassName}`}>
                     {unit}
                 </span>
             )}
