@@ -173,12 +173,12 @@ export default function UnitSettingsModal({ isOpen, onClose, catalogId, initialU
         }
     };
 
-    // ✅ سرچ همیشه کلی — فیلتر دسته (تکی/بسته) فقط وقتی سرچ خالی است اعمال می‌شود
+    // ✅ فیلتر همه/تکی/بسته فقط وقتی سرچ خالی است اعمال می‌شود — سرچ همیشه کلی است
     const filtered = useMemo(() => {
         const q = search.trim();
         return (allUnits as any[]).filter((u) =>
             (!q || (u.title || '').includes(q) || (u.shortCode || '').includes(q))
-            && (!q || scopeFilter === 'all' || u.scope === scopeFilter));
+            && (q || scopeFilter === 'all' || u.scope === scopeFilter));
     }, [allUnits, search, scopeFilter]);
 
     // ✅ انتخاب‌شده‌ها فقط با سورتینگ بالا می‌آیند — نه بخش جدای بزرگ
@@ -260,7 +260,8 @@ export default function UnitSettingsModal({ isOpen, onClose, catalogId, initialU
                     <div className="flex items-center gap-2">
                         <div className="relative flex-1">
                             <Search className="absolute right-3 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-gray-400" />
-                            <input value={search} onChange={(e) => setSearch(e.target.value)}
+                            {/* ✅ با اولین حرفِ سرچ، فیلتر اتوماتیک روی «همه» می‌آید — جستجو روی همهٔ واحدها */}
+                            <input value={search} onChange={(e) => { setSearch(e.target.value); setScopeFilter('all'); }}
                                    placeholder="جستجو و افزودن واحد…"
                                    className="w-full h-10 pr-9 rounded-xl bg-surface-container-lowest border border-outline-variant/40
                                        text-sm outline-none focus:border-amber-500 transition-colors" />
