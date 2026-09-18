@@ -5,6 +5,8 @@
 //    هر کاربر از هر نوع یکی — سیستم پر از بازوی فروش سرگردان نشود)
 // ✅ شیر + چشم + ⋯ کنار هویت — دسترسی سریع بدون رفتن به تبها (بنا بر خواستهٔ کاربر)
 //    «ساخت صفحه جدید» هم داخل همین ⋯ است؛ قرینهٔ منوی ⋯ بازوی فروش
+// ✅ موبایل (بازطراحی): فقط «شیر» و «⋯» کنار هویت؛ «چشم» به بالای منوی ⋯ می‌رود
+//    تا عنوان بازوی خرید تمام‌عرض نفس بکشد (دسکتاپ: هر سه سر جایشان)
 // پالت بازوی خرید: سنگی/کهربایی (هماهنگ با کارت‌های همین صفحه)
 'use client';
 
@@ -47,12 +49,12 @@ export default function InquiryIdentityBar({ inquiries, catalogs, currentInquiry
                             : canOpen
                                 ? 'border-stone-200 hover:border-brand-contrast-tint active:scale-[0.995] dark:border-gray-700'
                                 : 'border-stone-100 dark:border-gray-800')}>
-                <span className="grid size-10 shrink-0 place-items-center rounded-2xl bg-brand-contrast-soft dark:bg-amber-500/15">
+                <span className="grid size-9 sm:size-10 shrink-0 place-items-center rounded-2xl bg-brand-contrast-soft dark:bg-amber-500/15">
                     <ClipboardList className="size-5 text-amber-600 dark:text-amber-400" />
                 </span>
                 <span className="min-w-0 flex-1">
                     <span className="flex items-center gap-1.5 min-w-0">
-                        <span className="truncate text-[15px] font-black text-stone-900 dark:text-gray-100">
+                        <span className="truncate text-sm sm:text-[15px] font-black text-stone-900 dark:text-gray-100">
                             {current ? current.title : 'بازوهای خرید من'}
                         </span>
                     </span>
@@ -64,7 +66,7 @@ export default function InquiryIdentityBar({ inquiries, catalogs, currentInquiry
                 </span>
                 {/* ✅ فلشِ درشتِ دراپ‌داون در چیپِ متمایز — شکلیِ سلکت تا سوییچر بودن هدر مشهود باشد */}
                 {canOpen && (
-                    <span className="grid size-8 shrink-0 place-items-center rounded-full bg-stone-100 dark:bg-gray-800">
+                    <span className="grid size-7 sm:size-8 shrink-0 place-items-center rounded-full bg-stone-100 dark:bg-gray-800">
                         <ChevronDown className={cn('size-4 text-stone-500 transition-transform dark:text-gray-400', open && 'rotate-180')} />
                     </span>
                 )}
@@ -77,9 +79,9 @@ export default function InquiryIdentityBar({ inquiries, catalogs, currentInquiry
                 <Share2 className="size-4" />
             </button>
 
-            {/* 👁 مشاهدهٔ صفحهٔ عمومی — دم دست */}
+            {/* 👁 مشاهدهٔ صفحهٔ عمومی — دسکتاپ: کنار شیر | موبایل: داخل منوی ⋯ (جا برای عنوان) */}
             <button type="button" onClick={onPreview} aria-label="مشاهدهٔ صفحه" title="مشاهدهٔ صفحه"
-                    className="grid size-9 shrink-0 place-items-center rounded-xl bg-stone-100 text-stone-500
+                    className="hidden sm:grid size-9 shrink-0 place-items-center rounded-xl bg-stone-100 text-stone-500
                         transition-all hover:text-amber-700 hover:bg-stone-200 active:scale-95 dark:bg-gray-800 dark:text-gray-400 dark:hover:text-amber-400">
                 <Eye className="size-4" />
             </button>
@@ -97,6 +99,11 @@ export default function InquiryIdentityBar({ inquiries, catalogs, currentInquiry
                         <div className="fixed inset-0 z-40" onClick={() => setMenuOpen(false)} />
                         <div className="absolute top-full end-0 mt-1 z-50 w-56 p-1.5 rounded-xl bg-white dark:bg-gray-900
                             border border-stone-100 dark:border-gray-800 shadow-xl animate-in fade-in zoom-in-95 duration-150">
+                            {/* 👁 مشاهدهٔ صفحه — فقط موبایل (چشم از ردیف هویت به اینجا آمد تا عنوان باز شود) */}
+                            <button type="button" onClick={() => { setMenuOpen(false); onPreview(); }}
+                                    className="sm:hidden flex h-10 w-full items-center gap-2.5 rounded-lg px-3 text-[13px] text-stone-800 transition-colors hover:bg-stone-50 dark:text-gray-200 dark:hover:bg-gray-800">
+                                <Eye className="size-4 text-stone-400" /> مشاهدهٔ صفحه
+                            </button>
                             {/* 📍 ساخت صفحه جدید — از همین منو، بدون باز کردن سوییچر */}
                             <button type="button" onClick={() => { setMenuOpen(false); onNew(); }}
                                     className="flex h-10 w-full items-center gap-2.5 rounded-lg px-3 text-[13px] text-stone-800 transition-colors hover:bg-stone-50 dark:text-gray-200 dark:hover:bg-gray-800">

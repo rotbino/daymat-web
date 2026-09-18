@@ -69,8 +69,8 @@ export default function ProductsTab({
     return (
         <div className="space-y-2.5">
             {/* 🧰 نوار ابزار کالاها — آیکون‌های ساده بدون کانتینر (بنا بر بازخورد) + افزودن در انتها
-                مارجین بالا/پایین برای تنفس بهتر المان‌ها */}
-            <div className="flex items-center gap-1 my-3">
+                ✅ موبایل: flex-wrap + دکمهٔ اصلی flex-1 — حتی در ۳۲۰px دو دکمه کنار هم می‌مانند و نمی‌شکنند */}
+            <div className="flex flex-wrap items-center gap-1.5 my-2.5">
                 {!isService && (
                     <>
                         <button onClick={onOpenCategorySettings} title="دسته‌بندی‌های بازوی فروش — گروه‌بندی کالاها" aria-label="دسته‌بندی‌های بازوی فروش"
@@ -85,12 +85,13 @@ export default function ProductsTab({
                         </button>
                     </>
                 )}
-                <span className="flex-1" />
-                {/* ✨ افزودن گروهی محصول — قلم‌به‌قلم ننویس؛ لیستت را یک‌جا بیاور (CTA اصلی و چشمگیر) */}
+                <span className="hidden sm:block flex-1" />
+                {/* ✨ افزودن گروهی محصول — قلم‌به‌قلم ننویس؛ لیستت را یک‌جا بیاور (CTA اصلی و چشمگیر)
+                    موبایل: flex-1 — تمام فضای باقی‌مانده را می‌گیرد؛ دسکتاپ: اندازهٔ طبیعی */}
                 <button onClick={() => router.push(`/ad/import?catalog=${currentCatalog.id}`)}
                         title="افزودن گروهی محصول — با اکسل، متن، گرید یا هوش مصنوعی"
                         className="h-9 px-3.5 rounded-lg bg-amber-500 text-white text-[12px] font-extrabold shadow-sm
-                            flex items-center gap-1.5 flex-shrink-0 whitespace-nowrap
+                            flex flex-1 sm:flex-none items-center justify-center gap-1.5 flex-shrink-0 sm:flex-shrink whitespace-nowrap
                             hover:bg-amber-600 active:scale-[0.97] transition-all">
                     <Layers className="w-4 h-4" />
                     افزودن گروهی محصول

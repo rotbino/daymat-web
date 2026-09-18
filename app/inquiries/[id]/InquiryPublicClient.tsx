@@ -389,7 +389,7 @@ export default function InquiryPublicClient({ idOrSlug }: { idOrSlug: string }) 
                             </button>
 
                             {savedOpen && (
-                                <div className="absolute top-full mt-1 w-72 overflow-hidden rounded-2xl border border-stone-200/70 bg-white shadow-xl dark:border-gray-700 dark:bg-gray-900">
+                                <div className="absolute top-full mt-1 w-72 max-w-[calc(100vw-2rem)] overflow-hidden rounded-2xl border border-stone-200/70 bg-white shadow-xl dark:border-gray-700 dark:bg-gray-900">
                                     <div className="max-h-72 overflow-y-auto py-1">
                                         {savedInquiries.length === 0 ? (
                                             <p className="px-4 py-6 text-center text-[11px] font-bold leading-5 text-stone-400 dark:text-gray-500">
@@ -400,7 +400,7 @@ export default function InquiryPublicClient({ idOrSlug }: { idOrSlug: string }) 
                                             const armSlug = arm.slug || arm.id;
                                             const active = armSlug === (inquiry.slug || inquiry.id);
                                             return (
-                                                <button key={s.id} onClick={() => { setSavedOpen(false); if (!active) router.push(`/${armSlug}`); }}
+                                                <button key={s.id} onClick={() => { setSavedOpen(false); if (!active) router.push(`/i/${armSlug}`); }}
                                                     className={`flex w-full items-center gap-2.5 px-3 py-2.5 text-right transition-colors ${active ? 'bg-brand-primary-soft dark:bg-primary/10' : 'hover:bg-stone-50 dark:hover:bg-gray-800/50'}`}>
                                                     <span className="grid size-8 shrink-0 place-items-center overflow-hidden rounded-lg bg-stone-100 dark:bg-gray-800">
                                                         {arm.business?.logoUrl

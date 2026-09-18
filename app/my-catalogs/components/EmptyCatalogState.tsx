@@ -76,7 +76,7 @@ export default function EmptyCatalogState({ hasTemporaryPassword, user, inquirie
                                 </div>
                             </div>
                             {w.slug && (
-                                <a href={`/${w.slug}`}
+                                <a href={`/i/${w.slug}`}
                                    target="_blank"
                                    rel="noopener noreferrer"
                                    aria-label="مشاهده بازوی خرید"

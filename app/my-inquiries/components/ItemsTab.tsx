@@ -160,7 +160,7 @@ function ItemRow({ item, offerCount, variant, busy, onEdit, onToggleUrgent, onDe
                 )}
             </AnimatePresence>
 
-            <div className="mt-3 flex items-center gap-1.5 border-t border-dashed border-stone-100 pt-2.5 dark:border-gray-800">
+            <div className="mt-3 flex flex-wrap items-center gap-1.5 border-t border-dashed border-stone-100 pt-2.5 dark:border-gray-800">
                 {urgent ? (
                     <button onClick={onToggleUrgent} disabled={busy}
                         className="flex h-8 items-center gap-1.5 rounded-lg px-2.5 text-[11px] font-bold text-stone-400 transition-colors hover:bg-stone-100 hover:text-stone-600 disabled:opacity-50 dark:hover:bg-gray-800">

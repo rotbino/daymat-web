@@ -1,8 +1,13 @@
 // app/my-catalogs/components/ConsoleTabs.tsx
-// ناوبری بخش‌های بازوی فروش — داخل «هدر کنسول» (والد) سوار می‌شود:
+// نوار تب‌های بخش‌های بازوی فروش — داخل «هدر کنسول» (والد) سوار می‌شود:
 // والد نوار سفید/سایه‌دار چسبان را می‌سازد؛ اینجا فقط خودِ تب‌هاست.
 // ترند روز: تب‌افقی آندرلاین به‌سبک Stripe/اینستاگرام — آیکون + برچسب، بدون شبیه‌شدن به دکمه
-// موبایل: آیکون بالا + برچسب ریز پایین (عمودی) — ۴ تب بدون اسکرول افقی جا می‌گیرند
+// ✅ موبایل (بازطراحی — بازخورد «برگه‌ها در هم فرو رفتند و اسکرول نمی‌خوردند»):
+//    - نوار تب‌ها overflow-x-auto دارد؛ تب‌های سرریز با لمس اسکرول می‌شوند
+//    - بدون min-width صریح: هر تب هرگز از عرضِ محتوایش کوچک‌تر نمی‌شود
+//      (min-width:auto فلکس) → برچسب‌ها روی هم نمی‌نشینند و نمی‌شکنند
+//    - ۳-۴ تب => با flex-1 کل عرض پر می‌شود؛ ۷ تب => اسکرول نرم از لبه‌به‌لبه
+//      (nav با -mx-4 px-4 داخل هدرِ تمام‌عرض، هم‌ترازِ محتوا شروع می‌شود)
 'use client';
 
 import React from 'react';
@@ -28,12 +33,12 @@ export default function ConsoleTabs({ items, active, onChange }: {
     return (
         <div className="pt-1 lg:pt-1.5">
             <nav aria-label="بخش‌های بازوی فروش"
-                 className="flex items-stretch">
+                 className="no-scrollbar -mx-4 flex items-stretch overflow-x-auto px-4 lg:mx-0 lg:overflow-visible lg:px-0">
                 {items.map(({ key, label, mobileLabel, icon: Icon, count, alert }) => {
                     const isActive = active === key;
                     return (
                         <button key={key} type="button" onClick={() => onChange(key)} aria-current={isActive ? 'page' : undefined}
-                                className={cn('relative flex-1 lg:flex-none flex flex-col lg:flex-row items-center justify-center lg:justify-start gap-1 lg:gap-1.5 h-14 lg:h-14 px-1 lg:px-5 text-[10px] lg:text-sm whitespace-nowrap transition-colors',
+                                className={cn('relative flex-1 lg:flex-none flex flex-col lg:flex-row items-center justify-center lg:justify-start gap-1 lg:gap-1.5 h-14 px-2 lg:px-5 text-[10px] lg:text-sm whitespace-nowrap transition-colors',
                                     isActive
                                         ? 'text-primary font-extrabold'
                                         : 'text-on-surface-variant font-bold hover:text-on-surface active:scale-[0.98]')}>
@@ -61,7 +66,7 @@ export default function ConsoleTabs({ items, active, onChange }: {
                                 )}
                             </span>
                             {/* خط زیرین تب فعال */}
-                            <span className={cn('absolute bottom-0 inset-x-3 lg:inset-x-4 h-[3px] rounded-t-full bg-primary transition-opacity',
+                            <span className={cn('absolute bottom-0 inset-x-2.5 lg:inset-x-4 h-[3px] rounded-t-full bg-primary transition-opacity',
                                 isActive ? 'opacity-100' : 'opacity-0')} />
                         </button>
                     );

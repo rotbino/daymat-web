@@ -413,7 +413,7 @@ export default function MyCatalogsContent() {
             <div className="sticky top-0 lg:top-16 z-30 -mx-4 px-4 bg-white dark:bg-gray-900
                     border-b border-outline-variant/20 dark:border-gray-800
                     shadow-[0_6px_16px_-8px_rgba(15,23,42,0.28)] dark:shadow-[0_6px_16px_-8px_rgba(0,0,0,0.7)]">
-                <div className="pb-4 pt-2">
+                <div className="pb-3 lg:pb-4 pt-2">
                     <CatalogIdentityBar
                         catalogs={allCatalogs}
                         inquiries={myInquiries}

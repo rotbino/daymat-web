@@ -6,7 +6,9 @@
 // ✅ پایینِ سوییچر: لینک ساخت فقط برای نوعی که هنوز ندارد (ایدهٔ مالک:
 //    هر کاربر از هر نوع یکی — سیستم پر از بازوی فروش سرگردان نشود؛ دومی‌ها از زیر ⋯ یا پروفایل کسب‌وکار)
 // (کارت ویزیت به تب انتشار منتقل شد با نام «ساخت کارت ویزیت بازوی فروش» — بنا بر بازخورد کاربر)
-// موبایل: دکمه‌ها کوچک‌تر (w-9) تا برای عنوان جا بماند (بازخورد کاربر)
+// ✅ موبایل (بازطراحی — بازخورد «عنوان با آیکون‌های کناری در هم فرو می‌رود»):
+//    - در موبایل فقط «اشتراک» و «⋯» کنار هویت می‌مانند؛ «چشم» به بالای منوی ⋯ می‌رود (sm:hidden)
+//    - عنوان تمام عرض سوییچر را نفس می‌کشد؛ در دسکتاپ هر سه آیکون سر جایشان است
 // ⚠️ قانون: حالت تاریک همیشه چک شده
 'use client';
 
@@ -41,7 +43,7 @@ export default function CatalogIdentityBar({ catalogs, inquiries = [], currentCa
 
     const identity = (
         <span className="flex flex-1 items-center gap-2.5 min-w-0">
-            <span className="w-10 h-10 rounded-lg overflow-hidden bg-surface-container-high dark:bg-gray-800
+            <span className="w-9 h-9 lg:w-10 lg:h-10 rounded-lg overflow-hidden bg-surface-container-high dark:bg-gray-800
                     ring-1 ring-outline-variant/40 dark:ring-gray-700 flex items-center justify-center flex-shrink-0">
                 {logoSrc
                     ? <Image src={logoSrc} alt="" width={40} height={40} className="w-full h-full object-cover" unoptimized />
@@ -49,7 +51,7 @@ export default function CatalogIdentityBar({ catalogs, inquiries = [], currentCa
             </span>
             <span className="min-w-0">
                 <span className="flex items-center gap-1 max-w-full">
-                    <span className="text-[15px] font-black text-on-surface truncate">{currentCatalog?.name}</span>
+                    <span className="text-sm lg:text-[15px] font-black text-on-surface truncate">{currentCatalog?.name}</span>
                     {currentCatalog?.isTeamEntry && (
                         <span className="text-[9px] font-extrabold text-sky-700 dark:text-sky-300 bg-sky-500/10
                                 px-1.5 py-0.5 rounded-full flex-shrink-0">
@@ -75,8 +77,8 @@ export default function CatalogIdentityBar({ catalogs, inquiries = [], currentCa
                                  : 'border-outline-variant/40 dark:border-gray-700 hover:border-primary/40 active:scale-[0.99]')}>
                     {identity}
                     {/* ✅ فلشِ درشتِ دراپ‌داون در چیپِ متمایز — کل هدر شکلیِ سلکت گرفت تا سوییچر بودنش مشهود باشد */}
-                    <span className="grid w-8 h-8 place-items-center rounded-xl bg-surface-container-high dark:bg-gray-800 flex-shrink-0">
-                        <ChevronDown className={cn('w-4.5 h-4.5 text-on-surface-variant transition-transform', open && 'rotate-180')} />
+                    <span className="grid w-7 h-7 lg:w-8 lg:h-8 place-items-center rounded-xl bg-surface-container-high dark:bg-gray-800 flex-shrink-0">
+                        <ChevronDown className={cn('w-4 h-4 lg:w-4.5 lg:h-4.5 text-on-surface-variant transition-transform', open && 'rotate-180')} />
                     </span>
                 </button>
             ) : (
@@ -92,10 +94,10 @@ export default function CatalogIdentityBar({ catalogs, inquiries = [], currentCa
                 </button>
             )}
 
-            {/* 👁 مشاهدهٔ بازوی فروش عمومی — دم دست، بنا بر خواستهٔ کاربر */}
+            {/* 👁 مشاهدهٔ بازوی فروش عمومی — دسکتاپ: کنار شیر | موبایل: داخل منوی ⋯ (جا برای عنوان) */}
             {canShare && (
                 <button type="button" onClick={onPreview} aria-label="مشاهدهٔ بازوی فروش" title="مشاهدهٔ بازوی فروش"
-                        className="w-9 h-9 lg:w-10 lg:h-10 rounded-lg grid place-items-center flex-shrink-0
+                        className="hidden sm:grid w-9 h-9 lg:w-10 lg:h-10 rounded-lg place-items-center flex-shrink-0
                             bg-surface-container-high/70 dark:bg-gray-800 text-on-surface-variant
                             hover:text-primary hover:bg-surface-container-high dark:hover:bg-gray-700 active:scale-95 transition-all">
                     <Eye className="w-4 h-4 lg:w-[18px] lg:h-[18px]" />
@@ -115,6 +117,13 @@ export default function CatalogIdentityBar({ catalogs, inquiries = [], currentCa
                         <div className="fixed inset-0 z-40" onClick={() => setMenuOpen(false)} />
                         <div className="absolute top-full end-0 mt-1 z-50 w-52 p-1.5 rounded-lg bg-white dark:bg-gray-900
                             border border-outline-variant/30 dark:border-gray-700 shadow-xl animate-in fade-in zoom-in-95 duration-150">
+                            {/* 👁 مشاهدهٔ بازوی فروش — فقط موبایل (چشم از ردیف هویت به اینجا آمد تا عنوان باز شود) */}
+                            {canShare && (
+                                <button type="button" onClick={() => { setMenuOpen(false); onPreview(); }}
+                                        className="sm:hidden w-full flex items-center gap-2.5 h-10 px-3 rounded-md text-[13px] text-on-surface hover:bg-surface-container-high dark:hover:bg-gray-800 transition-colors">
+                                    <Eye className="w-4 h-4 text-on-surface-variant" /> مشاهدهٔ بازوی فروش
+                                </button>
+                            )}
                             {/* 📍 ساخت بازوی فروش جدید — هر دو محصول از همین منو (دسترسی راحت) */}
                             <button type="button" onClick={() => { setMenuOpen(false); onNewCatalog(); }}
                                     className="w-full flex items-center gap-2.5 h-10 px-3 rounded-md text-[13px] text-on-surface hover:bg-surface-container-high dark:hover:bg-gray-800 transition-colors">
