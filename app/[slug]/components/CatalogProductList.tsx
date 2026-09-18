@@ -10,6 +10,13 @@ import { cn } from '@/lib/utils';
 
 const WRAP = 'max-w-xl sm:max-w-2xl lg:max-w-4xl xl:max-w-5xl mx-auto px-4';
 
+// ✅ تازگی قیمت — عمر قیمت برای خریدار پیداشان باشد (قیمتِ تازه = اعتماد)
+function priceAgeDays(priceUpdatedAt?: string | Date | null): number {
+    if (!priceUpdatedAt) return 0;
+    return Math.max(0, Math.floor((Date.now() - new Date(priceUpdatedAt).getTime()) / (24 * 60 * 60 * 1000)));
+}
+const FRESH_CHIP = 'absolute bottom-2 right-2 px-2 py-0.5 rounded-full text-[9px] font-extrabold backdrop-blur-sm';
+
 function fmt(n: number | undefined) {
     return n?.toLocaleString('fa-IR') ?? '—';
 }
@@ -136,6 +143,13 @@ export default function CatalogProductList({
                                     <div className="relative aspect-square bg-gray-100 dark:bg-gray-800">
                                         <Image src={imgUrl} alt={title} fill sizes="25vw" loading="lazy" className="object-cover group-hover:scale-105 transition-transform" unoptimized />
                                         {ad.isBumped && <span className="absolute top-2 right-2 px-2 py-0.5 bg-primary text-white text-[9px] rounded-full">ویژه</span>}
+                                        {/* ✅ تازگی قیمت — قیمت تا ۷ روز تازه است؛ قدیمی‌تر باید دیده شود */}
+                                        {(() => {
+                                            const age = priceAgeDays(ad.priceUpdatedAt);
+                                            if (!hidePrices && age <= 7) return <span className={`${FRESH_CHIP} bg-emerald-600/85 text-white`}>قیمت روز</span>;
+                                            if (!hidePrices && age >= 21) return <span className={`${FRESH_CHIP} bg-amber-500/90 text-white`}>قیمت {age.toLocaleString('fa-IR')} روز پیش</span>;
+                                            return null;
+                                        })()}
                                     </div>
                                     <div className="p-2.5 text-right">
                                         <p className="text-xs font-bold line-clamp-1">{title}</p>
@@ -174,7 +188,15 @@ export default function CatalogProductList({
                                                 <Lock className="w-3 h-3" /> قیمت فقط برای اعضا
                                             </p>
                                         ) : (
-                                            <p className="text-sm font-extrabold text-primary mt-1">{fmt(ad.unitPrice)} {unit && <span className="text-[9px] font-normal text-gray-400">{unit}</span>}</p>
+                                            <p className="text-sm font-extrabold text-primary mt-1">
+                                                {fmt(ad.unitPrice)} {unit && <span className="text-[9px] font-normal text-gray-400">{unit}</span>}
+                                                {(() => {
+                                                    const age = priceAgeDays(ad.priceUpdatedAt);
+                                                    if (age <= 7) return <span className="ms-2 align-middle rounded-full bg-emerald-50 px-1.5 py-0.5 text-[8.5px] font-extrabold text-emerald-700 dark:bg-emerald-500/15 dark:text-emerald-400">قیمت روز</span>;
+                                                    if (age >= 21) return <span className="ms-2 align-middle rounded-full bg-amber-50 px-1.5 py-0.5 text-[8.5px] font-extrabold text-amber-700 dark:bg-amber-500/15 dark:text-amber-400">قیمت {age.toLocaleString('fa-IR')} روز پیش</span>;
+                                                    return null;
+                                                })()}
+                                            </p>
                                         )}
                                     </div>
                                     <ChevronLeft className="w-4 h-4 text-gray-300" />

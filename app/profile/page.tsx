@@ -1,7 +1,7 @@
 // app/profile/page.tsx
 'use client';
 
-import React, { useMemo, useState } from 'react';
+import React, { useEffect, useMemo, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import Image from 'next/image';
 import { useQuery } from '@tanstack/react-query';
@@ -15,12 +15,14 @@ import {
     User, Pencil, Key, CreditCard, TrendingUp, Moon, Sun,
     Info, FileText, Lightbulb, LogOut, Wallet, ArrowLeft,
     Gift, Copy, BadgeCheck, Building2, ChevronLeft, Plus,
+    BellRing, BellOff, Loader2,
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import NavTabs from '@/app/home/nav/NavTabs';
 import EditProfileModal from '@/app/[slug]/components/EditProfileModal';
 import { ChangePasswordModal } from '@/components/register/ChangePasswordModal';
 import { useMyBusinesses, useMyInquiries } from '@/lib/api/apiHooks';
+import { enablePush, disablePush, getPushStatus } from '@/lib/push';
 import { BusinessLogo } from '@/app/business/manage/components/BusinessLogo';
 
 export default function ProfilePage() {
@@ -298,6 +300,7 @@ export default function ProfilePage() {
                     <h2 className="text-xs font-bold text-on-surface-variant/70 px-1">تنظیمات</h2>
                     <Row icon={Key} label="تغییر رمز عبور" onClick={() => setPassOpen(true)} />
                     <Row icon={isDark ? Sun : Moon} label={isDark ? 'تم روشن' : 'تم تاریک'} onClick={toggleTheme} />
+                    <PushToggleRow />
                 </section>
 
                 {/* ═══ درباره ═══ */}
@@ -324,5 +327,59 @@ function LinkCard({ icon: Icon, label, href }: any) {
             text-[11px] font-bold text-on-surface-variant hover:text-primary hover:border-primary/40 transition-colors">
             <Icon className="w-3.5 h-3.5" /> {label}
         </a>
+    );
+}
+
+// 🔔 پوش فوری — اعلام خرید و پیشنهادها همان لحظه نوتیف می‌شوند؛ نه فقط توی پنل
+function PushToggleRow() {
+    const [status, setStatus] = useState<'loading' | 'unsupported' | 'granted' | 'denied' | 'off'>('loading');
+    const [busy, setBusy] = useState(false);
+
+    useEffect(() => {
+        getPushStatus().then((s) => setStatus(s));
+    }, []);
+
+    const toggle = async () => {
+        setBusy(true);
+        try {
+            if (status === 'granted') {
+                await disablePush();
+                toast.success('اعلان فوری خاموش شد');
+                setStatus('off');
+            } else {
+                const ok = await enablePush();
+                if (ok) {
+                    toast.success('اعلان فوری روشن شد — خبرهای خرید و فروش همان لحظه می‌رسد');
+                    setStatus('granted');
+                } else {
+                    toast.error('فعال‌سازی نشد — اجازهٔ اعلان را در مرورگر چک کن');
+                    setStatus(await getPushStatus());
+                }
+            }
+        } finally {
+            setBusy(false);
+        }
+    };
+
+    const label =
+        status === 'loading' ? 'اعلان‌های فوری'
+        : status === 'granted' ? 'اعلان‌های فوری: روشن'
+        : status === 'denied' ? 'اعلان‌های فوری (مسدود در مرورگر)'
+        : status === 'unsupported' ? 'اعلان‌های فوری (این مرورگر پشتیبانی نمی‌کند)'
+        : 'اعلان‌های فوری: خاموش';
+
+    const icon = status === 'granted' ? <BellRing className="w-3.5 h-3.5" /> : <BellOff className="w-3.5 h-3.5" />;
+    const disabled = busy || status === 'loading' || status === 'unsupported' || status === 'denied';
+
+    return (
+        <button onClick={toggle} disabled={disabled}
+            className="w-full flex items-center gap-2.5 rounded-xl px-3 py-2.5 text-xs font-bold text-on-surface
+                hover:bg-surface-container transition-colors disabled:opacity-60">
+            {busy ? <Loader2 className="w-3.5 h-3.5 animate-spin text-on-surface-variant" /> : icon}
+            <span className="flex-1 text-right">{label}</span>
+            {status !== 'unsupported' && status !== 'denied' && status !== 'loading' && (
+                <span className={`h-2 w-2 rounded-full ${status === 'granted' ? 'bg-emerald-500' : 'bg-stone-300'}`} />
+            )}
+        </button>
     );
 }

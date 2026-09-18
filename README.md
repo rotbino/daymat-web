@@ -198,8 +198,9 @@ User ──< ArmMembership >── Arm
 | `auth` | `POST /auth/register`، `/auth/login`، `/auth/check-phone`، `GET /auth/me`، `PUT /auth/change-password`، `POST /auth/request-verification` → `verify-code-and-set-password` | ثبت‌نام = موبایل IR + رمز ≥۶ + `refCode?` → هدیهٔ ۵۰ اعتبار |
 | `arm` | `POST /arm` (ادمین)، `GET /arm/:slug`، `GET /arm/suggested`، `POST /arm/:slug/join`، `DELETE /arm/:slug/leave`، `PATCH /arm/:slug/catalog-publish` | ترتیب روت‌ها مهم است: `/arm/suggested` قبل از `:slug` |
 | `catalog` | `POST /catalog` (`businessId` الزامی)، `GET /catalog`، `PUT /catalog/:id`، `PATCH /catalog/:id/config` (درخت دسته + واحدهای خصوصی)، slug-check | ساخت کاتالوگ خودش `TeamMember(catalog_owner)` می‌سازد |
-| `ad` | `POST /ad`، `PUT /ad/:id`، `POST /ad/:id/bump`، `GET /ad/arm/:slug` (تابلو)، `POST /ad/:id/publish-to-market`، `GET /ad/notifications` (اعلان‌های مشتق) | `catalogId`+`unitId` الزامی؛ مالکیت از طریق `catalog.business.ownerUserId` |
-| `inquiry` | سمت خرید: صفحهٔ خرید، اقلام، پیشنهادها، `GET /inquiry/arm/:slug`، انتشار `InquiryPublication` | واژگان رسمی «درخواست/پیشنهاد تامین» |
+| `ad` | `POST /ad`، `PUT /ad/:id`، `POST /ad/:id/bump`، `GET /ad/arm/:slug` (تابلو)، `POST /ad/:id/publish-to-market`، `GET /ad/notifications` (اعلان‌های مشتق)، `POST /ad/import/parse` + `POST /ad/import/commit` (📥 ایمپورت گروهی لیست قیمت) | `catalogId`+`unitId` الزامی؛ مالکیت از طریق `catalog.business.ownerUserId`؛ ردیف‌های import بدون انقضا (`validityHours:0`) و `source:'import'` |
+| `inquiry` | سمت خرید: صفحهٔ خرید، اقلام، پیشنهادها، `GET /inquiry/arm/:slug`، انتشار `InquiryPublication`، `GET /inquiry/:id/supplier-suggestions` (🤝 پیشنهاد تامین‌کننده بر پایهٔ کالای مرجع) | واژگان رسمی «درخواست/پیشنهاد تامین» |
+| `proforma` | 🧾 `POST /proforma`، `GET /proforma/sent|received`، `POST /proforma/:id/confirm|reject|cancel` | پیش‌فاکتور — تایید خریدار = `saleStatus='sold'` + شمارش «معامله موفق» اعتماد |
 | `brands` | `GET /brands/categories` (عمومی)، `GET /brands/search?q=`، `POST /brands` (`categoryId` الزامی)، `PATCH /brands/:id`، `DELETE /brands/:id` | بخش ۵ را ببین |
 | `products` | `GET /products/search?q=&mine=`، `POST /products`، `PUT /products/:id` | کالای مرجع مشترک |
 | `business` | `POST /business`، `GET /business/my`، `PUT /business/:id`، `PUT /business/:id/activities`، `GET /business/search-users` | «کسب‌وکار یک‌دقیقه‌ای» |
@@ -247,7 +248,7 @@ User ──< ArmMembership >── Arm
 
 ### ۷.۷) متغیرهای محیطی (نام‌ها)
 
-`DATABASE_URL` (Atlas)، `JWT_SECRET`، `JWT_EXPIRES_IN` (پیش‌فرض `7d`)، `PORT`، `NODE_ENV`، `FRONTEND_URL`، `CORS_EXTRA_ORIGINS`، آروان: `ARVAN_ENDPOINT/REGION/ACCESS_KEY/SECRET_KEY/BUCKET_NAME`، پرداخت: `DEFAULT_PAYMENT_GATEWAY`, `PAYMENT_CALLBACK_URL`, `ZARINPAL_MERCHANT_ID(+_SANDBOX)`, `RAYANPAY_PIN(+_SANDBOX)`, `PEC_PIN(+_SANDBOX)`.
+`DATABASE_URL` (Atlas)، `JWT_SECRET`، `JWT_EXPIRES_IN` (پیش‌فرض `7d`)، `PORT`، `NODE_ENV`، `FRONTEND_URL`، `CORS_EXTRA_ORIGINS`، پوش: `VAPID_PUBLIC_KEY`/`VAPID_PRIVATE_KEY`/`VAPID_SUBJECT` (با `npx web-push generate-vapid-keys`؛ ست‌نبودن = پوش خاموش ولی بک سالم)، آروان: `ARVAN_ENDPOINT/REGION/ACCESS_KEY/SECRET_KEY/BUCKET_NAME`، پرداخت: `DEFAULT_PAYMENT_GATEWAY`, `PAYMENT_CALLBACK_URL`, `ZARINPAL_MERCHANT_ID(+_SANDBOX)`, `RAYANPAY_PIN(+_SANDBOX)`, `PEC_PIN(+_SANDBOX)`.
 
 ---
 
@@ -272,6 +273,7 @@ Next.js **16** (App Router) · React 19 · TypeScript · Tailwind **4** · کا�
 | `/business/edit/[id]`, `/business/manage` | ویرایش/مدیریت کسب‌وکار (درصد کامل‌بودن، مدارک اعتماد) |
 | `/my-catalogs` | **کنسول کاتالوگ** — تب‌های مشخصات/محصولات/آمار/انتشار + PublishToMarket |
 | `/ad/create` | فرم آگهی چندمرحله‌ای (کالا→قیمت→شرایط→بازبینی) — **نیازمند `?catalog=<id>`** |
+| `/ad/import` | 📥 ورود سریع لیست قیمت — چسباندن متن واتساپ → پیش‌نمایش ردیفی → ثبت گروهی؛ **نیازمند `?catalog=<id>`** |
 | `/ad/edit/[id]`, `/ad/reedit/[id]`, `/ad/[id]/[slug]` | ویرایش/نمایش آگهی |
 | `/markets` | فهرست و جستجوی بازارها (ناوِ دو-مودی: عمومی بدون جستجو، اختصاصی با جستجو) |
 | `/[slug]` | صفحهٔ عمومی کاتالوگ/بازار (هدر پروفایل‌دار، تابلوی خرید، قیف تامین‌کننده) |
@@ -395,6 +397,14 @@ npm run build && npm start   # پروداکشن‌مانند (گیتِ راست�
 - ✅ تاکسونومی ثابت ۲۲تایی دستهٔ برند + الزام دسته در ثبت/ویرایش برند + سیدِ دیتابیس (وب+بک) — پس از ادغام با خط اصلی ریموت مجدداً روی `main` است.
 - ✅ فیکس ساختاری تکرار برند/کالا (findMany+JS به‌جای $regex خام) + تور ایمنی P2002 (بک).
 - ✅ نام پیشنهادی بازو در `/business/register` («بازوی فروش + نام کسب‌وکار»).
+
+**تازه انجام شده — بستهٔ «چرخهٔ معامله و رشد» (سپتامبر ۲۰۲۶):**
+- ✅ 📥 ایمپورت گروهی لیست قیمت (وب+بک) — قلم‌به‌قلم ننویس؛ لیست را بچسبان. ردیف‌ها بدون انقضا، مهر خودکار روی بازارها.
+- ✅ 🤝 مچینگ خودکار تامین‌کننده — «تامین‌کننده‌های این کالا در دیمت» زیر هر قلم فعالِ بازوی خرید؛ دعوت با یک لمس (`supplier-suggestions`).
+- ✅ 🧾 پیش‌فاکتور — فروشنده می‌فرستد، خریدار داخل دیمت تایید می‌کند؛ تایید = معامله موفق ثبت می‌شود و `saleStatus` پیشنهاد خودکار «sold».
+- ✅ ⏰ تازگی قیمت — تابلو بر اساس `priceUpdatedAt` مرتب است؛ چیپ «قیمت روز / قیمت X روز پیش» روی کارت‌های عمومی و پنل فروشنده.
+- ✅ 🔔 پوش فوری PWA — `web-push` + VAPID؛ اعلام خرید/پیشنهاد/پیش‌فاکتور همان لحظه نوتیف می‌شود؛ کلید روشن/خاموش در پروفایل.
+- ✅ 🛡️ سیگنال اعتماد — «عضو دیمت از …» و «N معاملهٔ موفق» در هدر بازوی فروش عمومی.
 
 **نقشهٔ راه مالک (به ترتیب اهمیت مفهومی):**
 - 🎯 **محدودسازی و تخصصی‌سازی برندها در هر بازو** — هدف اصلیِ دسته‌بندی برند: هر بازو بتواند فقط برندهای مرتبط حوزهٔ خودش را بپذیرد (زیرساخت: `Brand.armId` + `BrandCategory` آماده است؛ سیاست/UX آینده).

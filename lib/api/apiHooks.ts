@@ -2040,3 +2040,95 @@ export const useInquirySaveToggle = () => {
         },
     });
 };
+
+// ============================================================
+// 📥 ایمپورت گروهی لیست قیمت — parse/commit (بدون کش؛ همیشه زنده)
+// ============================================================
+export const useAdImportParse = () => {
+    return useMutation({
+        mutationFn: ({ catalogId, text }: { catalogId: string; text: string }) =>
+            apiService.ad.importParse(catalogId, text),
+    });
+};
+
+export const useAdImportCommit = () => {
+    const qc = useQueryClient();
+    return useMutation({
+        mutationFn: ({ catalogId, items, unitId }: { catalogId: string; items: { name: string; price: number; referenceId?: string }[]; unitId?: string }) =>
+            apiService.ad.importCommit(catalogId, items, unitId),
+        onSuccess: () => {
+            qc.invalidateQueries({ queryKey: ['catalog-ads'] });
+            qc.invalidateQueries({ queryKey: ['ad'] });
+        },
+    });
+};
+
+// ============================================================
+// 🤝 مچینگ خودکار — پیشنهاد تامین‌کننده برای اقلام فعال بازوی خرید (مالک)
+// ============================================================
+export const useSupplierSuggestions = (inquiryId?: string) => {
+    const { hasAccess } = useAuthState();
+    return useQuery({
+        queryKey: ['inquiry', 'supplier-suggestions', inquiryId],
+        queryFn: () => apiService.inquiry.supplierSuggestions(inquiryId!),
+        enabled: !!inquiryId && hasAccess,
+        staleTime: 60 * 1000,
+    });
+};
+
+// ============================================================
+// 🧾 پیش‌فاکتور — مُهر سبک معامله (فروشنده می‌فرستد، خریدار تایید می‌کند)
+// ============================================================
+export const useSentProformas = () => {
+    const { hasAccess } = useAuthState();
+    return useQuery({
+        queryKey: ['proforma', 'sent'],
+        queryFn: () => apiService.proforma.sent(),
+        enabled: hasAccess,
+        staleTime: 30 * 1000,
+    });
+};
+
+export const useReceivedProformas = () => {
+    const { hasAccess } = useAuthState();
+    return useQuery({
+        queryKey: ['proforma', 'received'],
+        queryFn: () => apiService.proforma.received(),
+        enabled: hasAccess,
+        staleTime: 30 * 1000,
+    });
+};
+
+const useInvalidateProformaSideEffects = () => {
+    const qc = useQueryClient();
+    return () => {
+        qc.invalidateQueries({ queryKey: ['proforma'] });
+        qc.invalidateQueries({ queryKey: ['inquiry-opportunities'] });
+        qc.invalidateQueries({ queryKey: ['inquiries', 'my-offers'] });
+        qc.invalidateQueries({ queryKey: ['notifications'] });
+    };
+};
+
+export const useCreateProforma = () => {
+    const bust = useInvalidateProformaSideEffects();
+    return useMutation({
+        mutationFn: (data: Parameters<typeof apiService.proforma.create>[0]) => apiService.proforma.create(data),
+        onSuccess: bust,
+    });
+};
+
+export const useConfirmProforma = () => {
+    const bust = useInvalidateProformaSideEffects();
+    return useMutation({
+        mutationFn: (id: string) => apiService.proforma.confirm(id),
+        onSuccess: bust,
+    });
+};
+
+export const useRejectProforma = () => {
+    const bust = useInvalidateProformaSideEffects();
+    return useMutation({
+        mutationFn: (id: string) => apiService.proforma.reject(id),
+        onSuccess: bust,
+    });
+};

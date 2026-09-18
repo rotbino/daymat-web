@@ -3,7 +3,7 @@
 
 import React, { useMemo } from 'react';
 import { useRouter } from 'next/navigation';
-import { BookOpen, Layers, Package, Plus } from 'lucide-react';
+import { BookOpen, Layers, Package, Plus, ClipboardPaste } from 'lucide-react';
 import { ProductRow } from './ProductRow';
 import { cn } from '@/lib/utils';
 import { fmt, isAdExpired, inMarket, isPriceExpired, isUncategorized, StatusFilter } from '../constants';
@@ -81,6 +81,15 @@ export default function ProductsTab({
                     </>
                 )}
                 <span className="flex-1" />
+                {/* ✨ ورود سریع لیست قیمت — قلم‌به‌قلم ننویس؛ لیستت را بچسبان */}
+                <button onClick={() => router.push(`/ad/import?catalog=${currentCatalog.id}`)}
+                        title="ورود سریع لیست قیمت — از واتساپ کپی کن و بچسبان"
+                        className="h-9 px-3.5 rounded-lg border border-amber-500/60 text-amber-600 dark:text-amber-400 text-[12px] font-extrabold
+                            flex items-center gap-1.5 flex-shrink-0 whitespace-nowrap
+                            hover:bg-amber-500/10 active:scale-[0.97] transition-all">
+                    <ClipboardPaste className="w-4 h-4" />
+                    ورود لیست قیمت
+                </button>
                 {/* ✨ CTA اصلی — جمع‌وجور در انتهای نوار */}
                 <button onClick={() => router.push(`/ad/create?catalog=${currentCatalog.id}`)}
                         className="h-9 px-3.5 rounded-lg bg-amber-500 text-white text-[12px] font-extrabold

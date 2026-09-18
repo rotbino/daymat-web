@@ -77,6 +77,55 @@ export const apiService = {
 
         markAllRead: (): Promise<any> =>
             apiRequest('/notification/read-all', { method: 'POST' }),
+
+        // ✅ پوش فوری PWA — کلید عمومی سرور (null = پوش فعال نیست)
+        pushPublicKey: (): Promise<{ publicKey: string | null }> =>
+            apiRequest('/notification/push-public-key'),
+
+        // ✅ ثبت اشتراک پوش این دستگاه
+        subscribePush: (data: { endpoint: string; keys: { p256dh: string; auth: string }; userAgent?: string }): Promise<{ success: boolean }> =>
+            apiRequest('/notification/subscribe', { method: 'POST', data }),
+
+        // ✅ حذف اشتراک پوش این دستگاه
+        unsubscribePush: (endpoint: string): Promise<{ success: boolean }> =>
+            apiRequest('/notification/unsubscribe', { method: 'POST', data: { endpoint } }),
+    },
+
+    // ============================================================
+    // PROFORMA — پیش‌فاکتور: مُهرِ سبک معامله داخل دیمت
+    //   فروشنده می‌فرستد ← خریدار تایید/رد می‌کند → معاملهٔ موفق ثبت می‌شود
+    // ============================================================
+    proforma: {
+        /** ارسال پیش‌فاکتور برای پیشنهاد پذیرفته‌شده (تامین‌کننده) */
+        create: (data: {
+            offerId?: string;
+            inquiryId?: string;
+            buyerUserId?: string;
+            items: { name: string; quantity?: number; unit?: string; unitPrice: number }[];
+            deliveryDays?: number;
+            notes?: string;
+        }): Promise<any> =>
+            apiRequest('/proforma', { method: 'POST', data }),
+
+        /** پیش‌فاکتورهای صادرشدهٔ من (تامین‌کننده) */
+        sent: (): Promise<any[]> =>
+            apiRequest('/proforma/sent'),
+
+        /** پیش‌فاکتورهای دریافتی من (خریدار) */
+        received: (): Promise<any[]> =>
+            apiRequest('/proforma/received'),
+
+        /** تایید پیش‌فاکتور (خریدار) — معامله مُهر می‌شود */
+        confirm: (id: string): Promise<any> =>
+            apiRequest(`/proforma/${id}/confirm`, { method: 'POST' }),
+
+        /** رد پیش‌فاکتور (خریدار) */
+        reject: (id: string): Promise<any> =>
+            apiRequest(`/proforma/${id}/reject`, { method: 'POST' }),
+
+        /** لغو پیش‌فاکتور (تامین‌کننده، تا پیش از تصمیم خریدار) */
+        cancel: (id: string): Promise<any> =>
+            apiRequest(`/proforma/${id}/cancel`, { method: 'POST' }),
     },
 
     // ============================================================
@@ -705,6 +754,16 @@ export const apiService = {
 
         bulkUpdate: (data: { updates: { id: string; unitPrice: number }[] }) =>
             apiRequest('/ad/bulk-update', { method: 'PUT', data }),
+
+        // ═══ 📥 ایمپورت گروهی لیست قیمت — «به‌جای قلم‌به‌قلم، لیستت را بچسبان» ═══
+
+        /** فاز ۱ — پیش‌نمایش: متن خام لیست را ردیف‌به‌ردیف می‌خواند (بدون ثبت) */
+        importParse: (catalogId: string, text: string): Promise<{ items: any[]; summary: { total: number; valid: number; invalid: number; duplicates: number; withReference: number } }> =>
+            apiRequest('/ad/import/parse', { method: 'POST', data: { catalogId, text } }),
+
+        /** فاز ۲ — ثبت نهایی: ساخت آگهی‌ها از ردیف‌های تاییدشدهٔ پیش‌نمایش */
+        importCommit: (catalogId: string, items: { name: string; price: number; referenceId?: string }[], unitId?: string): Promise<{ created: number; skipped: number; ads: { id: string; title: string }[] }> =>
+            apiRequest('/ad/import/commit', { method: 'POST', data: { catalogId, items, ...(unitId ? { unitId } : {}) } }),
         // ✅ دریافت جزئیات کامل آگهی (برای صفحه جزئیات)
         getDetail: (id: string): Promise<any> =>
             apiRequest(`/ad/${id}/detail`),
@@ -1512,6 +1571,10 @@ export const apiService = {
         /** فرصت‌های فروش تامین‌کننده — دعوت‌ها + اقلام فوریِ بازوهای خریدِ عضوش */
         opportunities: (): Promise<{ catalogs: any[]; invitations: any[]; requests: any[]; leads: any[]; accepted: any[] }> =>
             apiRequest('/inquiry/opportunities'),
+
+        /** ✅ پیشنهاد تامین‌کننده برای اقلام فعال (مالک) — بر پایهٔ کالای مرجع، همان‌شهری‌ها اول */
+        supplierSuggestions: (id: string): Promise<{ items: { itemId: string; name: string; suppliers: any[] }[]; suggestionsCount: number }> =>
+            apiRequest(`/inquiry/${id}/supplier-suggestions`),
 
         // ─── 💾 بازوهای خرید ذخیره‌شده — سوییچر هدر صفحهٔ عمومی (قرینهٔ بازوی فروش) ───
         /** لیست بازوهای خرید ذخیره‌شدهٔ من */

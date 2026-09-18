@@ -83,3 +83,47 @@ self.addEventListener("fetch", (event) => {
         );
     }
 });
+
+// ─── 🔔 پوش فوری — اعلام خرید فعال شد، پیشنهاد رسید، پیش‌فاکتور تایید شد ───
+self.addEventListener("push", (event) => {
+    let data = { title: "دیمت", body: "", href: null };
+    try {
+        if (event.data) {
+            const parsed = event.data.json();
+            data = { ...data, ...parsed };
+        }
+    } catch {
+        if (event.data) data.body = event.data.text();
+    }
+
+    event.waitUntil(
+        self.registration.showNotification(data.title || "دیمت", {
+            body: data.body || "",
+            icon: "/icons/icon-192.png",
+            badge: "/icons/icon-192.png",
+            dir: "rtl",
+            lang: "fa",
+            data: { href: data.href },
+        })
+    );
+});
+
+// ─── کلیک روی نوتیف → باز کردن مقصد ───
+self.addEventListener("notificationclick", (event) => {
+    event.notification.close();
+    const href = event.notification.data?.href;
+    event.waitUntil(
+        (async () => {
+            const clientList = await self.clients.matchAll({ type: "window", includeUncontrolled: true });
+            for (const client of clientList) {
+                if (href && "focus" in client) {
+                    client.navigate(href);
+                    return client.focus();
+                }
+                if ("focus" in client) return client.focus();
+            }
+            if (href) return self.clients.openWindow(href);
+            return self.clients.openWindow("/");
+        })()
+    );
+});

@@ -9,10 +9,12 @@ import Image from 'next/image';
 import { motion, AnimatePresence } from 'framer-motion';
 import {
     MessageSquareText, Truck, Megaphone, Share2, Sparkles,
-    BadgeCheck, FolderClosed, Check, X, Loader2, PhoneCall,
+    BadgeCheck, FolderClosed, Check, X, Loader2, PhoneCall, FileText,
 } from 'lucide-react';
 import OfferCallButton from '@/app/components/OfferCallButton';
 import { faNum, faPrice, faTimeAgo, STATUS_FA, offerBasisLabel } from '../../inquiries/utils';
+import { useReceivedProformas, useConfirmProforma, useRejectProforma } from '@/lib/api/apiHooks';
+import { toast } from 'sonner';
 import type { InquiryDetail, InquiryItem, InquiryOffer } from '@/lib/api/apiTypes';
 
 interface Props {
@@ -57,6 +59,28 @@ export default function OffersTab({ detail, offers, loading, onDecide, onFinaliz
         acc[it.id] = it.name;
         return acc;
     }, {});
+
+    // ✅ پیش‌فاکتورهای دریافتی — هر پیش‌فاکتور به پیشنهاد خودش می‌چسبد؛ تایید خریدار = ثبت معامله
+    const { data: receivedProformas } = useReceivedProformas();
+    const confirmProforma = useConfirmProforma();
+    const rejectProforma = useRejectProforma();
+    const proformaByOffer = new Map<string, any>();
+    for (const p of ((receivedProformas ?? []) as any[])) {
+        if (p.offerId && !proformaByOffer.has(p.offerId)) proformaByOffer.set(p.offerId, p);
+    }
+    const decideProforma = async (id: string, decision: 'confirm' | 'reject') => {
+        try {
+            if (decision === 'confirm') {
+                await confirmProforma.mutateAsync(id);
+                toast.success('پیش‌فاکتور تایید شد — معامله داخل دیمت ثبت شد');
+            } else {
+                await rejectProforma.mutateAsync(id);
+                toast.success('پیش‌فاکتور رد شد — فروشنده خبردار می‌شود');
+            }
+        } catch (e: any) {
+            toast.error(e?.response?.data?.message || 'عملیات ناموفق بود');
+        }
+    };
 
     const acceptedOffers = offers.filter((o) => o.status === 'accepted');
     const pendingOffers = offers.filter((o) => o.status === 'pending');
@@ -120,10 +144,51 @@ export default function OffersTab({ detail, offers, loading, onDecide, onFinaliz
                     </p>
                 )}
 
-                {/* ✅ پذیرفته‌شده: نتیجهٔ معامله که تامین‌کننده ثبت می‌کند — اینجا جلو چشم خریدار (فاز ۶ سناریو) */}
+                {/* ✅ پذیرفته‌شده: نتیجهٔ معامله که تامین‌کننده ثبت می‌کند + پیش‌فاکتور (فاز ۶ سناریو) */}
                 {o.status === 'accepted' && (
-                    <div className="mt-2 flex items-center gap-2">
-                        <SaleOutcomeBadge offer={o} />
+                    <div className="mt-2 space-y-2">
+                        <div className="flex items-center gap-2">
+                            <SaleOutcomeBadge offer={o} />
+                        </div>
+                        {(() => {
+                            const proforma = proformaByOffer.get(o.id);
+                            if (!proforma) return null;
+                            if (proforma.status === 'sent') {
+                                return (
+                                    <div className="rounded-xl border border-amber-200 bg-amber-50/60 p-3 dark:border-amber-500/25 dark:bg-amber-500/5">
+                                        <p className="flex items-center gap-1.5 text-[11.5px] font-black text-amber-700 dark:text-amber-400">
+                                            <FileText className="size-3.5" />
+                                            پیش‌فاکتور {proforma.number} رسید — {faPrice(proforma.totalAmount)} تومان
+                                        </p>
+                                        <p className="mt-1 text-[10px] font-bold leading-4 text-stone-500 dark:text-gray-400">
+                                            اگر قیمت و اقلامش موافقی، داخل دیمت تاییدش کن تا معامله هر دو طرف ثبت شود.
+                                        </p>
+                                        <div className="mt-2 flex gap-1.5">
+                                            <button onClick={() => decideProforma(proforma.id, 'confirm')}
+                                                disabled={confirmProforma.isPending || rejectProforma.isPending}
+                                                className="flex h-8 flex-1 items-center justify-center gap-1 rounded-lg bg-emerald-600 text-[11px] font-extrabold text-white disabled:opacity-50">
+                                                <Check className="size-3.5" /> تایید پیش‌فاکتور
+                                            </button>
+                                            <button onClick={() => decideProforma(proforma.id, 'reject')}
+                                                disabled={confirmProforma.isPending || rejectProforma.isPending}
+                                                className="flex h-8 items-center justify-center gap-1 rounded-lg border border-red-100 px-3 text-[11px] font-extrabold text-red-500 disabled:opacity-50 dark:border-red-500/20">
+                                                <X className="size-3.5" /> رد
+                                            </button>
+                                        </div>
+                                    </div>
+                                );
+                            }
+                            const chip = proforma.status === 'confirmed'
+                                ? { label: 'پیش‌فاکتور تایید شد — معامله موفق ✅', cls: 'bg-emerald-50 text-emerald-700 dark:bg-emerald-500/10 dark:text-emerald-400' }
+                                : proforma.status === 'rejected'
+                                    ? { label: 'پیش‌فاکتور را رد کردی', cls: 'bg-stone-100 text-stone-500 dark:bg-gray-800 dark:text-gray-400' }
+                                    : { label: `پیش‌فاکتور ${proforma.number} — لغو شد`, cls: 'bg-stone-100 text-stone-500 dark:bg-gray-800 dark:text-gray-400' };
+                            return (
+                                <span className={`inline-flex items-center gap-1 rounded-full px-2.5 py-1 text-[10px] font-black ${chip.cls}`}>
+                                    <FileText className="size-3" /> {chip.label}
+                                </span>
+                            );
+                        })()}
                     </div>
                 )}
 

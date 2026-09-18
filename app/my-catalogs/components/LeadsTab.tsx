@@ -11,18 +11,20 @@ import { motion } from 'framer-motion';
 import { useQueryClient } from '@tanstack/react-query';
 import {
     Megaphone, Check, X, Loader2, MapPin, Truck, Wallet, Clock,
-    ChevronDown, Handshake, ArrowLeft, BadgeCheck, ShoppingBag,
+    ChevronDown, Handshake, ArrowLeft, BadgeCheck, ShoppingBag, FileText,
 } from 'lucide-react';
 import Link from 'next/link';
 import { apiService } from '@/lib/api/apiService';
 import {
     useInquiryOpportunities, useDecideInquiryMember, useSetOfferSaleStatus,
+    useSentProformas, useCreateProforma,
 } from '@/lib/api/apiHooks';
 import { toast } from 'sonner';
 import { cn } from '@/lib/utils';
 import { faNum, faDigits, faPrice, faTimeAgo } from '@/app/inquiries/utils';
 import OfferSheet from '@/app/components/OfferSheet';
 import OfferCallButton from '@/app/components/OfferCallButton';
+import ProformaSheet, { ProformaTarget } from '@/app/components/ProformaSheet';
 
 const CARD_CLS = 'rounded-2xl border border-outline-variant/30 bg-white dark:border-gray-800 dark:bg-gray-900';
 
@@ -31,9 +33,11 @@ export default function LeadsTab() {
     const { data, isLoading } = useInquiryOpportunities();
     const decide = useDecideInquiryMember();
     const setSale = useSetOfferSaleStatus();
+    const { data: sentProformas } = useSentProformas();
 
     const [busyId, setBusyId] = useState<string | null>(null);
     const [openLead, setOpenLead] = useState<string | null>(null);
+    const [proformaTarget, setProformaTarget] = useState<ProformaTarget | null>(null);
     const [offerTarget, setOfferTarget] = useState<{
         inquiry: { id: string; units?: { unitId: string; title?: string }[] };
         item: any;
@@ -47,6 +51,18 @@ export default function LeadsTab() {
     const declinedRequests = requests.filter((r) => r.status === 'declined');
     const leads = (data?.leads ?? []) as any[];
     const accepted = (data?.accepted ?? []) as any[];
+
+    // ✅ پیش‌فاکتورها — آخرین پیش‌فاکتور هر پیشنهاد، برای چیپ وضعیت جلوی چشم
+    const proformaByOffer = new Map<string, any>();
+    for (const p of ((sentProformas ?? []) as any[])) {
+        if (p.offerId && !proformaByOffer.has(p.offerId)) proformaByOffer.set(p.offerId, p);
+    }
+    const PROFORMA_CHIP: Record<string, { label: string; cls: string }> = {
+        sent: { label: 'در انتظار تایید خریدار', cls: 'bg-amber-50 text-amber-700 dark:bg-amber-500/10 dark:text-amber-400' },
+        confirmed: { label: 'تایید شد ✅ معامله موفق', cls: 'bg-emerald-600 text-white' },
+        rejected: { label: 'خریدار نپذیرفت', cls: 'bg-red-50 text-red-600 dark:bg-red-500/10 dark:text-red-400' },
+        canceled: { label: 'لغو شد', cls: 'bg-stone-100 text-stone-500 dark:bg-gray-800 dark:text-gray-400' },
+    };
 
     const refresh = () => {
         qc.invalidateQueries({ queryKey: ['inquiry-opportunities'] });
@@ -141,6 +157,40 @@ export default function LeadsTab() {
                                             مزیت خرید از شما: {a.advantages}
                                         </p>
                                     )}
+
+                                    {/* ✅ پیش‌فاکتور — مُهر سبک معامله داخل دیمت:
+                                        اگر پیش‌فاکتور داری وضعیتش را ببین؛ وگرنه با یک دکمه بفرست */}
+                                    {(() => {
+                                        const proforma = proformaByOffer.get(a.id);
+                                        if (proforma) {
+                                            const chip = PROFORMA_CHIP[proforma.status] ?? PROFORMA_CHIP.sent;
+                                            return (
+                                                <div className="mt-2 flex items-center gap-1.5">
+                                                    <span className={cn('flex items-center gap-1 rounded-full px-2 py-1 text-[10px] font-black', chip.cls)}>
+                                                        <FileText className="size-3" />
+                                                        پیش‌فاکتور {proforma.number} — {chip.label}
+                                                    </span>
+                                                    {proforma.status === 'confirmed' && (
+                                                        <span className="text-[9.5px] font-bold text-stone-400">
+                                                            {faPrice(proforma.totalAmount)} تومان
+                                                        </span>
+                                                    )}
+                                                </div>
+                                            );
+                                        }
+                                        return (
+                                            <button onClick={() => setProformaTarget({
+                                                offerId: a.id,
+                                                itemName: a.itemName,
+                                                unit: a.unit,
+                                                unitPrice: a.price,
+                                            })}
+                                                className="mt-2 flex h-9 w-full items-center justify-center gap-1.5 rounded-lg border border-emerald-200 bg-white text-[11px] font-extrabold text-emerald-700 transition-colors hover:bg-emerald-50 dark:border-emerald-500/30 dark:bg-transparent dark:text-emerald-400">
+                                                <FileText className="size-3.5" />
+                                                ارسال پیش‌فاکتور — معامله را داخل دیمت ثبت کن
+                                            </button>
+                                        );
+                                    })()}
 
                                     {/* ثبت نتیجهٔ معامله — وضعیت فعلی با پررنگی مشخص است */}
                                     <div className="mt-2 flex items-center gap-1.5">
@@ -474,6 +524,11 @@ export default function LeadsTab() {
                 existingOffer={offerTarget?.existing ?? null}
                 onClose={() => setOfferTarget(null)}
             />
+
+            {/* ✅ شیت ارسال پیش‌فاکتور — برای پیشنهاد پذیرفته‌شده */}
+            {proformaTarget && (
+                <ProformaSheet target={proformaTarget} onClose={() => setProformaTarget(null)} />
+            )}
         </div>
     );
 }

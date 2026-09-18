@@ -23,6 +23,14 @@ export const isUncategorized = (ad: any) =>
 
 export const fmt = (n: number | undefined) => n?.toLocaleString('fa-IR') ?? '۰';
 
+// ─── تازگی قیمت — عمر قیمت بر پایهٔ priceUpdatedAt (بک: زمان آخرین بروزرسانی قیمت) ───
+//     چون قیمت‌ها مهم‌ترین دارایی دیمت است، کهنگی‌اش باید برای فروشنده و خریدار پیداشان باشد.
+export const priceAgeDays = (priceUpdatedAt?: string | Date | null): number => {
+    if (!priceUpdatedAt) return 0;
+    const ms = Date.now() - new Date(priceUpdatedAt).getTime();
+    return Math.max(0, Math.floor(ms / (24 * 60 * 60 * 1000)));
+};
+
 // ─── چیپ وضعیت انتشار در بازار ───
 export const PUB_CHIP: Record<string, { label: string; cls: string; icon: any }> = {
     active: { label: 'منتشر شده', cls: 'text-emerald-700 dark:text-emerald-300 bg-emerald-50 dark:bg-emerald-900/25', icon: BadgeCheck },

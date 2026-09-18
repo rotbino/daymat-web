@@ -4,9 +4,9 @@
 import React from 'react';
 import Link from 'next/link';
 import Image from 'next/image';
-import { Clock, EyeOff, Layers, Package, Pencil, RefreshCw, Store, TrendingUp, Unlink } from 'lucide-react';
+import { Clock, EyeOff, Layers, Package, Pencil, RefreshCw, Store, TrendingUp, Unlink, History } from 'lucide-react';
 import { cn } from '@/lib/utils';
-import { fmt, inMarket, isAdExpired, isPriceExpired, isUncategorized } from '../constants';
+import { fmt, inMarket, isAdExpired, isPriceExpired, isUncategorized, priceAgeDays } from '../constants';
 
 /**
  * ردیف کالا — پرکاربردترین المان پنل مدیریت.
@@ -31,6 +31,9 @@ function ProductRowBase({ ad, canPublishMarket = true, onEdit, onCategory, onRef
     const uncat = isUncategorized(ad);
     const unit = ad.unit?.title || ad.unit?.shortCode || '';
     const logoSrc = ad.files?.[0]?.thumbnailPath || ad.files?.[0]?.path;
+    // ✅ تازگی قیمت — قیمتِ ۱۴+ روز قدیمی برای خریدار قابل‌اعتماد نیست؛ فروشنده باید ببیند و تازه کند
+    const ageDays = priceAgeDays(ad.priceUpdatedAt);
+    const isStalePrice = onTable && ageDays >= 14;
 
     return (
         <div className={cn('rounded-lg border p-3 transition-colors',
@@ -88,6 +91,13 @@ function ProductRowBase({ ad, canPublishMarket = true, onEdit, onCategory, onRef
                                   className="inline-flex items-center gap-1 text-[9px] font-bold px-2 py-0.5 rounded-full
                                       bg-red-100 text-red-700 dark:bg-red-900/40 dark:text-red-300">
                                 <Clock className="w-2.5 h-2.5" /> اعتبار قیمت تمام شد
+                            </span>
+                        )}
+                        {isStalePrice && !priceExpired && (
+                            <span title="قیمت قدیمی اعتماد خریدار را کم می‌کند — همین حالا آپدیتش کن"
+                                  className="inline-flex items-center gap-1 text-[9px] font-bold px-2 py-0.5 rounded-full
+                                      bg-amber-100 text-amber-800 dark:bg-amber-900/40 dark:text-amber-300">
+                                <History className="w-2.5 h-2.5" /> قیمت {priceAgeDays(ad.priceUpdatedAt).toLocaleString('fa-IR')} روز پیش
                             </span>
                         )}
                     </div>
