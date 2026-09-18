@@ -8,6 +8,22 @@
 > - دامنهٔ رسمی: `daymat.ir`
 
 ---
+دیمت
+قراره باهم پروژه دیمت رو اینجا ادمه بدیم و تکمیلش کنیم.
+من بهت لینکهای گیت و توکن رو میدم که بتونی بهش وصل بشی و بخونی ببنی چیه
+آدرس بک
+https://github.com/rotbino/daymat-back
+آدرس فرانت
+https://github.com/rotbino/daymat-web
+اینم آدرس اتصال به دیتابیس
+DATABASE_URL="mongodb://uniqu434343:MirAli%40434343%2A@megancluster-shard-00-00.jm46r.mongodb.net:27017,megancluster-shard-00-01.jm46r.mongodb.net:27017,megancluster-shard-00-02.jm46r.mongodb.net:27017/daymat_online_db_zai?ssl=true&replicaSet=atlas-10bcqm-shard-0&authSource=admin&appName=MeganCluster"
+که در افیل env هست
+
+و اینم توکن همه کاره گیت
+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
+و حالا یه سری توضیحات
+توضیحات خوبی در فایل ریدمی فرانت نوشته شده. فقط الان کمی اصطلاحات عوض شده مثلا ما به کاتالوگ فروش الان می گیم بازوی فروش و به لیست خرید می گیم بازوی خرید و به آرم که بازراهای تخصصی توش تعریف میشن می گیم بازار تخصصی. ممکنه اسم مدلهای دیتابیس دقیقا اون چیزی نباشه که باید باشه. اما به هرحال تکلیف مشخصه . توصیه می کنم فایل لندینگ صفحه اصلی سایت رو بخونی تا کاملا متوجه بشی. اون فایل کاملا جدیده
+
 
 ## ۱) ایدهٔ دیمت در یک نگاه
 
