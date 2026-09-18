@@ -544,8 +544,8 @@ export function AdFormProvider({ adId, onSuccess, children }: { adId?: string; o
                 // ✅ قیمت تکی (قیمت واحد خرید مصرف‌کننده) اجباری — مبنای فیلتر بازه قیمتی بازار
                 if (formData.singleUnitPrice <= 0) errs.push('قیمت تکی را وارد کن.');
                 if (formData.unitPrice <= 0) errs.push('قیمت عمده را وارد کن.');
-                if (formData.availableQuantity <= 0) errs.push('موجودی تضمینی را وارد کن.');
-                if (formData.minQuantity > formData.availableQuantity)
+                if (!formData.availableQuantity || formData.availableQuantity <= 0) errs.push('موجودی تضمینی را وارد کن.');
+                if (formData.availableQuantity && formData.minQuantity > formData.availableQuantity)
                     errs.push('حداقل حجم فروش نمی‌تواند از موجودی بیشتر باشد.');
                 const constraints = getCategoryConstraints(formData.categoryId, categoryTree);
                 if (constraints.min !== null && formData.minQuantity < constraints.min)
