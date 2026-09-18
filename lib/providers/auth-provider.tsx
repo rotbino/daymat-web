@@ -30,6 +30,7 @@ const protectedPrefixes = [
     '/feedback',
     '/saved-ads',
     '/business',
+    '/my-inquiries',
 ];
 
 // ✅ مسیرهای ادمین (دسترسی خاص)
