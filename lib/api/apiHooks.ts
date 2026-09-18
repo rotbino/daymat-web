@@ -2042,23 +2042,34 @@ export const useInquirySaveToggle = () => {
 };
 
 // ============================================================
-// 📥 ایمپورت گروهی لیست قیمت — parse/commit (بدون کش؛ همیشه زنده)
+// 📥 ایمپورت گروهی چندمنبعی — اکسل/متن/گرید/هوش مصنوعی (بدون کش؛ همیشه زنده)
 // ============================================================
 export const useAdImportParse = () => {
     return useMutation({
-        mutationFn: ({ catalogId, text }: { catalogId: string; text: string }) =>
-            apiService.ad.importParse(catalogId, text),
+        mutationFn: ({ catalogId, text, source }: { catalogId: string; text: string; source?: 'text' | 'json' }) =>
+            apiService.ad.importParse(catalogId, text, source ?? 'text'),
+    });
+};
+
+export const useAdImportParseFile = () => {
+    return useMutation({
+        mutationFn: ({ catalogId, file }: { catalogId: string; file: File }) =>
+            apiService.ad.importParseFile(catalogId, file),
     });
 };
 
 export const useAdImportCommit = () => {
     const qc = useQueryClient();
     return useMutation({
-        mutationFn: ({ catalogId, items, unitId }: { catalogId: string; items: { name: string; price: number; referenceId?: string }[]; unitId?: string }) =>
-            apiService.ad.importCommit(catalogId, items, unitId),
+        mutationFn: ({ catalogId, items }: { catalogId: string; items: { name: string; price: number; referenceId?: string; unitTitle?: string; unitQty?: number; brandTitle?: string }[] }) =>
+            apiService.ad.importCommit(catalogId, items),
         onSuccess: () => {
-            qc.invalidateQueries({ queryKey: ['catalog-ads'] });
+            qc.invalidateQueries({ queryKey: ['catalog-products'] });
+            qc.invalidateQueries({ queryKey: ['catalog-stats'] });
             qc.invalidateQueries({ queryKey: ['ad'] });
+            qc.invalidateQueries({ queryKey: ['units'] });
+            qc.invalidateQueries({ queryKey: ['units-all'] });
+            qc.invalidateQueries({ queryKey: ['brands'] });
         },
     });
 };

@@ -3,7 +3,7 @@
 
 import React, { useMemo } from 'react';
 import { useRouter } from 'next/navigation';
-import { BookOpen, Layers, Package, Plus, ClipboardPaste } from 'lucide-react';
+import { BookOpen, Layers, Package, Plus } from 'lucide-react';
 import { ProductRow } from './ProductRow';
 import { cn } from '@/lib/utils';
 import { fmt, isAdExpired, inMarket, isPriceExpired, isUncategorized, StatusFilter } from '../constants';
@@ -26,12 +26,13 @@ interface Props {
     onRefresh: (ad: any) => void;
     onPublish: (ad: any) => void;
     onPriceUpdate: (ad: any) => void;
+    onDelete: (ad: any) => void;
 }
 
 /** تب محصولات — قلب پنل مدیریت بازوی فروش */
 export default function ProductsTab({
     products, adsLoading, statusFilter, onFilterChange, currentCatalog, canPublishMarket = true,
-    onOpenCategorySettings, onOpenUnitSettings, onCategory, onRefresh, onPublish, onPriceUpdate,
+    onOpenCategorySettings, onOpenUnitSettings, onCategory, onRefresh, onPublish, onPriceUpdate, onDelete,
 }: Props) {
     const router = useRouter();
     const isService = currentCatalog.salesType === 'service';
@@ -81,22 +82,23 @@ export default function ProductsTab({
                     </>
                 )}
                 <span className="flex-1" />
-                {/* ✨ ورود سریع لیست قیمت — قلم‌به‌قلم ننویس؛ لیستت را بچسبان */}
+                {/* ✨ افزودن گروهی محصول — قلم‌به‌قلم ننویس؛ لیستت را یک‌جا بیاور (CTA اصلی و چشمگیر) */}
                 <button onClick={() => router.push(`/ad/import?catalog=${currentCatalog.id}`)}
-                        title="ورود سریع لیست قیمت — از واتساپ کپی کن و بچسبان"
+                        title="افزودن گروهی محصول — با اکسل، متن، گرید یا هوش مصنوعی"
+                        className="h-9 px-3.5 rounded-lg bg-amber-500 text-white text-[12px] font-extrabold shadow-sm
+                            flex items-center gap-1.5 flex-shrink-0 whitespace-nowrap
+                            hover:bg-amber-600 active:scale-[0.97] transition-all">
+                    <Layers className="w-4 h-4" />
+                    افزودن گروهی محصول
+                </button>
+                {/* ✨ افزودن تکی — ثانویه و جمع‌وجور */}
+                <button onClick={() => router.push(`/ad/create?catalog=${currentCatalog.id}`)}
+                        title={isService ? 'افزودن یک خدمت به بازوی فروش' : 'افزودن یک محصول به بازوی فروش'}
                         className="h-9 px-3.5 rounded-lg border border-amber-500/60 text-amber-600 dark:text-amber-400 text-[12px] font-extrabold
                             flex items-center gap-1.5 flex-shrink-0 whitespace-nowrap
                             hover:bg-amber-500/10 active:scale-[0.97] transition-all">
-                    <ClipboardPaste className="w-4 h-4" />
-                    ورود لیست قیمت
-                </button>
-                {/* ✨ CTA اصلی — جمع‌وجور در انتهای نوار */}
-                <button onClick={() => router.push(`/ad/create?catalog=${currentCatalog.id}`)}
-                        className="h-9 px-3.5 rounded-lg bg-amber-500 text-white text-[12px] font-extrabold
-                            flex items-center gap-1.5 flex-shrink-0 whitespace-nowrap
-                            hover:bg-amber-600 active:scale-[0.97] transition-all">
                     <Plus className="w-4 h-4" />
-                    {isService ? 'افزودن خدمت به بازوی فروش' : 'افزودن محصول به بازوی فروش'}
+                    {isService ? 'افزودن خدمت' : 'افزودن محصول'}
                 </button>
             </div>
 
@@ -136,6 +138,7 @@ export default function ProductsTab({
                             onRefresh={onRefresh}
                             onPublish={onPublish}
                             onPriceUpdate={onPriceUpdate}
+                            onDelete={onDelete}
                         />
                     ))}
                 </div>

@@ -1,10 +1,10 @@
 // app/my-catalogs/components/ProductRow.tsx
 'use client';
 
-import React from 'react';
+import React, { useRef, useState } from 'react';
 import Link from 'next/link';
 import Image from 'next/image';
-import { Clock, EyeOff, Layers, Package, Pencil, RefreshCw, Store, TrendingUp, Unlink, History } from 'lucide-react';
+import { Clock, EyeOff, Layers, Package, Pencil, RefreshCw, Store, TrendingUp, Unlink, History, Trash2 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { fmt, inMarket, isAdExpired, isPriceExpired, isUncategorized, priceAgeDays } from '../constants';
 
@@ -12,8 +12,9 @@ import { fmt, inMarket, isAdExpired, isPriceExpired, isUncategorized, priceAgeDa
  * ردیف کالا — پرکاربردترین المان پنل مدیریت.
  * ✅ React.memo: با تغییر statusFilter رندر مجدد لیست ارزان می‌ماند.
  * چیدمان: بالای ردیف (عکس + هویت + قیمت) و ردیف اکشن افقی پایین — خوانا در موبایل.
+ * حذف: دو-مرحله‌ای (اول کلیک → «تایید حذف؟»، کلیک دوم واقعاً حذف می‌کند) — بدون مدال اضافه.
  */
-function ProductRowBase({ ad, canPublishMarket = true, onEdit, onCategory, onRefresh, onPublish, onPriceUpdate }: {
+function ProductRowBase({ ad, canPublishMarket = true, onEdit, onCategory, onRefresh, onPublish, onPriceUpdate, onDelete }: {
     ad: any;
     /** ✅ کاتالوگ عضو حداقل یک بازاره؟ — والا دکمه بازارها مخفی می‌شود (کاربر درگیر بازاری که نیست نمی‌شود) */
     canPublishMarket?: boolean;
@@ -22,11 +23,12 @@ function ProductRowBase({ ad, canPublishMarket = true, onEdit, onCategory, onRef
     onRefresh: (ad: any) => void;
     onPublish: (ad: any) => void;
     onPriceUpdate: (ad: any) => void;
+    onDelete: (ad: any) => void;
 }) {
     const expired = isAdExpired(ad);
     const priceExpired = isPriceExpired(ad);
     const market = inMarket(ad) && !!ad.armId;
-    // ✅ اعتبار قیمت دیگر آگهی را از تابلو برنمی‌دارد — فقط یادآوری است
+    // ✅ اعتبار قیمت دیگر آگهی را از تابلوی بازار برنمی‌دارد — فقط یادآوری است
     const onTable = ad.status === 'active' && market;
     const uncat = isUncategorized(ad);
     const unit = ad.unit?.title || ad.unit?.shortCode || '';
@@ -34,6 +36,20 @@ function ProductRowBase({ ad, canPublishMarket = true, onEdit, onCategory, onRef
     // ✅ تازگی قیمت — قیمتِ ۱۴+ روز قدیمی برای خریدار قابل‌اعتماد نیست؛ فروشنده باید ببیند و تازه کند
     const ageDays = priceAgeDays(ad.priceUpdatedAt);
     const isStalePrice = onTable && ageDays >= 14;
+
+    // ✅ حذف دو-مرحله‌ای — ۳ ثانیه فرصت، بعد خودش برمی‌گردد
+    const [confirming, setConfirming] = useState(false);
+    const confirmTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
+    const armDelete = () => {
+        if (confirming) {
+            if (confirmTimer.current) clearTimeout(confirmTimer.current);
+            setConfirming(false);
+            onDelete(ad);
+            return;
+        }
+        setConfirming(true);
+        confirmTimer.current = setTimeout(() => setConfirming(false), 3000);
+    };
 
     return (
         <div className={cn('rounded-lg border p-3 transition-colors',
@@ -145,6 +161,16 @@ function ProductRowBase({ ad, canPublishMarket = true, onEdit, onCategory, onRef
                         className="h-8 px-3 rounded-lg border border-outline-variant/50 text-[10px] font-bold text-on-surface-variant
                             hover:text-primary hover:border-primary/40 flex items-center gap-1 transition-colors">
                     <Pencil className="w-3 h-3" /> ویرایش
+                </button>
+                {/* ✅ حذف — دو-مرحله‌ای تا اشتباهی نباشد */}
+                <button onClick={armDelete}
+                        title={confirming ? 'دوباره بزن تا حذف شود' : 'حذف این کالا'}
+                        aria-label={confirming ? 'تایید حذف' : 'حذف کالا'}
+                        className={cn('h-8 px-3 rounded-lg border text-[10px] font-bold flex items-center gap-1 transition-all',
+                            confirming
+                                ? 'bg-red-600 border-red-600 text-white animate-pulse'
+                                : 'border-outline-variant/50 text-on-surface-variant hover:text-red-600 hover:border-red-400')}>
+                    <Trash2 className="w-3 h-3" /> {confirming ? 'تایید حذف؟' : 'حذف'}
                 </button>
             </div>
         </div>

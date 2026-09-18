@@ -25,6 +25,38 @@ export type ConnCandidateParams = {
     q?: string; province?: string; city?: string; sector?: string; role?: string;
 };
 
+// ─── ایمپورت گروهی چندمنبعی — ردیف پیش‌نمایش و گزارش ───
+export interface ImportItem {
+    name: string;
+    price: number;
+    valid: boolean;
+    reason?: string;
+    warnings?: string[];
+    duplicateOfAdId?: string;
+    referenceId?: string | null;
+    referenceTitle?: string | null;
+    unitTitle?: string | null;
+    unitResolved?: boolean | null;
+    unitContainsQty?: number | null;
+    unitQty?: number | null;
+    brandTitle?: string | null;
+    brandResolved?: boolean | null;
+    [k: string]: unknown;
+}
+
+export interface ImportSummary {
+    total: number; valid: number; invalid: number; duplicates: number;
+    withReference: number; withUnit: number; withBrand: number;
+    newUnits: number; newBrands: number;
+}
+
+export interface ImportReport {
+    created: number; skipped: number;
+    failed: { name: string; reason: string }[];
+    createdUnits: string[]; createdBrands: string[]; createdReferences: string[];
+    ads: { id: string; title: string }[];
+}
+
 /** ساخت رشتهٔ کوئری از پارامترهای غیرخالی */
 const connCandidateQuery = (p: ConnCandidateParams & { salesType?: string } = {}): string => {
     const sp = new URLSearchParams();
@@ -755,15 +787,23 @@ export const apiService = {
         bulkUpdate: (data: { updates: { id: string; unitPrice: number }[] }) =>
             apiRequest('/ad/bulk-update', { method: 'PUT', data }),
 
-        // ═══ 📥 ایمپورت گروهی لیست قیمت — «به‌جای قلم‌به‌قلم، لیستت را بچسبان» ═══
+        // ═══ 📥 ایمپورت گروهی چندمنبعی — اکسل | متن | گرید | هوش مصنوعی | سایت ═══
 
-        /** فاز ۱ — پیش‌نمایش: متن خام لیست را ردیف‌به‌ردیف می‌خواند (بدون ثبت) */
-        importParse: (catalogId: string, text: string): Promise<{ items: any[]; summary: { total: number; valid: number; invalid: number; duplicates: number; withReference: number } }> =>
-            apiRequest('/ad/import/parse', { method: 'POST', data: { catalogId, text } }),
+        /** فاز ۱ — پیش‌نمایش از متن ساده (source=text) یا JSON هوش مصنوعی/گرید (source=json) */
+        importParse: (catalogId: string, text: string, source: 'text' | 'json' = 'text'): Promise<{ items: ImportItem[]; summary: ImportSummary }> =>
+            apiRequest('/ad/import/parse', { method: 'POST', data: { catalogId, text, source } }),
 
-        /** فاز ۲ — ثبت نهایی: ساخت آگهی‌ها از ردیف‌های تاییدشدهٔ پیش‌نمایش */
-        importCommit: (catalogId: string, items: { name: string; price: number; referenceId?: string }[], unitId?: string): Promise<{ created: number; skipped: number; ads: { id: string; title: string }[] }> =>
-            apiRequest('/ad/import/commit', { method: 'POST', data: { catalogId, items, ...(unitId ? { unitId } : {}) } }),
+        /** فاز ۱ — پیش‌نمایش از فایل اکسل/CSV (multipart) */
+        importParseFile: (catalogId: string, file: File): Promise<{ items: ImportItem[]; summary: ImportSummary }> => {
+            const fd = new FormData();
+            fd.append('catalogId', catalogId);
+            fd.append('file', file);
+            return apiFileRequest('/ad/import/parse-file', fd);
+        },
+
+        /** فاز ۲ — ثبت نهایی: آگهی‌ها + ساخت خودکار واحد/برند/کالای مرجع + گزارش کامل */
+        importCommit: (catalogId: string, items: { name: string; price: number; referenceId?: string; unitTitle?: string; unitQty?: number; brandTitle?: string }[]): Promise<ImportReport> =>
+            apiRequest('/ad/import/commit', { method: 'POST', data: { catalogId, items } }),
         // ✅ دریافت جزئیات کامل آگهی (برای صفحه جزئیات)
         getDetail: (id: string): Promise<any> =>
             apiRequest(`/ad/${id}/detail`),

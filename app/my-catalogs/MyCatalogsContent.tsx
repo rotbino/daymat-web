@@ -16,7 +16,7 @@ import { apiService } from '@/lib/api/apiService';
 import {
     useArms, useMyUncategorized, useSetOwnAdCategory,
     useMyPendingApprovals, useMyInquiries,
-    useInquiryOpportunities, useCatalogTeam,
+    useInquiryOpportunities, useCatalogTeam, useDeleteAd,
 } from '@/lib/api/apiHooks';
 import { toast } from 'sonner';
 import { cn } from '@/lib/utils';
@@ -335,6 +335,18 @@ export default function MyCatalogsContent() {
         setCatModalAd(ad);
     };
 
+    // ─── حذف کالا — با دکمهٔ دو-مرحله‌ای خود ردیف صدا زده می‌شود ───
+    const deleteAdMut = useDeleteAd();
+    const handleDeleteAd = (ad: any) => {
+        deleteAdMut.mutate(ad.id, {
+            onSuccess: () => {
+                queryClient.invalidateQueries({ queryKey: ['catalog-products', currentId] });
+                queryClient.invalidateQueries({ queryKey: ['catalog-stats', currentId] });
+                queryClient.invalidateQueries({ queryKey: ['my-uncategorized'] });
+            },
+        });
+    };
+
     // ─── گاردها ───
     if (!isLoading && allCatalogs.length === 0) {
         // ✅ حتی بدون بازوی فروش، بازوهای خرید کاربر با دکمهٔ مدیریت همین‌جا دیده شوند
@@ -505,6 +517,7 @@ export default function MyCatalogsContent() {
                             onRefresh={setRefreshAd}
                             onPublish={setPublishModalAd}
                             onPriceUpdate={setUpdatePriceAd}
+                            onDelete={handleDeleteAd}
                         />
                     </div>
                 )}
