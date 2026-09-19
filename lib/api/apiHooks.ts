@@ -2136,6 +2136,33 @@ export const useAdBuyers = (adId?: string | null, enabled = true) => {
     });
 };
 
+// 🧭 اعلان‌های خرید مرتبط با کالاهای من — سمت فروشنده، تب «اعلان خرید»
+export const useSellerDiscoveries = () => {
+    const { hasAccess } = useAuthState();
+    return useQuery({
+        queryKey: ['match', 'discoveries'],
+        queryFn: () => apiService.match.discoveries(),
+        enabled: hasAccess,
+        staleTime: 60 * 1000,
+    });
+};
+
+/** پیشنهاد تامین به یک بازوی خرید از داخل مدال «خریداران این کالا» — بعدش شمارش‌ها تازه می‌شوند */
+export const useSendSupplyOffer = () => {
+    const qc = useQueryClient();
+    return useMutation({
+        mutationFn: ({ inquiryId, catalogId }: { inquiryId: string; catalogId: string }) =>
+            apiService.inquiry.requestAccess(inquiryId, { catalogId }),
+        onSuccess: () => {
+            qc.invalidateQueries({ queryKey: ['match', 'ad-buyers'] });
+            qc.invalidateQueries({ queryKey: ['match', 'buyer-counts'] });
+            qc.invalidateQueries({ queryKey: ['inquiry-opportunities'] });
+            qc.invalidateQueries({ queryKey: ['match', 'discoveries'] });
+            qc.invalidateQueries({ queryKey: ['notifications'] });
+        },
+    });
+};
+
 export const useRevealContact = () => {
     return useMutation({
         mutationFn: (data: { side: 'seller' | 'buyer'; catalogId?: string; inquiryId?: string; adId?: string; itemId?: string; productReferenceId?: string }) =>

@@ -1100,21 +1100,17 @@ function SupplierConnectModal({ inquiry, target, onClose, onConnected, onRequest
     if (!mounted) return null;
 
     const isPrivate = inquiry?.visibility === 'private';
-    const alreadyPending = inquiry?.accessState === 'pending' && isPrivate;
+    // ✅ همیشه pending — پیشنهاد تامین یعنی منتظر تایید خریدار (بازگشت از اتصال فوری، خواستهٔ مالک)
+    const alreadyPending = inquiry?.accessState === 'pending';
     const myCatalogs: any[] = catalogsRaw ?? [];
 
     const submit = async () => {
         if (!catalogId) return;
         try {
-            const member = await requestAccess.mutateAsync({ inquiryId: inquiry.id, catalogId });
-            if (member?.status === 'active') {
-                // عمومی: اتصال فوری — همان‌جا ادامهٔ مسیر (شیت پیشنهاد)
-                onConnected();
-            } else {
-                // خصوصی: درخواست در انتظار تایید خریدار
-                toast.success('پیشنهاد تامینت ثبت شد — منتظر تایید خریدار باش. یا می تونی باهاش تماس بگیری و بگی سریعتر تاییدت کنه');
-                onRequested();
-            }
+            await requestAccess.mutateAsync({ inquiryId: inquiry.id, catalogId });
+            // ✅ همیشه منتظر تایید خریدار — مستقل از عمومی/خصوصی بودن بازو
+            toast.success('پیشنهاد تامینت ثبت شد — منتظر تایید خریدار باش. یا می تونی باهاش تماس بگیری و بگی سریعتر تاییدت کنه');
+            onRequested();
         } catch (e: any) {
             toast.error(e?.response?.data?.message || 'ارسال پیشنهاد تامین ناموفق بود');
         }
@@ -1204,7 +1200,7 @@ function SupplierConnectModal({ inquiry, target, onClose, onConnected, onRequest
                     </>
                 )}
 
-                {/* ── حالت ۳: در انتظار تایید (خصوصی) ── */}
+                {/* ── حالت ۳: در انتظار تایید خریدار ── */}
                 {pending && (
                     <>
                         <p className="mx-auto mt-3 max-w-xs text-[12px] font-bold leading-6 text-stone-500 dark:text-gray-400">
@@ -1222,9 +1218,8 @@ function SupplierConnectModal({ inquiry, target, onClose, onConnected, onRequest
                 {picker && (
                     <>
                         <p className="mx-auto mt-3 max-w-xs text-[12px] font-bold leading-6 text-stone-500 dark:text-gray-400">
-                            {isPrivate
-                                ? 'این بازوی خرید خصوصیه — با یکی از بازوهای فروشت پیشنهاد تامین بده؛ بعد از تایید خریدار می تونی پیشنهاد بدی.'
-                                : 'بازوی فروشت را انتخاب کن تا همین حالا به‌عنوان تامین‌کنندهٔ این خریدار پیشنهادت را ثبت کنی.'}
+                            بازوی فروشت را انتخاب کن و پیشنهاد تامین بده —
+                            به‌محض تایید خریدار، اقلامش را می‌بینی و می‌توانی قیمت بدهی.
                         </p>
                         <div className="mt-4 max-h-44 space-y-1.5 overflow-y-auto pl-1 text-right">
                             {myCatalogs.map((c: any) => (
@@ -1247,8 +1242,8 @@ function SupplierConnectModal({ inquiry, target, onClose, onConnected, onRequest
                         </div>
                         <motion.button whileTap={{ scale: 0.97 }} disabled={!catalogId || requestAccess.isPending} onClick={submit}
                             className="mt-4 flex h-12 w-full items-center justify-center gap-2 rounded-full bg-primary text-sm font-extrabold text-on-primary shadow-lg shadow-primary/25 transition-opacity hover:opacity-95 disabled:opacity-50">
-                            {requestAccess.isPending ? <Loader2 className="size-4 animate-spin" /> : isPrivate ? <Handshake className="size-4" /> : <Send className="size-4" />}
-                            {isPrivate ? 'ارسال پیشنهاد تامین' : 'اتصال و ثبت پیشنهاد'}
+                            {requestAccess.isPending ? <Loader2 className="size-4 animate-spin" /> : <Handshake className="size-4" />}
+                            ارسال پیشنهاد تامین
                         </motion.button>
                     </>
                 )}

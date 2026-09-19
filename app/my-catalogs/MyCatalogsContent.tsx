@@ -371,26 +371,27 @@ export default function MyCatalogsContent() {
     const userAvatar = user?.avatarFile?.thumbnailPath || user?.avatarUrl;
     const userHasName = !!user?.fullName?.trim();
 
-    // ─── تب‌های بخش‌های بازوی فروش (RTL: تنظیمات در راست) — «اعضا» دو تب شد: تیم فروش + خریداران ───
+    // ─── تب‌های بخش‌های بازوی فروش (RTL: تنظیمات در راست) ───
+    // ✅ خواستهٔ مالک: «تیم فروش» آخر همهٔ تب‌ها + «درخواست‌های قیمت» حالا «اعلان خرید» است
     const tabItems = isTeamEntry
         ? teamMode === 'admin'
             ? [
                   { key: 'products' as Tab, label: 'محصولات', icon: Package, count: products.length },
-                  { key: 'team' as Tab, label: 'تیم فروش', icon: Users, alert: teamPendingOther },
                   { key: 'customers' as Tab, label: 'خریداران', icon: Handshake, alert: teamPendingBuyers },
+                  { key: 'team' as Tab, label: 'تیم فروش', icon: Users, alert: teamPendingOther },
               ]
             : [
-                  { key: 'team' as Tab, label: 'تیم فروش', icon: Users },
                   { key: 'customers' as Tab, label: 'خریداران', icon: Handshake },
+                  { key: 'team' as Tab, label: 'تیم فروش', icon: Users },
               ]
         : [
               { key: 'products' as Tab, label: 'محصولات', icon: Package, count: products.length },
-              { key: 'team' as Tab, label: 'تیم فروش', icon: Users, alert: teamPendingOther },
               { key: 'customers' as Tab, label: 'خریداران', icon: Handshake, alert: teamPendingBuyers },
-              { key: 'leads' as Tab, label: 'درخواستهای قیمت', mobileLabel: 'درخواست قیمت', icon: Megaphone, alert: pendingInvites },
+              { key: 'leads' as Tab, label: 'اعلان خرید', icon: Megaphone, alert: pendingInvites },
               { key: 'profile' as Tab, label: 'تنظیمات', icon: Settings2 },
               { key: 'stats' as Tab, label: 'آمار', icon: BarChart3 },
               { key: 'publish' as Tab, label: 'انتشار', icon: Globe, count: memberships.length > 0 ? memberships.length : undefined },
+              { key: 'team' as Tab, label: 'تیم فروش', icon: Users, alert: teamPendingOther },
           ];
 
     return (

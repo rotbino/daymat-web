@@ -72,32 +72,40 @@ export default function MembersTab({ inquiryId, visibility, slug }: Props) {
                 key={m.id}
                 initial={{ opacity: 0, y: 8 }}
                 animate={{ opacity: 1, y: 0 }}
-                className={`flex items-center gap-3 rounded-xl p-2.5 ${mode === 'incoming' ? 'bg-brand-contrast-soft/50 dark:bg-amber-500/5' : mode === 'declined' ? 'bg-rose-50/60 dark:bg-rose-900/10' : 'hover:bg-stone-50 dark:hover:bg-gray-800/50'}`}
+                className={`rounded-xl p-2.5 sm:flex sm:items-center sm:gap-3 ${mode === 'incoming' ? 'bg-brand-contrast-soft/50 dark:bg-amber-500/5' : mode === 'declined' ? 'bg-rose-50/60 dark:bg-rose-900/10' : 'hover:bg-stone-50 dark:hover:bg-gray-800/50'}`}
             >
-                <span className="grid size-10 shrink-0 place-items-center overflow-hidden rounded-xl bg-stone-100 dark:bg-gray-800">
+                <span className="hidden sm:grid size-10 shrink-0 place-items-center overflow-hidden rounded-xl bg-stone-100 dark:bg-gray-800">
                     {cat.logoUrl
                         ? <Image src={cat.logoUrl} alt="" width={40} height={40} className="size-full object-cover" unoptimized />
                         : <Handshake className="size-4 text-stone-400" />}
                 </span>
-                <div className="min-w-0 flex-1">
-                    <p className="truncate text-[13px] font-black text-stone-900 dark:text-gray-100">{cat.name || 'بازوی فروش'}</p>
-                    <p className="truncate text-[10px] font-bold text-stone-400 dark:text-gray-500">
-                        {m.user?.fullName || '—'}
-                        {cat.city ? ` · ${cat.city}` : ''}
-                        {mode === 'invited'
-                            ? ` · درخواست ${faDate(m.updatedAt || m.createdAt)} فرستاده شده`
-                            : mode === 'incoming' ? ' · پیشنهاد تامین' : ''}
-                    </p>
+                {/* ✅ موبایل: هویت و اکشن‌ها دو ردیفِ جدا — دکمه‌های قبول/رد له نمی‌شوند و اسم کامل دیده می‌شود */}
+                <div className="min-w-0 flex-1 flex items-start gap-2.5 sm:block">
+                    <span className="sm:hidden grid size-9 shrink-0 place-items-center overflow-hidden rounded-lg bg-stone-100 dark:bg-gray-800">
+                        {cat.logoUrl
+                            ? <Image src={cat.logoUrl} alt="" width={36} height={36} className="size-full object-cover" unoptimized />
+                            : <Handshake className="size-4 text-stone-400" />}
+                    </span>
+                    <div className="min-w-0 flex-1">
+                        <p className="truncate text-[13px] font-black text-stone-900 dark:text-gray-100">{cat.name || 'بازوی فروش'}</p>
+                        <p className="truncate text-[10px] font-bold text-stone-400 dark:text-gray-500">
+                            {m.user?.fullName || '—'}
+                            {cat.city ? ` · ${cat.city}` : ''}
+                            {mode === 'invited'
+                                ? ` · درخواست ${faDate(m.updatedAt || m.createdAt)} فرستاده شده`
+                                : mode === 'incoming' ? ' · پیشنهاد تامین' : ''}
+                        </p>
+                    </div>
                 </div>
                 {busy ? (
                     <Loader2 className="size-4 shrink-0 animate-spin text-stone-400" />
                 ) : mode === 'incoming' ? (
-                    <div className="flex shrink-0 items-center gap-1.5">
+                    <div className="mt-2 flex items-center justify-end gap-1.5 sm:mt-0 sm:shrink-0">
                         {/* ✅ تماس با متقاضی — همیشه (شمارهٔ ثبت‌نام شخص) */}
                         <OfferCallButton phone={m.user?.phone} title="تماس با متقاضی" />
                         <button
                             onClick={() => run(m.id, () => decide.mutateAsync({ inquiryId, memberId: m.id, status: 'active' }), 'پیشنهاد تامین پذیرفته شد')}
-                            className="inline-flex h-8 items-center gap-1 rounded-lg bg-emerald-600 px-2.5 text-[11px] font-extrabold text-white shadow-sm transition hover:bg-emerald-700 active:scale-95"
+                            className="inline-flex h-8 flex-1 sm:flex-none items-center justify-center gap-1 rounded-lg bg-emerald-600 px-2.5 text-[11px] font-extrabold text-white shadow-sm transition hover:bg-emerald-700 active:scale-95"
                             aria-label="قبول پیشنهاد تامین"
                         >
                             <Check className="size-3.5" />
@@ -105,7 +113,7 @@ export default function MembersTab({ inquiryId, visibility, slug }: Props) {
                         </button>
                         <button
                             onClick={() => run(m.id, () => decide.mutateAsync({ inquiryId, memberId: m.id, status: 'declined' }), 'پیشنهاد تامین رد شد')}
-                            className="inline-flex h-8 items-center gap-1 rounded-lg border border-stone-200 bg-white px-2.5 text-[11px] font-extrabold text-stone-500 transition hover:border-stone-300 active:scale-95 dark:border-gray-700 dark:bg-gray-900 dark:text-gray-300"
+                            className="inline-flex h-8 flex-1 sm:flex-none items-center justify-center gap-1 rounded-lg border border-stone-200 bg-white px-2.5 text-[11px] font-extrabold text-stone-500 transition hover:border-stone-300 active:scale-95 dark:border-gray-700 dark:bg-gray-900 dark:text-gray-300"
                             aria-label="رد پیشنهاد تامین"
                         >
                             <X className="size-3.5" />

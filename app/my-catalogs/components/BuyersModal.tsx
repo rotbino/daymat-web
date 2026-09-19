@@ -2,12 +2,17 @@
 // ✅ مدال «خریداران این کالا» — سمت بازوی فروش (جهتِ تازهٔ مچینگ):
 //    بازوهای خریدی که همین کالا را فعالانه برای قیمت‌گیری خواسته‌اند:
 //    نام خریدار + کسب‌وکار + حجم سفارش + برآورد ارزش با قیمتِ خودِ فروشنده
-//    (سطحِ زنجیره: خرده/عمده/بنکداری) + دکمهٔ تماس (شماره فقط با reveal).
+//    (سطحِ زنجیره: خرده/عمده/بنکداری).
+//    ✅ (خواستهٔ مالک) اکشنِ این مدال «پیشنهاد تامین» است، نه تماس —
+//    خریدار نمی‌خواهد فروشنده‌های مختلف مدام به او زنگ بزنند؛ فروشنده پیشنهاد
+//    تامین می‌دهد و خریدار در پنل خودش قبول/رد می‌کند (همیشه منتظر تایید خریدار).
+//    تماس فقط بعد از پذیرش پیشنهاد معنا دارد — آن‌وقت شماره از مسیر خودش باز می‌شود.
 'use client';
 
 import React, { useState } from 'react';
-import { Ban, Clock, Loader2, Package, Phone, X } from 'lucide-react';
-import { useAdBuyers, useRevealContact } from '@/lib/api/apiHooks';
+import { Clock, Handshake, Loader2, Package, Send, X } from 'lucide-react';
+import { toast } from 'sonner';
+import { useAdBuyers, useSendSupplyOffer } from '@/lib/api/apiHooks';
 import { tierLabel } from '@/lib/match';
 import { faPrice } from '../../inquiries/utils';
 
@@ -18,28 +23,28 @@ interface Props {
 }
 
 export default function BuyersModal({ isOpen, onClose, ad }: Props) {
-    const { data, isLoading } = useAdBuyers(ad?.id, isOpen);
-    const reveal = useRevealContact();
-    const [phones, setPhones] = useState<Record<string, string>>({});
+    const { data, isLoading, refetch } = useAdBuyers(ad?.id, isOpen);
+    const sendOffer = useSendSupplyOffer();
+    const [busyId, setBusyId] = useState<string | null>(null);
 
     if (!isOpen || !ad) return null;
 
     const buyers: any[] = data?.buyers ?? [];
     const unit = ad.unit?.title || ad.unit?.shortCode || '';
+    const myCatalogId: string | undefined = ad.catalogId;
 
-    const handleReveal = async (b: any) => {
-        if (phones[b.inquiryId]) return;
+    /** ✅ پیشنهاد تامین — همیشه منتظر تایید خریدار (بک: requestAccess → pending) */
+    const handleOffer = async (b: any) => {
+        if (!myCatalogId) return;
+        setBusyId(b.inquiryId);
         try {
-            const res = await reveal.mutateAsync({
-                side: 'buyer',
-                inquiryId: b.inquiryId,
-                adId: ad.id,
-                itemId: b.itemId,
-                productReferenceId: ad.productReferenceId || undefined,
-            });
-            setPhones((p) => ({ ...p, [b.inquiryId]: res.phone }));
-        } catch {
-            // toast در هوک هندل می‌شود
+            await sendOffer.mutateAsync({ inquiryId: b.inquiryId, catalogId: myCatalogId });
+            toast.success('پیشنهاد تامینت ثبت شد — منتظر تایید خریدار باش');
+            refetch(); // چیپ «در انتظار پذیرش» همان لحظه جاافتاده شود
+        } catch (e: any) {
+            toast.error(e?.response?.data?.message || 'ارسال پیشنهاد تامین ناموفق بود');
+        } finally {
+            setBusyId(null);
         }
     };
 
@@ -90,7 +95,9 @@ export default function BuyersModal({ isOpen, onClose, ad }: Props) {
                     ) : (
                         buyers.map((b) => {
                             const tier = tierLabel(b.tier);
-                            const phone = phones[b.inquiryId];
+                            const busy = busyId === b.inquiryId;
+                            const connected = b.memberStatus === 'active';
+                            const pending = b.memberStatus === 'pending';
                             return (
                                 <div
                                     key={b.inquiryId}
@@ -132,45 +139,47 @@ export default function BuyersModal({ isOpen, onClose, ad }: Props) {
                                                         هم‌شهری شما
                                                     </span>
                                                 )}
-                                                {b.memberStatus === 'active' && (
-                                                    <span className="rounded-full bg-emerald-50 px-2 py-0.5 text-[9.5px] font-black text-emerald-600 dark:bg-emerald-500/10">
-                                                        عضو بازوی خریدش هستید
+                                                {!b.sameCity && b.sameProvince && (
+                                                    <span className="rounded-full bg-teal-50 px-2 py-0.5 text-[9.5px] font-black text-teal-700 dark:bg-teal-500/10 dark:text-teal-300">
+                                                        هم‌استانی شما
                                                     </span>
                                                 )}
-                                                {b.memberStatus === 'pending' && (
+                                                {connected && (
+                                                    <span className="rounded-full bg-emerald-50 px-2 py-0.5 text-[9.5px] font-black text-emerald-600 dark:bg-emerald-500/10">
+                                                        تامین‌کنندهٔ این بازو هستید
+                                                    </span>
+                                                )}
+                                                {pending && (
                                                     <span className="flex items-center gap-0.5 rounded-full bg-stone-100 px-2 py-0.5 text-[9.5px] font-black text-stone-500 dark:bg-gray-800 dark:text-gray-400">
-                                                        <Clock className="size-2.5" /> در انتظار پذیرش
+                                                        <Clock className="size-2.5" /> در انتظار پذیرش خریدار
                                                     </span>
                                                 )}
                                             </div>
                                         </div>
                                     </div>
-                                    {/* اکشن تماس — اگر خریدار تماس مستقیم را بسته باشد اصلا رندر نمی‌شود */}
-                                    {b.contactAllowed ? (
-                                        phone ? (
-                                            <a
-                                                href={`tel:${phone}`}
-                                                dir="ltr"
-                                                className="mt-2 flex h-8 items-center justify-center gap-1.5 rounded-lg bg-brand-contrast text-[11px] font-extrabold text-white transition-colors hover:bg-brand-contrast-strong"
-                                            >
-                                                <Phone className="size-3.5" />
-                                                {phone}
-                                            </a>
-                                        ) : (
-                                            <button
-                                                onClick={() => handleReveal(b)}
-                                                disabled={reveal.isPending}
-                                                className="mt-2 flex h-8 w-full items-center justify-center gap-1.5 rounded-lg bg-brand-contrast text-[11px] font-extrabold text-white transition-colors hover:bg-brand-contrast-strong disabled:opacity-50"
-                                            >
-                                                {reveal.isPending ? <Loader2 className="size-3.5 animate-spin" /> : <Phone className="size-3.5" />}
-                                                تماس با خریدار
-                                            </button>
-                                        )
-                                    ) : (
-                                        <p className="mt-2 flex items-center justify-center gap-1 rounded-lg bg-stone-50 py-2 text-[10px] font-bold text-stone-400 dark:bg-gray-800/60 dark:text-gray-500">
-                                            <Ban className="size-3" />
-                                            این خریدار تماس مستقیم را بسته
+
+                                    {/* ✅ اکشن واحد: پیشنهاد تامین — نه تماس (خواستهٔ مالک):
+                                        خریدار نمی‌خواهد فروشنده‌ها پشت‌سرهم زنگ بزنند؛
+                                        پیشنهاد می‌دهی، او در آرامش قبول/رد می‌کند. */}
+                                    {connected ? (
+                                        <p className="mt-2 flex items-center justify-center gap-1.5 rounded-lg bg-emerald-50/70 py-2 text-[10.5px] font-extrabold text-emerald-700 dark:bg-emerald-500/10 dark:text-emerald-300">
+                                            <Handshake className="size-3.5" />
+                                            همکارِ تامین‌کنندهٔ این بازو هستید — از تب اعلان خرید قیمت بدهید
                                         </p>
+                                    ) : pending ? (
+                                        <p className="mt-2 flex items-center justify-center gap-1.5 rounded-lg bg-stone-50 py-2 text-[10.5px] font-extrabold text-stone-400 dark:bg-gray-800/60 dark:text-gray-500">
+                                            <Clock className="size-3.5" />
+                                            پیشنهاد تامینتان ثبت شده — منتظر پذیرش خریدار
+                                        </p>
+                                    ) : (
+                                        <button
+                                            onClick={() => handleOffer(b)}
+                                            disabled={busy || !myCatalogId || sendOffer.isPending}
+                                            className="mt-2 flex h-8 w-full items-center justify-center gap-1.5 rounded-lg bg-primary text-[11px] font-extrabold text-on-primary transition-colors hover:bg-primary/90 disabled:opacity-50"
+                                        >
+                                            {busy ? <Loader2 className="size-3.5 animate-spin" /> : <Send className="size-3.5" />}
+                                            پیشنهاد تامین بده
+                                        </button>
                                     )}
                                 </div>
                             );
@@ -181,7 +190,8 @@ export default function BuyersModal({ isOpen, onClose, ad }: Props) {
                 {/* فوتر راهنما */}
                 <div className="flex-shrink-0 border-t border-outline-variant/20 px-4 py-2.5">
                     <p className="text-center text-[9.5px] font-bold text-on-surface-variant/60">
-                        این خریدارها همین کالا را در حال قیمت‌گیری‌اند — هم‌شهری‌ها و سفارش‌های بزرگ‌تر اول‌اند
+                        این خریدارها همین کالا را در حال قیمت‌گیری‌اند — پیشنهاد بده، تصمیم با خودشان است؛
+                        هم‌شهری‌ها و سفارش‌های بزرگ‌تر اول‌اند
                     </p>
                 </div>
             </div>

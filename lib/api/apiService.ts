@@ -1673,6 +1673,10 @@ export const apiService = {
         adBuyers: (adId: string): Promise<any> =>
             apiRequest(`/match/ad/${adId}/buyers`),
 
+        // 🧭 اعلان‌های خرید مرتبط با کالاهای من — سمت فروشنده، تب «اعلان خرید»
+        discoveries: (): Promise<{ items: any[]; total: number }> =>
+            apiRequest('/match/discoveries'),
+
         // افشای شمارهٔ تماس با ثبت در دفتر مچینگ — شماره فقط از این مسیر داده می‌شود
         reveal: (data: { side: 'seller' | 'buyer'; catalogId?: string; inquiryId?: string; adId?: string; itemId?: string; productReferenceId?: string }): Promise<any> =>
             apiRequest('/match/reveal', { method: 'POST', data }),

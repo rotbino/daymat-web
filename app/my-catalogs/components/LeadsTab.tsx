@@ -1,9 +1,11 @@
 // app/my-catalogs/components/LeadsTab.tsx
-// ✅ تب «درخواستهای قیمت» پنل بازوی فروش — قلب شبکهٔ خرید↔فروش از سمت تامین‌کننده:
-//    ۱) دعوت‌های در انتظار — بازوهای خریدی که تو را تامین‌کننده دعوت کرده‌اند (پذیرش/رد)
-//    ۲) درخواست‌های قیمتِ بازوهای خریدی که تامین‌کنندهٔ تاییدشده‌شان هستی
+// ✅ تب «اعلان خرید» پنل بازوی فروش — قلب شبکهٔ خرید↔فروش از سمت تامین‌کننده:
+//    ۱) اعلان‌های خریدِ مرتبط با کالاهای تو — مچینگِ بازار: بازوهای خریدِ بازی که همین حالا
+//       کالای مرجعِ کالاهایت را فعالانه قیمت‌گیری می‌کنند و هنوز متصل نیستی — یک لمس تا پیشنهاد تامین
+//    ۲) دعوت‌های در انتظار — بازوهای خریدی که تو را تامین‌کننده دعوت کرده‌اند (پذیرش/رد)
+//    ۳) اعلان‌های خریدِ بازوهای خریدی که تامین‌کنندهٔ تاییدشده‌شان هستی
 //       روی هر قلم مستقیم قیمت می‌دهی (شیت مشترک پیشنهاد قیمت)
-//    سرنخ فروش بدون جست‌وجو — خریدار خودش درخواست می‌دهد، تو فقط قیمت می‌دهی.
+//    سرنخ فروش بدون جست‌وجو — هم خریدار درخواست می‌دهد، هم مچینگ خودش اعلان‌ها را می‌آورد.
 'use client';
 
 import React, { useState } from 'react';
@@ -12,12 +14,13 @@ import { useQueryClient } from '@tanstack/react-query';
 import {
     Megaphone, Check, X, Loader2, MapPin, Truck, Wallet, Clock,
     ChevronDown, Handshake, ArrowLeft, BadgeCheck, ShoppingBag, FileText,
+    Radar, Send, ExternalLink,
 } from 'lucide-react';
 import Link from 'next/link';
 import { apiService } from '@/lib/api/apiService';
 import {
     useInquiryOpportunities, useDecideInquiryMember, useSetOfferSaleStatus,
-    useSentProformas, useCreateProforma,
+    useSentProformas, useCreateProforma, useSellerDiscoveries, useSendSupplyOffer,
 } from '@/lib/api/apiHooks';
 import { toast } from 'sonner';
 import { cn } from '@/lib/utils';
@@ -34,6 +37,9 @@ export default function LeadsTab() {
     const decide = useDecideInquiryMember();
     const setSale = useSetOfferSaleStatus();
     const { data: sentProformas } = useSentProformas();
+    // ✅ مچینگ بازار — اعلان‌های خریدِ مرتبط با کالاهای من (سوراخ‌سازی فرصت)
+    const { data: discoveriesData } = useSellerDiscoveries();
+    const sendOffer = useSendSupplyOffer();
 
     const [busyId, setBusyId] = useState<string | null>(null);
     const [openLead, setOpenLead] = useState<string | null>(null);
@@ -51,6 +57,7 @@ export default function LeadsTab() {
     const declinedRequests = requests.filter((r) => r.status === 'declined');
     const leads = (data?.leads ?? []) as any[];
     const accepted = (data?.accepted ?? []) as any[];
+    const discoveries = (discoveriesData?.items ?? []) as any[];
 
     // ✅ پیش‌فاکتورها — آخرین پیش‌فاکتور هر پیشنهاد، برای چیپ وضعیت جلوی چشم
     const proformaByOffer = new Map<string, any>();
@@ -91,6 +98,22 @@ export default function LeadsTab() {
             refresh();
         } catch (e: any) {
             toast.error(e?.response?.data?.message || 'ثبت نتیجه ناموفق بود');
+        } finally {
+            setBusyId(null);
+        }
+    };
+
+    /** ✅ پیشنهاد تامین از دل اعلان‌های مرتبط — همیشه منتظر تایید خریدار (بک: pending) */
+    const sendDiscoveryOffer = async (d: any) => {
+        if (!d?.myCatalog?.id) return;
+        const key = `disc-${d.inquiryId}`;
+        setBusyId(key);
+        try {
+            await sendOffer.mutateAsync({ inquiryId: d.inquiryId, catalogId: d.myCatalog.id });
+            toast.success(`پیشنهاد تامین برای «${d.buyer?.name || d.inquiryTitle}» ثبت شد — منتظر تایید خریدار باش`);
+            refresh();
+        } catch (e: any) {
+            toast.error(e?.response?.data?.message || 'ارسال پیشنهاد تامین ناموفق بود');
         } finally {
             setBusyId(null);
         }
@@ -236,6 +259,100 @@ export default function LeadsTab() {
                 </div>
             )}
 
+            {/* ✅ اعلان‌های خرید مرتبط با کالاهای تو — مچینگ بازار (خواستهٔ مالک):
+                بازوهای خریدِ بازی که همین حالا کالای مرجعِ کالاهایت را می‌خواهند و هنوز متصل نیستی */}
+            {discoveries.length > 0 && (
+                <div className={cn(CARD_CLS, 'border-primary/25 p-4 dark:border-primary/20')}>
+                    <p className="mb-1 flex items-center gap-2 text-[13px] font-black text-primary dark:text-emerald-400">
+                        <Radar className="size-4" />
+                        اعلان‌های خرید مرتبط با کالاهای تو
+                        <span className="rounded-full bg-primary px-1.5 py-0.5 text-[8.5px] font-black text-on-primary">
+                            {faNum(discoveries.length)}
+                        </span>
+                    </p>
+                    <p className="mb-3 px-0.5 text-[10.5px] font-bold leading-4 text-stone-400 dark:text-gray-500">
+                        این خریدارها همین الان کالایی مثل کالاهای تو را فعالانه قیمت‌گیری می‌کنند —
+                        پیشنهاد تامین بده، بعد از تاییدشان اقلامشان را می‌بینی و قیمت می‌دهی.
+                    </p>
+                    <div className="space-y-2">
+                        {discoveries.map((d) => {
+                            const busy = busyId === `disc-${d.inquiryId}`;
+                            return (
+                                <motion.div key={d.inquiryId} initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }}
+                                    className="rounded-xl border border-primary/15 bg-primary/[0.03] p-3 dark:border-primary/15 dark:bg-primary/5">
+                                    <div className="flex items-start gap-2.5">
+                                        <span className="grid size-10 shrink-0 place-items-center overflow-hidden rounded-xl bg-white ring-1 ring-outline-variant/25 dark:bg-gray-900 dark:ring-gray-800">
+                                            {d.buyer?.logoUrl
+                                                ? // eslint-disable-next-line @next/next/no-img-element
+                                                  <img src={d.buyer.logoUrl} alt="" className="size-full object-cover" />
+                                                : <ShoppingBag className="size-4 text-primary" />}
+                                        </span>
+                                        <div className="min-w-0 flex-1">
+                                            <p className="flex items-center gap-1.5 truncate text-[12.5px] font-black text-stone-900 dark:text-gray-100">
+                                                <span className="truncate">{d.buyer?.name || 'خریدار'}</span>
+                                                {d.buyer?.verified && <BadgeCheck className="size-3.5 shrink-0 text-primary" />}
+                                            </p>
+                                            <p className="truncate text-[10px] font-bold text-stone-400 dark:text-gray-500">
+                                                «{d.inquiryTitle}»{d.city ? ` · ${d.city}` : ''}
+                                            </p>
+                                            <div className="mt-1 flex flex-wrap items-center gap-1">
+                                                {d.matchedProductTitle && (
+                                                    <span className="rounded-full bg-stone-100 px-2 py-0.5 text-[9.5px] font-black text-stone-600 dark:bg-gray-800 dark:text-gray-300">
+                                                        کالای مرتبط: {d.matchedProductTitle}
+                                                    </span>
+                                                )}
+                                                {(d.quantity || d.unitTitle) && (
+                                                    <span className="rounded-full bg-blue-50 px-2 py-0.5 text-[9.5px] font-black text-blue-700 dark:bg-blue-500/10 dark:text-blue-300">
+                                                        می‌خواهد: {d.quantity ?? '—'} {d.unitTitle ?? ''}
+                                                    </span>
+                                                )}
+                                                {d.estimatedValue && (
+                                                    <span title="برآورد ارزش سفارش با قیمتِ کالای خودت"
+                                                        className="rounded-full bg-amber-50 px-2 py-0.5 text-[9.5px] font-black text-amber-700 dark:bg-amber-500/10 dark:text-amber-300">
+                                                        ~{faPrice(d.estimatedValue)} تومان
+                                                    </span>
+                                                )}
+                                                {d.sameCity && (
+                                                    <span className="rounded-full bg-emerald-50 px-2 py-0.5 text-[9.5px] font-black text-emerald-700 dark:bg-emerald-500/10 dark:text-emerald-300">
+                                                        هم‌شهری تو
+                                                    </span>
+                                                )}
+                                                {!d.sameCity && d.sameProvince && (
+                                                    <span className="rounded-full bg-teal-50 px-2 py-0.5 text-[9.5px] font-black text-teal-700 dark:bg-teal-500/10 dark:text-teal-300">
+                                                        هم‌استانی تو
+                                                    </span>
+                                                )}
+                                                {d.myCatalog?.name && (
+                                                    <span className="rounded-full bg-stone-50 px-2 py-0.5 text-[9px] font-bold text-stone-400 dark:bg-gray-800/60 dark:text-gray-500">
+                                                        با بازوی فروش: {d.myCatalog.name}
+                                                    </span>
+                                                )}
+                                            </div>
+                                        </div>
+                                    </div>
+                                    <div className="mt-2 flex items-center gap-1.5">
+                                        <button
+                                            onClick={() => sendDiscoveryOffer(d)}
+                                            disabled={busy || sendOffer.isPending}
+                                            className="flex h-9 flex-1 items-center justify-center gap-1.5 rounded-lg bg-primary text-[11px] font-extrabold text-on-primary shadow-sm transition-colors hover:bg-primary/90 disabled:opacity-50">
+                                            {busy ? <Loader2 className="size-3.5 animate-spin" /> : <Send className="size-3.5" />}
+                                            پیشنهاد تامین بده
+                                        </button>
+                                        {d.slug && (
+                                            <Link href={`/i/${d.slug}`} target="_blank"
+                                                className="flex h-9 items-center gap-1 rounded-lg border border-outline-variant/40 px-3 text-[11px] font-extrabold text-stone-500 transition-colors hover:border-primary/40 hover:text-primary dark:border-gray-700 dark:text-gray-300">
+                                                <ExternalLink className="size-3.5" />
+                                                مشاهده
+                                            </Link>
+                                        )}
+                                    </div>
+                                </motion.div>
+                            );
+                        })}
+                    </div>
+                </div>
+            )}
+
             {/* دعوت‌های در انتظار پذیرش تو */}
             {invitations.length > 0 && (
                 <div className={cn(CARD_CLS, 'border-brand-contrast-tint p-4 dark:!border-amber-500/25')}>
@@ -332,12 +449,12 @@ export default function LeadsTab() {
                 </div>
             )}
 
-            {/* اقلام فوری — درخواستهای قیمت */}
+            {/* اعلان‌های خرید جاری — بازوهای خرید متصل */}
             <div>
                 <div className="mb-2 flex items-center justify-between px-1">
                     <p className="flex items-center gap-1.5 text-[13px] font-black text-stone-900 dark:text-gray-100">
                         <Megaphone className="size-4 text-brand-contrast" />
-                        درخواست‌های قیمت جاری
+                        اعلان‌های خرید جاری
                     </p>
                     <span className="text-[10px] font-bold text-stone-400">
                         {leads.length > 0 ? `${faNum(leads.reduce((a, l) => a + (l.items?.length ?? 0), 0))} قلم از ${faNum(leads.length)} خریدار` : ''}
