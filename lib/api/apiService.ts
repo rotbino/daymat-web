@@ -54,6 +54,8 @@ export interface ImportReport {
     created: number; skipped: number;
     failed: { name: string; reason: string }[];
     createdUnits: string[]; createdBrands: string[]; createdReferences: string[];
+    /** 🏷️ تعداد کالاهای با برچسب «نیاز به تکمیل» — تا ویرایش در کاتالوگ عمومی دیده نمی‌شوند */
+    needsCompletion?: number;
     ads: { id: string; title: string }[];
 }
 
@@ -296,7 +298,7 @@ export const apiService = {
         requestVerification: (catalogId: string, data: any): Promise<Catalog> =>
             apiRequest(`/catalog/${catalogId}/verify`, { method: 'POST', data }),
 
-        updateConfig: (id: string, dto: { units?: any[]; categoryTree?: any[] }): Promise<any> =>
+        updateConfig: (id: string, dto: { units?: any[]; categoryTree?: any[]; theme?: { color?: string | null }; currency?: string | null }): Promise<any> =>
             apiRequest(`/catalog/${id}/config`, { method: 'PATCH', data: dto }),
 
         // 💾 کارت ویزیت — ذخیرهٔ مشخصات (JSON) روی بازوی فروش تا زحمت کاربر از بین نرود
@@ -790,13 +792,14 @@ export const apiService = {
         // ═══ 📥 ایمپورت گروهی چندمنبعی — اکسل | متن | گرید | هوش مصنوعی | سایت ═══
 
         /** فاز ۱ — پیش‌نمایش از متن ساده (source=text) یا JSON هوش مصنوعی/گرید (source=json) */
-        importParse: (catalogId: string, text: string, source: 'text' | 'json' = 'text'): Promise<{ items: ImportItem[]; summary: ImportSummary }> =>
-            apiRequest('/ad/import/parse', { method: 'POST', data: { catalogId, text, source } }),
+        importParse: (catalogId: string, text: string, source: 'text' | 'json' = 'text', priceCurrency: 'toman' | 'rial' = 'toman'): Promise<{ items: ImportItem[]; summary: ImportSummary }> =>
+            apiRequest('/ad/import/parse', { method: 'POST', data: { catalogId, text, source, priceCurrency } }),
 
         /** فاز ۱ — پیش‌نمایش از فایل اکسل/CSV (multipart) */
-        importParseFile: (catalogId: string, file: File): Promise<{ items: ImportItem[]; summary: ImportSummary }> => {
+        importParseFile: (catalogId: string, file: File, priceCurrency: 'toman' | 'rial' = 'toman'): Promise<{ items: ImportItem[]; summary: ImportSummary }> => {
             const fd = new FormData();
             fd.append('catalogId', catalogId);
+            fd.append('priceCurrency', priceCurrency);
             fd.append('file', file);
             return apiFileRequest('/ad/import/parse-file', fd);
         },

@@ -21,7 +21,8 @@ import {
 } from '@/lib/api/apiHooks';
 import { toast } from 'sonner';
 import { cn } from '@/lib/utils';
-import { BarChart3, Globe, IdCard, Loader2, Package, Users, Handshake, Hourglass, Check, X, Megaphone } from 'lucide-react';
+import { BarChart3, Globe, Settings2, Loader2, Package, Users, Handshake, Hourglass, Check, X, Megaphone } from 'lucide-react';
+import { brandVars } from '@/lib/utils/brand';
 
 import UnitSettingsModal from '@/app/ad/components/UnitSettingsModal';
 import CategorySettingsModal from '@/app/ad/components/CategorySettingsModal';
@@ -370,7 +371,7 @@ export default function MyCatalogsContent() {
     const userAvatar = user?.avatarFile?.thumbnailPath || user?.avatarUrl;
     const userHasName = !!user?.fullName?.trim();
 
-    // ─── تب‌های بخش‌های بازوی فروش (RTL: مشخصات در راست) — «اعضا» دو تب شد: تیم فروش + خریداران ───
+    // ─── تب‌های بخش‌های بازوی فروش (RTL: تنظیمات در راست) — «اعضا» دو تب شد: تیم فروش + خریداران ───
     const tabItems = isTeamEntry
         ? teamMode === 'admin'
             ? [
@@ -387,13 +388,14 @@ export default function MyCatalogsContent() {
               { key: 'team' as Tab, label: 'تیم فروش', icon: Users, alert: teamPendingOther },
               { key: 'customers' as Tab, label: 'خریداران', icon: Handshake, alert: teamPendingBuyers },
               { key: 'leads' as Tab, label: 'درخواستهای قیمت', mobileLabel: 'درخواست قیمت', icon: Megaphone, alert: pendingInvites },
-              { key: 'profile' as Tab, label: 'مشخصات', icon: IdCard },
+              { key: 'profile' as Tab, label: 'تنظیمات', icon: Settings2 },
               { key: 'stats' as Tab, label: 'آمار', icon: BarChart3 },
               { key: 'publish' as Tab, label: 'انتشار', icon: Globe, count: memberships.length > 0 ? memberships.length : undefined },
           ];
 
     return (
-        <div className="space-y-4">
+        <div className="space-y-4"
+             style={brandVars(currentCatalog?.config?.theme?.color, 'sales') || undefined}>
             {/* 🔴 هشدار رمز موقت */}
             {hasTemporaryPassword && (
                 <TemporaryPasswordBanner phone={user?.phone} onClick={() => setPasswordOpen(true)} />
@@ -485,7 +487,7 @@ export default function MyCatalogsContent() {
 
             {/* ── محتوای تب فعال — بدون قاب اضافه، فلت ── */}
             <div className="pt-0.5 pb-2">
-                {/* تب مشخصات — هویت + تکمیل + ویرایش */}
+                {/* تب تنظیمات — ظاهر (رنگ برند + واحد پول) + هویت + تکمیل + ویرایش */}
                 {tab === 'profile' && (
                     <ProfileTab
                         catalog={currentCatalog}
@@ -497,6 +499,7 @@ export default function MyCatalogsContent() {
                         userAvatar={userAvatar}
                         userHasName={userHasName}
                         onProfile={() => router.push('/profile')}
+                        onSettingsSaved={() => queryClient.invalidateQueries({ queryKey: ['catalogs'] })}
                     />
                 )}
 
@@ -617,6 +620,7 @@ export default function MyCatalogsContent() {
             )}
             {updatePriceAd && (
                 <UpdatePriceModal isOpen={!!updatePriceAd} onClose={() => setUpdatePriceAd(null)} ad={updatePriceAd}
+                                  currency={currentCatalog?.config?.currency}
                                   onSuccess={() => refreshAll()} />
             )}
             {/* ✅ مچینگ دوطرفه — مدال «خریداران این کالا» سمت بازوی فروش */}

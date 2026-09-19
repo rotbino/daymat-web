@@ -6,7 +6,7 @@ import { BadgeCheck, Hourglass, PauseCircle, Store, Package, Wrench, XCircle } f
 // ─── انواع ───
 // ✅ تب «اعضا» به دو تب تفکیک شد: team (تیم فروش) + customers (خریداران)
 export type Tab = 'profile' | 'products' | 'publish' | 'stats' | 'team' | 'leads' | 'customers';
-export type StatusFilter = 'all' | 'table' | 'catalog' | 'stale' | 'uncat';
+export type StatusFilter = 'all' | 'table' | 'catalog' | 'stale' | 'uncat' | 'incomplete';
 
 // ─── هلپرهای وضعیت آگهی ───
 // ✅ اعتبار قیمت — فقط یادآوری آپدیت قیمت به خود فروشنده است؛ آگهی همچنان روی تابلو دیده می‌شود
@@ -20,6 +20,11 @@ export const inMarket = (ad: any) => ad.publishToMarket !== false;
 
 export const isUncategorized = (ad: any) =>
     inMarket(ad) && !!ad.armId && !ad.categoryId && !!ad.catalogCategoryId;
+
+// 🏷️ «نیاز به تکمیل» — کالای ایمپورت‌شده که هنوز ویرایش و تکمیل نشده؛
+//    در کاتالوگ عمومی و تابلوی بازار دیده نمی‌شود تا فروشنده با ویرایش، تکمیلش کند
+export const isNeedsCompletion = (ad: any) =>
+    !!(ad?.customFields as any)?.needsCompletion;
 
 export const fmt = (n: number | undefined) => n?.toLocaleString('fa-IR') ?? '۰';
 

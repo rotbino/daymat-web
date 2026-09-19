@@ -8,15 +8,18 @@ import { Loader2, TrendingUp, X, Info } from 'lucide-react';
 import { NumberInput } from '@/components/common/NumberInput';
 import { useBulkUpdateAd } from '@/lib/api/apiHooks';
 import { fmt } from '../constants';
+import { currencyLabel } from '@/lib/utils/brand';
 
 interface Props {
     isOpen: boolean;
     onClose: () => void;
     ad: any;
     onSuccess?: () => void;
+    /** 💱 واحد پول نمایشی بازوی فروش — پیش‌فرض تومان */
+    currency?: string | null;
 }
 
-export default function UpdatePriceModal({ isOpen, onClose, ad, onSuccess }: Props) {
+export default function UpdatePriceModal({ isOpen, onClose, ad, onSuccess, currency }: Props) {
     const [newPrice, setNewPrice] = useState<number>(0);
     const bulkMut = useBulkUpdateAd();
 
@@ -82,16 +85,16 @@ export default function UpdatePriceModal({ isOpen, onClose, ad, onSuccess }: Pro
                     <div className="rounded-xl bg-surface-container-low/60 border border-outline-variant/30 p-3 flex items-center justify-between">
                         <span className="text-[11px] text-on-surface-variant font-bold">قیمت فعلی</span>
                         <span className="text-sm font-extrabold text-on-surface">
-                            {fmt(ad.unitPrice)} <span className="text-[9px] font-normal text-on-surface-variant">تومان/{unit}</span>
+                            {fmt(ad.unitPrice)} <span className="text-[9px] font-normal text-on-surface-variant">{currencyLabel(currency)}/{unit}</span>
                         </span>
                     </div>
 
                     <section className="space-y-2">
-                        <label className="text-xs font-bold text-on-surface">قیمت جدید (تومان/{unit})</label>
+                        <label className="text-xs font-bold text-on-surface">قیمت جدید ({currencyLabel(currency)}/{unit})</label>
                         <NumberInput
                             value={newPrice || undefined}
                             onChange={(v) => setNewPrice(v || 0)}
-                            unit="تومان"
+                            unit={currencyLabel(currency)}
                             className="w-full h-14 font-extrabold"
                         />
                     </section>

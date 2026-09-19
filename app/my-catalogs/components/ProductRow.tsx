@@ -4,9 +4,10 @@
 import React, { useRef, useState } from 'react';
 import Link from 'next/link';
 import Image from 'next/image';
-import { Clock, EyeOff, Layers, Package, Pencil, RefreshCw, Store, TrendingUp, Unlink, History, Trash2, Users } from 'lucide-react';
+import { Clock, EyeOff, Layers, Package, Pencil, RefreshCw, Store, TrendingUp, Unlink, History, Trash2, Users, ListChecks } from 'lucide-react';
 import { cn } from '@/lib/utils';
-import { fmt, inMarket, isAdExpired, isPriceExpired, isUncategorized, priceAgeDays } from '../constants';
+import { fmt, inMarket, isAdExpired, isNeedsCompletion, isPriceExpired, isUncategorized, priceAgeDays } from '../constants';
+import { currencyLabel } from '@/lib/utils/brand';
 
 /**
  * ردیف کالا — پرکاربردترین المان پنل مدیریت.
@@ -14,7 +15,7 @@ import { fmt, inMarket, isAdExpired, isPriceExpired, isUncategorized, priceAgeDa
  * چیدمان: بالای ردیف (عکس + هویت + قیمت) و ردیف اکشن افقی پایین — خوانا در موبایل.
  * حذف: دو-مرحله‌ای (اول کلیک → «تایید حذف؟»، کلیک دوم واقعاً حذف می‌کند) — بدون مدال اضافه.
  */
-function ProductRowBase({ ad, canPublishMarket = true, onEdit, onCategory, onRefresh, onPublish, onPriceUpdate, onDelete, onBuyers, buyerCount = 0 }: {
+function ProductRowBase({ ad, canPublishMarket = true, onEdit, onCategory, onRefresh, onPublish, onPriceUpdate, onDelete, onBuyers, buyerCount = 0, currency }: {
     ad: any;
     /** ✅ کاتالوگ عضو حداقل یک بازاره؟ — والا دکمه بازارها مخفی می‌شود (کاربر درگیر بازاری که نیست نمی‌شود) */
     canPublishMarket?: boolean;
@@ -27,10 +28,14 @@ function ProductRowBase({ ad, canPublishMarket = true, onEdit, onCategory, onRef
     /** ✅ مچینگ دوطرفه — مدال «خریداران این کالا»؛ فقط وقتی خریدارِ فعالِ واقعی باشد دیده می‌شود */
     onBuyers?: (ad: any) => void;
     buyerCount?: number;
+    /** 💱 واحد پول نمایشی بازوی فروش — پیش‌فرض تومان */
+    currency?: string | null;
 }) {
     const expired = isAdExpired(ad);
     const priceExpired = isPriceExpired(ad);
     const market = inMarket(ad) && !!ad.armId;
+    // 🏷️ کالای ایمپورت‌شدهٔ نیازمند تکمیل — تا ویرایش در کاتالوگ عمومی پنهان است
+    const needsCompletion = isNeedsCompletion(ad);
     // ✅ اعتبار قیمت دیگر آگهی را از تابلوی بازار برنمی‌دارد — فقط یادآوری است
     const onTable = ad.status === 'active' && market;
     const uncat = isUncategorized(ad);
@@ -119,15 +124,30 @@ function ProductRowBase({ ad, canPublishMarket = true, onEdit, onCategory, onRef
                                 <History className="w-2.5 h-2.5" /> قیمت {priceAgeDays(ad.priceUpdatedAt).toLocaleString('fa-IR')} روز پیش
                             </span>
                         )}
+                        {needsCompletion && (
+                            <span title="تا ویرایش و تکمیل، این کالا در کاتالوگ عمومی و تابلوی بازار دیده نمی‌شود"
+                                  className="inline-flex items-center gap-1 text-[9px] font-extrabold px-2 py-0.5 rounded-full
+                                      bg-orange-100 text-orange-700 dark:bg-orange-900/40 dark:text-orange-300">
+                                <ListChecks className="w-2.5 h-2.5" /> نیاز به تکمیل — پنهان از کاتالوگ
+                            </span>
+                        )}
                     </div>
                     <p className="text-xs font-extrabold text-primary mt-1">
-                        {fmt(ad.unitPrice)} <span className="text-[9px] font-normal text-on-surface-variant">تومان/{unit}</span>
+                        {fmt(ad.unitPrice)} <span className="text-[9px] font-normal text-on-surface-variant">{currencyLabel(currency)}/{unit}</span>
                     </p>
                 </div>
             </div>
 
             {/* اکشن‌ها — ردیف افقی پایین */}
             <div className="flex items-center gap-1.5 mt-2.5 pt-2.5 border-t border-outline-variant/15 dark:border-gray-700/40 flex-wrap">
+                {needsCompletion && (
+                    <button onClick={() => onEdit(ad)}
+                            title="با ذخیرهٔ ویرایش، برچسب برداشته می‌شود و کالا در کاتالوگ دیده می‌شود"
+                            className="h-8 px-3 rounded-lg bg-orange-500 text-white text-[10px] font-extrabold flex items-center gap-1
+                                hover:bg-orange-600 active:scale-95 transition-transform shadow-sm">
+                        <ListChecks className="w-3 h-3" /> تکمیل و نمایش
+                    </button>
+                )}
                 {uncat && (
                     <button onClick={() => onCategory(ad)}
                             className="h-8 px-3 rounded-md bg-amber-500 text-white text-[10px] font-bold flex items-center gap-1

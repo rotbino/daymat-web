@@ -116,7 +116,7 @@ export default function OffersTab({ detail, offers, loading, onDecide, onFinaliz
                         </div>
                     </div>
                     <div className="text-end">
-                        <p className="text-base font-black text-brand-contrast">{faPrice(o.price)}</p>
+                        <p className="text-base font-black text-brand-contrast">{faPrice(o.price, (detail as any)?.metadata?.currency)}</p>
                         {!!offerBasisLabel(o) && <p className="text-[10px] font-bold text-stone-400">{offerBasisLabel(o)}</p>}
                     </div>
                 </div>
@@ -158,7 +158,7 @@ export default function OffersTab({ detail, offers, loading, onDecide, onFinaliz
                                     <div className="rounded-xl border border-amber-200 bg-amber-50/60 p-3 dark:border-amber-500/25 dark:bg-amber-500/5">
                                         <p className="flex items-center gap-1.5 text-[11.5px] font-black text-amber-700 dark:text-amber-400">
                                             <FileText className="size-3.5" />
-                                            پیش‌فاکتور {proforma.number} رسید — {faPrice(proforma.totalAmount)} تومان
+                                            پیش‌فاکتور {proforma.number} رسید — {faPrice(proforma.totalAmount, (detail as any)?.metadata?.currency)}
                                         </p>
                                         <p className="mt-1 text-[10px] font-bold leading-4 text-stone-500 dark:text-gray-400">
                                             اگر قیمت و اقلامش موافقی، داخل آی مچ تاییدش کن تا معامله هر دو طرف ثبت شود.

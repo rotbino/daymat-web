@@ -1,5 +1,5 @@
 // app/my-inquiries/components/SettingsTab.tsx
-// تب تنظیمات پنل بازوی خرید — مشخصات، شرایط، دسترسی و قیمت‌گیری، وضعیت
+// تب تنظیمات پنل بازوی خرید — ظاهر (رنگ برند + واحد پول)، مشخصات، شرایط، دسترسی و قیمت‌گیری، وضعیت
 // شامل فیلد «امکان ارسال قیمت برای خریدهای غیر فوری» (ایدهٔ مالک)
 // ✅ نمایانی دوگانه: عمومی (هرکس با لینک) | خصوصی (همه لیست را می‌بینند؛ فقط اعضا قیمت می‌دهند)
 // ✅ حذف برداشته شد (تصمیم مالک): بازوی فروش حذف نمی‌شود — فقط پذیرش قیمت متوقف/بسته می‌شود
@@ -8,11 +8,16 @@
 import React, { useEffect, useState } from 'react';
 import { motion } from 'framer-motion';
 import { toast } from 'sonner';
-import { Save, Boxes, Ban, RotateCcw, Loader2, Globe, ShieldCheck, Link2 } from 'lucide-react';
+import { Save, Boxes, Ban, RotateCcw, Loader2, Globe, ShieldCheck, Link2, Palette, Coins, Check, Info } from 'lucide-react';
 import SwitchRow from './SwitchRow';
 import SlugEditor from '@/app/my-catalogs/SlugEditor';
 import { IranLocationSelector } from '@/app/components/IranLocationSelector';
 import { inp } from '../../inquiries/utils';
+import { cn } from '@/lib/utils';
+import {
+    ARM_CURRENCIES, PRESET_BRAND_COLORS, DEFAULT_BRAND_COLOR,
+    normalizeHex, isLightColor, currencyLabel,
+} from '@/lib/utils/brand';
 import type { InquiryDetail } from '@/lib/api/apiTypes';
 
 interface Props {
@@ -45,6 +50,9 @@ export default function SettingsTab({ detail, onSave, onOpenUnits, onToggleStatu
     // ✅ آدرس عمومی — قابل ویرایش مثل بازوی فروش (لینک قدیمی /inquiries/{id} هم همچنان کار می‌کند)
     const [slug, setSlug] = useState('');
     const [slugStatus, setSlugStatus] = useState<'taken' | 'reserved' | null>(null);
+    // 🎨 ظاهر بازوی خرید — رنگ برند + واحد پول (در metadata بازو ذخیره می‌شود)
+    const [themeColor, setThemeColor] = useState<string>('');
+    const [currency, setCurrency] = useState<string>('toman');
 
     // با تعویض بازوی فروش، فرم از نو پر می‌شود
     useEffect(() => {
@@ -65,6 +73,9 @@ export default function SettingsTab({ detail, onSave, onOpenUnits, onToggleStatu
         setShowContactPhone(detail.showContactPhone !== false);
         setSlug(detail.slug || '');
         setSlugStatus(null);
+        const meta: any = (detail as any).metadata || {};
+        setThemeColor(meta.theme?.color || '');
+        setCurrency(meta.currency || 'toman');
     }, [detail?.id]); // eslint-disable-line react-hooks/exhaustive-deps
 
     const save = async () => {
@@ -94,6 +105,9 @@ export default function SettingsTab({ detail, onSave, onOpenUnits, onToggleStatu
                 visibility,
                 allowNonUrgentOffers,
                 showContactPhone,
+                // 🎨 ظاهر بازوی خرید — بک در metadata ادغام می‌کند (کارت ویزیت پرت نمی‌شود)
+                themeColor: normalizeHex(themeColor), // null = برگشت به رنگ پیش‌فرض دیمت
+                currency,
                 ...(slug.trim() && slug.trim() !== (detail.slug || '') ? { slug: slug.trim() } : {}),
             });
             toast.success('تنظیمات ذخیره شد');
@@ -109,6 +123,89 @@ export default function SettingsTab({ detail, onSave, onOpenUnits, onToggleStatu
 
     return (
         <div className="space-y-3">
+            {/* 🎨 ظاهر بازوی خرید — رنگ برند + واحد پول */}
+            <motion.section initial={{ opacity: 0, y: 14 }} animate={{ opacity: 1, y: 0 }} className={card}>
+                <h2 className={cardTitle}>ظاهر بازوی خرید</h2>
+
+                {/* رنگ برند */}
+                <p className="mb-1 flex items-center gap-2 text-sm font-extrabold text-stone-800 dark:text-gray-100">
+                    <Palette className="size-4 text-brand-contrast" /> رنگ برند
+                </p>
+                <p className="mb-2.5 text-[11px] font-bold leading-5 text-stone-500 dark:text-gray-400">
+                    یک رنگ انتخاب کن — صفحهٔ عمومی بازوی خریدت با همین رنگ نشان داده می‌شود.
+                </p>
+                <div className="flex flex-wrap gap-2">
+                    {PRESET_BRAND_COLORS.map((c) => {
+                        const active = normalizeHex(themeColor) === c.hex;
+                        return (
+                            <button key={c.hex} type="button" onClick={() => setThemeColor(c.hex)}
+                                    title={c.name} aria-label={`رنگ ${c.name}`}
+                                    className={cn(
+                                        'relative size-9 rounded-full transition-all active:scale-90 hover:scale-110',
+                                        active ? 'ring-2 ring-offset-2 ring-stone-500 dark:ring-offset-gray-900' : 'ring-1 ring-black/10',
+                                    )}
+                                    style={{ backgroundColor: c.hex }}>
+                                {active && <Check className={cn('absolute inset-0 m-auto size-4', isLightColor(c.hex) ? 'text-black' : 'text-white')} />}
+                            </button>
+                        );
+                    })}
+                    <label className="relative size-9 cursor-pointer place-items-center grid overflow-hidden rounded-full border-2 border-dashed border-stone-300 dark:border-gray-600"
+                           title="رنگ دلخواه">
+                        <span className="text-[8px] font-black text-stone-400">دیگر</span>
+                        <input type="color" value={normalizeHex(themeColor) || DEFAULT_BRAND_COLOR} aria-label="انتخاب رنگ دلخواه"
+                               onChange={(e) => setThemeColor(e.target.value)}
+                               className="absolute inset-0 cursor-pointer opacity-0" />
+                    </label>
+                </div>
+                {normalizeHex(themeColor) && (
+                    <div className="mt-3 flex items-center gap-2.5 rounded-xl p-2.5" style={{ backgroundColor: themeColor + '18' }}>
+                        <span className="size-7 rounded-lg grid place-items-center text-[10px] font-black"
+                              style={{ backgroundColor: themeColor, color: isLightColor(themeColor) ? '#111' : '#fff' }}>آ</span>
+                        <p className="flex-1 text-[11px] font-extrabold" style={{ color: themeColor }}>
+                            نمونهٔ قیمت: ۱۲۵٬۰۰۰ {currencyLabel(currency)}
+                        </p>
+                        <button type="button" onClick={() => setThemeColor('')}
+                                className="text-[10px] font-bold text-stone-400 underline underline-offset-2 hover:text-stone-600">
+                            رنگ پیش‌فرض
+                        </button>
+                    </div>
+                )}
+
+                {/* واحد پول */}
+                <p className="mt-5 mb-1 flex items-center gap-2 text-sm font-extrabold text-stone-800 dark:text-gray-100">
+                    <Coins className="size-4 text-brand-contrast" /> واحد پول قیمت‌ها
+                </p>
+                <p className="mb-2.5 text-[11px] font-bold leading-5 text-stone-500 dark:text-gray-400">
+                    پیش‌فرض تومان است — برای خرید از افغانستان، تاجیکستان یا تجارت ارزی می‌توانی تغییرش دهی.
+                </p>
+                <div className="grid grid-cols-2 gap-1.5">
+                    {ARM_CURRENCIES.map((c) => {
+                        const active = currency === c.code;
+                        return (
+                            <button key={c.code} type="button" onClick={() => setCurrency(c.code)}
+                                    className={cn(
+                                        'rounded-xl border-2 px-2.5 py-2 text-right transition-all active:scale-[0.98]',
+                                        active
+                                            ? 'border-brand-contrast/60 bg-brand-contrast-soft/50 dark:bg-amber-500/10'
+                                            : 'border-stone-100 hover:border-stone-200 dark:border-gray-800 dark:hover:border-gray-700',
+                                    )}>
+                                <span className="flex items-center gap-1.5">
+                                    <span className={cn('text-[11.5px] font-extrabold', active ? 'text-amber-700 dark:text-amber-300' : 'text-stone-700 dark:text-gray-200')}>
+                                        {c.label}
+                                    </span>
+                                    {active && <Check className="size-3.5 text-amber-600 dark:text-amber-400" />}
+                                </span>
+                                <span className="mt-0.5 block text-[9px] font-bold text-stone-400 dark:text-gray-500">{c.region}</span>
+                            </button>
+                        );
+                    })}
+                </div>
+                <p className="mt-2 flex items-start gap-1.5 text-[10px] font-bold leading-5 text-stone-400 dark:text-gray-500">
+                    <Info className="mt-0.5 size-3.5 shrink-0" />
+                    ریال نداریم (فیلتر قیمت بازار به‌هم می‌ریزد) — واحد پول فقط برچسب نمایش است؛ اعداد همان‌طور که وارد شده‌اند می‌مانند.
+                </p>
+            </motion.section>
+
             {/* مشخصات */}
             <motion.section initial={{ opacity: 0, y: 14 }} animate={{ opacity: 1, y: 0 }} className={card}>
                 <h2 className={cardTitle}>مشخصات</h2>

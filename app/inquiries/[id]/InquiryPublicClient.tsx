@@ -39,6 +39,7 @@ import {
     Bookmark, ChevronDown, ArrowRight, Pause, Play,
 } from 'lucide-react';
 import { faNum, faPrice, faTimeAgo, faDeadlineLeft, STATUS_FA, STATUS_CHIP, offerBasisLabel } from '../utils';
+import { brandVars } from '@/lib/utils/brand';
 import OfferSheet from '@/app/components/OfferSheet';
 import OfferCallButton from '@/app/components/OfferCallButton';
 import ArmFooter from './ArmFooter';
@@ -366,7 +367,8 @@ export default function InquiryPublicClient({ idOrSlug }: { idOrSlug: string }) 
     );
 
     return (
-        <div className="min-h-screen bg-white text-stone-900 dark:bg-gray-950 dark:text-gray-100">
+        <div className="min-h-screen bg-white text-stone-900 dark:bg-gray-950 dark:text-gray-100"
+             style={brandVars(inquiry?.metadata?.theme?.color, 'purchase') || undefined}>
             {/* ═══ نوار ابزار — قرینهٔ بازوی فروش: بازگشت | سوییچر بازوهای ذخیره‌شده | تنظیمات/ذخیره/اشتراک ═══ */}
             <header className="sticky top-0 z-40 border-b border-stone-100/80 bg-white/90 backdrop-blur-md dark:border-gray-800 dark:bg-gray-950/90">
                 <div className="mx-auto flex h-14 max-w-2xl items-center justify-between gap-1 px-4">
@@ -945,7 +947,7 @@ export default function InquiryPublicClient({ idOrSlug }: { idOrSlug: string }) 
                                                     </div>
                                                 </div>
                                                 <div className="text-end">
-                                                    <p className="text-base font-black text-primary dark:text-emerald-300">{faPrice(o.price)}</p>
+                                                    <p className="text-base font-black text-primary dark:text-emerald-300">{faPrice(o.price, (inquiry as any)?.metadata?.currency)}</p>
                                                     {!!offerBasisLabel(o) && <p className="text-[10px] font-bold text-stone-400">{offerBasisLabel(o)}</p>}
                                                 </div>
                                             </div>

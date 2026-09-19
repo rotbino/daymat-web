@@ -1,5 +1,5 @@
 // app/my-catalogs/components/ProfileTab.tsx
-// تب مشخصات بازوی فروش — هویت + حلقهٔ تکمیل (سبک قدیمی افقی و تشویق‌کننده) + ویرایش با مداد
+// تب تنظیمات بازوی فروش — ظاهر (رنگ برند + واحد پول) + هویت + حلقهٔ تکمیل + ویرایش با مداد
 // ⚠️ قانون: حالت تاریک همیشه چک شده
 'use client';
 
@@ -13,10 +13,11 @@ import {
 import { cn } from '@/lib/utils';
 import { SALES_ICON, SALES_LABEL } from '../constants';
 import { ProfileBanner } from './AlertBanners';
+import AppearanceSettings from './AppearanceSettings';
 
 interface CompletionItem { key: string; label: string; ok: boolean; }
 
-export default function ProfileTab({ catalog, completion, canShare, onShare, onEdit, onVerify, userAvatar, userHasName, onProfile }: {
+export default function ProfileTab({ catalog, completion, canShare, onShare, onEdit, onVerify, userAvatar, userHasName, onProfile, onSettingsSaved }: {
     catalog: any;
     completion: { percent: number; items: CompletionItem[]; openItem: (key: string) => void };
     canShare: boolean;
@@ -26,6 +27,7 @@ export default function ProfileTab({ catalog, completion, canShare, onShare, onE
     userAvatar?: string | null;
     userHasName: boolean;
     onProfile: () => void;
+    onSettingsSaved?: () => void;
 }) {
     const [expanded, setExpanded] = useState(false);
     const [copied, setCopied] = useState(false);
@@ -50,6 +52,9 @@ export default function ProfileTab({ catalog, completion, canShare, onShare, onE
 
     return (
         <div className="space-y-3">
+            {/* ── 🎨 ظاهر بازوی فروش — رنگ برند + واحد پول (برندبوک) ── */}
+            <AppearanceSettings catalog={catalog} onSaved={onSettingsSaved} />
+
             {/* ── هویت بازوی فروش — فلت، بدون قاب کارتی ── */}
             <div className="flex items-start gap-3.5">
                 <button type="button" onClick={onEdit} aria-label="ویرایش لوگو و اطلاعات بازوی فروش"

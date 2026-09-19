@@ -2070,15 +2070,15 @@ export const useInquirySaveToggle = () => {
 // ============================================================
 export const useAdImportParse = () => {
     return useMutation({
-        mutationFn: ({ catalogId, text, source }: { catalogId: string; text: string; source?: 'text' | 'json' }) =>
-            apiService.ad.importParse(catalogId, text, source ?? 'text'),
+        mutationFn: ({ catalogId, text, source, priceCurrency }: { catalogId: string; text: string; source?: 'text' | 'json'; priceCurrency?: 'toman' | 'rial' }) =>
+            apiService.ad.importParse(catalogId, text, source ?? 'text', priceCurrency ?? 'toman'),
     });
 };
 
 export const useAdImportParseFile = () => {
     return useMutation({
-        mutationFn: ({ catalogId, file }: { catalogId: string; file: File }) =>
-            apiService.ad.importParseFile(catalogId, file),
+        mutationFn: ({ catalogId, file, priceCurrency }: { catalogId: string; file: File; priceCurrency?: 'toman' | 'rial' }) =>
+            apiService.ad.importParseFile(catalogId, file, priceCurrency ?? 'toman'),
     });
 };
 

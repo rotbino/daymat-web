@@ -14,6 +14,7 @@ import CatalogHeader from './components/CatalogHeader';
 import CatalogProductList from './components/CatalogProductList';
 import CatalogFooter from './components/CatalogFooter';
 import CoopRequestModal from './components/CoopRequestModal';
+import { brandVars } from '@/lib/utils/brand';
 import { LoginModal } from '@/components/LoginModal';
 import EditBusinessModal from "@/app/[slug]/components/EditBusinessModal";
 import EditProfileModal from "@/app/[slug]/components/EditProfileModal";
@@ -274,7 +275,10 @@ export default function CatalogClient({ slug, initialCatalog, initialSearch = ''
 
     return (
         <>
-            <div className="min-h-screen bg-gray-50 dark:bg-gray-950 text-gray-900 dark:text-gray-100">
+            {/* 🎨 رنگ برند بازوی فروش — متغیرهای CSS روی ریشهٔ صفحه تزریق می‌شود؛ هدر/قیمت‌ها/دکمه‌ها
+                همه با توکن‌های brand/primary رنگ می‌گیرند. بی‌رنگ = سبز پیش‌فرض دیمت */}
+            <div className="min-h-screen bg-gray-50 dark:bg-gray-950 text-gray-900 dark:text-gray-100"
+                 style={brandVars(displayCatalog?.config?.theme?.color, 'sales') || undefined}>
                 {/* هدر */}
                 <CatalogHeader
                     catalog={displayCatalog}
@@ -318,6 +322,7 @@ export default function CatalogClient({ slug, initialCatalog, initialSearch = ''
                     onAddProduct={handleAddProduct} // ✅ افزودن محصول از خود بازوی فروش
                     hidePrices={hidePrices}         // ✅ بازوی فروش خصوصی — قیمت فقط برای اعضا
                     onCoopRequest={handleCoopRequest} // ✅ CTA درخواست ارتباط تجاری
+                    currency={displayCatalog?.config?.currency} // 💱 واحد پول نمایشی بازوی فروش
                 />
 
                 {/* فوتر */}

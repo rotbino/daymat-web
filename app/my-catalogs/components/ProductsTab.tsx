@@ -6,7 +6,7 @@ import { useRouter } from 'next/navigation';
 import {BookOpen, Layers, ListPlus, Package, Plus} from 'lucide-react';
 import { ProductRow } from './ProductRow';
 import { cn } from '@/lib/utils';
-import { fmt, isAdExpired, inMarket, isPriceExpired, isUncategorized, StatusFilter } from '../constants';
+import { fmt, isAdExpired, inMarket, isNeedsCompletion, isPriceExpired, isUncategorized, StatusFilter } from '../constants';
 
 function RowSkeleton() {
     return <div style={{ height: 116 }} className="rounded-lg bg-surface-container-high/50 dark:bg-gray-800/60 animate-pulse" />;
@@ -47,6 +47,7 @@ export default function ProductsTab({
         catalog: products.filter((a) => !inMarket(a)).length,
         stale: products.filter((a) => isPriceExpired(a) && inMarket(a)).length,
         uncat: products.filter(isUncategorized).length,
+        incomplete: products.filter(isNeedsCompletion).length,
     }), [products]);
 
     const filtered = useMemo(() => products.filter((ad) => {
@@ -55,11 +56,13 @@ export default function ProductsTab({
         if (statusFilter === 'catalog') return !inMarket(ad);
         if (statusFilter === 'stale') return isPriceExpired(ad) && inMarket(ad);
         if (statusFilter === 'uncat') return isUncategorized(ad);
+        if (statusFilter === 'incomplete') return isNeedsCompletion(ad);
         return true;
     }), [products, statusFilter]);
 
     const filters: readonly (readonly [StatusFilter, string])[] = [
         ['all', `همه (${fmt(counts.all)})`],
+        ...(counts.incomplete > 0 ? ([['incomplete', `نیاز به تکمیل (${fmt(counts.incomplete)})`]] as const) : []),
         ['table', `روی تابلو (${fmt(counts.table)})`],
         ['catalog', `فقط بازوی فروش (${fmt(counts.catalog)})`],
         ['stale', `نیازمند قیمت تازه (${fmt(counts.stale)})`],
@@ -138,6 +141,7 @@ export default function ProductsTab({
                             key={ad.id}
                             ad={ad}
                             canPublishMarket={canPublishMarket}
+                            currency={currentCatalog?.config?.currency}
                             onEdit={(a) => router.push(`/ad/edit/${a.id}?catalog=${currentCatalog.id}`)}
                             onCategory={onCategory}
                             onRefresh={onRefresh}

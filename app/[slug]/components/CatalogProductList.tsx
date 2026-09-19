@@ -6,6 +6,8 @@ import Image from 'next/image';
 import { useRouter } from 'next/navigation';
 import { ChevronLeft, LayoutGrid, List, Loader2, Lock, Package, Search, X, Plus } from 'lucide-react';
 import { unitLabel } from '@/lib/utils/unitLabel';
+import { isNeedsCompletion } from '@/app/my-catalogs/constants';
+import { currencyLabel } from '@/lib/utils/brand';
 import { cn } from '@/lib/utils';
 
 const WRAP = 'max-w-xl sm:max-w-2xl lg:max-w-4xl xl:max-w-5xl mx-auto px-4';
@@ -46,18 +48,23 @@ interface CatalogProductListProps {
     /** ✅ بازوی فروش خصوصی — قیمت فقط برای اعضای پذیرفته‌شده */
     hidePrices?: boolean;
     onCoopRequest?: () => void;
+    /** 💱 واحد پول نمایشی بازوی فروش — پیش‌فرض تومان */
+    currency?: string | null;
 }
 
 export default function CatalogProductList({
                                                ads, total, query, setQuery, view, setView,
                                                isLoading, isFetching, loadMoreRef, isLoadingMore,
-                                               isOwner, onAddProduct, hidePrices, onCoopRequest,
+                                               isOwner, onAddProduct, hidePrices, onCoopRequest, currency,
                                            }: CatalogProductListProps) {
     const router = useRouter();
 
+    // 🏷️ کالاهای «نیاز به تکمیل» — برای بازدیدکننده دیده نمی‌شوند؛ فقط مالک در پنلش می‌بیند
+    const visibleAds = isOwner ? ads : ads.filter((ad) => !isNeedsCompletion(ad));
+
     const filteredAds = query.trim()
-        ? ads.filter(ad => (ad.productType || ad.title || '').includes(query.trim()))
-        : ads;
+        ? visibleAds.filter(ad => (ad.productType || ad.title || '').includes(query.trim()))
+        : visibleAds;
 
     return (
         <main className="pb-16">
@@ -161,7 +168,7 @@ export default function CatalogProductList({
                                             ) : (
                                                 <span className="text-sm font-extrabold text-primary">{fmt(ad.unitPrice)}</span>
                                             )}
-                                            {unit && !hidePrices && <span className="text-[9px] text-gray-400">{unit}</span>}
+                                            {unit && !hidePrices && <span className="text-[9px] text-gray-400">{unit} — {currencyLabel(currency)}</span>}
                                         </div>
                                     </div>
                                 </button>
@@ -189,7 +196,7 @@ export default function CatalogProductList({
                                             </p>
                                         ) : (
                                             <p className="text-sm font-extrabold text-primary mt-1">
-                                                {fmt(ad.unitPrice)} {unit && <span className="text-[9px] font-normal text-gray-400">{unit}</span>}
+                                                {fmt(ad.unitPrice)} {unit && <span className="text-[9px] font-normal text-gray-400">{unit} · {currencyLabel(currency)}</span>}
                                                 {(() => {
                                                     const age = priceAgeDays(ad.priceUpdatedAt);
                                                     if (age <= 7) return <span className="ms-2 align-middle rounded-full bg-emerald-50 px-1.5 py-0.5 text-[8.5px] font-extrabold text-emerald-700 dark:bg-emerald-500/15 dark:text-emerald-400">قیمت روز</span>;

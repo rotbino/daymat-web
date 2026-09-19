@@ -19,6 +19,7 @@ import {
     useUpdateInquiry, useUpdateOfferStatus, useFinalizeInquiry,
 } from '@/lib/api/apiHooks';
 import { toast } from 'sonner';
+import { brandVars } from '@/lib/utils/brand';
 import NavTabs from '@/app/home/nav/NavTabs';
 import { faNum } from '../inquiries/utils';
 import InquiryIdentityBar from './components/InquiryIdentityBar';
@@ -308,7 +309,8 @@ export default function MyInquiriesPage() {
 
     return (
         <div className="min-h-screen bg-gradient-to-b from-surface via-surface to-surface-container-low/40
-            dark:from-gray-950 dark:via-gray-950 dark:to-gray-900/40 pb-24">
+            dark:from-gray-950 dark:via-gray-950 dark:to-gray-900/40 pb-24"
+             style={brandVars(currentRow?.metadata?.theme?.color || detail?.metadata?.theme?.color, 'purchase') || undefined}>
             <NavTabs />
             <main className="mx-auto max-w-3xl px-4 md:pt-6">
                 {isLoading ? (

@@ -1,4 +1,6 @@
 // app/inquiries/utils.ts — کمک‌متیرهای مشترک بازوی خرید
+import { currencyLabel } from '@/lib/utils/brand';
+
 export const faNum = (n: number | null | undefined): string =>
     (n ?? 0).toLocaleString('fa-IR');
 
@@ -6,8 +8,9 @@ export const faNum = (n: number | null | undefined): string =>
 export const faDigits = (s: string | number): string =>
     String(s ?? '').replace(/[0-9]/g, (d) => '۰۱۲۳۴۵۶۷۸۹'[Number(d)]);
 
+// 💱 قیمت + واحد پول — کدِ بازو از رجیستری برند می‌آید؛ «IRR» قدیمی = ریال؛ خالی = تومان
 export const faPrice = (n: number | null | undefined, currency?: string | null): string =>
-    `${faNum(n)} ${currency === 'IRR' ? 'ریال' : 'تومان'}`;
+    `${faNum(n)} ${currency === 'IRR' ? 'ریال' : currencyLabel(currency)}`;
 
 /** زمان نسبی فارسی — «۳ ساعت پیش» */
 export function faTimeAgo(iso?: string | null): string {
