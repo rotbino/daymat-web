@@ -41,6 +41,12 @@ export interface ImportItem {
     unitQty?: number | null;
     brandTitle?: string | null;
     brandResolved?: boolean | null;
+    /** 🖼️ عکسِ گرفته‌شده از اکسل — فایل استیجینگ؛ با ثبت به آگهی وصل می‌شود */
+    image?: { fileId: string; url: string; thumbnailUrl: string | null } | null;
+    /** 📦 قیمتِ اصلی ورودی وقتی «هر بسته/کارتن» بود — قبل از تقسیم بر تعداد */
+    inputPrice?: number | null;
+    /** 🛠️ خطای قابل‌اصلاح در پیش‌نمایش — qty یعنی فقط «تعداد در بسته» کم است؛ با نوشتنش ردیف زنده می‌شود */
+    fixable?: 'qty' | null;
     [k: string]: unknown;
 }
 
@@ -56,6 +62,8 @@ export interface ImportReport {
     createdUnits: string[]; createdBrands: string[]; createdReferences: string[];
     /** 🏷️ تعداد کالاهای با برچسب «نیاز به تکمیل» — تا ویرایش در کاتالوگ عمومی دیده نمی‌شوند */
     needsCompletion?: number;
+    /** 🖼️ تعداد عکس‌های اکسل که به کالاها وصل شد */
+    imagesAttached?: number;
     ads: { id: string; title: string }[];
 }
 
@@ -792,20 +800,21 @@ export const apiService = {
         // ═══ 📥 ایمپورت گروهی چندمنبعی — اکسل | متن | گرید | هوش مصنوعی | سایت ═══
 
         /** فاز ۱ — پیش‌نمایش از متن ساده (source=text) یا JSON هوش مصنوعی/گرید (source=json) */
-        importParse: (catalogId: string, text: string, source: 'text' | 'json' = 'text', priceCurrency: 'toman' | 'rial' = 'toman'): Promise<{ items: ImportItem[]; summary: ImportSummary }> =>
-            apiRequest('/ad/import/parse', { method: 'POST', data: { catalogId, text, source, priceCurrency } }),
+        importParse: (catalogId: string, text: string, source: 'text' | 'json' = 'text', priceCurrency: 'toman' | 'rial' = 'toman', priceBasis: 'single' | 'package' = 'single'): Promise<{ items: ImportItem[]; summary: ImportSummary; images?: { found: number; attached: number; skipped: number } }> =>
+            apiRequest('/ad/import/parse', { method: 'POST', data: { catalogId, text, source, priceCurrency, priceBasis } }),
 
-        /** فاز ۱ — پیش‌نمایش از فایل اکسل/CSV (multipart) */
-        importParseFile: (catalogId: string, file: File, priceCurrency: 'toman' | 'rial' = 'toman'): Promise<{ items: ImportItem[]; summary: ImportSummary }> => {
+        /** فاز ۱ — پیش‌نمایش از فایل اکسل/CSV (multipart) — عکس‌های داخل اکسل هم برمی‌گردد */
+        importParseFile: (catalogId: string, file: File, priceCurrency: 'toman' | 'rial' = 'toman', priceBasis: 'single' | 'package' = 'single'): Promise<{ items: ImportItem[]; summary: ImportSummary; images?: { found: number; attached: number; skipped: number } }> => {
             const fd = new FormData();
             fd.append('catalogId', catalogId);
             fd.append('priceCurrency', priceCurrency);
+            fd.append('priceBasis', priceBasis);
             fd.append('file', file);
             return apiFileRequest('/ad/import/parse-file', fd);
         },
 
-        /** فاز ۲ — ثبت نهایی: آگهی‌ها + ساخت خودکار واحد/برند/کالای مرجع + گزارش کامل */
-        importCommit: (catalogId: string, items: { name: string; price: number; referenceId?: string; unitTitle?: string; unitQty?: number; brandTitle?: string }[]): Promise<ImportReport> =>
+        /** فاز ۲ — ثبت نهایی: آگهی‌ها + ساخت خودکار واحد/برند/کالای مرجع + عکس‌های اکسل + گزارش کامل */
+        importCommit: (catalogId: string, items: { name: string; price: number; referenceId?: string; unitTitle?: string; unitQty?: number; brandTitle?: string; imageFileId?: string }[]): Promise<ImportReport> =>
             apiRequest('/ad/import/commit', { method: 'POST', data: { catalogId, items } }),
         // ✅ دریافت جزئیات کامل آگهی (برای صفحه جزئیات)
         getDetail: (id: string): Promise<any> =>

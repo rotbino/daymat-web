@@ -19,7 +19,7 @@ import {
     ClipboardPaste, Loader2, Check, AlertTriangle, Copy,
     Package, ListChecks, Store, FileSpreadsheet, Type, Table2,
     Sparkles, Globe, Plus, Trash2, ExternalLink, CheckCircle2, ArrowRight,
-    CircleHelp, X, Info,
+    CircleHelp, X, Info, ImageIcon,
 } from 'lucide-react';
 import { toast } from 'sonner';
 import { useAdImportParse, useAdImportParseFile, useAdImportCommit, useUnits, useCatalog } from '@/lib/api/apiHooks';
@@ -56,10 +56,11 @@ function buildAiPrompt(siteUrl?: string): string {
     return `${source}
 آن‌ها را دقیقاً به این شکل JSON برگردان — فقط JSON خالص، بدون هیچ توضیح اضافه:
 [
-  {"name": "نام کامل کالا", "price": 485000, "unit": "کارتن", "unitQty": 24, "brand": "نام برند"}
+  {"name": "نام کامل کالا", "price": 485000, "unit": "کارتن", "unitQty": 24, "brand": "نام برند", "priceBasis": "single"}
 ]
 قواعد:
 - price: قیمت عمدهٔ «یک عدد» به تومان — اگر کالا کارتنی است قیمتِ هر یک عددش را بده نه قیمت کل کارتن — عدد کامل و بدون اعشار و جداکننده. اگر قیمت‌ها ریال بود خودت تقسیم بر ۱۰ کن و به تومان بده
+- priceBasis: اگر قیمتِ اصلیِ منبع «هر یک عدد» بود "single" بنویس (همین پیش‌فرض است). اگر فقط قیمتِ کلِ بسته/کارتن را داشتی، همان را در price بده و "priceBasis": "package" بنویس — در این حالت نوشتنِ unitQty (تعداد داخل بسته) الزامی است
 - unit: واحد فروش مثل کارتن، بسته، عدد، کیلوگرم (اگر مشخص نیست این کلید را ننویس)
 - unitQty: تعداد داخل واحد مثل ۲۴ برای کارتن ۲۴تایی (اگر مشخص نیست ننویس)
 - brand: برند کالا (اگر مشخص نیست ننویس)`;
@@ -91,10 +92,12 @@ function ImportContent() {
     const catalogName: string | undefined = catalogData?.name;
     // 💱 واحد پول قیمت‌های ورودی — پیش‌فرض تومان؛ اگر فایل/خروجی ریالی بود، موقع پارس ده‌تا یکی می‌شود
     const [priceCurrency, setPriceCurrency] = useState<'toman' | 'rial'>('toman');
+    // 📦 مبنای قیمت — «یک عدد» یا «هر بسته/کارتن»؛ بسته‌ای بودن تعداد در بسته را اجباری می‌کند
+    const [priceBasis, setPriceBasis] = useState<'single' | 'package'>('single');
     // 📖 مدال راهنما — per-tab محتوا دارد
     const [helpOpen, setHelpOpen] = useState(false);
-    // 💾 آخرین ورودی هر منبع — برای بازخوانی بعد از تغییر واحد پول در پیش‌نمایش
-    const [lastSource, setLastSource] = useState<{ kind: 'text' | 'excel' | 'ai'; text?: string; file?: File } | null>(null);
+    // 💾 آخرین ورودی هر منبع — برای بازخوانی بعد از تغییر واحد پول/مبنای قیمت در پیش‌نمایش
+    const [lastSource, setLastSource] = useState<{ kind: 'text' | 'excel' | 'ai' | 'grid'; text?: string; file?: File; grid?: GridRow[] } | null>(null);
 
     const [tab, setTab] = useState<SourceTab>('excel');
     const [rows, setRows] = useState<(ImportItem & { checked?: boolean })[]>([]);
@@ -182,71 +185,92 @@ function ImportContent() {
         setRows(items.map((it) => ({ ...it, checked: !!it.valid })));
     };
 
+    /** 🖼️ گزارش عکس‌های گرفته‌شده از اکسل */
+    const toastImages = (images?: { found: number; attached: number; skipped: number }) => {
+        if (images?.attached) toast.success(`${images.attached.toLocaleString('fa-IR')} عکس از فایل اکسل گرفته شد — با ثبت به کالاها وصل می‌شود`);
+        else if (images && images.found > 0 && images.attached === 0) toast.info('عکسِ قابل‌برداشت در فایل پیدا نشد — عکس‌ها باید کنار ردیفِ کالا و به فرمت PNG/JPG باشند');
+    };
+
     const errToast = (e: any, fallback: string) =>
         toast.error(e?.response?.data?.message || e?.message || fallback);
 
     // ─── اجرای پارس برای هر تب ───
-    const runExcel = async (file: File, cur?: 'toman' | 'rial') => {
+    const runExcel = async (file: File, cur?: 'toman' | 'rial', basis?: 'single' | 'package') => {
         try {
-            const res = await parseFile.mutateAsync({ catalogId, file, priceCurrency: cur ?? priceCurrency });
+            const res = await parseFile.mutateAsync({ catalogId, file, priceCurrency: cur ?? priceCurrency, priceBasis: basis ?? priceBasis });
             setFileName(file.name);
             setLastSource({ kind: 'excel', file });
             showItems(res.items);
+            toastImages(res.images);
         } catch (e: any) { errToast(e, 'خواندن فایل ناموفق بود'); }
     };
 
-    const runText = async (cur?: 'toman' | 'rial') => {
+    const runText = async (cur?: 'toman' | 'rial', basis?: 'single' | 'package') => {
         if (text.trim().length < 3) { toast.error('چیزی برای خواندن نیست — لیستت را بچسبان یا تایپ کن'); return; }
         try {
-            const res = await parseText.mutateAsync({ catalogId, text, source: 'text', priceCurrency: cur ?? priceCurrency });
+            const res = await parseText.mutateAsync({ catalogId, text, source: 'text', priceCurrency: cur ?? priceCurrency, priceBasis: basis ?? priceBasis });
             setLastSource({ kind: 'text', text });
             showItems(res.items);
         } catch (e: any) { errToast(e, 'خواندن لیست ناموفق بود'); }
     };
 
-    const runGrid = async () => {
+    const gridJson = (g: GridRow[]) => JSON.stringify(g
+        .filter((x) => x.name.trim() || (x.priceNum ?? 0) > 0)
+        .map((x) => ({
+            name: x.name.trim(),
+            price: x.priceNum ?? 0,
+            unitTitle: x.unit.trim(),
+            unitQty: x.qty.trim(),
+            brandTitle: x.brand.trim(),
+        })));
+
+    const runGrid = async (cur?: 'toman' | 'rial', basis?: 'single' | 'package') => {
         const filled = grid.filter((g) => g.name.trim() || (g.priceNum ?? 0) > 0);
         if (!filled.length) { toast.error('حداقل یک ردیف را پر کن'); return; }
         try {
             const res = await parseText.mutateAsync({
                 catalogId,
-                text: JSON.stringify(filled.map((g) => ({
-                    name: g.name.trim(),
-                    price: g.priceNum ?? 0,
-                    unitTitle: g.unit.trim(),
-                    unitQty: g.qty.trim(),
-                    brandTitle: g.brand.trim(),
-                }))),
+                text: gridJson(grid),
                 source: 'json',
+                priceCurrency: cur ?? priceCurrency,
+                priceBasis: basis ?? priceBasis,
             });
+            setLastSource({ kind: 'grid', grid: grid.map((g) => ({ ...g })) });
             showItems(res.items);
         } catch (e: any) { errToast(e, 'خواندن ردیف‌ها ناموفق بود'); }
     };
 
-    const runAi = async (isSite: boolean, cur?: 'toman' | 'rial') => {
+    const runAi = async (isSite: boolean, cur?: 'toman' | 'rial', basis?: 'single' | 'package') => {
         const src = aiText.trim();
         if (src.length < 3) { toast.error(isSite ? 'خروجی هوش مصنوعی را بچسبان' : 'خروجی هوش مصنوعی را در کادر بچسبان'); return; }
         try {
-            const res = await parseText.mutateAsync({ catalogId, text: src, source: 'json', priceCurrency: cur ?? priceCurrency });
+            const res = await parseText.mutateAsync({ catalogId, text: src, source: 'json', priceCurrency: cur ?? priceCurrency, priceBasis: basis ?? priceBasis });
             setLastSource({ kind: 'ai', text: src });
             showItems(res.items);
         } catch (e: any) { errToast(e, 'خواندن خروجی هوش مصنوعی ناموفق بود'); }
     };
 
-    /** 💱 تغییر واحد پول قیمت‌ها در پیش‌نمایش — همان منبع دوباره خوانده می‌شود */
-    const reparseWithCurrency = async (cur: 'toman' | 'rial') => {
+    /** 💱📦 تغییر سوییچ‌های قیمت (واحد پول/مبنای قیمت) در پیش‌نمایش — همان منبع دوباره خوانده می‌شود */
+    const reparseWithSwitches = async (cur: 'toman' | 'rial', basis: 'single' | 'package') => {
         if (!lastSource) return;
-        if (lastSource.kind === 'excel' && lastSource.file) { await runExcel(lastSource.file, cur); return; }
+        if (lastSource.kind === 'excel' && lastSource.file) { await runExcel(lastSource.file, cur, basis); return; }
+        if (lastSource.kind === 'grid' && lastSource.grid) {
+            try {
+                const res = await parseText.mutateAsync({ catalogId, text: gridJson(lastSource.grid), source: 'json', priceCurrency: cur, priceBasis: basis });
+                showItems(res.items);
+            } catch (e: any) { errToast(e, 'خواندن ردیف‌ها ناموفق بود'); }
+            return;
+        }
         if (lastSource.kind === 'text' && lastSource.text != null) {
             try {
-                const res = await parseText.mutateAsync({ catalogId, text: lastSource.text, source: 'text', priceCurrency: cur });
+                const res = await parseText.mutateAsync({ catalogId, text: lastSource.text, source: 'text', priceCurrency: cur, priceBasis: basis });
                 showItems(res.items);
             } catch (e: any) { errToast(e, 'خواندن لیست ناموفق بود'); }
             return;
         }
         if (lastSource.kind === 'ai' && lastSource.text != null) {
             try {
-                const res = await parseText.mutateAsync({ catalogId, text: lastSource.text, source: 'json', priceCurrency: cur });
+                const res = await parseText.mutateAsync({ catalogId, text: lastSource.text, source: 'json', priceCurrency: cur, priceBasis: basis });
                 showItems(res.items);
             } catch (e: any) { errToast(e, 'خواندن خروجی هوش مصنوعی ناموفق بود'); }
         }
@@ -255,7 +279,13 @@ function ImportContent() {
     const switchCurrency = (cur: 'toman' | 'rial') => {
         if (cur === priceCurrency) return;
         setPriceCurrency(cur);
-        if (rows.length) reparseWithCurrency(cur);
+        if (rows.length) reparseWithSwitches(cur, priceBasis);
+    };
+
+    const switchBasis = (basis: 'single' | 'package') => {
+        if (basis === priceBasis) return;
+        setPriceBasis(basis);
+        if (rows.length) reparseWithSwitches(priceCurrency, basis);
     };
 
     const copyPrompt = async (prompt: string) => {
@@ -278,6 +308,7 @@ function ImportContent() {
                     unitTitle: r.unitTitle || undefined,
                     unitQty: r.unitQty && r.unitQty >= 2 ? r.unitQty : undefined,
                     brandTitle: r.brandTitle || undefined,
+                    imageFileId: r.image?.fileId || undefined, // 🖼️ عکسِ اکسل — با ثبت به آگهی وصل می‌شود
                 })),
             });
             setReport(rep);
@@ -330,6 +361,11 @@ function ImportContent() {
                                 {report.createdReferences.length > 0 && (
                                     <p className="text-[11.5px] font-bold leading-6 text-emerald-800 dark:text-emerald-300">
                                         {fa(report.createdReferences.length)} کالای مرجع جدید در آی مچ ثبت شد
+                                    </p>
+                                )}
+                                {!!report.imagesAttached && report.imagesAttached > 0 && (
+                                    <p className="text-[11.5px] font-bold leading-6 text-emerald-800 dark:text-emerald-300">
+                                        🖼️ {fa(report.imagesAttached)} عکس از اکسل به کالاها وصل شد
                                     </p>
                                 )}
                             </div>
@@ -400,7 +436,7 @@ function ImportContent() {
                         </button>
                     </div>
 
-                    {/* 💱 واحد پول قیمت‌های ورودی — اگر ریال بود، قیمت‌ها ده‌تا یکی شده‌اند */}
+                    {/* 💱📦 سوییچ‌های قیمت — واحد پول + مبنای قیمت (تکی/بسته)؛ هر تغییری همان منبع را دوباره می‌خواند */}
                     <div className={`${CARD_CLS} mb-3 flex flex-wrap items-center gap-2 p-3`}>
                         <span className="text-[11px] font-black text-stone-500 dark:text-gray-400">قیمت‌های ورودی به:</span>
                         <div className="flex rounded-full border border-outline-variant/40 p-0.5 dark:border-gray-700">
@@ -418,6 +454,25 @@ function ImportContent() {
                         {priceCurrency === 'rial' && (
                             <span className="inline-flex items-center gap-1 rounded-full bg-sky-50 px-2.5 py-1 text-[10px] font-bold text-sky-700 dark:bg-sky-500/10 dark:text-sky-400">
                                 <Info className="size-3" /> همهٔ قیمت‌ها به تومان تبدیل شدند
+                            </span>
+                        )}
+                        <span className="hidden h-5 w-px bg-stone-200 sm:inline-block dark:bg-gray-700" />
+                        <span className="text-[11px] font-black text-stone-500 dark:text-gray-400">قیمت هر:</span>
+                        <div className="flex rounded-full border border-outline-variant/40 p-0.5 dark:border-gray-700">
+                            {([['single', 'یک عدد'], ['package', 'بسته / کارتن']] as const).map(([v, label]) => (
+                                <button key={v} onClick={() => switchBasis(v)} disabled={parsePending}
+                                        className={`h-7 rounded-full px-3 text-[10.5px] font-extrabold transition-colors disabled:opacity-50 ${
+                                            priceBasis === v
+                                                ? 'bg-amber-500 text-white'
+                                                : 'text-stone-500 hover:text-amber-600 dark:text-gray-400'
+                                        }`}>
+                                    {label}
+                                </button>
+                            ))}
+                        </div>
+                        {priceBasis === 'package' && (
+                            <span className="inline-flex items-center gap-1 rounded-full bg-violet-50 px-2.5 py-1 text-[10px] font-bold text-violet-700 dark:bg-violet-500/10 dark:text-violet-400">
+                                <Info className="size-3" /> تعداد در بسته لازم است — قیمت تکی خودکار تقسیم می‌شود
                             </span>
                         )}
                     </div>
@@ -458,6 +513,22 @@ function ImportContent() {
                             const qtyNum = Number(row.unitQty ?? 0);
                             const hasQty = Number.isFinite(qtyNum) && qtyNum >= 2;
                             const saleUnitPrice = hasQty ? row.price * Math.floor(qtyNum) : row.price;
+                            // 📦 اگر قیمت «هر بسته» بود، قیمت بسته‌یِ اصلیِ کاربر دقیق‌تر از حاصل‌ضرب گردشده است
+                            const packagePrice = row.inputPrice ?? saleUnitPrice;
+                            const canFixQty = !row.valid && row.fixable === 'qty';
+                            // 🛠️ نوشتنِ «تعداد در بسته» روی ردیفِ ردشده — همان‌جا زنده می‌شود
+                            const onQtyChange = (raw: number | null) => {
+                                if (canFixQty && raw != null && raw >= 1 && (row.inputPrice ?? 0) > 0) {
+                                    const q = Math.floor(raw);
+                                    const single = Math.round((row.inputPrice as number) / q);
+                                    patchRow(idx, {
+                                        unitQty: q, valid: true, price: single, fixable: null, reason: undefined, checked: true,
+                                        warnings: [`${(row.inputPrice as number).toLocaleString('fa-IR')} ÷ ${q.toLocaleString('fa-IR')} = ${single.toLocaleString('fa-IR')} — قیمت یک عدد حساب شد`],
+                                    });
+                                } else {
+                                    patchRow(idx, { unitQty: raw });
+                                }
+                            };
                             return (
                             <motion.div key={idx} initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }}
                                         className={`${CARD_CLS} p-3 ${!row.valid ? 'opacity-70' : ''}`}>
@@ -466,6 +537,15 @@ function ImportContent() {
                                            onChange={(e) => patchRow(idx, { checked: e.target.checked })}
                                            className="size-5 shrink-0 accent-amber-500 disabled:opacity-40 sm:size-4"
                                            aria-label={`ثبت ${row.name}`} />
+                                    {/* 🖼️ عکسِ گرفته‌شده از اکسل — با ثبت به کالا وصل می‌شود */}
+                                    {row.image && (
+                                        <a href={row.image.url} target="_blank" rel="noreferrer" title="عکسِ گرفته‌شده از اکسل"
+                                           className="relative size-10 shrink-0 overflow-hidden rounded-lg border border-outline-variant/40 sm:size-11 dark:border-gray-700">
+                                            {/* eslint-disable-next-line @next/next/no-img-element */}
+                                            <img src={row.image.thumbnailUrl || row.image.url} alt=""
+                                                 className="size-full object-cover" />
+                                        </a>
+                                    )}
                                     <input value={row.name} disabled={!row.valid}
                                            onChange={(e) => patchRow(idx, { name: e.target.value })}
                                            placeholder="نام کالا"
@@ -489,7 +569,7 @@ function ImportContent() {
                                         </span>
                                         <span className="text-[10.5px] font-bold text-stone-500 dark:text-gray-400">
                                             قیمت {row.unitTitle?.trim() || 'واحد فروش'}:
-                                            <b className={`ms-1 text-[12px] ${hasQty ? 'text-emerald-600 dark:text-emerald-400' : 'text-stone-400 dark:text-gray-500'}`}>{saleUnitPrice.toLocaleString('fa-IR')} {curLabel}</b>
+                                            <b className={`ms-1 text-[12px] ${hasQty ? 'text-emerald-600 dark:text-emerald-400' : 'text-stone-400 dark:text-gray-500'}`}>{packagePrice.toLocaleString('fa-IR')} {curLabel}</b>
                                         </span>
                                         {!hasQty && (
                                             <span className="inline-flex items-center gap-1 text-[10px] font-bold text-amber-600 dark:text-amber-400">
@@ -500,19 +580,25 @@ function ImportContent() {
                                     </div>
                                 )}
 
-                                {row.valid && (
+                                {(row.valid || canFixQty) && (
                                     <div className="mt-2 grid grid-cols-3 gap-1.5 sm:flex sm:flex-wrap sm:items-center sm:gap-1.5 sm:ps-6.5">
                                         <input value={row.unitTitle ?? ''} onChange={(e) => patchRow(idx, { unitTitle: e.target.value })}
                                                list="unit-options" placeholder="کارتن"
                                                className={`${INP} h-9 w-full sm:w-28`} />
                                         <span className="hidden text-[10px] font-bold text-stone-400 sm:inline">×</span>
-                                        <input type="number" min={2} value={row.unitQty ?? ''} onChange={(e) => patchRow(idx, { unitQty: e.target.value ? Number(e.target.value) : null })}
-                                               placeholder="تعداد"
-                                               className={`${INP} h-9 w-full sm:w-24`} />
+                                        <input type="number" min={1} value={row.unitQty ?? ''}
+                                               onChange={(e) => onQtyChange(e.target.value ? Number(e.target.value) : null)}
+                                               placeholder={canFixQty ? 'تعداد در بسته؟' : 'تعداد'}
+                                               className={`${INP} h-9 w-full sm:w-24 ${canFixQty ? 'border-amber-400' : ''}`} />
                                         <input value={row.brandTitle ?? ''} onChange={(e) => patchRow(idx, { brandTitle: e.target.value })}
                                                placeholder="برند"
                                                className={`${INP} h-9 w-full sm:w-28`} />
                                     </div>
+                                )}
+                                {canFixQty && (
+                                    <p className="mt-1.5 ps-6.5 text-[10px] font-bold leading-5 text-amber-600 dark:text-amber-400">
+                                        💡 همین‌جا «تعداد در بسته» را بنویس — قیمت یک عدد خودش حساب می‌شود و ردیف زنده می‌شود
+                                    </p>
                                 )}
 
                                 <div className="mt-1.5 space-y-0.5 ps-6.5">
@@ -606,19 +692,33 @@ function ImportContent() {
                 </div>
 
                 <div className={`${CARD_CLS} p-4 sm:p-5`}>
-                    {/* نوار راهنما + واحد پول قیمت‌ها — بالای همهٔ منبع‌ها */}
+                    {/* نوار راهنما + سوییچ‌های قیمت (واحد پول + مبنای قیمت) — بالای همهٔ منبع‌ها */}
                     <div className="mb-4 flex flex-wrap items-center justify-between gap-2 rounded-xl bg-stone-50 px-3 py-2.5 dark:bg-gray-800/60">
                         <button onClick={() => setHelpOpen(true)}
                                 className="inline-flex items-center gap-1.5 text-[11.5px] font-extrabold text-amber-700 transition-colors hover:text-amber-800 dark:text-amber-400">
                             <CircleHelp className="size-4" /> راهنمای این روش را ببین
                         </button>
-                        <div className="flex items-center gap-1.5">
+                        <div className="flex flex-wrap items-center gap-1.5">
                             <span className="text-[10.5px] font-black text-stone-400">قیمت‌هایم به:</span>
                             <div className="flex rounded-full border border-outline-variant/40 p-0.5 dark:border-gray-700">
                                 {([['toman', 'تومان'], ['rial', 'ریال']] as const).map(([v, label]) => (
                                     <button key={v} onClick={() => switchCurrency(v)}
                                             className={`h-6.5 rounded-full px-2.5 text-[10px] font-extrabold transition-colors ${
                                                 priceCurrency === v
+                                                    ? 'bg-amber-500 text-white'
+                                                    : 'text-stone-500 hover:text-amber-600 dark:text-gray-400'
+                                            }`}>
+                                        {label}
+                                    </button>
+                                ))}
+                            </div>
+                            <span className="hidden h-5 w-px bg-stone-200 sm:inline-block dark:bg-gray-700" />
+                            <span className="text-[10.5px] font-black text-stone-400">قیمت هر:</span>
+                            <div className="flex rounded-full border border-outline-variant/40 p-0.5 dark:border-gray-700">
+                                {([['single', 'یک عدد'], ['package', 'بسته/کارتن']] as const).map(([v, label]) => (
+                                    <button key={v} onClick={() => switchBasis(v)}
+                                            className={`h-6.5 rounded-full px-2.5 text-[10px] font-extrabold transition-colors ${
+                                                priceBasis === v
                                                     ? 'bg-amber-500 text-white'
                                                     : 'text-stone-500 hover:text-amber-600 dark:text-gray-400'
                                             }`}>
@@ -633,7 +733,13 @@ function ImportContent() {
                         <>
                             <p className="text-xs font-bold leading-6 text-stone-500 dark:text-gray-400">
                                 فایل اکسل یا CSV را انتخاب کن. ستون‌های «نام کالا» و «قیمت» را خودم می‌شناسم؛
-                                «برند»، «واحد» و «تعداد در واحد» هم اگر باشند بهتر. اگر ریالی قیمت دادی، بالا روی «ریال» بزن تا ده‌تا یکی شود.
+                                «برند»، «واحد» و «تعداد در واحد» هم اگر باشند بهتر. اگر ریالی قیمت دادی، بالا روی «ریال» بزن تا ده‌تا یکی شود،
+                                و اگر قیمت‌هات مالِ هر بسته/کارتن است، روی «بسته/کارتن» بزن.
+                            </p>
+                            <p className="mt-2 flex items-start gap-1.5 rounded-xl bg-emerald-50/70 px-3 py-2 text-[11px] font-bold leading-5 text-emerald-800 dark:bg-emerald-500/10 dark:text-emerald-300">
+                                <ImageIcon className="mt-0.5 size-3.5 shrink-0" />
+                                اگر کنار ردیفِ هر کالا داخل خود اکسل عکس گذاشته باشی، عکس‌ها را خودکار برمی‌دارم و با ثبت به کالاها می‌زنم
+                                (فقط فایل xlsx و عکس‌های PNG/JPG/GIF/WEBP — عکس داخل سلول نباشد، کنار ردیف کافی است).
                             </p>
                             <input ref={fileInputRef} type="file" accept=".xlsx,.xls,.csv,.txt" className="hidden"
                                    onChange={(e) => {
@@ -678,7 +784,9 @@ function ImportContent() {
                     {tab === 'grid' && (
                         <>
                             <p className="text-xs font-bold leading-6 text-stone-500 dark:text-gray-400">
-                                ردیف‌به‌ردیف تایپ کن — قیمت را «عمدهٔ یک عدد» بنویس؛ قیمت کارتن خودش از تعداد حساب می‌شود. پر نکردن‌ها اشکالی ندارد.
+                                ردیف‌به‌ردیف تایپ کن — قیمت را «عمدهٔ یک عدد» بنویس؛ قیمت کارتن خودش از تعداد حساب می‌شود.
+                                اگر قیمت‌هات مالِ هر بسته/کارتن است، بالای فرم روی «بسته/کارتن» بزن — آن‌وقت نوشتنِ تعداد در بسته لازم است.
+                                پر نکردن‌ها اشکالی ندارد.
                             </p>
                             <datalist id="unit-options">
                                 {unitOptions.map((u) => <option key={u.id} value={u.title} />)}
@@ -688,9 +796,9 @@ function ImportContent() {
                             <div className="mt-3 hidden items-center gap-1.5 ps-9 text-[10px] font-black text-stone-400 sm:flex">
                                 <span className="flex-1">نام کالا</span>
                                 <span className="w-20 text-center">واحد</span>
-                                <span className="w-16 text-center">تعداد</span>
+                                <span className="w-16 text-center">{priceBasis === 'package' ? 'تعداد در بسته' : 'تعداد'}</span>
                                 <span className="w-20 text-center">برند</span>
-                                <span className="w-32 text-center">قیمت عمدهٔ ۱ عدد</span>
+                                <span className="w-32 text-center">{priceBasis === 'package' ? 'قیمت هر بسته' : 'قیمت عمدهٔ ۱ عدد'}</span>
                             </div>
 
                             <div className="mt-2 space-y-2 sm:mt-3">
@@ -723,7 +831,7 @@ function ImportContent() {
                                                 {/* ✅ قیمت با نامبر اینپوت — همیشه با فرمت سه‌رقمی (خیلی مهم) */}
                                                 <div className="mt-1.5 sm:hidden">
                                                     <NumberInput value={g.priceNum} onChange={(v) => setGrid((prev) => prev.map((r, j) => (j === i ? { ...r, priceNum: v } : r)))}
-                                                                 placeholder="قیمت عمدهٔ ۱ عدد" />
+                                                                 placeholder={priceBasis === 'package' ? 'قیمت هر بسته' : 'قیمت عمدهٔ ۱ عدد'} />
                                                 </div>
 
                                                 {/* دسکتاپ: همهٔ فیلدها در یک ردیف */}
@@ -732,14 +840,14 @@ function ImportContent() {
                                                            list="unit-options" placeholder="کارتن"
                                                            className={`${INP} h-9 w-20 shrink-0 text-center`} />
                                                     <input value={g.qty} onChange={(e) => setGrid((prev) => prev.map((r, j) => (j === i ? { ...r, qty: e.target.value } : r)))}
-                                                           inputMode="numeric" placeholder="۲۴"
-                                                           className={`${INP} h-9 w-16 shrink-0 text-center`} />
+                                                           inputMode="numeric" placeholder={priceBasis === 'package' ? 'تعداد در بسته' : '۲۴'}
+                                                           className={`${INP} h-9 w-20 shrink-0 text-center`} />
                                                     <input value={g.brand} onChange={(e) => setGrid((prev) => prev.map((r, j) => (j === i ? { ...r, brand: e.target.value } : r)))}
                                                            placeholder="مینو"
                                                            className={`${INP} h-9 w-20 shrink-0 text-center`} />
                                                     <div className="w-32 shrink-0">
                                                         <NumberInput value={g.priceNum} onChange={(v) => setGrid((prev) => prev.map((r, j) => (j === i ? { ...r, priceNum: v } : r)))}
-                                                                     placeholder="۴۸۵٬۰۰۰" />
+                                                                     placeholder={priceBasis === 'package' ? 'قیمت هر بسته' : '۴۸۵٬۰۰۰'} />
                                                     </div>
                                                 </div>
                                             </div>
@@ -862,11 +970,14 @@ function HelpModal({ tab, onClose }: { tab: SourceTab; onClose: () => void }) {
                 {/* قاعدهٔ طلایی قیمت — همهٔ تب‌ها */}
                 <div className="mb-4 rounded-xl bg-amber-50 px-3.5 py-3 dark:bg-amber-500/10">
                     <p className="text-[12px] font-black leading-6 text-amber-800 dark:text-amber-300">
-                        ⭐ مهم‌ترین قاعده: قیمت = قیمت عمدهٔ «یک عدد» به تومان
+                        ⭐ مهم‌ترین قاعده: قیمت = قیمت عمدهٔ «یک عدد» به تومان — یا بالای فرم روی «بسته/کارتن» بزن
                     </p>
                     <p className="mt-1 text-[11px] font-bold leading-6 text-amber-700/90 dark:text-amber-300/80">
-                        اگر کالا کارتنی است، قیمتِ «یک پفک» را بنویس نه قیمت کل کارتن — قیمت کارتن خودش از «تعداد در واحد» حساب می‌شود.
-                        مثلاً هر پفک ۸۵٬۰۰۰ تومان و کارتن ۲۴تایی می‌شود ۲٬۰۴۰٬۰۰۰. اگر تعداد را ننویسی، فرض می‌شود ۱ — پس سعی کن همیشه بنویسی.
+                        اگر قیمت‌هات مالِ «یک عدد» است، همان را بنویس (پیش‌فرض). اگر قیمت‌هات مالِ «هر بسته/کارتن» است،
+                        بالای فرم سوییچ را روی «بسته/کارتن» بگذار — آن‌وقت حتماً «تعداد در واحد» را هم بنویس (مثلاً ۲۴)
+                        تا قیمت هر یک عدد خودش تقسیم و حساب شود؛ این تعداد با کالا ثبت می‌شود و یک بار نوشتن، همیشه کارت را راحت می‌کند.
+                        اگر روی «یک عدد» مانده و کالا کارتنی است، قیمتِ «یک پفک» را بنویس نه قیمت کل کارتن —
+                        مثلاً هر پفک ۸۵٬۰۰۰ تومان و کارتن ۲۴تایی می‌شود ۲٬۰۴۰٬۰۰۰.
                     </p>
                 </div>
 
@@ -893,9 +1004,14 @@ function HelpModal({ tab, onClose }: { tab: SourceTab; onClose: () => void }) {
                         </p>
                         <ul className="mt-3 space-y-1.5 text-[11.5px] font-bold leading-6 text-stone-600 dark:text-gray-300">
                             <li>• قیمت‌ها بدون ویرگول و اعشار — فقط عدد (۴۸۵۰۰۰ نه ۴۸۵٫۰۰۰ تومان)</li>
-                            <li>• اگر فایل اکسلِ عکس‌دار داری، عکس‌ها را همان‌جا نگه دار؛ ولی فعلاً عکس‌ها را بعد از ثبت، در ویرایش هر کالا بگذار — عکس کالا برای فروش خیلی مهم است</li>
+                            <li>• 🖼️ عکس کنار هر ردیف داخل اکسل بگذار — خودکار برمی‌دارم و به کالا می‌زنم؛
+                                در اکسل از منوی «Insert ← Pictures» عکس را همان‌جایی که ردیفِ کالاست بگذار
+                                (فقط فایل xlsx با عکس‌های PNG/JPG/GIF/WEBP؛ عکسِ چسبانده‌شده از اسکرین‌شات ویندوز یعنی EMF پشتیبانی نمی‌شود —
+                                اول فایل عکس را ذخیره و به‌صورت PNG درج کن). CSV و xls قدیمی عکس ندارند</li>
                             <li>• اگر قیمت‌هایت «ریال» است، بالای فرم روی «ریال» بزن تا همه ده‌تا یکی شوند</li>
-                            <li>• CSV هم قبول است — با جداکنندهٔ کاما و یک سطر سرستون مثل جدول بالا</li>
+                            <li>• اگر قیمت‌هات مالِ «هر بسته/کارتن» است، سوییچ «قیمت هر» را روی «بسته/کارتن» بگذار —
+                                و ستون «تعداد در واحد» را حتماً پر کن؛ قیمت تکی خودش تقسیم می‌شود</li>
+                            <li>• CSV هم قبول است — با جداکنندهٔ کاما و یک سطر سرستون مثل جدول بالا (ولی عکس ندارد)</li>
                             <li>• بعد از ثبت، همهٔ کالاها با برچسب «نیاز به تکمیل» می‌روند — عکس و دسته و جزئیاتشان را در ویرایش کامل کن تا در کاتالوگ دیده شوند</li>
                         </ul>
                     </>
@@ -925,9 +1041,11 @@ function HelpModal({ tab, onClose }: { tab: SourceTab; onClose: () => void }) {
 
                 {tab === 'grid' && (
                     <ul className="space-y-1.5 text-[11.5px] font-bold leading-6 text-stone-600 dark:text-gray-300">
-                        <li>• قیمت را «عمدهٔ یک عدد» بنویس — قیمت کارتن خودش از «تعداد» حساب می‌شود</li>
+                        <li>• قیمت را «عمدهٔ یک عدد» بنویس — قیمت کارتن خودش از «تعداد» حساب می‌شود؛
+                            اگر قیمت‌هات مالِ هر بسته/کارتن است، بالای فرم روی «بسته/کارتن» بزن و تعداد در بسته را حتماً بنویس</li>
                         <li>• قیمت‌ها با فرمت سه‌رقمی تایپ می‌شوند — نگران جداکننده نباش</li>
-                        <li>• «واحد» مثل کارتن/بسته/کیلوگرم — از لیست پیشنهادی انتخاب کن یا بنویس؛ نبود، خودکار ساخته می‌شود</li>
+                        <li>• «واحد» مثل کارتن/بسته/کیلوگرم — از لیست پیشنهادی انتخاب کن یا بنویس؛ نبود، خودکار ساخته می‌شود
+                            و با تعدادش به واحدهای بازوی فروشت هم اضافه می‌شود — یک بار بنویس، همیشه در لیستت می‌ماند</li>
                         <li>• بعد از ثبت، کالاها با برچسب «نیاز به تکمیل» می‌روند — در ویرایش، عکس و دسته‌شان را کامل کن</li>
                     </ul>
                 )}
@@ -935,7 +1053,8 @@ function HelpModal({ tab, onClose }: { tab: SourceTab; onClose: () => void }) {
                 {(tab === 'ai' || tab === 'site') && (
                     <ul className="space-y-1.5 text-[11.5px] font-bold leading-6 text-stone-600 dark:text-gray-300">
                         <li>• پرامپت پایین را کپی کن و همراه فایل/لینک به هوش مصنوعی بده</li>
-                        <li>• به هوش مصنوعی گفته‌ای قیمت‌ها را به «تومانِ یک عدد» برگرداند — پس خیالت راحت است</li>
+                        <li>• به هوش مصنوعی گفته‌ای قیمت‌ها را به «تومانِ یک عدد» برگرداند؛ اگر خودش فقط قیمتِ بسته/کارتن داشت،
+                            خودش priceBasis را "package" می‌گذارد و تعداد بسته را می‌دهد — یا بالای فرم سوییچ را روی «بسته/کارتن» بگذار</li>
                         <li>• خروجی JSON را کامل کپی و در کادر بچسبان — ناقص که شود نمی‌خوانم</li>
                         <li>• اگر خروجی خطا داد، دوباره از هوش مصنوعی بخواه «فقط JSON خالص» بدهد</li>
                     </ul>

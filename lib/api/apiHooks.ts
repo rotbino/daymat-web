@@ -2070,22 +2070,22 @@ export const useInquirySaveToggle = () => {
 // ============================================================
 export const useAdImportParse = () => {
     return useMutation({
-        mutationFn: ({ catalogId, text, source, priceCurrency }: { catalogId: string; text: string; source?: 'text' | 'json'; priceCurrency?: 'toman' | 'rial' }) =>
-            apiService.ad.importParse(catalogId, text, source ?? 'text', priceCurrency ?? 'toman'),
+        mutationFn: ({ catalogId, text, source, priceCurrency, priceBasis }: { catalogId: string; text: string; source?: 'text' | 'json'; priceCurrency?: 'toman' | 'rial'; priceBasis?: 'single' | 'package' }) =>
+            apiService.ad.importParse(catalogId, text, source ?? 'text', priceCurrency ?? 'toman', priceBasis ?? 'single'),
     });
 };
 
 export const useAdImportParseFile = () => {
     return useMutation({
-        mutationFn: ({ catalogId, file, priceCurrency }: { catalogId: string; file: File; priceCurrency?: 'toman' | 'rial' }) =>
-            apiService.ad.importParseFile(catalogId, file, priceCurrency ?? 'toman'),
+        mutationFn: ({ catalogId, file, priceCurrency, priceBasis }: { catalogId: string; file: File; priceCurrency?: 'toman' | 'rial'; priceBasis?: 'single' | 'package' }) =>
+            apiService.ad.importParseFile(catalogId, file, priceCurrency ?? 'toman', priceBasis ?? 'single'),
     });
 };
 
 export const useAdImportCommit = () => {
     const qc = useQueryClient();
     return useMutation({
-        mutationFn: ({ catalogId, items }: { catalogId: string; items: { name: string; price: number; referenceId?: string; unitTitle?: string; unitQty?: number; brandTitle?: string }[] }) =>
+        mutationFn: ({ catalogId, items }: { catalogId: string; items: { name: string; price: number; referenceId?: string; unitTitle?: string; unitQty?: number; brandTitle?: string; imageFileId?: string }[] }) =>
             apiService.ad.importCommit(catalogId, items),
         onSuccess: () => {
             qc.invalidateQueries({ queryKey: ['catalog-products'] });
