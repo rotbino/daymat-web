@@ -86,7 +86,7 @@ function MiniCatalog() {
 
           <div className="min-w-0 flex-1">
             <div className="text-[10px] font-black text-stone-700 dark:text-gray-200">
-             بازوی فروش
+              بازوی فروش
             </div>
 
             <div className="mt-0.5 text-[8px] text-stone-400 dark:text-gray-500">
@@ -559,92 +559,92 @@ function LiveFromDaymat() {
  */
 function MarketBoardIllustration() {
   return (
-    <div className="relative mx-auto mt-10 max-w-md">
-      {/* قاب تابلو */}
-      <div className="rounded-3xl border border-stone-200 bg-white p-5 shadow-sm dark:border-gray-800 dark:bg-gray-900">
+      <div className="relative mx-auto mt-10 max-w-md">
+        {/* قاب تابلو */}
+        <div className="rounded-3xl border border-stone-200 bg-white p-5 shadow-sm dark:border-gray-800 dark:bg-gray-900">
 
-        {/* سرِ تابلو */}
-        <div className="flex items-center justify-between rounded-2xl bg-stone-900 px-4 py-2.5 dark:bg-gray-800">
+          {/* سرِ تابلو */}
+          <div className="flex items-center justify-between rounded-2xl bg-stone-900 px-4 py-2.5 dark:bg-gray-800">
           <span className="flex items-center gap-1.5 text-[11px] font-bold text-white">
             <Store className="size-3.5" />
             تابلوی بازار
           </span>
 
-          <span className="text-[10px] text-stone-400">صنف × شهر</span>
-        </div>
+            <span className="text-[10px] text-stone-400">صنف × شهر</span>
+          </div>
 
-        {/* دو بازو که داخل تابلو می‌افتند */}
-        <div className="mt-5 flex items-center justify-center gap-3">
-          <motion.div
-              initial={{ opacity: 0, y: -44 }}
-              whileInView={{ opacity: 1, y: 0 }}
-              viewport={{ once: true, margin: '-60px' }}
-              transition={{ duration: 0.55, delay: 0.15, ease: 'easeOut' }}
-          >
+          {/* دو بازو که داخل تابلو می‌افتند */}
+          <div className="mt-5 flex items-center justify-center gap-3">
             <motion.div
-                animate={{ y: [0, -3, 0] }}
-                transition={{ duration: 2.4, repeat: Infinity, ease: 'easeInOut' }}
-                className="flex items-center gap-1.5 rounded-full bg-brand-primary-soft px-3.5 py-2 text-xs font-extrabold
+                initial={{ opacity: 0, y: -44 }}
+                whileInView={{ opacity: 1, y: 0 }}
+                viewport={{ once: true, margin: '-60px' }}
+                transition={{ duration: 0.55, delay: 0.15, ease: 'easeOut' }}
+            >
+              <motion.div
+                  animate={{ y: [0, -3, 0] }}
+                  transition={{ duration: 2.4, repeat: Infinity, ease: 'easeInOut' }}
+                  className="flex items-center gap-1.5 rounded-full bg-brand-primary-soft px-3.5 py-2 text-xs font-extrabold
               text-brand-primary-strong ring-1 ring-brand-primary-tint
               dark:bg-brand-primary/15 dark:text-brand-primary dark:ring-brand-primary/25"
-            >
-              <Store className="size-3.5" />
-              بازوی فروش
+              >
+                <Store className="size-3.5" />
+                بازوی فروش
+              </motion.div>
             </motion.div>
-          </motion.div>
 
-          {/* گرهٔ اتصال */}
-          <motion.span
-              initial={{ scale: 0 }}
-              whileInView={{ scale: 1 }}
-              viewport={{ once: true, margin: '-60px' }}
-              transition={{ delay: 0.65, type: 'spring', stiffness: 260, damping: 14 }}
-              className="grid size-8 place-items-center rounded-full border border-stone-200 bg-white shadow-sm
+            {/* گرهٔ اتصال */}
+            <motion.span
+                initial={{ scale: 0 }}
+                whileInView={{ scale: 1 }}
+                viewport={{ once: true, margin: '-60px' }}
+                transition={{ delay: 0.65, type: 'spring', stiffness: 260, damping: 14 }}
+                className="grid size-8 place-items-center rounded-full border border-stone-200 bg-white shadow-sm
             dark:border-gray-700 dark:bg-gray-950"
-          >
-            <ArrowLeftRight className="size-3.5 text-stone-500 dark:text-gray-300" />
-          </motion.span>
+            >
+              <ArrowLeftRight className="size-3.5 text-stone-500 dark:text-gray-300" />
+            </motion.span>
 
-          <motion.div
-              initial={{ opacity: 0, y: -44 }}
-              whileInView={{ opacity: 1, y: 0 }}
-              viewport={{ once: true, margin: '-60px' }}
-              transition={{ duration: 0.55, delay: 0.35, ease: 'easeOut' }}
-          >
             <motion.div
-                animate={{ y: [0, -3, 0] }}
-                transition={{ duration: 2.4, repeat: Infinity, ease: 'easeInOut', delay: 0.4 }}
-                className="flex items-center gap-1.5 rounded-full bg-brand-contrast-soft px-3.5 py-2 text-xs font-extrabold
+                initial={{ opacity: 0, y: -44 }}
+                whileInView={{ opacity: 1, y: 0 }}
+                viewport={{ once: true, margin: '-60px' }}
+                transition={{ duration: 0.55, delay: 0.35, ease: 'easeOut' }}
+            >
+              <motion.div
+                  animate={{ y: [0, -3, 0] }}
+                  transition={{ duration: 2.4, repeat: Infinity, ease: 'easeInOut', delay: 0.4 }}
+                  className="flex items-center gap-1.5 rounded-full bg-brand-contrast-soft px-3.5 py-2 text-xs font-extrabold
               text-brand-contrast-strong ring-1 ring-brand-contrast-tint
               dark:bg-brand-contrast/15 dark:text-brand-contrast dark:ring-brand-contrast/25"
-            >
-              <ClipboardList className="size-3.5" />
-              بازوی خرید
+              >
+                <ClipboardList className="size-3.5" />
+                بازوی خرید
+              </motion.div>
             </motion.div>
-          </motion.div>
-        </div>
+          </div>
 
-        {/* نتیجه: تشکیل بازار */}
-        <motion.p
-            initial={{ opacity: 0 }}
-            whileInView={{ opacity: 1 }}
-            viewport={{ once: true, margin: '-60px' }}
-            transition={{ delay: 0.9, duration: 0.5 }}
-            className="mt-4 text-center text-[11px] font-bold text-stone-500 dark:text-gray-400"
-        >
-          بازار تخصصی همون صنف، توی همون شهر تشکیل می‌شه
-        </motion.p>
-        <motion.p
-            initial={{ opacity: 0 }}
-            whileInView={{ opacity: 1 }}
-            viewport={{ once: true, margin: '-60px' }}
-            transition={{ delay: 0.9, duration: 0.5 }}
-            className="mt-4 text-center text-[11px] font-bold text-stone-500 dark:text-gray-400"
-        >
-         بازارهای صنفی می تونن در سطح استان و کشور هم توسعه پیدا کنن.
-        </motion.p>
+          {/* نتیجه: تشکیل بازار */}
+          <motion.p
+              initial={{ opacity: 0 }}
+              whileInView={{ opacity: 1 }}
+              viewport={{ once: true, margin: '-60px' }}
+              transition={{ delay: 0.9, duration: 0.5 }}
+              className="mt-4 text-center text-[11px] font-bold text-stone-500 dark:text-gray-400"
+          >
+            بازار تخصصی همون صنف، توی همون شهر تشکیل می‌شه
+          </motion.p>
+          <motion.p
+              initial={{ opacity: 0 }}
+              whileInView={{ opacity: 1 }}
+              viewport={{ once: true, margin: '-60px' }}
+              transition={{ delay: 0.9, duration: 0.5 }}
+              className="mt-4 text-center text-[11px] font-bold text-stone-500 dark:text-gray-400"
+          >
+            بازارهای صنفی می تونن در سطح استان و کشور هم توسعه پیدا کنن.
+          </motion.p>
+        </div>
       </div>
-    </div>
   );
 }
 
@@ -671,19 +671,19 @@ export default function Landing() {
               className="fixed inset-x-0 top-0 z-50 border-b border-stone-200/80 bg-white/85 backdrop-blur-md
           dark:border-gray-800 dark:bg-gray-950/85"
           >
-            <div className="mx-auto flex h-22 max-w-6xl items-center justify-between px-4 sm:px-6">
+            <div className="mx-auto flex h-18 max-w-6xl items-center justify-between px-4 sm:px-6">
               <Link
                   href="/"
                   className="flex items-center gap-2.5"
                   aria-label="آی مچ"
               >
-                <div className="rounded bg-white/90 px-3 py-1.5 shadow-sm transition-colors dark:bg-white/90 dark:ring-1 dark:ring-white/20">
+                <div className="transition-colors 0">
                   <Image
                       src="/images/logo3.png"
                       alt="آی مچ"
-                      width={200}
-                      height={165}
-                      className="h-14 w-auto object-contain"
+                      width={500}
+                      height={300}
+                      className="h-12 w-auto object-contain"
                       unoptimized
                       priority
                   />
@@ -723,14 +723,14 @@ export default function Landing() {
                 <motion.div {...fadeUp()} className="mx-auto max-w-[500px] text-center">
                 <span className="inline-flex items-center gap-1.5 rounded-full border border-brand-primary-tint bg-brand-primary-soft px-3.5 py-1.5 text-xs font-bold text-brand-primary-strong dark:border-brand-primary/25 dark:bg-brand-primary/10 dark:text-brand-primary">
                   <ArrowLeftRight className="size-3.5" />
-                  آی مچ، پلتفرم ساخت بازوهای خرید و فروش
+                  آی مچ، پلتفرم ساخت و انطباق بازوهای خرید و فروش
                 </span>
 
                   <h1 className="mt-5 pb-4 pt-3 md:pt-6 text-xl  font-black leading-[1.5] tracking-tight text-stone-950 dark:text-white sm:text-xl md:text-[1.5rem] md:leading-[1.35]">
-                   آی مچ با اتصال هدفمند بازوهای خرید و فروش به یکدیگر، شبکه خرید و فروش شما رو گسترش میده.
+                    آی مچ با اتصال هوشمند بازوهای خرید و فروش به یکدیگر، شبکه خرید و فروش شما رو گسترش میده.
                   </h1>
 
-                 {/*  <span className="inline-flex items-center gap-1.5 rounded-full border border-brand-primary-tint bg-brand-primary-soft px-3.5 py-1.5 text-xs font-bold text-brand-primary-strong dark:border-brand-primary/25 dark:bg-brand-primary/10 dark:text-brand-primary">
+                  {/*  <span className="inline-flex items-center gap-1.5 rounded-full border border-brand-primary-tint bg-brand-primary-soft px-3.5 py-1.5 text-xs font-bold text-brand-primary-strong dark:border-brand-primary/25 dark:bg-brand-primary/10 dark:text-brand-primary">
                   <ArrowLeftRight className="size-3.5" />
                   آی مچ، پلتفرم اتصال خریداران عمده به تامین کنندگان
                 </span>
@@ -748,9 +748,9 @@ export default function Landing() {
                   <HeroBox
                       tone="primary"
                       icon={Store}
-                      chip="بازوی فروش"
+                      chip="با بازوی فروش، بگو چی برای فروش عمده داری"
                       question="چه محصول یا خدماتی رو عمده می‌فروشی؟"
-                      body=" بازوی فروش محصولات یا خدماتت رو بساز. لینکش رو به مشتریان مرتبط بفرست؛ هر مشتری که به این بازو وصل بشه ، بخشی از شبکه فروشت میشه و همیشه کاتالوگ آنلاین قیمتهای شما رو داره. آی مچ هم شبکه خریدارنت رو گسترش میده."
+                      body=" بازوی فروش محصولات یا خدماتت رو بساز. لینکش رو به مشتریان خودت بفرست؛ هر مشتری که به این بازو وصل بشه ، بخشی از شبکه فروشت میشه و همیشه کاتالوگ آنلاین قیمتهای شما رو داره. آی مچ هم، خریداران  کالا یا خدمتی که تو داری رو در لحظه ثبت نیاز، بهت معرفی می کنه."
                       delay={0.1}
                   />
 
@@ -766,9 +766,9 @@ export default function Landing() {
                   <HeroBox
                       tone="contrast"
                       icon={ClipboardList}
-                      chip="بازوی خرید"
+                      chip="با بازوی خرید نیاز خرید عمده ات رو اعلام کن"
                       question="چه محصولات یا خدماتی رو عمده می‌خری؟"
-                      body="بازوی خرید کسب و کارت رو بساز، لیست خریدت رو وارد کن. لینک رو برای تأمین‌کنندگان مرتبط بفرست. هر وقت نیاز داشتی، قیمت‌گیری بعضی اقلام رو فعال کن تا از تامین کنندگانت، قیمت و شرایط رقابتی بگیری. آی مچ هم شبکه تامین کنندگانت رو گسترش میده."
+                      body="بازوی خرید کسب و کارت رو بساز، لیست خریدت رو وارد کن. لینک رو برای تأمین‌کنندگان خودت بفرست. هر وقت نیاز داشتی، قیمت‌گیری بعضی اقلام رو فعال کن تا از تامین کنندگانت، قیمت و شرایط رقابتی بگیری. آی مچ هم، در لحظه ای که نیاز داری، تامین کنندگان مناسب همون کالا یا خدمت رو در همون حجم مورد نیاز، بهت پیشنهاد میده."
                       delay={0.15}
                   />
                 </div>
@@ -869,7 +869,7 @@ export default function Landing() {
                       className="inline-flex h-13 items-center gap-2.5 rounded-full bg-brand-primary px-10 py-3.5 text-lg font-extrabold text-white
                     shadow-lg shadow-brand-primary/25 transition-colors hover:bg-brand-primary-strong"
                   >
-                   شروع کن و رایگان بساز
+                    شروع کن و رایگان بساز
                     <ArrowLeft className="size-5" />
                   </Link>
 
