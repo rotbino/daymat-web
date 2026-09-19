@@ -63,11 +63,11 @@ export const BUSINESS_TYPE = [
         id: "service",
         label: "خدمات",
         children: [
-            { id: "consulting", label: "مشاوره", firstCatalog: true },
-            { id: "contracting", label: "پیمانکاری", firstCatalog: true },
-            { id: "maintenance", label: "تعمیرات و نگهداری", firstCatalog: true },
-            { id: "digital", label: "خدمات دیجیتال", firstCatalog: true },
-            { id: "training", label: "آموزش", firstCatalog: true },
+            { id: "consulting", label: "مشاوره", firstCatalog: false },
+            { id: "contracting", label: "پیمانکاری", firstCatalog: false },
+            { id: "maintenance", label: "تعمیرات و نگهداری", firstCatalog: false },
+            { id: "digital", label: "خدمات دیجیتال", firstCatalog: false },
+            { id: "training", label: "آموزش", firstCatalog: false },
             { id: "other_services", label: "سایر خدمات", firstCatalog: false },
         ],
     },
@@ -117,6 +117,18 @@ export function getBusinessSector(roleId: string | undefined | null): string {
         }
     }
     return '';
+}
+
+// ✅ فلسفهٔ نوی بازوها (بازنویسی مالک — ۱۴۰۴/۰۶):
+//    «بازوی خرید» برای همه؛ «بازوی فروشِ عمده» فقط برای لایه‌های بالادستی زنجیرهٔ تامین —
+//    توزیع/پخش، تولید و بازرگانی. خرده‌فروش (سوپرمارکت، فروشگاه…) و خدمات فقط خریدار عمده‌اند؛
+//    این نسخه اصلاً وارد «بازار فروش خدمات» نمی‌شود. همین قاعده سمت بک هم گیت شده است.
+export const SALES_ARM_SECTORS = ['distribution', 'manufacturing', 'trade'] as const;
+
+/** آیا این sector می‌تواند بازوی فروش بسازد؟ (مقادیر قدیمیِ ناشناس محدود نمی‌شوند) */
+export function canCreateSalesArm(sectorId?: string | null): boolean {
+    if (!sectorId) return true; // سازگاری با رکوردهای قدیمی
+    return (SALES_ARM_SECTORS as readonly string[]).includes(sectorId);
 }
 
 // ✅ helper: پیشنهادِ اولین ابزار برای یک role —

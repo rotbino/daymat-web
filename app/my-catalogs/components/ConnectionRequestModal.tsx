@@ -46,7 +46,7 @@ const SCOPES: Record<'team' | 'buyers', { key: Scope; label: string; icon: React
         { key: 'contacts', label: 'مخاطبین', icon: Smartphone, hint: 'از دفترچهٔ تلفنت: اعضای آی مچ دعوت همکاری می‌گیرند، غیراعضا با لینک بازوی فروش دعوت می‌شوند' },
     ],
     buyers: [
-        { key: 'businesses', label: 'کسب‌وکارها', icon: Store, hint: 'کسب‌وکارها را به‌عنوان خریدار ثبت کن تا تماس‌شان به شما برسد' },
+        { key: 'businesses', label: 'کسب‌وکارها', icon: Store, hint: 'کسب‌وکارهای مناسب را پیدا کن و پیشنهاد تامین بفرست — تایید با خودِ خریدار است' },
         { key: 'contacts', label: 'مخاطبین', icon: Smartphone, hint: 'از دفترچهٔ تلفنت: کسب‌وکار اعضای آی مچ به‌عنوان خریدار ثبت می‌شود، غیراعضا با لینک بازوی فروش دعوت می‌شوند' },
     ],
 };
@@ -197,7 +197,7 @@ export default function ConnectionRequestModal({ open, onClose, catalogId, mode,
                 businessId: b.id,
                 ...(assignTo ? { sellerUserId: assignTo } : {}),
             });
-            toast.success((res?.message || 'درخواست ثبت خریدار ارسال شد — در انتظار پذیرش خریدار') + quotaSuffix(res?.quota));
+            toast.success((res?.message || 'پیشنهاد تامین ارسال شد — در انتظار پذیرش خریدار') + quotaSuffix(res?.quota));
             markSent(`biz-${b.id}`);
             refreshQuota();
             refreshTeam();
@@ -236,7 +236,7 @@ export default function ConnectionRequestModal({ open, onClose, catalogId, mode,
                 <div className="flex items-start justify-between gap-3 mb-3">
                     <div>
                         <p className="font-bold text-gray-900 dark:text-gray-100">
-                            {mode === 'team' ? 'افزودن به تیم فروش' : 'درخواست ارتباط با خریدار'}
+                            {mode === 'team' ? 'افزودن به تیم فروش' : 'پیشنهاد تامین'}
                         </p>
                         <p className="text-[11px] text-gray-500 dark:text-gray-400 mt-0.5">
                             {mode === 'team'
@@ -385,7 +385,7 @@ export default function ConnectionRequestModal({ open, onClose, catalogId, mode,
                                     businessId,
                                     ...(assignTo ? { sellerUserId: assignTo } : {}),
                                 });
-                                toast.success((res?.message || 'درخواست ثبت خریدار ارسال شد — در انتظار پذیرش خریدار') + quotaSuffix(res?.quota));
+                                toast.success((res?.message || 'پیشنهاد تامین ارسال شد — در انتظار پذیرش خریدار') + quotaSuffix(res?.quota));
                                 refreshQuota();
                                 refreshTeam();
                             } catch (e: any) {
@@ -549,7 +549,7 @@ export default function ConnectionRequestModal({ open, onClose, catalogId, mode,
                                         className="px-3 py-2 rounded-xl bg-primary text-white text-xs font-bold flex-shrink-0 flex items-center gap-1.5 hover:opacity-90 active:scale-95 transition"
                                     >
                                         {isBiz
-                                            ? <><ShoppingBasket className="w-3.5 h-3.5" /> درخواست ارتباط</>
+                                            ? <><ShoppingBasket className="w-3.5 h-3.5" /> پیشنهاد تامین</>
                                             : <><Handshake className="w-3.5 h-3.5" /> دعوت</>}
                                     </button>
                                 )}

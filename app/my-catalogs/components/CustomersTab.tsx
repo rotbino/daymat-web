@@ -17,7 +17,6 @@ import { cn } from '@/lib/utils';
 import { CARD_CLS } from '../constants';
 import { useCatalogTeam } from '@/lib/api/apiHooks';
 import ConnectionRequestModal from './ConnectionRequestModal';
-import OfferCallButton from '@/app/components/OfferCallButton';
 import { Avatar, BuyerMainInfo, personalSlugOf, REQUEST_LABEL, InviteStateChip } from './MemberBits';
 
 interface Props {
@@ -205,15 +204,8 @@ export default function CustomersTab({ catalogId, slug }: Props) {
                 {st === 'owner_pending' && <InviteStateChip state="pending" pendingLabel="در انتظار پذیرش خریدار" />}
                 {st === 'declined' && <InviteStateChip state="declined" />}
 
-                {/* ✅ تماس با خریدار — همیشه (شمارهٔ ثبت‌نام شخص؛ قاعدهٔ تماس‌ها) */}
-                <OfferCallButton
-                    phone={m.phone}
-                    title={st === 'self_pending'
-                        ? 'تماس با متقاضی خریداربودن'
-                        : st === 'owner_pending'
-                            ? 'تماس — یادآوری پذیرش ثبت خریدار'
-                            : `تماس با ${displayName}`}
-                />
+                {/* ✅ خواستهٔ مالک: خریدار را با تماس اذیت نکنیم — فقط پیشنهاد تامین؛
+                    دکمهٔ تماس از ردیف‌های خریداران حذف شد (پیشنهاد/تایید/رد همان‌جا انجام می‌شود) */}
 
                 {/* منو یا دکمهٔ حذفِ ردشده */}
                 {st === 'declined' ? (
@@ -283,8 +275,8 @@ export default function CustomersTab({ catalogId, slug }: Props) {
                         className="flex items-center gap-1.5 px-3 py-2 rounded-xl bg-primary text-white text-sm font-bold hover:opacity-90 transition"
                     >
                         <UserPlus className="w-4 h-4" />
-                        <span className="hidden sm:inline">درخواست ارتباط با خریدار</span>
-                        <span className="sm:hidden">درخواست ارتباط</span>
+                        <span className="hidden sm:inline">پیشنهاد تامین</span>
+                        <span className="sm:hidden">پیشنهاد تامین</span>
                     </button>
                 )}
             </div>
@@ -309,8 +301,6 @@ export default function CustomersTab({ catalogId, slug }: Props) {
                                 </div>
                                 {busy === `apr-${s.id}` ? <Loader2 className="w-4 h-4 animate-spin flex-shrink-0" /> : (
                                     <div className="flex items-center gap-1 flex-shrink-0">
-                                        {/* ✅ تماس با متقاضی — همیشه (شمارهٔ ثبت‌نام) */}
-                                        <OfferCallButton phone={s.phone} title="تماس با متقاضی خریداربودن" />
                                         <button
                                             onClick={() => run(`apr-${s.id}`, () => apiService.catalog.team.approveBuyer(catalogId, s.id), 'به‌عنوان خریدار تایید شد', activateMemberIn(s.id))}
                                             className="h-8 px-2.5 rounded-xl bg-emerald-600 text-white text-[11px] font-bold flex items-center gap-1"

@@ -10,7 +10,7 @@ import {
     LibraryBig, Building2, Loader2, ArrowRight, AlertTriangle, Globe, Lock, BadgeCheck, ClipboardList,
 } from 'lucide-react';
 import { useCreateCatalog, useBusinessSearch, useCataloges, useMyBusinesses, useMyBusinessMembership } from '@/lib/api/apiHooks';
-import { USER_POSITIONS, getFirstCatalog, getBusinessRoleLabel } from '@/lib/api/data-types';
+import { USER_POSITIONS, getFirstCatalog, getBusinessRoleLabel, getBusinessSector, canCreateSalesArm } from '@/lib/api/data-types';
 import { setCurrentCatalog } from '@/lib/store/slices/catalogSlice';
 import { clearStoredRef, readStoredRef } from '@/app/components/RefCapture';
 import BusinessSelector from '@/app/components/BusinessSelector';
@@ -105,7 +105,9 @@ export default function RegisterCatalogPage() {
     const [catalogName, setCatalogName] = useState('');
     const [nameDirty, setNameDirty] = useState(false);
     const [slug, setSlug] = useState('');          // ✅ کاربر خودش پر می‌کند — پیش‌فرض خالی
-    const [salesType, setSalesType] = useState<'wholesale' | 'retail' | 'service'>('wholesale');
+    const [salesType] = useState<'wholesale' | 'retail' | 'service'>('wholesale');
+    // ✅ فلسفهٔ نوی مالک: کاتالوگِ دیمت ذاتاً «عمده»ست — انتخابِ عمده/خرده/خدمات حذف شد؛
+    //    هرکس کاتالوگ می‌سازد به‌نحوی عمده‌فروش است (بک هم فقط wholesale/retail می‌پذیرفت)
     // ✅ دسترسی بازوی فروش — خصوصی: قیمت‌ها فقط برای اعضای پذیرفته‌شده
     const [isPrivate, setIsPrivate] = useState(false);
     const [errors, setErrors] = useState<Record<string, string>>({});
@@ -116,16 +118,21 @@ export default function RegisterCatalogPage() {
     // ─── ✅ پیشنهاد گام بعدی — بعد از ثبتِ «جدید»ِ کسب‌وکار، بر اساس نوع فعالیت (firstCatalog) ───
     // فقط برای خریدبذَرها (firstCatalog=false: خرده‌فروش، رستوران، آرایشگر…) کارت پیشنهاد بازوی خرید نشان داده می‌شود؛
     // برای جنس‌بذَرها همین فرم بازوی فروش خودش مسیر پیشنهادی است — هیچ کاردی لازم نیست. پیشنهاد است، نه اجبار.
-    const [stepHint, setStepHint] = useState<{ bizId: string; bizName: string; roleLabel: string } | null>(null);
+    const [stepHint, setStepHint] = useState<{ bizId: string; bizName: string; roleLabel: string; roleId?: string } | null>(null);
     const handleBusinessCreated = (biz: any) => {
         if (biz?.id && getFirstCatalog(biz.businessRole) === false) {
             setStepHint({
                 bizId: biz.id,
                 bizName: biz.name || 'کسب‌وکار شما',
                 roleLabel: getBusinessRoleLabel(biz.businessRole) || 'کسب‌وکار',
+                roleId: biz.businessRole || undefined,
             });
         }
     };
+
+    // ✅ گیتِ بازوی فروش (فلسفهٔ نوی مالک): خرده‌فروش/خدمات فقط بازوی خرید می‌سازند —
+    //    فرم ساخت بازوی فروش برایشان باز نمی‌شود؛ کارتِ هدایت به بازوی خرید می‌آید
+    const salesArmBlocked = !!selectedBiz && !canCreateSalesArm(getBusinessSector((selectedBiz as any)?.businessRole));
 
     // ─── تغییر کسب‌وکار: نام پیشنهادی تازه می‌شود ───
     useEffect(() => {
@@ -303,7 +310,7 @@ export default function RegisterCatalogPage() {
                 </section>
 
                 {/* ═══ سایر آیتم‌های بازوی فروش — فقط بعد از انتخاب/ثبت کسب‌وکار ═══ */}
-                {selectedBiz && (
+                {selectedBiz && !salesArmBlocked && (
                 <form onSubmit={handleSubmit} className="space-y-5">
                     {/* ═══ ۲) نقش شما در کسب‌وکار — اگر در تیم کسب‌وکار قبلاً مشخص شده، فقط نمایش داده می‌شود ═══ */}
                     <section className="space-y-1.5">
@@ -405,36 +412,9 @@ export default function RegisterCatalogPage() {
                         )}
                     </section>
 
-                    {/* ═══ ۵) نوع فروش ═══ */}
+                    {/* ═══ ۵) دسترسی بازوی فروش — عمومی / خصوصی ═══ */}
                     <section className="space-y-2">
-                        <SectionTitle n={5} title="هدف این بازوی فروش " />
-                        <div className="grid grid-cols-3 gap-2">
-                            {[
-                                { v: 'wholesale', t: 'فروش عمده', icon: '📦' },
-                                { v: 'retail', t: 'فروش خرده', icon: '🛒' },
-                                { v: 'service', t: 'خدمات', icon: '🔧' },
-                            ].map((o) => (
-                                <button key={o.v} type="button"
-                                        onClick={() => setSalesType(o.v as any)}
-                                        className={cn(
-                                            'rounded-xl border p-3 text-center transition-all',
-                                            salesType === o.v
-                                                ? 'border-primary bg-primary/5 ring-1 ring-primary/20'
-                                                : 'border-outline-variant/40 dark:border-gray-700 hover:border-primary/30',
-                                        )}>
-                                    <span className="block text-xl mb-1">{o.icon}</span>
-                                    <span className={cn('block text-xs font-bold',
-                                        salesType === o.v ? 'text-primary' : 'text-on-surface')}>
-                                        {o.t}
-                                    </span>
-                                </button>
-                            ))}
-                        </div>
-                    </section>
-
-                    {/* ═══ ۶) دسترسی بازوی فروش — عمومی / خصوصی ═══ */}
-                    <section className="space-y-2">
-                        <SectionTitle n={6} title="دسترسی بازوی فروش" />
+                        <SectionTitle n={5} title="دسترسی بازوی فروش" />
                         <div className="grid grid-cols-2 gap-2">
                             <button type="button" onClick={() => setIsPrivate(false)}
                                     className={cn(
@@ -478,6 +458,28 @@ export default function RegisterCatalogPage() {
                     </button>
                 </form>
                 )}
+
+                {/* ✅ گیت بازوی فروش — خرده‌فروش/خدمات: فقط بازوی خرید (فلسفهٔ نوی مالک) */}
+                {selectedBiz && salesArmBlocked && (
+                    <div className="rounded-2xl border border-amber-200 bg-amber-50/60 dark:border-amber-900/40 dark:bg-amber-950/20 p-5 text-center">
+                        <span className="mx-auto grid size-12 place-items-center rounded-2xl bg-brand-contrast-soft">
+                            <ClipboardList className="size-6 text-amber-600 dark:text-amber-400" />
+                        </span>
+                        <p className="mt-3 text-sm font-black text-on-surface dark:text-gray-100">
+                            «{shortName(selectedBiz.name || '', 24)}» بازوی فروش عمده نمی‌سازد
+                        </p>
+                        <p className="mt-2 text-[12px] leading-6 text-on-surface-variant">
+                            چون گفتی <b>{getBusinessRoleLabel((selectedBiz as any)?.businessRole) || 'خرده‌فروش/خدمات'}</b>، ابزارِ تو
+                            {' '}<b className="text-amber-600 dark:text-amber-400">بازوی خرید</b> است — لیست خریدت را می‌نویسی و
+                            تامین‌کننده‌های عمده (تولید، واردات، پخش) پیشنهاد تامین و قیمت می‌دهند.
+                        </p>
+                        <Link href={`/inquiries/new?bizId=${selectedBiz.id}`}
+                              className="mt-4 flex h-11 w-full items-center justify-center gap-2 rounded-xl bg-brand-contrast text-[13px] font-extrabold text-white shadow-lg shadow-brand-contrast/25 transition-colors hover:bg-brand-contrast-strong">
+                            <ClipboardList className="size-4" />
+                            ساخت بازوی خرید
+                        </Link>
+                    </div>
+                )}
             </main>
 
             {/* ═══ کارت گام بعدی — فقط بعد از ثبتِ جدیدِ کسب‌وکارِ خریدبذَر (firstCatalog=false) ═══
@@ -497,7 +499,7 @@ export default function RegisterCatalogPage() {
                             چون گفتی <span className="font-black">{stepHint.roleLabel}</span>، و بیشتر خرید عمده داری تا فروش عمده می‌کنیم اول{' '}
                             <span className="font-black text-amber-600 dark:text-amber-400">بازوی خرید</span> بسازی —
                             لیست خریدت رو می‌نویسی، تامین‌کننده‌ها قیمت می‌دن و تو بهترین رو انتخاب می‌کنی.
-                            (بازوی فروش هم هر وقت خواستی می تونی از پنل خودت بسازی)
+                            (در دیمت، ابزارِ خرده‌فروش و خدمات همان بازوی خرید است — پیشنهادهای تامین را همان‌جا می‌گیری)
                         </p>
                         <Link href={`/inquiries/new?bizId=${stepHint.bizId}`}
                               className="mt-5 flex h-12 w-full items-center justify-center gap-2 rounded-xl bg-brand-contrast text-sm font-extrabold text-white shadow-lg shadow-brand-contrast/30 transition-colors hover:bg-brand-contrast-strong">
