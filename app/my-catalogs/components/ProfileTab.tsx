@@ -14,6 +14,7 @@ import { cn } from '@/lib/utils';
 import { SALES_ICON, SALES_LABEL } from '../constants';
 import { ProfileBanner } from './AlertBanners';
 import AppearanceSettings from './AppearanceSettings';
+import CopyPermissionCard from './CopyPermissionCard';
 
 interface CompletionItem { key: string; label: string; ok: boolean; }
 
@@ -54,6 +55,9 @@ export default function ProfileTab({ catalog, completion, canShare, onShare, onE
         <div className="space-y-3">
             {/* ── 🎨 ظاهر بازوی فروش — رنگ برند + واحد پول (برندبوک) ── */}
             <AppearanceSettings catalog={catalog} onSaved={onSettingsSaved} />
+
+            {/* ── 📋 اجازهٔ کپی محصولات — برای همکاران تیم فروش و کسب‌وکارهای دیگر ── */}
+            <CopyPermissionCard catalog={catalog} onSaved={onSettingsSaved} />
 
             {/* ── هویت بازوی فروش — فلت، بدون قاب کارتی ── */}
             <div className="flex items-start gap-3.5">

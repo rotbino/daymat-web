@@ -106,6 +106,15 @@ export interface Catalog {
     armMemberships?: ArmMembership[];
     ads?: Ad[];
     credits?: Credit[];
+    // ⚙️ تنظیمات بازوی فروش — واحدهای منتخب، تم، واحد پول، اجازهٔ کپی و…
+    config?: {
+        units?: any[];
+        categoryTree?: any[];
+        theme?: { color?: string | null };
+        currency?: string | null;
+        allowCopy?: boolean;
+        [key: string]: any;
+    };
     _count?: {
         ads: number;
         armMemberships: number;

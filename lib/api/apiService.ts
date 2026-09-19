@@ -306,8 +306,18 @@ export const apiService = {
         requestVerification: (catalogId: string, data: any): Promise<Catalog> =>
             apiRequest(`/catalog/${catalogId}/verify`, { method: 'POST', data }),
 
-        updateConfig: (id: string, dto: { units?: any[]; categoryTree?: any[]; theme?: { color?: string | null }; currency?: string | null }): Promise<any> =>
+        updateConfig: (id: string, dto: { units?: any[]; categoryTree?: any[]; theme?: { color?: string | null }; currency?: string | null; allowCopy?: boolean }): Promise<any> =>
             apiRequest(`/catalog/${id}/config`, { method: 'PATCH', data: dto }),
+
+        // 📋 کپی کالاها از بازوی فروش دیگر — جست‌وجوی کسب‌وکار، لیست کالاهای قابل‌کپی، ثبت کپی
+        copySearch: (query: string): Promise<{ items: any[] }> =>
+            apiRequest(`/catalog/copy/search?query=${encodeURIComponent(query)}`),
+
+        copyProducts: (sourceCatalogId: string): Promise<{ catalog: { id: string; name: string }; items: any[] }> =>
+            apiRequest(`/catalog/${sourceCatalogId}/copy/products`),
+
+        copyCommit: (dto: { sourceCatalogId: string; targetCatalogId: string; adIds: string[] }): Promise<any> =>
+            apiRequest(`/catalog/copy`, { method: 'POST', data: dto }),
 
         // 💾 کارت ویزیت — ذخیرهٔ مشخصات (JSON) روی بازوی فروش تا زحمت کاربر از بین نرود
         updateVisitCard: (id: string, spec: any): Promise<any> =>

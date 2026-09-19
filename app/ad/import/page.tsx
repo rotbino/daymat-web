@@ -1,12 +1,14 @@
 // app/ad/import/page.tsx
 // 📥 افزودن گروهی محصول — «موتور رشد کالاهای بازار»
-//    پنج منبع ورود، هرکدام یک تب: اکسل | متن | جدول | هوش مصنوعی | از سایت
+//    شش منبع ورود، هرکدام یک تب: اکسل | متن | جدول | هوش مصنوعی | از سایت | از کاتالوگ
 //    جریان مشترک: انتخاب منبع → پیش‌نمایش ویرایش‌پذیر → ثبت → گزارش کامل (چند موفق/چند رد/چه چیزهای تازه ساخته شد)
 //    واحد و برند و کالای مرجعِ نبود، خودکار توسط بک‌اند ساخته می‌شود — هیچ تکراری هم ثبت نمی‌شود.
 //    ✅ قیمت واردشده = قیمت عمدهٔ «یک عدد» — قیمت کارتن از تعداد محاسبه می‌شود (تعدادِ نبود = ۱)
 //    ✅ مدال راهنمای هر تب — شکل درست ستون‌های اکسل + نمونهٔ دوردیفی + قالب پنج‌خطی متن
 //    ✅ پرسش واحد پول قیمت‌ها — اگر فایل/خروجی ریالی بود، موقع پارس ده‌تا یکی می‌شود (تومان نداریم چون فیلتر بازار می‌شکند)
 //    ✅ کالاهای ایمپورت‌شده با برچسب «نیاز به تکمیل» ثبت می‌شوند — تا ویرایش در کاتالوگ عمومی دیده نمی‌شوند
+//    ✅ تب «از کاتالوگ» — جست‌وجوی کسب‌وکار، تیک کالاهای بازوی فروش دیگران (با اجازهٔ صاحب بازو) و کپی چندثانیه‌ای؛
+//       صاحب بازو در تنظیماتش تیک «اجازهٔ کپی محصولات» را روشن/خاموش می‌کند — برای تیم‌های فروش که یک نفر لیست را می‌سازد
 //    ✅ بازطراحی موبایل‌محور: هدر تمام‌عرض چسبان با سایه (فلش بازگشت استاندارد همهٔ صفحات) +
 //       تب‌های زیرخط‌دار به‌سبک تب‌ویو کنسول + جدولِ سریعِ کارت‌شده در موبایل + نوار ثبتِ چسبان
 'use client';
@@ -14,15 +16,17 @@
 import React, { Suspense, useMemo, useRef, useState } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
 import Link from 'next/link';
+import Image from 'next/image';
 import { motion, AnimatePresence } from 'framer-motion';
 import {
-    ClipboardPaste, Loader2, Check, AlertTriangle, Copy,
+    ClipboardPaste, Loader2, Check, AlertTriangle, Copy, CopyPlus,
     Package, ListChecks, Store, FileSpreadsheet, Type, Table2,
     Sparkles, Globe, Plus, Trash2, ExternalLink, CheckCircle2, ArrowRight,
-    CircleHelp, X, Info, ImageIcon,
+    CircleHelp, X, Info, ImageIcon, Search, Lock, Phone, Ban,
 } from 'lucide-react';
 import { toast } from 'sonner';
 import { useAdImportParse, useAdImportParseFile, useAdImportCommit, useUnits, useCatalog } from '@/lib/api/apiHooks';
+import { apiService } from '@/lib/api/apiService';
 import { NumberInput } from '@/components/common/NumberInput';
 import { currencyLabel } from '@/lib/utils/brand';
 import type { ImportItem, ImportReport, ImportSummary } from '@/lib/api/apiService';
@@ -38,7 +42,7 @@ const SAMPLE_TEXT = [
     'کالای پنجم | برند پنجم | شانه | ۲۰ | قیمت عمده یک عدد',
 ].join('\n');
 
-type SourceTab = 'excel' | 'text' | 'grid' | 'ai' | 'site';
+type SourceTab = 'excel' | 'text' | 'grid' | 'ai' | 'site' | 'copy';
 
 const TABS: { key: SourceTab; title: string; icon: React.ReactNode }[] = [
     { key: 'excel', title: 'اکسل', icon: <FileSpreadsheet className="size-[18px] sm:size-4" /> },
@@ -46,6 +50,7 @@ const TABS: { key: SourceTab; title: string; icon: React.ReactNode }[] = [
     { key: 'grid', title: 'جدول', icon: <Table2 className="size-[18px] sm:size-4" /> },
     { key: 'ai', title: 'هوش مصنوعی', icon: <Sparkles className="size-[18px] sm:size-4" /> },
     { key: 'site', title: 'از سایت', icon: <Globe className="size-[18px] sm:size-4" /> },
+    { key: 'copy', title: 'از کاتالوگ', icon: <CopyPlus className="size-[18px] sm:size-4" /> },
 ];
 
 /** پرامپت آماده برای هوش مصنوعی — کاربر فایل/سایتش را با همین متن به ChatGPT/DeepSeek می‌دهد */
@@ -666,6 +671,7 @@ function ImportContent() {
                 <p className="mb-4 text-[12px] font-bold leading-6 text-stone-500 dark:text-gray-400">
                     برای آسانیِ ورود محصولات، امکان ثبت از لیست‌های مختلف مثل اکسل، فایل ساده یا با استفاده از هوش مصنوعی فراهم شده است.
                     یکی از بهترین‌ها فایل اکسل است؛ اما اگر فایل اکسل محصولات را ندارید می‌توانید از روش‌های دیگر استفاده کنید.
+                    اگر هم کاتالوگت را همکارت از تیم فروش ساخته، از تب «از کاتالوگ» با اجازهٔ او کپی کن — لازم نیست از صفر وارد کنی.
                     دقت کنید این روش‌ها فقط برای ساده‌تر کردنِ ثبت لیست محصول است؛ قطعاً بعد از ورود محصولات باید جزئیات و قیمت‌های
                     آن‌ها را ویرایش و کامل کنید و در صورت نداشتن تصویر، تصویر تک‌تک محصولات را آپلود نمایید.
                 </p>
@@ -692,12 +698,13 @@ function ImportContent() {
                 </div>
 
                 <div className={`${CARD_CLS} p-4 sm:p-5`}>
-                    {/* نوار راهنما + سوییچ‌های قیمت (واحد پول + مبنای قیمت) — بالای همهٔ منبع‌ها */}
+                    {/* نوار راهنما + سوییچ‌های قیمت (واحد پول + مبنای قیمت) — بالای همهٔ منبع‌ها؛ تب کپی سوییچ نمی‌خواهد */}
                     <div className="mb-4 flex flex-wrap items-center justify-between gap-2 rounded-xl bg-stone-50 px-3 py-2.5 dark:bg-gray-800/60">
                         <button onClick={() => setHelpOpen(true)}
                                 className="inline-flex items-center gap-1.5 text-[11.5px] font-extrabold text-amber-700 transition-colors hover:text-amber-800 dark:text-amber-400">
                             <CircleHelp className="size-4" /> راهنمای این روش را ببین
                         </button>
+                        {tab !== 'copy' && (
                         <div className="flex flex-wrap items-center gap-1.5">
                             <span className="text-[10.5px] font-black text-stone-400">قیمت‌هایم به:</span>
                             <div className="flex rounded-full border border-outline-variant/40 p-0.5 dark:border-gray-700">
@@ -727,7 +734,10 @@ function ImportContent() {
                                 ))}
                             </div>
                         </div>
+                        )}
                     </div>
+
+                    {tab === 'copy' && <CopyTabContent catalogId={catalogId} catalogName={catalogName} />}
 
                     {tab === 'excel' && (
                         <>
@@ -861,7 +871,7 @@ function ImportContent() {
                                         className="h-11 rounded-xl border border-dashed border-outline-variant/50 px-4 text-[11.5px] font-extrabold text-stone-500 hover:border-amber-400 dark:text-gray-400">
                                     <Plus className="me-1 inline size-3.5" /> ردیف
                                 </button>
-                                <button onClick={runGrid} disabled={parsePending}
+                                <button onClick={() => runGrid()} disabled={parsePending}
                                         className="flex h-11 flex-1 items-center justify-center gap-2 rounded-xl bg-amber-500 text-[12.5px] font-extrabold text-white hover:bg-amber-600 disabled:opacity-50">
                                     {parseText.isPending ? <Loader2 className="size-4 animate-spin" /> : <ListChecks className="size-4" />}
                                     پیش‌نمایش
@@ -937,10 +947,287 @@ function ImportContent() {
 }
 
 // ═══════════════════════════════════════════════════════════
+// 📋 تب «از کاتالوگ» — کپی کالاها از بازوی فروش کسب‌وکار دیگر
+//    سرچ نام شرکت/بازو → لیست بازوها → تیک تک‌تک یا همهٔ کالاها → کپی به بازوی من.
+//    شرط: صاحب بازو تیک «اجازهٔ کپی محصولات» را در تنظیماتش روشن کرده باشد؛
+//    اگر نه، پیام تماس می‌بینیم تا ازش بخواهیم برای چند لحظه تیک را روشن کند.
+// ═══════════════════════════════════════════════════════════
+function CopyTabContent({ catalogId, catalogName }: { catalogId: string; catalogName?: string }) {
+    const router = useRouter();
+
+    // 🔎 جست‌وجو
+    const [query, setQuery] = useState('');
+    const [searching, setSearching] = useState(false);
+    const [results, setResults] = useState<any[]>([]);
+    const [searched, setSearched] = useState(false);
+
+    // 📦 بازوی انتخاب‌شده و کالاهایش
+    const [selected, setSelected] = useState<any | null>(null);
+    const [loadingProducts, setLoadingProducts] = useState(false);
+    const [products, setProducts] = useState<any[]>([]);
+    const [checked, setChecked] = useState<Set<string>>(new Set());
+
+    // 📋 کپی و گزارش
+    const [copying, setCopying] = useState(false);
+    const [report, setReport] = useState<{ copied: number; skipped: number; failed: { name: string; reason: string }[] } | null>(null);
+
+    const fa = (n: number) => n.toLocaleString('fa-IR');
+
+    // سرچ با تاخیر — حداقل دو حرف، ۴۰۰ms بعد از تایپ
+    React.useEffect(() => {
+        const q = query.trim();
+        if (q.length < 2) { setResults([]); setSearched(false); return; }
+        const t = setTimeout(async () => {
+            setSearching(true);
+            try {
+                const res = await apiService.catalog.copySearch(q);
+                setResults(res.items || []);
+                setSearched(true);
+            } catch (e: any) { toast.error(e?.response?.data?.message || e?.message || 'جست‌وجو ناموفق بود'); }
+            finally { setSearching(false); }
+        }, 400);
+        return () => clearTimeout(t);
+    }, [query]);
+
+    const openCatalog = async (c: any) => {
+        if (!c.copyAllowed) return; // غیرفعال — فقط پیام تماس نشان داده می‌شود
+        setSelected(c);
+        setLoadingProducts(true);
+        setReport(null);
+        try {
+            const res = await apiService.catalog.copyProducts(c.id);
+            setProducts(res.items || []);
+            setChecked(new Set((res.items || []).map((p: any) => p.id))); // پیش‌فرض: همه تیک
+        } catch (e: any) {
+            toast.error(e?.response?.data?.message || e?.message || 'خواندن کالاهای این بازو ممکن نشد');
+            setSelected(null);
+        } finally { setLoadingProducts(false); }
+    };
+
+    const backToResults = () => { setSelected(null); setProducts([]); setChecked(new Set()); setReport(null); };
+
+    const toggle = (id: string) =>
+        setChecked((prev) => { const n = new Set(prev); n.has(id) ? n.delete(id) : n.add(id); return n; });
+
+    const allChecked = products.length > 0 && checked.size === products.length;
+
+    const doCopy = async () => {
+        if (!checked.size) { toast.error('حداقل یک کالا را تیک بزن'); return; }
+        setCopying(true);
+        try {
+            const rep = await apiService.catalog.copyCommit({
+                sourceCatalogId: selected.id,
+                targetCatalogId: catalogId,
+                adIds: Array.from(checked),
+            });
+            setReport({ copied: rep.copied ?? 0, skipped: rep.skipped ?? 0, failed: rep.failed || [] });
+            toast.success(`${fa(rep.copied ?? 0)} کالا به «${catalogName || 'بازوی فروشت'}» کپی شد`);
+        } catch (e: any) {
+            toast.error(e?.response?.data?.message || e?.message || 'کپی ناموفق بود');
+        } finally { setCopying(false); }
+    };
+
+    // ── گزارش کپی ──
+    if (report) {
+        return (
+            <div>
+                <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }}
+                            className="rounded-2xl bg-emerald-50/70 p-4 dark:bg-emerald-500/10">
+                    <div className="flex items-center gap-3">
+                        <span className="grid size-11 shrink-0 place-items-center rounded-full bg-emerald-500/15 text-emerald-600 dark:text-emerald-400">
+                            <CheckCircle2 className="size-6" />
+                        </span>
+                        <div>
+                            <p className="text-sm font-black text-emerald-800 dark:text-emerald-300">
+                                {fa(report.copied)} کالا کپی شد به «{catalogName}»
+                            </p>
+                            {report.skipped > 0 && (
+                                <p className="mt-0.5 text-[11px] font-bold text-amber-700 dark:text-amber-400">
+                                    {fa(report.skipped)} قلم کپی نشد — تکراری بود
+                                </p>
+                            )}
+                        </div>
+                    </div>
+                    {report.failed.length > 0 && (
+                        <ul className="mt-3 space-y-1 border-t border-emerald-200/50 pt-2.5 dark:border-emerald-800/40">
+                            {report.failed.slice(0, 6).map((f, i) => (
+                                <li key={i} className="text-[10.5px] font-bold leading-5 text-stone-500 dark:text-gray-400">
+                                    • {f.name} — {f.reason}
+                                </li>
+                            ))}
+                            {report.failed.length > 6 && (
+                                <li className="text-[10px] font-bold text-stone-400">و {fa(report.failed.length - 6)} مورد دیگر…</li>
+                            )}
+                        </ul>
+                    )}
+                </motion.div>
+                <div className="mt-3 flex gap-2">
+                    <button onClick={() => router.push(`/my-catalogs?catalog=${catalogId}`)}
+                            className="flex h-11 flex-1 items-center justify-center gap-1.5 rounded-xl bg-emerald-600 text-[12.5px] font-extrabold text-white hover:bg-emerald-700">
+                        <Store className="size-4" /> دیدن کالاهای بازوی من
+                    </button>
+                    <button onClick={backToResults}
+                            className="h-11 rounded-xl border border-outline-variant/50 px-4 text-[11.5px] font-bold text-stone-500 hover:border-amber-400 dark:text-gray-400">
+                        کپی از بازوی دیگر
+                    </button>
+                </div>
+            </div>
+        );
+    }
+
+    // ── انتخاب کالاها از بازوی انتخاب‌شده ──
+    if (selected) {
+        return (
+            <div>
+                <div className="mb-3 flex items-center gap-2">
+                    <button onClick={backToResults} aria-label="برگشت به نتایج"
+                            className="grid size-8 shrink-0 place-items-center rounded-full text-stone-400 hover:bg-stone-100 hover:text-stone-600 dark:hover:bg-gray-800">
+                        <ArrowRight className="size-4" />
+                    </button>
+                    <div className="min-w-0 flex-1">
+                        <p className="truncate text-[13px] font-black text-stone-800 dark:text-gray-100">{selected.name}</p>
+                        <p className="truncate text-[10px] font-bold text-stone-400">
+                            {selected.businessName ? `کسب‌وکار: ${selected.businessName} · ` : ''}{fa(products.length)} کالا قابل‌کپی
+                        </p>
+                    </div>
+                    <button onClick={() => setChecked(allChecked ? new Set() : new Set(products.map((p) => p.id)))}
+                            className="h-8 shrink-0 rounded-lg border border-outline-variant/40 px-2.5 text-[10px] font-extrabold text-stone-500 hover:border-amber-400 dark:text-gray-400">
+                        {allChecked ? 'برداشتن تیک‌ها' : 'تیک همه'}
+                    </button>
+                </div>
+
+                {loadingProducts ? (
+                    <div className="grid h-40 place-items-center"><Loader2 className="size-6 animate-spin text-stone-300" /></div>
+                ) : products.length === 0 ? (
+                    <div className="rounded-xl bg-stone-50 p-6 text-center dark:bg-gray-800/50">
+                        <Package className="mx-auto size-8 text-stone-300" />
+                        <p className="mt-2 text-[11.5px] font-bold leading-6 text-stone-500 dark:text-gray-400">
+                            این بازو کالای کاملی برای کپی ندارد — کالاهای «نیاز به تکمیل» کپی نمی‌شوند
+                        </p>
+                    </div>
+                ) : (
+                    <>
+                        <div className="max-h-[420px] space-y-1.5 overflow-y-auto pe-1">
+                            {products.map((p) => {
+                                const on = checked.has(p.id);
+                                return (
+                                    <button key={p.id} type="button" onClick={() => toggle(p.id)}
+                                            className={`flex w-full items-center gap-2.5 rounded-xl border p-2 text-right transition-all active:scale-[0.99] ${
+                                                on ? 'border-amber-400/60 bg-amber-500/5' : 'border-outline-variant/30 hover:border-outline-variant/60 dark:border-gray-700/60'
+                                            }`}>
+                                        <span className={`grid size-5 shrink-0 place-items-center rounded-md border-2 transition-colors ${on ? 'border-amber-500 bg-amber-500' : 'border-stone-300 dark:border-gray-600'}`}>
+                                            {on && <Check className="size-3 text-white" />}
+                                        </span>
+                                        {p.image
+                                            ? <Image src={p.image} alt={p.title} width={40} height={40} unoptimized className="size-10 shrink-0 rounded-lg object-cover" />
+                                            : <span className="grid size-10 shrink-0 place-items-center rounded-lg bg-stone-100 dark:bg-gray-800"><Package className="size-4 text-stone-300" /></span>}
+                                        <span className="min-w-0 flex-1">
+                                            <span className="block truncate text-[12px] font-extrabold text-stone-700 dark:text-gray-200">{p.title}</span>
+                                            <span className="mt-0.5 block truncate text-[10px] font-bold text-stone-400">
+                                                {p.price != null && <>{fa(p.price)} تومان{p.unitQty ? ` / ${p.unitTitle || 'بسته'} ${fa(p.unitQty)}تایی` : ''}</>}
+                                                {p.brandTitle ? ` · ${p.brandTitle}` : ''}
+                                            </span>
+                                        </span>
+                                    </button>
+                                );
+                            })}
+                        </div>
+                        <button onClick={doCopy} disabled={copying || checked.size === 0}
+                                className="mt-3 flex h-12 w-full items-center justify-center gap-2 rounded-xl bg-emerald-600 text-[13px] font-extrabold text-white transition-colors hover:bg-emerald-700 disabled:opacity-50">
+                            {copying ? <Loader2 className="size-4 animate-spin" /> : <CopyPlus className="size-4" />}
+                            کپی {fa(checked.size)} کالا به «{catalogName || 'بازوی فروش من'}»
+                        </button>
+                    </>
+                )}
+            </div>
+        );
+    }
+
+    // ── جست‌وجو و نتایج ──
+    return (
+        <div>
+            <p className="text-xs font-bold leading-6 text-stone-500 dark:text-gray-400">
+                اسم کسب‌وکار یا بازوی فروشش را جست‌وجو کن — کالاهایش را تیک بزن و در چند ثانیه به بازوی خودت کپی کن.
+                برای تیم‌های فروش عالی است: یکی لیست را می‌سازد، بقیه کپی می‌کنند.
+            </p>
+            <div className="relative mt-3">
+                <Search className="absolute start-3 top-1/2 size-4 -translate-y-1/2 text-stone-300" />
+                <input value={query} onChange={(e) => setQuery(e.target.value)} dir="rtl"
+                       placeholder="مثلاً: پخش مصالح نارین"
+                       className="h-11 w-full rounded-xl border border-outline-variant/50 bg-transparent ps-9 pe-3 text-[13px] font-bold text-stone-700 outline-none placeholder:text-stone-300 focus:border-amber-400 dark:border-gray-700 dark:text-gray-200 dark:placeholder:text-gray-600" />
+                {searching && <Loader2 className="absolute end-3 top-1/2 size-4 -translate-y-1/2 animate-spin text-amber-500" />}
+            </div>
+
+            {/* نتایج */}
+            {searched && !searching && results.length === 0 && (
+                <div className="mt-4 rounded-xl bg-stone-50 p-6 text-center dark:bg-gray-800/50">
+                    <Search className="mx-auto size-8 text-stone-300" />
+                    <p className="mt-2 text-[11.5px] font-bold leading-6 text-stone-500 dark:text-gray-400">
+                        چیزی پیدا نشد — با نام کسب‌وکار یا نام بازوی فروشش امتحان کن
+                    </p>
+                </div>
+            )}
+
+            {results.length > 0 && (
+                <div className="mt-3 space-y-2">
+                    {results.map((c) => (
+                        <div key={c.id}
+                             className={`rounded-xl border p-3 transition-all ${c.copyAllowed ? 'border-outline-variant/40 hover:border-amber-400/60 dark:border-gray-700' : 'border-outline-variant/30 bg-stone-50/60 dark:border-gray-800 dark:bg-gray-800/40'}`}>
+                            <button type="button" onClick={() => openCatalog(c)} disabled={!c.copyAllowed}
+                                    className="flex w-full items-center gap-3 text-right disabled:cursor-not-allowed">
+                                {c.logoUrl
+                                    ? <Image src={c.logoUrl} alt={c.name} width={44} height={44} unoptimized className="size-11 shrink-0 rounded-xl object-cover" />
+                                    : <span className="grid size-11 shrink-0 place-items-center rounded-xl bg-amber-500/10 text-[13px] font-black text-amber-600 dark:text-amber-400">{c.name?.[0] || '؟'}</span>}
+                                <span className="min-w-0 flex-1">
+                                    <span className="flex items-center gap-1.5">
+                                        <span className="truncate text-[13px] font-black text-stone-800 dark:text-gray-100">{c.name}</span>
+                                        {c.verified && <CheckCircle2 className="size-3.5 shrink-0 text-emerald-500" />}
+                                    </span>
+                                    {c.businessName && (
+                                        <span className="mt-0.5 block truncate text-[10px] font-bold text-stone-400">{c.businessName} · {fa(c.productCount)} کالا</span>
+                                    )}
+                                </span>
+                                {c.copyAllowed ? (
+                                    <span className="inline-flex shrink-0 items-center gap-1 rounded-full bg-emerald-50 px-2.5 py-1 text-[9.5px] font-extrabold text-emerald-700 dark:bg-emerald-500/10 dark:text-emerald-400">
+                                        <CopyPlus className="size-3" /> قابل‌کپی
+                                    </span>
+                                ) : (
+                                    <span className="inline-flex shrink-0 items-center gap-1 rounded-full bg-stone-100 px-2.5 py-1 text-[9.5px] font-extrabold text-stone-400 dark:bg-gray-800 dark:text-gray-500">
+                                        <Lock className="size-3" /> کپی غیرفعال
+                                    </span>
+                                )}
+                            </button>
+
+                            {/* اجازهٔ کپی ندارد — راهنمای تماس با صاحب بازو */}
+                            {!c.copyAllowed && (
+                                <div className="mt-2.5 border-t border-outline-variant/20 pt-2.5 dark:border-gray-800">
+                                    <p className="flex items-start gap-1.5 text-[10.5px] font-bold leading-5 text-stone-500 dark:text-gray-400">
+                                        <Ban className="mt-0.5 size-3.5 shrink-0 text-stone-400" />
+                                        صاحبش فعلاً اجازهٔ کپی نداده — اگر همکارِ تیم فروشت است، تماس بگیر و ازش بخواه
+                                        در تنظیماتش تیک «اجازهٔ کپی محصولات» را برای چند لحظه روشن کند؛ بعد همین‌جا کپی کن.
+                                        (می‌توانید رایگان یا با توافق مالی خودتان باشد — تیک را هر وقت بخواهد برمی‌دارد)
+                                    </p>
+                                    {c.phone && (
+                                        <a href={`tel:${c.phone}`} dir="ltr"
+                                           className="mt-2 inline-flex h-9 items-center gap-1.5 rounded-lg border border-outline-variant/40 px-3 text-[11px] font-extrabold text-emerald-700 hover:border-emerald-400 dark:text-emerald-400 dark:border-gray-700">
+                                            <Phone className="size-3.5" /> {c.phone}
+                                        </a>
+                                    )}
+                                </div>
+                            )}
+                        </div>
+                    ))}
+                </div>
+            )}
+        </div>
+    );
+}
+
+// ═══════════════════════════════════════════════════════════
 // 📖 مدال راهنما — به زبان ساده: ستون‌های اکسل، قالب پنج‌خطی متن، قیمتِ یک‌عددی
 //    شامل جدول نمونهٔ دوردیفی (همان چیزی که مالک خواست) + نکتهٔ ریال + عکس‌ها
 // ═══════════════════════════════════════════════════════════
-const HELP_COL_SAMPLE: { head: string; rows: string[][] } = {
+const HELP_COL_SAMPLE: { head: string[]; rows: string[][] } = {
     head: ['نام کالا', 'برند', 'واحد', 'تعداد در واحد', 'قیمت (تومان)'],
     rows: [
         ['پفک مینو کارتنی', 'مینو', 'کارتن', '۲۴', '۸۵٬۰۰۰'],
@@ -1058,6 +1345,35 @@ function HelpModal({ tab, onClose }: { tab: SourceTab; onClose: () => void }) {
                         <li>• خروجی JSON را کامل کپی و در کادر بچسبان — ناقص که شود نمی‌خوانم</li>
                         <li>• اگر خروجی خطا داد، دوباره از هوش مصنوعی بخواه «فقط JSON خالص» بدهد</li>
                     </ul>
+                )}
+
+                {tab === 'copy' && (
+                    <>
+                        <p className="text-[12px] font-bold leading-6 text-stone-600 dark:text-gray-300">
+                            اگر کاتالوگت را همکارت از تیم فروش ساخته، لازم نیست از صفر وارد کنی —
+                            اسم کسب‌وکار را جست‌وجو کن، بازوی فروشش را باز کن، هر کالایی را خواستی یا همه را تیک بزن
+                            و کپی کن. کاتالوگت در چند ثانیه ساخته می‌شود.
+                        </p>
+                        <div className="mt-3 rounded-xl bg-amber-50 px-3.5 py-3 dark:bg-amber-500/10">
+                            <p className="text-[11.5px] font-black leading-6 text-amber-800 dark:text-amber-300">
+                                🔑 شرطش یک تیک است — «اجازهٔ کپی محصولات»
+                            </p>
+                            <p className="mt-1 text-[11px] font-bold leading-6 text-amber-700/90 dark:text-amber-300/80">
+                                صاحب بازوی فروش باید در «تنظیمات» پنلش این تیک را روشن کرده باشد — هر وقت هم بخواهد برمی‌دارد
+                                و کپی بسته می‌شود. اگر کسی از تو کپی می‌خواهد، همین تیک را برایش روشن کن؛ کارش که تمام شد خاموشش کن.
+                            </p>
+                        </div>
+                        <ul className="mt-3 space-y-1.5 text-[11.5px] font-bold leading-6 text-stone-600 dark:text-gray-300">
+                            <li>• تیکِ فعال نبود؟ کنار بازو می‌بینی «کپی غیرفعال» — با صاحبش تماس بگیر (شماره‌اش همان‌جاست) و
+                                ازش بخواه تیک را برای چند لحظه روشن کند؛ رایگان یا با توافق مالی بین خودتان. بعد این‌جا کپی کن.</li>
+                            <li>• با جست‌وجو همهٔ بازوها پیدا می‌شوند، حتی غیرفعال‌ها — تا بدانی چه چیزی هست و از کی بخواهی</li>
+                            <li>• همه‌چیز با هم کپی می‌شود: قیمت تکی و کارتن، تعداد در بسته، برند، عکس و توضیحات —
+                                تکراری‌های خودت کپی نمی‌شوند</li>
+                            <li>• کالاهای ناقصِ «نیاز به تکمیل» کپی نمی‌شوند — اول صاحبش باید کاملشان کند</li>
+                            <li>• کالاهای کپی‌شده در «بازوی تو» دیده می‌شوند و می‌توانی مثل بقیه ویرایششان کنی —
+                                استان و شهرشان هم کسب‌وکار خودت می‌شود</li>
+                        </ul>
+                    </>
                 )}
 
                 <button onClick={onClose}
